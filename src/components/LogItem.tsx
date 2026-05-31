@@ -53,7 +53,14 @@ export function LogItem({ log, onRemove }: Props) {
     >
       <View style={styles.logItem}>
         <View style={styles.logContent}>
-          <Text style={styles.dateText}>{formatDateDisplay(dateString)}</Text>
+          <Text style={styles.dateText}>
+            {formatDateDisplay(dateString)}
+            {' - '}
+            {new Date(log.timestamp).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </Text>
           <Text style={styles.elapsedText}>{formatElapsed(log.timestamp)}</Text>
         </View>
       </View>
