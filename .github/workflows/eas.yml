@@ -34,6 +34,11 @@ jobs:
               if (commits.length > 0) {
                 const commitMessage = commits[commits.length - 1].message;
 
+                if (commitMessage.toLowerCase().includes('build-apk')) {
+                  console.log('Building APK: commit message contains build-apk');
+                  shouldBuildApk = true;
+                }
+
                 if (commitMessage.toLowerCase().includes('skip-ota')) {
                   console.log('Skipping OTA update: commit message contains skip-ota');
                 } else {
