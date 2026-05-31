@@ -6,14 +6,23 @@ import type { BehaviorEntry } from '../types/behavior';
 
 interface BehaviorStore {
   behaviors: BehaviorEntry[];
-  addBehavior: (name: string, icon?: string | { uri: string }) => void;
+  addBehavior: (
+    name: string,
+    icon?:
+      | string
+      | {
+          uri: string;
+        },
+  ) => void;
   logBehavior: (id: string, timestamp?: number, metadata?: Record<string, string | number>) => void;
   removeBehavior: (id: string) => void;
+  removeLog: (behaviorId: string, logId: string) => void;
+  getBehaviorLogs: (behaviorId: string) => BehaviorEntry['logs'];
 }
 
 export const useBehaviorStore = create<BehaviorStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       behaviors: [],
       addBehavior: (name, icon) =>
         set((state) => ({
@@ -25,6 +34,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               icon,
               lastTimestamp: null,
               metadata: {},
+              logs: [],
             },
           ],
         })),
@@ -35,7 +45,18 @@ export const useBehaviorStore = create<BehaviorStore>()(
               ? {
                   ...t,
                   lastTimestamp: timestamp ?? Date.now(),
-                  metadata: { ...t.metadata, ...metadata },
+                  metadata: {
+                    ...t.metadata,
+                    ...metadata,
+                  },
+                  logs: [
+                    ...t.logs,
+                    {
+                      id: uuidv4(),
+                      timestamp: timestamp ?? Date.now(),
+                      metadata,
+                    },
+                  ],
                 }
               : t,
           ),
@@ -44,6 +65,25 @@ export const useBehaviorStore = create<BehaviorStore>()(
         set((state) => ({
           behaviors: state.behaviors.filter((t) => t.id !== id),
         })),
+      removeLog: (behaviorId, logId) =>
+        set((state) => ({
+          behaviors: state.behaviors.map((b) =>
+            b.id === behaviorId
+              ? {
+                  ...b,
+                  logs: b.logs.filter((log) => log.id !== logId),
+                  lastTimestamp:
+                    b.logs.filter((log) => log.id !== logId).length > 0
+                      ? Math.max(...b.logs.filter((log) => log.id !== logId).map((log) => log.timestamp))
+                      : null,
+                }
+              : b,
+          ),
+        })),
+      getBehaviorLogs: (behaviorId) => {
+        const behavior = get().behaviors.find((b) => b.id === behaviorId);
+        return behavior?.logs ?? [];
+      },
     }),
     {
       name: 'recupero-behaviors',

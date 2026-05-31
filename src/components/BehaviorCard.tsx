@@ -1,36 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  Image,
-  Pressable,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import type { BehaviorEntry } from '../types/behavior';
+import { formatElapsed } from '../utils/timeUtils';
 import { Text } from './Text';
 
 interface Props {
   behavior: BehaviorEntry;
   onLog: () => void;
   onRemove: () => void;
+  onPress?: () => void;
 }
 
-function formatElapsed(timestamp: number | null): string {
-  if (timestamp === null) return 'Never';
-  const elapsed = Date.now() - timestamp;
-  const seconds = Math.floor(elapsed / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-
-  if (days > 0) return `${days}d ${hours % 24}h ago`;
-  if (hours > 0) return `${hours}h ${minutes % 60}m ago`;
-  if (minutes > 0) return `${minutes}m ${seconds % 60}s ago`;
-  return `${seconds}s ago`;
-}
-
-export function BehaviorCard({ behavior, onLog, onRemove }: Props) {
+export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
   const swipeableRef = useRef<Swipeable>(null);
   const [, setTick] = useState(0);
 
@@ -41,7 +24,12 @@ export function BehaviorCard({ behavior, onLog, onRemove }: Props) {
 
   const renderLeftActions = () => (
     <Pressable
-      style={({ pressed }) => [styles.deleteButton, pressed && { opacity: 0.8 }]}
+      style={({ pressed }) => [
+        styles.deleteButton,
+        pressed && {
+          opacity: 0.8,
+        },
+      ]}
       onPress={() => onRemove()}
     >
       <Ionicons
@@ -60,26 +48,28 @@ export function BehaviorCard({ behavior, onLog, onRemove }: Props) {
       overshootLeft={false}
     >
       <View style={styles.card}>
-        <Pressable style={styles.content}>
+        <Pressable
+          style={styles.content}
+          onPress={onPress}
+        >
           {behavior.icon && typeof behavior.icon === 'object' ? (
             <Image
               source={behavior.icon}
               style={styles.iconImage}
             />
           ) : (
-            <Text style={styles.emoji}>
-              {typeof behavior.icon === 'string' ? behavior.icon : '⏱️'}
-            </Text>
+            <Text style={styles.emoji}>{typeof behavior.icon === 'string' ? behavior.icon : '⏱️'}</Text>
           )}
           <View style={styles.info}>
             <Text style={styles.name}>{behavior.name}</Text>
-            <Text style={styles.elapsed}>
-              {formatElapsed(behavior.lastTimestamp)}
-            </Text>
+            <Text style={styles.elapsed}>{formatElapsed(behavior.lastTimestamp)}</Text>
           </View>
         </Pressable>
         <Pressable
-          style={({ pressed }) => [styles.logBtn, pressed && styles.logBtnPressed]}
+          style={({ pressed }) => [
+            styles.logBtn,
+            pressed && styles.logBtnPressed,
+          ]}
           onPress={onLog}
         >
           <Ionicons
@@ -140,7 +130,11 @@ const styles = StyleSheet.create({
   },
   logBtnPressed: {
     opacity: 0.5,
-    transform: [{ scale: 0.92 }],
+    transform: [
+      {
+        scale: 0.92,
+      },
+    ],
   },
   deleteButton: {
     backgroundColor: '#943030',

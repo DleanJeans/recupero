@@ -1,3 +1,5 @@
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,8 +9,12 @@ import { LogConfirmModal } from '../components/LogBehaviorModal';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
+import type { RootStackParamList } from '../types/navigation';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function HomeScreen() {
+  const navigation = useNavigation<NavigationProp>();
   const { behaviors, addBehavior, logBehavior, removeBehavior } = useBehaviorStore();
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState('');
@@ -21,23 +27,38 @@ export function HomeScreen() {
     const raw = newIcon.trim();
     const icon = raw
       ? raw.startsWith('http://') || raw.startsWith('https://')
-        ? { uri: raw }
+        ? {
+            uri: raw,
+          }
         : raw
       : undefined;
     addBehavior(name, icon);
     setNewName('');
     setNewIcon('');
     setIsAdding(false);
-  }, [newName, newIcon, addBehavior]);
+  }, [
+    newName,
+    newIcon,
+    addBehavior,
+  ]);
 
   const handleRemove = useCallback(
     (behavior: BehaviorEntry) => {
       Alert.alert('Remove Behavior', `Remove "${behavior.name}"?`, [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: () => removeBehavior(behavior.id) },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => removeBehavior(behavior.id),
+        },
       ]);
     },
-    [removeBehavior],
+    [
+      removeBehavior,
+    ],
   );
 
   return (
@@ -52,6 +73,11 @@ export function HomeScreen() {
             behavior={item}
             onLog={() => setLoggingBehavior(item)}
             onRemove={() => handleRemove(item)}
+            onPress={() =>
+              navigation.navigate('BehaviorDetails', {
+                behaviorId: item.id,
+              })
+            }
           />
         )}
         ListEmptyComponent={<Text style={styles.empty}>No behaviors yet.{`\n`}Add your first one.</Text>}
@@ -69,7 +95,10 @@ export function HomeScreen() {
         />
       ) : (
         <Pressable
-          style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+          style={({ pressed }) => [
+            styles.fab,
+            pressed && styles.fabPressed,
+          ]}
           onPress={() => setIsAdding(true)}
         >
           <Text style={styles.fabText}>+ Add behavior</Text>
@@ -122,7 +151,11 @@ const styles = StyleSheet.create({
   },
   fabPressed: {
     backgroundColor: '#D8D8D8',
-    transform: [{ scale: 0.98 }],
+    transform: [
+      {
+        scale: 0.98,
+      },
+    ],
   },
   fabText: {
     color: '#111111',
