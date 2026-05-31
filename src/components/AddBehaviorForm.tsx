@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Text, TextInput } from './Text';
 
 interface Props {
@@ -15,7 +16,7 @@ export function AddBehaviorForm({ newIcon, newName, onChangeIcon, onChangeName, 
   const nameRef = useRef<import('react-native').TextInput>(null);
 
   return (
-    <KeyboardAvoidingView behavior="position">
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.form}>
         <View style={styles.row}>
           <TextInput
