@@ -16,7 +16,9 @@ export function AddBehaviorForm({ newIcon, newName, onChangeIcon, onChangeName, 
   const nameRef = useRef<import('react-native').TextInput>(null);
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView
+      behavior="padding" /* DO NOT change */
+    >
       <View style={styles.form}>
         <View style={styles.row}>
           <TextInput
