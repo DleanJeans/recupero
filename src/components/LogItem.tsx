@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import type { LogEntry } from '../types/behavior';
 import { formatDateDisplay } from '../utils/dateUtils';
-import { formatElapsed } from '../utils/timeUtils';
+import { formatElapsed, formatTime } from '../utils/timeUtils';
 import { Text } from './Text';
 
 interface Props {
@@ -54,14 +54,8 @@ export function LogItem({ log, onRemove, onEdit }: Props) {
     >
       <View style={styles.logItem}>
         <View style={styles.logContent}>
-          <Text style={styles.dateText}>
-            {formatDateDisplay(dateString)}
-            {' - '}
-            {new Date(log.timestamp).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </Text>
+          <Text style={styles.dateText}>{formatDateDisplay(dateString)}</Text>
+          <Text style={styles.timeText}>{formatTime(log.timestamp)}</Text>
           <Text style={styles.elapsedText}>{formatElapsed(log.timestamp)}</Text>
         </View>
         <Pressable
@@ -101,6 +95,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+    marginBottom: 2,
+  },
+  timeText: {
+    color: '#fff',
+    fontSize: 14,
     marginBottom: 4,
   },
   elapsedText: {
