@@ -9,6 +9,7 @@ import { LogBehaviorModal } from '../components/LogBehaviorModal';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
+import type { MetadataField } from '../types/metadata';
 import type { RootStackParamList } from '../types/navigation';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -19,6 +20,7 @@ export function HomeScreen() {
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState('');
   const [newIcon, setNewIcon] = useState('');
+  const [newMetadata, setNewMetadata] = useState<MetadataField[]>([]);
   const [loggingBehavior, setLoggingBehavior] = useState<BehaviorEntry | null>(null);
 
   const handleAdd = useCallback(() => {
@@ -32,13 +34,15 @@ export function HomeScreen() {
           }
         : raw
       : undefined;
-    addBehavior(name, icon);
+    addBehavior(name, icon, newMetadata);
     setNewName('');
     setNewIcon('');
+    setNewMetadata([]);
     setIsAdding(false);
   }, [
     newName,
     newIcon,
+    newMetadata,
     addBehavior,
   ]);
 
@@ -88,8 +92,10 @@ export function HomeScreen() {
         <AddBehaviorForm
           newIcon={newIcon}
           newName={newName}
+          metadata={newMetadata}
           onChangeIcon={setNewIcon}
           onChangeName={setNewName}
+          onChangeMetadata={setNewMetadata}
           onAdd={handleAdd}
           onCancel={() => setIsAdding(false)}
         />

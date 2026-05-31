@@ -1,17 +1,30 @@
 import React, { useRef } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import type { MetadataField } from '../types/metadata';
+import { MetadataInput } from './MetadataInput';
 import { Text, TextInput } from './Text';
 
 interface Props {
   newIcon: string;
   newName: string;
+  metadata: MetadataField[];
   onChangeIcon: (v: string) => void;
   onChangeName: (v: string) => void;
+  onChangeMetadata: (metadata: MetadataField[]) => void;
   onAdd: () => void;
   onCancel: () => void;
 }
 
-export function AddBehaviorForm({ newIcon, newName, onChangeIcon, onChangeName, onAdd, onCancel }: Props) {
+export function AddBehaviorForm({
+  newIcon,
+  newName,
+  metadata,
+  onChangeIcon,
+  onChangeName,
+  onChangeMetadata,
+  onAdd,
+  onCancel,
+}: Props) {
   const nameRef = useRef<import('react-native').TextInput>(null);
 
   return (
@@ -39,6 +52,10 @@ export function AddBehaviorForm({ newIcon, newName, onChangeIcon, onChangeName, 
             returnKeyType="done"
           />
         </View>
+        <MetadataInput
+          metadata={metadata}
+          onChange={onChangeMetadata}
+        />
         <View style={styles.actions}>
           <Pressable
             style={styles.cancelBtn}

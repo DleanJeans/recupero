@@ -1,3 +1,5 @@
+import type { MetadataField } from './metadata';
+
 export interface LogEntry {
   id: string;
   timestamp: number;
@@ -13,6 +15,6 @@ export interface BehaviorEntry {
         uri: string;
       };
   lastTimestamp: number | null;
-  metadata: Record<string, string | number>;
+  metadata: MetadataField[];
   logs: LogEntry[];
 }

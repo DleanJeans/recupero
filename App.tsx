@@ -11,7 +11,9 @@ import { HomeScreen } from './src/screens/HomeScreen';
 const Stack = createNativeStackNavigator();
 
 const linking = {
-  prefixes: ['exp+recupero://'],
+  prefixes: [
+    'exp+recupero://',
+  ],
   config: {
     screens: {
       Home: 'home',
@@ -26,10 +28,18 @@ export default function App() {
   if (!fontsReady) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView
+      style={{
+        flex: 1,
+      }}
+    >
       <SafeAreaProvider>
         <NavigationContainer linking={linking}>
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Navigator
+            screenOptions={{
+              headerShown: false,
+            }}
+          >
             <Stack.Screen
               name="Home"
               component={HomeScreen}

@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { BehaviorEntry } from '../types/behavior';
+import type { MetadataField } from '../types/metadata';
 
 interface BehaviorStore {
   behaviors: BehaviorEntry[];
@@ -13,11 +14,13 @@ interface BehaviorStore {
       | {
           uri: string;
         },
+    metadata?: MetadataField[],
   ) => void;
   logBehavior: (id: string, timestamp?: number, metadata?: Record<string, string | number>) => void;
   removeBehavior: (id: string) => void;
   removeLog: (behaviorId: string, logId: string) => void;
   updateLog: (behaviorId: string, logId: string, timestamp: number) => void;
+  updateBehaviorMetadata: (behaviorId: string, metadata: MetadataField[]) => void;
   getBehaviorLogs: (behaviorId: string) => BehaviorEntry['logs'];
 }
 
@@ -25,7 +28,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
   persist(
     (set, get) => ({
       behaviors: [],
-      addBehavior: (name, icon) =>
+      addBehavior: (name, icon, metadata = []) =>
         set((state) => ({
           behaviors: [
             ...state.behaviors,
@@ -34,7 +37,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               name,
               icon,
               lastTimestamp: null,
-              metadata: {},
+              metadata,
               logs: [],
             },
           ],
@@ -46,10 +49,6 @@ export const useBehaviorStore = create<BehaviorStore>()(
               ? {
                   ...t,
                   lastTimestamp: timestamp ?? Date.now(),
-                  metadata: {
-                    ...t.metadata,
-                    ...metadata,
-                  },
                   logs: [
                     ...t.logs,
                     {
@@ -96,6 +95,17 @@ export const useBehaviorStore = create<BehaviorStore>()(
                       : log,
                   ),
                   lastTimestamp: Math.max(...b.logs.map((log) => (log.id === logId ? timestamp : log.timestamp))),
+                }
+              : b,
+          ),
+        })),
+      updateBehaviorMetadata: (behaviorId, metadata) =>
+        set((state) => ({
+          behaviors: state.behaviors.map((b) =>
+            b.id === behaviorId
+              ? {
+                  ...b,
+                  metadata,
                 }
               : b,
           ),

@@ -5,9 +5,11 @@ import { Alert, FlatList, Image, Pressable, StyleSheet, View } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LogBehaviorModal } from '../components/LogBehaviorModal';
 import { LogItem } from '../components/LogItem';
+import { MetadataInput } from '../components/MetadataInput';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { LogEntry } from '../types/behavior';
+import type { MetadataField } from '../types/metadata';
 import type { RootStackParamList } from '../types/navigation';
 
 type BehaviorDetailsRouteProp = RouteProp<RootStackParamList, 'BehaviorDetails'>;
@@ -17,9 +19,10 @@ export function BehaviorDetailsScreen() {
   const route = useRoute<BehaviorDetailsRouteProp>();
   const { behaviorId } = route.params;
 
-  const { behaviors, removeLog, updateLog } = useBehaviorStore();
+  const { behaviors, removeLog, updateLog, updateBehaviorMetadata } = useBehaviorStore();
   const behavior = behaviors.find((b) => b.id === behaviorId);
   const [editingLog, setEditingLog] = useState<LogEntry | null>(null);
+  const [editingMetadata, setEditingMetadata] = useState(false);
 
   const handleRemoveLog = useCallback(
     (logId: string) => {
@@ -70,6 +73,10 @@ export function BehaviorDetailsScreen() {
     ...behavior.logs,
   ].sort((a, b) => b.timestamp - a.timestamp);
 
+  const handleMetadataChange = (metadata: MetadataField[]) => {
+    updateBehaviorMetadata(behaviorId, metadata);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -100,6 +107,48 @@ export function BehaviorDetailsScreen() {
           <Text style={styles.headerTitle}>{behavior.name}</Text>
         </View>
       </View>
+
+      <View style={styles.metadataSection}>
+        <View style={styles.metadataTitleRow}>
+          <Text style={styles.metadataTitle}>Metadata</Text>
+          <Pressable
+            style={styles.editMetadataBtn}
+            onPress={() => setEditingMetadata(!editingMetadata)}
+          >
+            <Ionicons
+              name={editingMetadata ? 'checkmark' : 'create-outline'}
+              size={20}
+              color="#fff"
+            />
+          </Pressable>
+        </View>
+
+        {editingMetadata ? (
+          <MetadataInput
+            metadata={behavior.metadata}
+            onChange={handleMetadataChange}
+          />
+        ) : behavior.metadata.length > 0 ? (
+          <View style={styles.metadataList}>
+            {behavior.metadata.map((field) => (
+              <View
+                key={field.id}
+                style={styles.metadataItem}
+              >
+                <Text style={styles.metadataName}>{field.name}</Text>
+                <Text style={styles.metadataValue}>
+                  {field.value}
+                  {field.unit && ` ${field.unit}`}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Text style={styles.noMetadata}>No metadata configured</Text>
+        )}
+      </View>
+
+      <Text style={styles.logsTitle}>Logs</Text>
 
       <FlatList
         data={sortedLogs}
@@ -176,5 +225,58 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 15,
     padding: 32,
+  },
+  metadataSection: {
+    backgroundColor: '#1e1e1e',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 12,
+    gap: 12,
+  },
+  metadataTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  metadataTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  editMetadataBtn: {
+    padding: 4,
+  },
+  metadataList: {
+    gap: 8,
+  },
+  metadataItem: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    padding: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  metadataName: {
+    color: '#aaa',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  metadataValue: {
+    color: '#fff',
+    fontSize: 15,
+  },
+  noMetadata: {
+    color: '#666',
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
+  logsTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginHorizontal: 16,
+    marginBottom: 12,
   },
 });

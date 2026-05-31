@@ -14,7 +14,11 @@ module.exports = function withJVMMemory(config) {
       if (index >= 0) {
         props[index].value = value;
       } else {
-        props.push({ type: 'property', key, value });
+        props.push({
+          type: 'property',
+          key,
+          value,
+        });
       }
     };
 
