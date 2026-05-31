@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Image,
   Pressable,
@@ -33,6 +33,12 @@ function formatElapsed(timestamp: number | null): string {
 
 export function BehaviorCard({ behavior, onLog, onRemove }: Props) {
   const swipeableRef = useRef<Swipeable>(null);
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const renderLeftActions = () => (
     <TouchableOpacity
