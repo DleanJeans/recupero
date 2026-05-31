@@ -26,7 +26,7 @@ jobs:
             if (context.eventName === 'pull_request') {
               const labels = context.payload.pull_request.labels.map(label => label.name);
               shouldBuildApk = labels.includes('rebuild apk');
-              shouldOtaUpdate = labels.includes('expo ota');
+              shouldOtaUpdate = labels.includes('send ota');
               console.log('PR labels:', labels);
             } else if (context.eventName === 'push' && context.ref === 'refs/heads/main') {
               const commits = context.payload.commits || [];
