@@ -6,11 +6,11 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
+    "android:build": "eas build --platform android --profile development --local --non-interactive",
     "test:maestro": "maestro test",
     "test:maestro:all": "maestro test .maestro",
     "emulator": "$ANDROID_HOME/emulator/emulator -netdelay none -netspeed full -no-snapshot-load -avd maestro_test",
     "emulator:stop": "adb emu kill",
-    "android:rebuild": "npx expo run:android",
     "test:unit": "jest"
   },
   "dependencies": {
