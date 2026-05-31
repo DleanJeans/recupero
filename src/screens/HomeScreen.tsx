@@ -1,15 +1,9 @@
 import React, { useCallback, useState } from 'react';
-import {
-    Alert,
-    FlatList,
-    Pressable,
-    StyleSheet,
-    View,
-} from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddBehaviorForm } from '../components/AddBehaviorForm';
-import { Text } from '../components/Text';
 import { BehaviorCard } from '../components/BehaviorCard';
+import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
 
