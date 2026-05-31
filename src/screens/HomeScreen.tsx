@@ -3,7 +3,7 @@ import { Alert, FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddBehaviorForm } from '../components/AddBehaviorForm';
 import { BehaviorCard } from '../components/BehaviorCard';
-import { LogConfirmModal } from '../components/LogConfirmModal';
+import { LogConfirmModal } from '../components/LogBehaviorModal';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
