@@ -1,5 +1,13 @@
-import React from 'react';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useRef } from 'react';
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import type { BehaviorEntry } from '../types/behavior';
 import { Text } from './Text';
 
@@ -24,32 +32,53 @@ function formatElapsed(timestamp: number | null): string {
 }
 
 export function BehaviorCard({ behavior, onLog, onRemove }: Props) {
+  const swipeableRef = useRef<Swipeable>(null);
+
+  const renderLeftActions = () => (
+    <TouchableOpacity
+      style={styles.deleteButton}
+      onPress={() => onRemove()}
+      activeOpacity={0.7}
+    >
+      <Ionicons
+        name="trash"
+        size={24}
+        color="#fff"
+      />
+      <Text style={styles.deleteButtonText}>Delete</Text>
+    </TouchableOpacity>
+  );
+
   return (
-    <View style={styles.card}>
-      <Pressable
-        style={styles.content}
-        onPress={onLog}
-      >
-        {behavior.icon && typeof behavior.icon === 'object' ? (
-          <Image
-            source={behavior.icon}
-            style={styles.iconImage}
-          />
-        ) : (
-          <Text style={styles.emoji}>{typeof behavior.icon === 'string' ? behavior.icon : '⏱️'}</Text>
-        )}
-        <View style={styles.info}>
-          <Text style={styles.name}>{behavior.name}</Text>
-          <Text style={styles.elapsed}>{formatElapsed(behavior.lastTimestamp)}</Text>
-        </View>
-      </Pressable>
-      <Pressable
-        style={styles.removeBtn}
-        onPress={onRemove}
-      >
-        <Text style={styles.removeText}>✕</Text>
-      </Pressable>
-    </View>
+    <Swipeable
+      ref={swipeableRef}
+      renderLeftActions={renderLeftActions}
+      overshootLeft={false}
+    >
+      <View style={styles.card}>
+        <Pressable
+          style={styles.content}
+          onPress={onLog}
+        >
+          {behavior.icon && typeof behavior.icon === 'object' ? (
+            <Image
+              source={behavior.icon}
+              style={styles.iconImage}
+            />
+          ) : (
+            <Text style={styles.emoji}>
+              {typeof behavior.icon === 'string' ? behavior.icon : '⏱️'}
+            </Text>
+          )}
+          <View style={styles.info}>
+            <Text style={styles.name}>{behavior.name}</Text>
+            <Text style={styles.elapsed}>
+              {formatElapsed(behavior.lastTimestamp)}
+            </Text>
+          </View>
+        </Pressable>
+      </View>
+    </Swipeable>
   );
 }
 
@@ -59,9 +88,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#1e1e1e',
     borderRadius: 12,
-    marginHorizontal: 16,
     marginVertical: 6,
     overflow: 'hidden',
+    marginHorizontal: 16,
   },
   content: {
     flex: 1,
@@ -92,11 +121,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 2,
   },
-  removeBtn: {
-    padding: 16,
+  deleteButton: {
+    backgroundColor: '#c62828',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 100,
+    marginVertical: 6,
+    marginLeft: 16,
+    marginRight: -48,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+    paddingRight: 28,
   },
-  removeText: {
-    color: '#666',
-    fontSize: 16,
+  deleteButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
   },
 });
