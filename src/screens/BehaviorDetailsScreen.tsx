@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Alert, FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LogBehaviorModal } from '../components/LogBehaviorModal';
 import { LogItem } from '../components/LogItem';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
+import type { LogEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
 
 type BehaviorDetailsRouteProp = RouteProp<RootStackParamList, 'BehaviorDetails'>;
@@ -15,8 +17,9 @@ export function BehaviorDetailsScreen() {
   const route = useRoute<BehaviorDetailsRouteProp>();
   const { behaviorId } = route.params;
 
-  const { behaviors, removeLog } = useBehaviorStore();
+  const { behaviors, removeLog, updateLog } = useBehaviorStore();
   const behavior = behaviors.find((b) => b.id === behaviorId);
+  const [editingLog, setEditingLog] = useState<LogEntry | null>(null);
 
   const handleRemoveLog = useCallback(
     (logId: string) => {
@@ -105,12 +108,24 @@ export function BehaviorDetailsScreen() {
           <LogItem
             log={item}
             onRemove={() => handleRemoveLog(item.id)}
+            onEdit={() => setEditingLog(item)}
           />
         )}
         ListEmptyComponent={
           <Text style={styles.empty}>No logs yet.{'\n'}Press the + button to log this behavior.</Text>
         }
         contentContainerStyle={sortedLogs.length === 0 && styles.emptyContainer}
+      />
+
+      <LogBehaviorModal
+        behaviorName={behavior.name}
+        visible={editingLog != null}
+        initialTimestamp={editingLog?.timestamp}
+        onConfirm={(timestamp) => {
+          if (editingLog) updateLog(behaviorId, editingLog.id, timestamp);
+          setEditingLog(null);
+        }}
+        onCancel={() => setEditingLog(null)}
       />
     </SafeAreaView>
   );

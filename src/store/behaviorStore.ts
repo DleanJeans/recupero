@@ -17,6 +17,7 @@ interface BehaviorStore {
   logBehavior: (id: string, timestamp?: number, metadata?: Record<string, string | number>) => void;
   removeBehavior: (id: string) => void;
   removeLog: (behaviorId: string, logId: string) => void;
+  updateLog: (behaviorId: string, logId: string, timestamp: number) => void;
   getBehaviorLogs: (behaviorId: string) => BehaviorEntry['logs'];
 }
 
@@ -76,6 +77,25 @@ export const useBehaviorStore = create<BehaviorStore>()(
                     b.logs.filter((log) => log.id !== logId).length > 0
                       ? Math.max(...b.logs.filter((log) => log.id !== logId).map((log) => log.timestamp))
                       : null,
+                }
+              : b,
+          ),
+        })),
+      updateLog: (behaviorId, logId, timestamp) =>
+        set((state) => ({
+          behaviors: state.behaviors.map((b) =>
+            b.id === behaviorId
+              ? {
+                  ...b,
+                  logs: b.logs.map((log) =>
+                    log.id === logId
+                      ? {
+                          ...log,
+                          timestamp,
+                        }
+                      : log,
+                  ),
+                  lastTimestamp: Math.max(...b.logs.map((log) => (log.id === logId ? timestamp : log.timestamp))),
                 }
               : b,
           ),

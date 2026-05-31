@@ -10,6 +10,7 @@ import { Text } from './Text';
 interface Props {
   log: LogEntry;
   onRemove: () => void;
+  onEdit: () => void;
 }
 
 function toDateString(timestamp: number): string {
@@ -17,7 +18,7 @@ function toDateString(timestamp: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export function LogItem({ log, onRemove }: Props) {
+export function LogItem({ log, onRemove, onEdit }: Props) {
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -63,6 +64,20 @@ export function LogItem({ log, onRemove }: Props) {
           </Text>
           <Text style={styles.elapsedText}>{formatElapsed(log.timestamp)}</Text>
         </View>
+        <Pressable
+          style={({ pressed }) => [
+            styles.editBtn,
+            pressed && styles.editBtnPressed,
+          ]}
+          onPress={onEdit}
+          accessibilityLabel="Edit log"
+        >
+          <Ionicons
+            name="create-outline"
+            size={24}
+            color="#ccc"
+          />
+        </Pressable>
       </View>
     </Swipeable>
   );
@@ -70,6 +85,8 @@ export function LogItem({ log, onRemove }: Props) {
 
 const styles = StyleSheet.create({
   logItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#1e1e1e',
     borderRadius: 12,
     marginVertical: 6,
@@ -77,6 +94,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   logContent: {
+    flex: 1,
     padding: 16,
   },
   dateText: {
@@ -88,6 +106,20 @@ const styles = StyleSheet.create({
   elapsedText: {
     color: '#888',
     fontSize: 13,
+  },
+  editBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editBtnPressed: {
+    opacity: 0.5,
+    transform: [
+      {
+        scale: 0.92,
+      },
+    ],
   },
   deleteButton: {
     backgroundColor: '#943030',

@@ -130,11 +130,12 @@ const wStyles = StyleSheet.create({
 interface Props {
   behaviorName: string;
   visible: boolean;
+  initialTimestamp?: number;
   onConfirm: (timestamp: number) => void;
   onCancel: () => void;
 }
 
-export function LogBehaviorModal({ behaviorName, visible, onConfirm, onCancel }: Props) {
+export function LogBehaviorModal({ behaviorName, visible, initialTimestamp, onConfirm, onCancel }: Props) {
   const nowRef = useRef(new Date());
   const todayStr = toDateString(nowRef.current);
 
@@ -162,8 +163,8 @@ export function LogBehaviorModal({ behaviorName, visible, onConfirm, onCancel }:
 
   useEffect(() => {
     if (visible) {
-      const n = new Date();
-      nowRef.current = n;
+      const n = initialTimestamp ? new Date(initialTimestamp) : new Date();
+      nowRef.current = new Date();
       setSelectedDate(toDateString(n));
       setHour(n.getHours());
       setMinute(n.getMinutes());
@@ -172,6 +173,7 @@ export function LogBehaviorModal({ behaviorName, visible, onConfirm, onCancel }:
     }
   }, [
     visible,
+    initialTimestamp,
   ]);
 
   const handleConfirm = useCallback(() => {
@@ -200,7 +202,9 @@ export function LogBehaviorModal({ behaviorName, visible, onConfirm, onCancel }:
         onPress={onCancel}
       />
       <View style={styles.sheet}>
-        <Text style={styles.title}>Log "{behaviorName}"</Text>
+        <Text style={styles.title}>
+          {initialTimestamp ? 'Edit' : 'Log'} "{behaviorName}"
+        </Text>
 
         <Text style={styles.sectionLabel}>Date</Text>
         <Pressable
@@ -263,7 +267,7 @@ export function LogBehaviorModal({ behaviorName, visible, onConfirm, onCancel }:
             ]}
             onPress={handleConfirm}
           >
-            <Text style={styles.confirmText}>Log</Text>
+            <Text style={styles.confirmText}>{initialTimestamp ? 'Save' : 'Log'}</Text>
           </Pressable>
         </View>
       </View>
