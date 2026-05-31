@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Pressable, StyleSheet, View } from 'react-native';
 import type { MetadataField } from '../types/metadata';
 import { MetadataInput } from './MetadataInput';
 import { Text, TextInput } from './Text';
@@ -28,7 +28,9 @@ export function AddBehaviorForm({
   const nameRef = useRef<import('react-native').TextInput>(null);
 
   return (
-    <KeyboardAvoidingView behavior="position">
+    <KeyboardAvoidingView
+      behavior="padding" /* DO NOT change */
+    >
       <View style={styles.form}>
         <View style={styles.row}>
           <TextInput

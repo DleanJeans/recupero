@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import 'expo-dev-client';
 import React from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAppFonts } from './src/hooks/useAppFonts';
 import { BehaviorDetailsScreen } from './src/screens/BehaviorDetailsScreen';
@@ -33,24 +34,26 @@ export default function App() {
         flex: 1,
       }}
     >
-      <SafeAreaProvider>
-        <NavigationContainer linking={linking}>
-          <Stack.Navigator
-            screenOptions={{
-              headerShown: false,
-            }}
-          >
-            <Stack.Screen
-              name="Home"
-              component={HomeScreen}
-            />
-            <Stack.Screen
-              name="BehaviorDetails"
-              component={BehaviorDetailsScreen}
-            />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </SafeAreaProvider>
+      <KeyboardProvider>
+        <SafeAreaProvider>
+          <NavigationContainer linking={linking}>
+            <Stack.Navigator
+              screenOptions={{
+                headerShown: false,
+              }}
+            >
+              <Stack.Screen
+                name="Home"
+                component={HomeScreen}
+              />
+              <Stack.Screen
+                name="BehaviorDetails"
+                component={BehaviorDetailsScreen}
+              />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </SafeAreaProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }
