@@ -1,0 +1,2 @@
+patchedDependencies:
+  react-native-reanimated@4.4.0: patches/react-native-reanimated@4.4.0.patch
