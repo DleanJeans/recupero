@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { formatDateDisplay } from '../utils/dateUtils';
-import { Text } from './Text';
+import { Text, TextInput } from './Text';
 
 const ITEM_HEIGHT = 48;
 const VISIBLE_ITEMS = 5;
@@ -129,13 +129,23 @@ const wStyles = StyleSheet.create({
 
 interface Props {
   behaviorName: string;
+  behaviorMetadata?: import('../types/metadata').MetadataField[]; // Metadata fields for the behavior
   visible: boolean;
   initialTimestamp?: number;
-  onConfirm: (timestamp: number) => void;
+  initialMetadata?: Record<string, string | number>; // Initial values for editing
+  onConfirm: (timestamp: number, metadata?: Record<string, string | number>) => void;
   onCancel: () => void;
 }
 
-export function LogBehaviorModal({ behaviorName, visible, initialTimestamp, onConfirm, onCancel }: Props) {
+export function LogBehaviorModal({
+  behaviorName,
+  behaviorMetadata = [],
+  visible,
+  initialTimestamp,
+  initialMetadata = {},
+  onConfirm,
+  onCancel,
+}: Props) {
   const nowRef = useRef(new Date());
   const todayStr = toDateString(nowRef.current);
 
@@ -144,6 +154,10 @@ export function LogBehaviorModal({ behaviorName, visible, initialTimestamp, onCo
   const [minute, setMinute] = useState(nowRef.current.getMinutes());
   const [calendarVisible, setCalendarVisible] = useState(false);
   const [wheelKey, setWheelKey] = useState(0);
+  const [metadataValues, setMetadataValues] = useState<Record<string, string | number>>(initialMetadata);
+
+  // Filter for per-log metadata only
+  const logMetadata = behaviorMetadata.filter((m) => m.scope === 'log');
 
   const isToday = selectedDate === todayStr;
   const maxHour = isToday ? nowRef.current.getHours() : 23;
@@ -170,6 +184,13 @@ export function LogBehaviorModal({ behaviorName, visible, initialTimestamp, onCo
       setMinute(n.getMinutes());
       setCalendarVisible(false);
       setWheelKey((k) => k + 1);
+
+      // Initialize metadata values with defaults
+      const initialValues: Record<string, string | number> = {};
+      for (const field of logMetadata) {
+        initialValues[field.id] = initialMetadata[field.id] ?? field.value;
+      }
+      setMetadataValues(initialValues);
     }
   }, [
     visible,
@@ -179,11 +200,12 @@ export function LogBehaviorModal({ behaviorName, visible, initialTimestamp, onCo
   const handleConfirm = useCallback(() => {
     const [y, m, d] = selectedDate.split('-').map(Number);
     const ts = new Date(y, m - 1, d, hour, minute, 0, 0).getTime();
-    onConfirm(ts);
+    onConfirm(ts, metadataValues);
   }, [
     selectedDate,
     hour,
     minute,
+    metadataValues,
     onConfirm,
   ]);
 
@@ -235,6 +257,31 @@ export function LogBehaviorModal({ behaviorName, visible, initialTimestamp, onCo
             onChange={setMinute}
           />
         </View>
+
+        {logMetadata.length > 0 && (
+          <>
+            {logMetadata.map((field) => (
+              <View key={field.id}>
+                <Text style={styles.sectionLabel}>{field.name}</Text>
+                <TextInput
+                  style={styles.metadataInput}
+                  value={String(metadataValues[field.id] ?? field.value)}
+                  onChangeText={(text) => {
+                    const value = field.type === 'integer' ? Number(text) || 0 : text;
+                    setMetadataValues((prev) => ({
+                      ...prev,
+                      [field.id]: value,
+                    }));
+                  }}
+                  keyboardType={field.type === 'integer' ? 'numeric' : 'default'}
+                  placeholder={`${field.value}${field.unit ? ` ${field.unit}` : ''}`}
+                  placeholderTextColor="#666"
+                />
+                {field.unit && field.unit !== 'time' && <Text style={styles.unitLabel}>{field.unit}</Text>}
+              </View>
+            ))}
+          </>
+        )}
 
         <View style={styles.actions}>
           <Pressable
@@ -413,5 +460,21 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 16,
     fontWeight: '700',
+  },
+  metadataInput: {
+    backgroundColor: '#2a2a2a',
+    color: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  unitLabel: {
+    color: '#888',
+    fontSize: 12,
+    marginBottom: 16,
+    marginLeft: 16,
   },
 });

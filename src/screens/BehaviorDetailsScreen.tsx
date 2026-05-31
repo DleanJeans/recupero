@@ -169,10 +169,12 @@ export function BehaviorDetailsScreen() {
 
       <LogBehaviorModal
         behaviorName={behavior.name}
+        behaviorMetadata={behavior.metadata}
         visible={editingLog != null}
         initialTimestamp={editingLog?.timestamp}
-        onConfirm={(timestamp) => {
-          if (editingLog) updateLog(behaviorId, editingLog.id, timestamp);
+        initialMetadata={editingLog?.metadata}
+        onConfirm={(timestamp, metadata) => {
+          if (editingLog) updateLog(behaviorId, editingLog.id, timestamp, metadata);
           setEditingLog(null);
         }}
         onCancel={() => setEditingLog(null)}

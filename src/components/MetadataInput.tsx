@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
-import type { MetadataField, MetadataType } from '../types/metadata';
+import type { MetadataField, MetadataScope, MetadataType } from '../types/metadata';
+import { DurationInput } from './DurationInput';
 import { Text, TextInput } from './Text';
 
 interface Props {
@@ -16,6 +17,7 @@ export function MetadataInput({ metadata, onChange }: Props) {
   const [newValue, setNewValue] = useState('');
   const [newUnit, setNewUnit] = useState('');
   const [newType, setNewType] = useState<MetadataType>('string');
+  const [newScope, setNewScope] = useState<MetadataScope>('log');
 
   const handleAdd = () => {
     if (!newName.trim()) return;
@@ -24,7 +26,8 @@ export function MetadataInput({ metadata, onChange }: Props) {
       id: uuidv4(),
       name: newName.trim(),
       type: newType,
-      value: newType === 'integer' ? Number(newValue) || 0 : newValue,
+      scope: newScope,
+      value: newType === 'integer' ? Number(newValue) || 0 : newType === 'duration' ? Number(newValue) || 0 : newValue,
       unit: newType === 'integer' && newUnit.trim() ? newUnit.trim() : undefined,
     };
 
@@ -36,6 +39,7 @@ export function MetadataInput({ metadata, onChange }: Props) {
     setNewValue('');
     setNewUnit('');
     setNewType('string');
+    setNewScope('log');
     setShowAdd(false);
   };
 
@@ -66,32 +70,55 @@ export function MetadataInput({ metadata, onChange }: Props) {
           style={styles.fieldRow}
         >
           <View style={styles.fieldInfo}>
-            <Text style={styles.fieldName}>{field.name}</Text>
-            <TextInput
-              style={styles.fieldValueInput}
-              value={String(field.value)}
-              onChangeText={(text) => {
-                const value = field.type === 'integer' ? Number(text) || 0 : text;
-                handleUpdate(field.id, {
-                  value,
-                });
-              }}
-              keyboardType={field.type === 'integer' ? 'numeric' : 'default'}
-              placeholder="Value"
-              placeholderTextColor="#666"
-            />
+            <View style={styles.fieldHeader}>
+              <Text style={styles.fieldName}>{field.name}</Text>
+              <Text
+                style={[
+                  styles.scopeBadge,
+                  field.scope === 'global' && styles.scopeBadgeGlobal,
+                ]}
+              >
+                {field.scope === 'global' ? 'Behavior' : 'Per Log'}
+              </Text>
+            </View>
+            {field.type === 'duration' ? (
+              <DurationInput
+                totalMinutes={Number(field.value) || 0}
+                onChange={(mins) =>
+                  handleUpdate(field.id, {
+                    value: mins,
+                  })
+                }
+              />
+            ) : (
+              <TextInput
+                style={styles.fieldValueInput}
+                value={String(field.value)}
+                onChangeText={(text) => {
+                  const value = field.type === 'integer' ? Number(text) || 0 : text;
+                  handleUpdate(field.id, {
+                    value,
+                  });
+                }}
+                keyboardType={field.type === 'integer' ? 'numeric' : 'default'}
+                placeholder="Value"
+                placeholderTextColor="#666"
+              />
+            )}
             {field.unit && <Text style={styles.unit}>{field.unit}</Text>}
           </View>
-          <Pressable
-            style={styles.removeBtn}
-            onPress={() => handleRemove(field.id)}
-          >
-            <Ionicons
-              name="close-circle"
-              size={20}
-              color="#ff4444"
-            />
-          </Pressable>
+          {!field.isDefault && (
+            <Pressable
+              style={styles.removeBtn}
+              onPress={() => handleRemove(field.id)}
+            >
+              <Ionicons
+                name="close-circle"
+                size={20}
+                color="#ff4444"
+              />
+            </Pressable>
+          )}
         </View>
       ))}
 
@@ -134,31 +161,65 @@ export function MetadataInput({ metadata, onChange }: Props) {
             ))}
           </View>
 
-          <View style={styles.valueRow}>
-            <TextInput
-              style={[
-                styles.input,
-                styles.valueInput,
-              ]}
-              placeholder="Value"
-              placeholderTextColor="#666"
-              value={newValue}
-              onChangeText={setNewValue}
-              keyboardType={newType === 'integer' ? 'numeric' : 'default'}
+          <View style={styles.scopeSelector}>
+            {(
+              [
+                'log',
+                'global',
+              ] as MetadataScope[]
+            ).map((scope) => (
+              <Pressable
+                key={scope}
+                style={[
+                  styles.scopeBtn,
+                  newScope === scope && styles.scopeBtnActive,
+                ]}
+                onPress={() => setNewScope(scope)}
+              >
+                <Text
+                  style={[
+                    styles.scopeText,
+                    newScope === scope && styles.scopeTextActive,
+                  ]}
+                >
+                  {scope === 'global' ? 'Behavior-level' : 'Per Log'}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {newType === 'duration' ? (
+            <DurationInput
+              totalMinutes={Number(newValue) || 0}
+              onChange={(mins) => setNewValue(String(mins))}
             />
-            {newType === 'integer' && (
+          ) : (
+            <View style={styles.valueRow}>
               <TextInput
                 style={[
                   styles.input,
-                  styles.unitInput,
+                  styles.valueInput,
                 ]}
-                placeholder="Unit"
+                placeholder="Value"
                 placeholderTextColor="#666"
-                value={newUnit}
-                onChangeText={setNewUnit}
+                value={newValue}
+                onChangeText={setNewValue}
+                keyboardType={newType === 'integer' ? 'numeric' : 'default'}
               />
-            )}
-          </View>
+              {newType === 'integer' && (
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.unitInput,
+                  ]}
+                  placeholder="Unit"
+                  placeholderTextColor="#666"
+                  value={newUnit}
+                  onChangeText={setNewUnit}
+                />
+              )}
+            </View>
+          )}
 
           <View style={styles.addActions}>
             <Pressable
@@ -169,6 +230,7 @@ export function MetadataInput({ metadata, onChange }: Props) {
                 setNewValue('');
                 setNewUnit('');
                 setNewType('string');
+                setNewScope('log');
               }}
             >
               <Text style={styles.cancelText}>Cancel</Text>
@@ -221,10 +283,28 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 6,
   },
+  fieldHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   fieldName: {
     color: '#aaa',
     fontSize: 12,
     fontWeight: '600',
+  },
+  scopeBadge: {
+    backgroundColor: '#3a3a3a',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    fontSize: 10,
+    color: '#888',
+    fontWeight: '600',
+  },
+  scopeBadgeGlobal: {
+    backgroundColor: '#404040',
+    color: '#aaa',
   },
   fieldValueInput: {
     color: '#fff',
@@ -276,6 +356,28 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   typeTextActive: {
+    color: '#000',
+  },
+  scopeSelector: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  scopeBtn: {
+    flex: 1,
+    backgroundColor: '#1e1e1e',
+    borderRadius: 6,
+    paddingVertical: 6,
+    alignItems: 'center',
+  },
+  scopeBtnActive: {
+    backgroundColor: '#fff',
+  },
+  scopeText: {
+    color: '#aaa',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  scopeTextActive: {
     color: '#000',
   },
   valueRow: {

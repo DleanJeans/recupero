@@ -19,7 +19,7 @@ interface BehaviorStore {
   logBehavior: (id: string, timestamp?: number, metadata?: Record<string, string | number>) => void;
   removeBehavior: (id: string) => void;
   removeLog: (behaviorId: string, logId: string) => void;
-  updateLog: (behaviorId: string, logId: string, timestamp: number) => void;
+  updateLog: (behaviorId: string, logId: string, timestamp: number, metadata?: Record<string, string | number>) => void;
   updateBehaviorMetadata: (behaviorId: string, metadata: MetadataField[]) => void;
   getBehaviorLogs: (behaviorId: string) => BehaviorEntry['logs'];
 }
@@ -80,7 +80,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               : b,
           ),
         })),
-      updateLog: (behaviorId, logId, timestamp) =>
+      updateLog: (behaviorId, logId, timestamp, metadata) =>
         set((state) => ({
           behaviors: state.behaviors.map((b) =>
             b.id === behaviorId
@@ -91,6 +91,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
                       ? {
                           ...log,
                           timestamp,
+                          metadata: metadata ?? log.metadata,
                         }
                       : log,
                   ),

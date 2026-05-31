@@ -28,9 +28,7 @@ export function AddBehaviorForm({
   const nameRef = useRef<import('react-native').TextInput>(null);
 
   return (
-    <KeyboardAvoidingView
-      behavior="padding" /* DO NOT change */
-    >
+    <KeyboardAvoidingView behavior="padding" /* DO NOT change */>
       <View style={styles.form}>
         <View style={styles.row}>
           <TextInput

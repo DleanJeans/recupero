@@ -3,6 +3,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { v4 as uuidv4 } from 'uuid';
 import { AddBehaviorForm } from '../components/AddBehaviorForm';
 import { BehaviorCard } from '../components/BehaviorCard';
 import { LogBehaviorModal } from '../components/LogBehaviorModal';
@@ -13,6 +14,27 @@ import type { MetadataField } from '../types/metadata';
 import type { RootStackParamList } from '../types/navigation';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+// Default metadata fields for new behaviors
+const createDefaultMetadata = (): MetadataField[] => [
+  {
+    id: uuidv4(),
+    name: 'Cooldown',
+    type: 'duration',
+    scope: 'global',
+    value: 0, // 0 minutes by default
+    isDefault: true,
+  },
+  {
+    id: uuidv4(),
+    name: 'Unit',
+    type: 'integer',
+    scope: 'log',
+    value: 1, // Default to 1
+    unit: 'time',
+    isDefault: true,
+  },
+];
 
 export function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -34,7 +56,15 @@ export function HomeScreen() {
           }
         : raw
       : undefined;
-    addBehavior(name, icon, newMetadata);
+
+    // Merge default metadata with user-added metadata
+    const defaultMeta = createDefaultMetadata();
+    const allMetadata = [
+      ...defaultMeta,
+      ...newMetadata,
+    ];
+
+    addBehavior(name, icon, allMetadata);
     setNewName('');
     setNewIcon('');
     setNewMetadata([]);
@@ -113,9 +143,10 @@ export function HomeScreen() {
 
       <LogBehaviorModal
         behaviorName={loggingBehavior?.name ?? ''}
+        behaviorMetadata={loggingBehavior?.metadata}
         visible={loggingBehavior != null}
-        onConfirm={(timestamp) => {
-          if (loggingBehavior) logBehavior(loggingBehavior.id, timestamp);
+        onConfirm={(timestamp, metadata) => {
+          if (loggingBehavior) logBehavior(loggingBehavior.id, timestamp, metadata);
           setLoggingBehavior(null);
         }}
         onCancel={() => setLoggingBehavior(null)}
