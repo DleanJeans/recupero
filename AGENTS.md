@@ -1,0 +1,2 @@
+- Never add package-lock.json to commit
+- Update pnpm-lock.yaml when there is change to package.json
