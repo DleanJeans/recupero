@@ -1,20 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import type { BehaviorEntry } from '../types/behavior';
-import { formatElapsed } from '../utils/timeUtils';
+import type { LogEntry } from '../types/behavior';
+import { formatDateDisplay } from '../utils/dateUtils';
+import { formatElapsed, formatTime } from '../utils/timeUtils';
 import { Text } from './Text';
 
 interface Props {
-  behavior: BehaviorEntry;
-  onLog: () => void;
+  log: LogEntry;
   onRemove: () => void;
-  onPress?: () => void;
+  onEdit: () => void;
 }
 
-export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
-  const swipeableRef = useRef<Swipeable>(null);
+function toDateString(timestamp: number): string {
+  const d = new Date(timestamp);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+export function LogItem({ log, onRemove, onEdit }: Props) {
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -41,41 +45,30 @@ export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
     </Pressable>
   );
 
+  const dateString = toDateString(log.timestamp);
+
   return (
     <Swipeable
-      ref={swipeableRef}
       renderLeftActions={renderLeftActions}
       overshootLeft={false}
     >
-      <View style={styles.card}>
-        <Pressable
-          style={styles.content}
-          onPress={onPress}
-        >
-          {behavior.icon && typeof behavior.icon === 'object' ? (
-            <Image
-              source={behavior.icon}
-              style={styles.iconImage}
-            />
-          ) : (
-            <Text style={styles.emoji}>{typeof behavior.icon === 'string' ? behavior.icon : '⏱️'}</Text>
-          )}
-          <View style={styles.info}>
-            <Text style={styles.name}>{behavior.name}</Text>
-            <Text style={styles.elapsed}>{formatElapsed(behavior.lastTimestamp)}</Text>
-          </View>
-        </Pressable>
+      <View style={styles.logItem}>
+        <View style={styles.logContent}>
+          <Text style={styles.dateText}>{formatDateDisplay(dateString)}</Text>
+          <Text style={styles.timeText}>{formatTime(log.timestamp)}</Text>
+          <Text style={styles.elapsedText}>{formatElapsed(log.timestamp)}</Text>
+        </View>
         <Pressable
           style={({ pressed }) => [
-            styles.logBtn,
-            pressed && styles.logBtnPressed,
+            styles.editBtn,
+            pressed && styles.editBtnPressed,
           ]}
-          onPress={onLog}
-          accessibilityLabel={`Log ${behavior.name}`}
+          onPress={onEdit}
+          accessibilityLabel="Edit log"
         >
           <Ionicons
-            name="add-circle-outline"
-            size={28}
+            name="create-outline"
+            size={24}
             color="#ccc"
           />
         </Pressable>
@@ -85,51 +78,41 @@ export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
 }
 
 const styles = StyleSheet.create({
-  card: {
+  logItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#1e1e1e',
     borderRadius: 12,
     marginVertical: 6,
-    overflow: 'hidden',
     marginHorizontal: 16,
+    overflow: 'hidden',
   },
-  content: {
+  logContent: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
     padding: 16,
   },
-  emoji: {
-    fontSize: 32,
-    marginRight: 12,
-  },
-  iconImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  info: {
-    flex: 1,
-  },
-  name: {
+  dateText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+    marginBottom: 2,
   },
-  elapsed: {
+  timeText: {
+    color: '#fff',
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  elapsedText: {
     color: '#888',
     fontSize: 13,
-    marginTop: 2,
   },
-  logBtn: {
+  editBtn: {
     paddingHorizontal: 16,
     paddingVertical: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  logBtnPressed: {
+  editBtnPressed: {
     opacity: 0.5,
     transform: [
       {

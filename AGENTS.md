@@ -1,2 +1,4 @@
 - Never add package-lock.json to commit
 - Update pnpm-lock.yaml when there is change to package.json
+- Put util functions in src/utils instead of in component files
+- Format/Organize imports with biome before committing changes

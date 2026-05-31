@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { formatDistanceToNowStrict, isToday, isYesterday, parseISO } from 'date-fns';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
+import { formatDateDisplay } from '../utils/dateUtils';
 import { Text } from './Text';
 
 const ITEM_HEIGHT = 48;
@@ -13,26 +13,21 @@ function pad2(n: number) {
   return String(n).padStart(2, '0');
 }
 
-const ALL_HOURS = Array.from({ length: 24 }, (_, i) => pad2(i));
-const ALL_MINUTES = Array.from({ length: 60 }, (_, i) => pad2(i));
+const ALL_HOURS = Array.from(
+  {
+    length: 24,
+  },
+  (_, i) => pad2(i),
+);
+const ALL_MINUTES = Array.from(
+  {
+    length: 60,
+  },
+  (_, i) => pad2(i),
+);
 
 function toDateString(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function formatDateDisplay(dateStr: string): string {
-  const date = parseISO(dateStr);
-  const locale = Intl.DateTimeFormat().resolvedOptions().locale;
-  const local = date.toLocaleDateString(locale, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-
-  if (isToday(date)) return `Today, ${local}`;
-  if (isYesterday(date)) return `Yesterday, ${local}`;
-  const distance = formatDistanceToNowStrict(date, { addSuffix: true });
-  return `${distance.charAt(0).toUpperCase() + distance.slice(1)}, ${local}`;
 }
 
 interface WheelProps {
@@ -46,23 +41,31 @@ function Wheel({ values, initialIndex, onChange }: WheelProps) {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      ref.current?.scrollTo({ y: initialIndex * ITEM_HEIGHT, animated: false });
+      ref.current?.scrollTo({
+        y: initialIndex * ITEM_HEIGHT,
+        animated: false,
+      });
     }, 50);
     return () => clearTimeout(timer);
-  }, [initialIndex]);
+  }, [
+    initialIndex,
+  ]);
 
   const onScrollEnd = useCallback(
-    (e: { nativeEvent: { contentOffset: { y: number } } }) => {
-      const index = Math.max(
-        0,
-        Math.min(
-          Math.round(e.nativeEvent.contentOffset.y / ITEM_HEIGHT),
-          values.length - 1,
-        ),
-      );
+    (e: {
+      nativeEvent: {
+        contentOffset: {
+          y: number;
+        };
+      };
+    }) => {
+      const index = Math.max(0, Math.min(Math.round(e.nativeEvent.contentOffset.y / ITEM_HEIGHT), values.length - 1));
       onChange(index);
     },
-    [onChange, values.length],
+    [
+      onChange,
+      values.length,
+    ],
   );
 
   return (
@@ -77,7 +80,9 @@ function Wheel({ values, initialIndex, onChange }: WheelProps) {
         decelerationRate="fast"
         showsVerticalScrollIndicator={false}
         onMomentumScrollEnd={onScrollEnd}
-        contentContainerStyle={{ paddingVertical: PAD }}
+        contentContainerStyle={{
+          paddingVertical: PAD,
+        }}
       >
         {values.map((v) => (
           <View
@@ -116,23 +121,21 @@ const wStyles = StyleSheet.create({
   text: {
     color: '#ccc',
     fontSize: 22,
-    fontVariant: ['tabular-nums'],
+    fontVariant: [
+      'tabular-nums',
+    ],
   },
 });
 
 interface Props {
   behaviorName: string;
   visible: boolean;
+  initialTimestamp?: number;
   onConfirm: (timestamp: number) => void;
   onCancel: () => void;
 }
 
-export function LogConfirmModal({
-  behaviorName,
-  visible,
-  onConfirm,
-  onCancel,
-}: Props) {
+export function LogBehaviorModal({ behaviorName, visible, initialTimestamp, onConfirm, onCancel }: Props) {
   const nowRef = useRef(new Date());
   const todayStr = toDateString(nowRef.current);
 
@@ -144,36 +147,45 @@ export function LogConfirmModal({
 
   const isToday = selectedDate === todayStr;
   const maxHour = isToday ? nowRef.current.getHours() : 23;
-  const maxMinute =
-    isToday && hour === nowRef.current.getHours()
-      ? nowRef.current.getMinutes()
-      : 59;
+  const maxMinute = isToday && hour === nowRef.current.getHours() ? nowRef.current.getMinutes() : 59;
 
   useEffect(() => {
     if (hour > maxHour) setHour(maxHour);
-  }, [maxHour]);
+  }, [
+    maxHour,
+  ]);
 
   useEffect(() => {
     if (minute > maxMinute) setMinute(maxMinute);
-  }, [maxMinute]);
+  }, [
+    maxMinute,
+  ]);
 
   useEffect(() => {
     if (visible) {
-      const n = new Date();
-      nowRef.current = n;
+      const n = initialTimestamp ? new Date(initialTimestamp) : new Date();
+      nowRef.current = new Date();
       setSelectedDate(toDateString(n));
       setHour(n.getHours());
       setMinute(n.getMinutes());
       setCalendarVisible(false);
       setWheelKey((k) => k + 1);
     }
-  }, [visible]);
+  }, [
+    visible,
+    initialTimestamp,
+  ]);
 
   const handleConfirm = useCallback(() => {
     const [y, m, d] = selectedDate.split('-').map(Number);
     const ts = new Date(y, m - 1, d, hour, minute, 0, 0).getTime();
     onConfirm(ts);
-  }, [selectedDate, hour, minute, onConfirm]);
+  }, [
+    selectedDate,
+    hour,
+    minute,
+    onConfirm,
+  ]);
 
   const hourValues = ALL_HOURS.slice(0, maxHour + 1);
   const minuteValues = ALL_MINUTES.slice(0, maxMinute + 1);
@@ -190,16 +202,16 @@ export function LogConfirmModal({
         onPress={onCancel}
       />
       <View style={styles.sheet}>
-        <Text style={styles.title}>Log "{behaviorName}"</Text>
+        <Text style={styles.title}>
+          {initialTimestamp ? 'Edit' : 'Log'} "{behaviorName}"
+        </Text>
 
         <Text style={styles.sectionLabel}>Date</Text>
         <Pressable
           style={styles.dateField}
           onPress={() => setCalendarVisible(true)}
         >
-          <Text style={styles.dateFieldText}>
-            {formatDateDisplay(selectedDate)}
-          </Text>
+          <Text style={styles.dateFieldText}>{formatDateDisplay(selectedDate)}</Text>
           <Ionicons
             name="calendar-outline"
             size={18}
@@ -226,16 +238,36 @@ export function LogConfirmModal({
 
         <View style={styles.actions}>
           <Pressable
-            style={({ pressed }) => [styles.cancelBtn, pressed && { opacity: 0.6, transform: [{ scale: 0.98 }] }]}
+            style={({ pressed }) => [
+              styles.cancelBtn,
+              pressed && {
+                opacity: 0.6,
+                transform: [
+                  {
+                    scale: 0.98,
+                  },
+                ],
+              },
+            ]}
             onPress={onCancel}
           >
             <Text style={styles.cancelText}>Cancel</Text>
           </Pressable>
           <Pressable
-            style={({ pressed }) => [styles.confirmBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+            style={({ pressed }) => [
+              styles.confirmBtn,
+              pressed && {
+                opacity: 0.85,
+                transform: [
+                  {
+                    scale: 0.98,
+                  },
+                ],
+              },
+            ]}
             onPress={handleConfirm}
           >
-            <Text style={styles.confirmText}>Log</Text>
+            <Text style={styles.confirmText}>{initialTimestamp ? 'Save' : 'Log'}</Text>
           </Pressable>
         </View>
       </View>

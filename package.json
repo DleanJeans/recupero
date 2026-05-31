@@ -6,7 +6,7 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "test:maestro": "maestro test .maestro",
+    "test:maestro": "maestro test",
     "test:maestro:all": "maestro test .maestro",
     "emulator": "$ANDROID_HOME/emulator/emulator -netdelay none -netspeed full -no-snapshot-load -avd maestro_test",
     "emulator:stop": "adb emu kill",
