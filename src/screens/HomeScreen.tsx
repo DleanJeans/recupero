@@ -54,7 +54,7 @@ export function HomeScreen() {
             onRemove={() => handleRemove(item)}
           />
         )}
-        ListEmptyComponent={<Text style={styles.empty}>No behaviors yet. Add one below!</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>No behaviors yet.{`\n`}Add your first one.</Text>}
         contentContainerStyle={behaviors.length === 0 && styles.emptyContainer}
       />
 
@@ -69,10 +69,10 @@ export function HomeScreen() {
         />
       ) : (
         <Pressable
-          style={styles.fab}
+          style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
           onPress={() => setIsAdding(true)}
         >
-          <Text style={styles.fabText}>+ Add Behavior</Text>
+          <Text style={styles.fabText}>+ Add behavior</Text>
         </Pressable>
       )}
 
@@ -96,11 +96,12 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#fff',
-    fontSize: 28,
+    fontSize: 34,
     fontWeight: 'bold',
+    letterSpacing: -0.5,
     marginHorizontal: 16,
     marginTop: 8,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   emptyContainer: {
     flex: 1,
@@ -114,14 +115,18 @@ const styles = StyleSheet.create({
   },
   fab: {
     margin: 16,
-    backgroundColor: '#4a9eff',
+    backgroundColor: '#EFEFEF',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
   },
+  fabPressed: {
+    backgroundColor: '#D8D8D8',
+    transform: [{ scale: 0.98 }],
+  },
   fabText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#111111',
+    fontSize: 15,
     fontWeight: '600',
   },
 });

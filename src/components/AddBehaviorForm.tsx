@@ -21,7 +21,7 @@ export function AddBehaviorForm({ newIcon, newName, onChangeIcon, onChangeName, 
           <TextInput
             style={styles.iconInput}
             placeholder="🏃"
-            placeholderTextColor="#555"
+            placeholderTextColor="#4a4a4a"
             value={newIcon}
             onChangeText={onChangeIcon}
             onSubmitEditing={() => nameRef.current?.focus()}
@@ -105,13 +105,13 @@ const styles = StyleSheet.create({
   },
   addBtn: {
     flex: 1,
-    backgroundColor: '#4a9eff',
+    backgroundColor: '#EFEFEF',
     borderRadius: 8,
     paddingVertical: 12,
     alignItems: 'center',
   },
   addText: {
-    color: '#fff',
+    color: '#111111',
     fontSize: 15,
     fontWeight: '600',
   },

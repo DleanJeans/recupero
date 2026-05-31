@@ -226,13 +226,13 @@ export function LogConfirmModal({
 
         <View style={styles.actions}>
           <Pressable
-            style={styles.cancelBtn}
+            style={({ pressed }) => [styles.cancelBtn, pressed && { opacity: 0.6, transform: [{ scale: 0.98 }] }]}
             onPress={onCancel}
           >
             <Text style={styles.cancelText}>Cancel</Text>
           </Pressable>
           <Pressable
-            style={styles.confirmBtn}
+            style={({ pressed }) => [styles.confirmBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
             onPress={handleConfirm}
           >
             <Text style={styles.confirmText}>Log</Text>
@@ -291,16 +291,16 @@ const styles = StyleSheet.create({
   },
   sheet: {
     backgroundColor: '#1e1e1e',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 40,
   },
   title: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '600',
     marginBottom: 20,
     textAlign: 'center',
   },

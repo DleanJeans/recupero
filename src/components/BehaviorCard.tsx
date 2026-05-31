@@ -4,7 +4,6 @@ import {
   Image,
   Pressable,
   StyleSheet,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -41,10 +40,9 @@ export function BehaviorCard({ behavior, onLog, onRemove }: Props) {
   }, []);
 
   const renderLeftActions = () => (
-    <TouchableOpacity
-      style={styles.deleteButton}
+    <Pressable
+      style={({ pressed }) => [styles.deleteButton, pressed && { opacity: 0.8 }]}
       onPress={() => onRemove()}
-      activeOpacity={0.7}
     >
       <Ionicons
         name="trash"
@@ -52,7 +50,7 @@ export function BehaviorCard({ behavior, onLog, onRemove }: Props) {
         color="#fff"
       />
       <Text style={styles.deleteButtonText}>Delete</Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 
   return (
@@ -80,17 +78,16 @@ export function BehaviorCard({ behavior, onLog, onRemove }: Props) {
             </Text>
           </View>
         </Pressable>
-        <TouchableOpacity
-          style={styles.logBtn}
+        <Pressable
+          style={({ pressed }) => [styles.logBtn, pressed && styles.logBtnPressed]}
           onPress={onLog}
-          activeOpacity={0.7}
         >
           <Ionicons
-            name="add-circle"
+            name="add-circle-outline"
             size={28}
-            color="#fff"
+            color="#ccc"
           />
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </Swipeable>
   );
@@ -131,7 +128,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   elapsed: {
-    color: '#aaa',
+    color: '#888',
     fontSize: 13,
     marginTop: 2,
   },
@@ -141,8 +138,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  logBtnPressed: {
+    opacity: 0.5,
+    transform: [{ scale: 0.92 }],
+  },
   deleteButton: {
-    backgroundColor: '#c62828',
+    backgroundColor: '#943030',
     justifyContent: 'center',
     alignItems: 'center',
     width: 100,
