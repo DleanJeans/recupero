@@ -90,14 +90,14 @@ Add EAS project configuration:
     "slug": "yourapp",
     "scheme": "exp+yourapp",
     "updates": {
-      "url": "https://u.expo.dev/YOUR_PROJECT_ID"
+      "url": "https://u.expo.dev/{YOUR_PROJECT_ID}"
     },
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "extra": {
       "eas": {
-        "projectId": "YOUR_PROJECT_ID"
+        "projectId": "{YOUR_PROJECT_ID}"
       }
     },
     "owner": "your-expo-username",

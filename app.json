@@ -1,0 +1,61 @@
+{
+  "expo": {
+    "name": "Recupero",
+    "slug": "recupero",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "exp+recupero",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dleanjeans.recupero"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.dleanjeans.recupero",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "exp+recupero"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/8a864518-09f4-4aac-b87c-44f7cfe5ae0c"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "8a864518-09f4-4aac-b87c-44f7cfe5ae0c"
+      }
+    },
+    "plugins": [
+      "./plugins/withJVMMemory",
+      [
+        "expo-dev-client",
+        {
+          "launchMode": "launcher"
+        }
+      ]
+    ],
+    "owner": "dleanjeans"
+  }
+}

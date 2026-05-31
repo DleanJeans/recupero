@@ -1,0 +1,13 @@
+# Maestro Configuration
+
+appId: com.dleanjeans.recupero
+
+flows:
+  - "issues/*.yaml"
+
+tags:
+  - mobile
+  - react-native
+  - expo
+
+retries: 0
