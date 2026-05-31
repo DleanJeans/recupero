@@ -114,6 +114,7 @@ export function BehaviorDetailsScreen() {
           <Pressable
             style={styles.editMetadataBtn}
             onPress={() => setEditingMetadata(!editingMetadata)}
+            accessibilityLabel={editingMetadata ? 'Save Metadata' : 'Edit Metadata'}
           >
             <Ionicons
               name={editingMetadata ? 'checkmark' : 'create-outline'}

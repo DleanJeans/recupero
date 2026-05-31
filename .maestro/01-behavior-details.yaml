@@ -2,6 +2,7 @@ appId: com.dleanjeans.recupero
 ---
 - runFlow: 00-launch-app.yaml
 
+# Create a new behavior
 - tapOn: + Add behavior
 - inputText: Drink water
 - tapOn: Add
@@ -9,3 +10,5 @@ appId: com.dleanjeans.recupero
 - tapOn: Log Drink water
 - tapOn: Log
 - tapOn: Drink water
+
+- tapOn: Edit Metadata
