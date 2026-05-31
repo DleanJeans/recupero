@@ -1,0 +1,11 @@
+appId: com.dleanjeans.recupero
+---
+- runFlow: 00-launch-app.yaml
+
+- tapOn: + Add behavior
+- inputText: Drink water
+- tapOn: Add
+
+- tapOn: Log Drink water
+- tapOn: Log
+- tapOn: Drink water

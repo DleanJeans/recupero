@@ -58,11 +58,15 @@ export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
               style={styles.iconImage}
             />
           ) : (
-            <Text style={styles.emoji}>{typeof behavior.icon === 'string' ? behavior.icon : '⏱️'}</Text>
+            <Text style={styles.emoji}>
+              {typeof behavior.icon === 'string' ? behavior.icon : '⏱️'}
+            </Text>
           )}
           <View style={styles.info}>
             <Text style={styles.name}>{behavior.name}</Text>
-            <Text style={styles.elapsed}>{formatElapsed(behavior.lastTimestamp)}</Text>
+            <Text style={styles.elapsed}>
+              {formatElapsed(behavior.lastTimestamp)}
+            </Text>
           </View>
         </Pressable>
         <Pressable
@@ -71,6 +75,7 @@ export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
             pressed && styles.logBtnPressed,
           ]}
           onPress={onLog}
+          accessibilityLabel={`Log ${behavior.name}`}
         >
           <Ionicons
             name="add-circle-outline"

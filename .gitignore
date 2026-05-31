@@ -40,3 +40,6 @@ yarn-error.*
 # Maestro test artifacts
 .maestro/tests/
 test-results.xml
+
+android/
+ios/
