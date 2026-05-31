@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { formatDistanceToNowStrict, isToday, isYesterday, parseISO } from 'date-fns';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
@@ -135,7 +134,7 @@ interface Props {
   onCancel: () => void;
 }
 
-export function LogConfirmModal({ behaviorName, visible, onConfirm, onCancel }: Props) {
+export function LogBehaviorModal({ behaviorName, visible, onConfirm, onCancel }: Props) {
   const nowRef = useRef(new Date());
   const todayStr = toDateString(nowRef.current);
 
