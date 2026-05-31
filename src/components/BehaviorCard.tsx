@@ -62,10 +62,7 @@ export function BehaviorCard({ behavior, onLog, onRemove }: Props) {
       overshootLeft={false}
     >
       <View style={styles.card}>
-        <Pressable
-          style={styles.content}
-          onPress={onLog}
-        >
+        <Pressable style={styles.content}>
           {behavior.icon && typeof behavior.icon === 'object' ? (
             <Image
               source={behavior.icon}
@@ -83,6 +80,17 @@ export function BehaviorCard({ behavior, onLog, onRemove }: Props) {
             </Text>
           </View>
         </Pressable>
+        <TouchableOpacity
+          style={styles.logBtn}
+          onPress={onLog}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="add-circle"
+            size={28}
+            color="#fff"
+          />
+        </TouchableOpacity>
       </View>
     </Swipeable>
   );
@@ -126,6 +134,12 @@ const styles = StyleSheet.create({
     color: '#aaa',
     fontSize: 13,
     marginTop: 2,
+  },
+  logBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   deleteButton: {
     backgroundColor: '#c62828',

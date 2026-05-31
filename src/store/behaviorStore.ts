@@ -7,7 +7,7 @@ import type { BehaviorEntry } from '../types/behavior';
 interface BehaviorStore {
   behaviors: BehaviorEntry[];
   addBehavior: (name: string, icon?: string | { uri: string }) => void;
-  logBehavior: (id: string, metadata?: Record<string, string | number>) => void;
+  logBehavior: (id: string, timestamp?: number, metadata?: Record<string, string | number>) => void;
   removeBehavior: (id: string) => void;
 }
 
@@ -28,13 +28,13 @@ export const useBehaviorStore = create<BehaviorStore>()(
             },
           ],
         })),
-      logBehavior: (id, metadata = {}) =>
+      logBehavior: (id, timestamp, metadata = {}) =>
         set((state) => ({
           behaviors: state.behaviors.map((t) =>
             t.id === id
               ? {
                   ...t,
-                  lastTimestamp: Date.now(),
+                  lastTimestamp: timestamp ?? Date.now(),
                   metadata: { ...t.metadata, ...metadata },
                 }
               : t,

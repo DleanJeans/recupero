@@ -3,6 +3,7 @@ import { Alert, FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddBehaviorForm } from '../components/AddBehaviorForm';
 import { BehaviorCard } from '../components/BehaviorCard';
+import { LogConfirmModal } from '../components/LogConfirmModal';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
@@ -12,6 +13,7 @@ export function HomeScreen() {
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState('');
   const [newIcon, setNewIcon] = useState('');
+  const [loggingBehavior, setLoggingBehavior] = useState<BehaviorEntry | null>(null);
 
   const handleAdd = useCallback(() => {
     const name = newName.trim();
@@ -48,7 +50,7 @@ export function HomeScreen() {
         renderItem={({ item }) => (
           <BehaviorCard
             behavior={item}
-            onLog={() => logBehavior(item.id)}
+            onLog={() => setLoggingBehavior(item)}
             onRemove={() => handleRemove(item)}
           />
         )}
@@ -73,6 +75,16 @@ export function HomeScreen() {
           <Text style={styles.fabText}>+ Add Behavior</Text>
         </Pressable>
       )}
+
+      <LogConfirmModal
+        behaviorName={loggingBehavior?.name ?? ''}
+        visible={loggingBehavior != null}
+        onConfirm={(timestamp) => {
+          if (loggingBehavior) logBehavior(loggingBehavior.id, timestamp);
+          setLoggingBehavior(null);
+        }}
+        onCancel={() => setLoggingBehavior(null)}
+      />
     </SafeAreaView>
   );
 }
