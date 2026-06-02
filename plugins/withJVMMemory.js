@@ -1,4 +1,4 @@
-const { withGradleProperties } = require('@expo/config-plugins');
+const { withGradleProperties } = require('expo/config-plugins');
 
 /**
  * Expo config plugin to configure Gradle JVM memory settings.
