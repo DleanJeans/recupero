@@ -1,0 +1,40 @@
+schema: spec-driven
+
+# Project context
+context: |
+  Tech stack:
+    - Expo SDK 55, React Native 0.83, React 19.2
+    - TypeScript ~5.9
+    - State management: Zustand 5
+    - Navigation: React Navigation 7 (native-stack)
+    - UI: react-native-reanimated 4.2, react-native-gesture-handler,
+      react-native-safe-area-context, react-native-screens,
+      react-native-calendars, expo-vector-icons
+    - Storage: @react-native-async-storage/async-storage
+    - Formatting/Linting: Biome 2
+    - Testing: Jest + ts-jest (unit), Maestro (E2E)
+    - Build: EAS (Expo Application Services), expo-dev-client
+    - Package manager: pnpm 10
+    - Targeting: iOS + Android
+    - Dark mode (userInterfaceStyle: "dark")
+    - Fonts: expo-font + custom plugins
+
+  Conventions:
+    - Never commit package-lock.json; only pnpm-lock.yaml
+    - Utility functions go in src/utils/, not in component files
+    - Format and organize imports with Biome before committing
+    - behaviorStore must remain backward-compatible with logs from previous versions
+    - Use uuid v4 for unique identifiers
+
+  AI tools:
+    - Primary: OpenCode CLI (via Hermes Agent)
+    - GitHub Actions: EAS Build, Maestro E2E tests on PRs
+
+# Per-artifact rules
+rules:
+  proposal:
+    - Keep proposals focused on a single change
+    - Always include a "Motivation" and "Non-goals" section
+  tasks:
+    - Break tasks into small, testable chunks
+    - Include Maestro E2E test steps where applicable
