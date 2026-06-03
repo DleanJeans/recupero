@@ -13,7 +13,6 @@ jobs:
     with:
       app-name: recupero
       expo-project-slug: recupero
-      ota-push-branch: preview
       ota-label: send ota
     secrets:
       expo-token: ${{ secrets.EXPO_TOKEN }}
