@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddBehaviorForm } from '../components/AddBehaviorForm';
@@ -20,6 +20,21 @@ export function HomeScreen() {
   const [newName, setNewName] = useState('');
   const [newIcon, setNewIcon] = useState('');
   const [loggingBehavior, setLoggingBehavior] = useState<BehaviorEntry | null>(null);
+
+  const sortedBehaviors = useMemo(() => {
+    return [
+      ...behaviors,
+    ].sort((a, b) => {
+      if (a.lastTimestamp === null && b.lastTimestamp === null) return 0;
+      if (a.lastTimestamp === null) return 1;
+      if (b.lastTimestamp === null) return -1;
+      const diff = b.lastTimestamp - a.lastTimestamp;
+      if (diff !== 0) return diff;
+      return a.name.localeCompare(b.name);
+    });
+  }, [
+    behaviors,
+  ]);
 
   const handleAdd = useCallback(() => {
     const name = newName.trim();
@@ -66,7 +81,7 @@ export function HomeScreen() {
       <Text style={styles.title}>Recupero</Text>
 
       <FlatList
-        data={behaviors}
+        data={sortedBehaviors}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <BehaviorCard
