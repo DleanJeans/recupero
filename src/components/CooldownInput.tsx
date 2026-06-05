@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from './Text';
 
 type CooldownUnit = 'minutes' | 'hours' | 'days' | 'weeks';
@@ -66,7 +66,6 @@ export function CooldownInput({ cooldownMinutes, onChange }: Props) {
     [
       displayValue,
       onChange,
-      setUnit,
     ],
   );
 
@@ -81,51 +80,47 @@ export function CooldownInput({ cooldownMinutes, onChange }: Props) {
         placeholderTextColor="#666"
         selectTextOnFocus
       />
-      <Pressable
-        style={styles.unitButton}
-        onPress={() => setPickerOpen(true)}
-      >
-        <Text style={styles.unitText}>{unit}</Text>
-        <Text style={styles.chevron}>▼</Text>
-      </Pressable>
-
-      <Modal
-        visible={pickerOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPickerOpen(false)}
-      >
+      <View style={styles.unitWrapper}>
         <Pressable
-          style={styles.overlay}
-          onPress={() => setPickerOpen(false)}
+          style={styles.unitButton}
+          onPress={() => setPickerOpen(!pickerOpen)}
         >
-          <View style={styles.pickerSheet}>
-            <Text style={styles.pickerTitle}>Select unit</Text>
-            {UNITS.map((u) => (
-              <Pressable
-                key={u}
-                style={({ pressed }) => [
-                  styles.pickerOption,
-                  u === unit && styles.pickerOptionActive,
-                  pressed && {
-                    opacity: 0.6,
-                  },
-                ]}
-                onPress={() => handleUnitSelect(u)}
-              >
-                <Text
-                  style={[
-                    styles.pickerOptionText,
-                    u === unit && styles.pickerOptionTextActive,
-                  ]}
-                >
-                  {u}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+          <Text style={styles.unitText}>{unit}</Text>
+          <Text style={styles.chevron}>▼</Text>
         </Pressable>
-      </Modal>
+        {pickerOpen && (
+          <>
+            <Pressable
+              style={styles.backdrop}
+              onPress={() => setPickerOpen(false)}
+            />
+            <View style={styles.dropdown}>
+              {UNITS.map((u) => (
+                <Pressable
+                  key={u}
+                  style={({ pressed }) => [
+                    styles.pickerOption,
+                    u === unit && styles.pickerOptionActive,
+                    pressed && {
+                      opacity: 0.6,
+                    },
+                  ]}
+                  onPress={() => handleUnitSelect(u)}
+                >
+                  <Text
+                    style={[
+                      styles.pickerOptionText,
+                      u === unit && styles.pickerOptionTextActive,
+                    ]}
+                  >
+                    {u}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        )}
+      </View>
     </View>
   );
 }
@@ -163,38 +158,48 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 10,
   },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
+  unitWrapper: {
+    position: 'relative',
+    zIndex: 1,
   },
-  pickerSheet: {
-    width: '100%',
-    backgroundColor: '#1e1e1e',
-    borderRadius: 16,
-    padding: 20,
+  backdrop: {
+    position: 'absolute',
+    top: -1000,
+    left: -1000,
+    right: -1000,
+    bottom: -1000,
+    backgroundColor: 'transparent',
+    zIndex: 10,
   },
-  pickerTitle: {
-    color: '#aaa',
-    fontSize: 13,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 12,
+  dropdown: {
+    position: 'absolute',
+    bottom: 44,
+    right: 0,
+    minWidth: 140,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 10,
+    padding: 4,
+    zIndex: 11,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
   },
   pickerOption: {
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
   },
   pickerOptionActive: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   pickerOptionText: {
     color: '#fff',
-    fontSize: 17,
+    fontSize: 15,
   },
   pickerOptionTextActive: {
     fontWeight: '700',
