@@ -75,3 +75,31 @@ export function formatElapsed(timestamp: number | null): string {
   const years = Math.floor(days / 365);
   return `${years}y ago`;
 }
+
+export function formatDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  if (totalSeconds < 60) return 'Just now';
+
+  const minutes = Math.floor(totalSeconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) {
+    const remainingHours = hours % 24;
+    const remainingMinutes = minutes % 60;
+    if (remainingHours > 0) {
+      return `${days}d ${remainingHours}h`;
+    }
+    if (remainingMinutes > 0) {
+      return `${days}d ${remainingMinutes}m`;
+    }
+    return `${days}d`;
+  }
+
+  if (hours > 0) {
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+  }
+
+  return `${minutes}m`;
+}

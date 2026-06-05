@@ -104,9 +104,10 @@ export function BehaviorDetailsScreen() {
       <FlatList
         data={sortedLogs}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <LogItem
             log={item}
+            nextLogTimestamp={index > 0 ? sortedLogs[index - 1].timestamp : undefined}
             onRemove={() => handleRemoveLog(item.id)}
             onEdit={() => setEditingLog(item)}
           />

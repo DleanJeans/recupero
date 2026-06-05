@@ -4,11 +4,12 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import type { LogEntry } from '../types/behavior';
 import { formatDateDisplay } from '../utils/dateUtils';
-import { formatElapsed, formatTime } from '../utils/timeUtils';
+import { formatDuration, formatElapsed, formatTime } from '../utils/timeUtils';
 import { Text } from './Text';
 
 interface Props {
   log: LogEntry;
+  nextLogTimestamp?: number;
   onRemove: () => void;
   onEdit: () => void;
 }
@@ -18,7 +19,7 @@ function toDateString(timestamp: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export function LogItem({ log, onRemove, onEdit }: Props) {
+export function LogItem({ log, nextLogTimestamp, onRemove, onEdit }: Props) {
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -47,6 +48,9 @@ export function LogItem({ log, onRemove, onEdit }: Props) {
 
   const dateString = toDateString(log.timestamp);
 
+  const distanceLabel =
+    nextLogTimestamp != null ? formatDuration(nextLogTimestamp - log.timestamp) : null;
+
   return (
     <Swipeable
       renderLeftActions={renderLeftActions}
@@ -73,6 +77,13 @@ export function LogItem({ log, onRemove, onEdit }: Props) {
           />
         </Pressable>
       </View>
+      {distanceLabel && (
+        <View style={styles.distanceRow}>
+          <View style={styles.distanceLine} />
+          <Text style={styles.distanceText}>{distanceLabel}</Text>
+          <View style={styles.distanceLine} />
+        </View>
+      )}
     </Swipeable>
   );
 }
@@ -137,5 +148,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     marginTop: 4,
+  },
+  distanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 32,
+    marginVertical: 2,
+  },
+  distanceLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#333',
+  },
+  distanceText: {
+    color: '#666',
+    fontSize: 12,
+    fontWeight: '500',
+    marginHorizontal: 10,
   },
 });

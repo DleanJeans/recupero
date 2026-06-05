@@ -1,4 +1,4 @@
-import { formatElapsed } from '../src/utils/timeUtils';
+import { formatDuration, formatElapsed } from '../src/utils/timeUtils';
 
 describe('formatElapsed', () => {
   beforeAll(() => {
@@ -112,6 +112,35 @@ describe('formatElapsed', () => {
   it('returns "Xy ago" for 365+ days', () => {
     expect(formatElapsed(Date.now() - 365 * 24 * 3600_000)).toBe('1y ago');
     expect(formatElapsed(Date.now() - 730 * 24 * 3600_000)).toBe('2y ago');
+  });
+});
+
+describe('formatDuration', () => {
+  it('returns "Just now" for < 60 seconds', () => {
+    expect(formatDuration(30_000)).toBe('Just now');
+    expect(formatDuration(0)).toBe('Just now');
+  });
+
+  it('returns "Xm" for < 1 hour', () => {
+    expect(formatDuration(5 * 60_000)).toBe('5m');
+    expect(formatDuration(1 * 60_000)).toBe('1m');
+    expect(formatDuration(59 * 60_000)).toBe('59m');
+  });
+
+  it('returns "Xh Ym" for hours and minutes', () => {
+    expect(formatDuration(1 * 3600_000 + 23 * 60_000)).toBe('1h 23m');
+    expect(formatDuration(2 * 3600_000 + 5 * 60_000)).toBe('2h 5m');
+    expect(formatDuration(12 * 3600_000)).toBe('12h');
+  });
+
+  it('returns "Xd Yh" for days and hours', () => {
+    expect(formatDuration(3 * 24 * 3600_000 + 5 * 3600_000)).toBe('3d 5h');
+    expect(formatDuration(1 * 24 * 3600_000 + 12 * 3600_000 + 30 * 60_000)).toBe('1d 12h');
+    expect(formatDuration(7 * 24 * 3600_000)).toBe('7d');
+  });
+
+  it('returns "Xd Ym" for days and minutes (no hours)', () => {
+    expect(formatDuration(2 * 24 * 3600_000 + 15 * 60_000)).toBe('2d 15m');
   });
 });
 
