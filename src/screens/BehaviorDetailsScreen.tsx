@@ -320,9 +320,8 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
     paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingBottom: 8,
   },
   backBtn: {
     padding: 8,
