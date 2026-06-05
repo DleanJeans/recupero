@@ -6,13 +6,12 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddBehaviorForm } from '../components/AddBehaviorForm';
 import { BehaviorLogItem } from '../components/BehaviorLogItem';
-import { CooldownIcon } from '../components/CooldownIcon';
+import { CooldownLabel } from '../components/CooldownLabel';
 import { LogBehaviorModal } from '../components/LogBehaviorModal';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry, LogEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
-import { formatCooldown } from '../utils/timeUtils';
 
 type BehaviorDetailsRouteProp = RouteProp<RootStackParamList, 'BehaviorDetails'>;
 export function BehaviorDetailsScreen() {
@@ -139,22 +138,10 @@ function BehaviorTitle({ icon, name, cooldownMinutes }: BehaviorTitleProps) {
       ) : (
         <Text style={styles.emoji}>{typeof icon === 'string' ? icon : '⏱️'}</Text>
       )}
-      <View style={styles.titleTextColumn}>
+      <View style={styles.titleTextRow}>
         <Text style={styles.headerTitle}>{name}</Text>
         {cooldownMinutes ? <CooldownLabel minutes={cooldownMinutes} /> : null}
       </View>
-    </View>
-  );
-}
-
-interface CooldownLabelProps {
-  minutes: number;
-}
-function CooldownLabel({ minutes }: CooldownLabelProps) {
-  return (
-    <View style={styles.cooldownRow}>
-      <CooldownIcon />
-      <Text style={styles.cooldownText}>{formatCooldown(minutes)} cooldown</Text>
     </View>
   );
 }
@@ -335,19 +322,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
   },
-  titleTextColumn: {
+  titleTextRow: {
     flex: 1,
-    gap: 2,
-  },
-  cooldownText: {
-    color: '#888',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  cooldownRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
   },
   emoji: {
     fontSize: 24,

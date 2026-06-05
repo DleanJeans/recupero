@@ -4,6 +4,7 @@ import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import type { BehaviorEntry } from '../types/behavior';
 import { formatElapsed } from '../utils/timeUtils';
+import { CooldownLabel } from './CooldownLabel';
 import { Text } from './Text';
 
 interface Props {
@@ -36,6 +37,7 @@ export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
           <BehaviorInfo
             name={behavior.name}
             lastTimestamp={behavior.lastTimestamp}
+            cooldownMinutes={behavior.cooldownMinutes}
           />
         </Pressable>
         <LogButton
@@ -66,12 +68,16 @@ function BehaviorIcon({ icon }: BehaviorIconProps) {
 interface BehaviorInfoProps {
   name: string;
   lastTimestamp: number | null;
+  cooldownMinutes: number;
 }
-function BehaviorInfo({ name, lastTimestamp }: BehaviorInfoProps) {
+function BehaviorInfo({ name, lastTimestamp, cooldownMinutes }: BehaviorInfoProps) {
   return (
     <View style={styles.info}>
       <BehaviorName name={name} />
-      <BehaviorElapsed lastTimestamp={lastTimestamp} />
+      <View style={styles.elapsedRow}>
+        <BehaviorElapsed lastTimestamp={lastTimestamp} />
+        {cooldownMinutes ? <CooldownLabel minutes={cooldownMinutes} /> : null}
+      </View>
     </View>
   );
 }
@@ -166,6 +172,12 @@ const styles = StyleSheet.create({
   info: {
     flex: 1,
   },
+  elapsedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
   name: {
     color: '#fff',
     fontSize: 16,
@@ -174,7 +186,6 @@ const styles = StyleSheet.create({
   elapsed: {
     color: '#888',
     fontSize: 13,
-    marginTop: 2,
   },
   logBtn: {
     paddingHorizontal: 16,
