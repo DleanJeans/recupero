@@ -37,10 +37,10 @@ export function formatElapsed(timestamp: number | null): string {
   if (seconds < 60) return 'Just now';
   if (hours < 1) return `${minutes}m ago`;
 
+  const hoursAgo = ` · ${hours}h ago`;
   const sameDay =
     date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
-
-  if (sameDay) return `Today · ${hours}h ago`;
+  if (sameDay) return `Today${hoursAgo}`;
 
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
@@ -49,7 +49,7 @@ export function formatElapsed(timestamp: number | null): string {
     date.getMonth() === yesterday.getMonth() &&
     date.getDate() === yesterday.getDate();
 
-  if (isYesterday) return 'Yesterday';
+  if (isYesterday) return `Yesterday${hours < 24 ? hoursAgo : ''}`;
 
   if (days < 7) {
     return `${DAY_NAMES[date.getDay()]} · ${days}d ago`;
