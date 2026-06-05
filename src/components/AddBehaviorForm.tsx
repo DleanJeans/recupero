@@ -1,6 +1,5 @@
-import { Ionicons } from '@expo/vector-icons';
 import React, { useRef } from 'react';
-import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { CooldownIcon } from './CooldownIcon';
 import { CooldownInput } from './CooldownInput';
@@ -58,7 +57,7 @@ export function AddBehaviorForm({
         </View>
         <View style={styles.cooldownSection}>
           <View style={styles.cooldownLabelRow}>
-            <CooldownIcon size={14} color="#888" />
+            <CooldownIcon size={14} />
             <Text style={styles.cooldownLabel}>Cooldown (optional)</Text>
           </View>
           <CooldownInput

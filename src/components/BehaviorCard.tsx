@@ -76,7 +76,12 @@ function BehaviorInfo({ name, lastTimestamp, cooldownMinutes }: BehaviorInfoProp
       <BehaviorName name={name} />
       <View style={styles.elapsedRow}>
         <BehaviorElapsed lastTimestamp={lastTimestamp} />
-        {cooldownMinutes ? <CooldownLabel minutes={cooldownMinutes} /> : null}
+        {cooldownMinutes ? (
+          <CooldownLabel
+            minutes={cooldownMinutes}
+            lastTimestamp={lastTimestamp}
+          />
+        ) : null}
       </View>
     </View>
   );

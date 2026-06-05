@@ -53,6 +53,7 @@ export function BehaviorDetailsScreen() {
             icon={behavior.icon}
             name={behavior.name}
             cooldownMinutes={behavior.cooldownMinutes}
+            lastTimestamp={behavior.lastTimestamp}
           />
         ) : (
           <BehaviorTitle />
@@ -122,8 +123,9 @@ interface BehaviorTitleProps {
   icon?: BehaviorEntry['icon'];
   name?: string;
   cooldownMinutes?: number;
+  lastTimestamp?: number | null;
 }
-function BehaviorTitle({ icon, name, cooldownMinutes }: BehaviorTitleProps) {
+function BehaviorTitle({ icon, name, cooldownMinutes, lastTimestamp }: BehaviorTitleProps) {
   if (!name) {
     return <Text style={styles.headerTitle}>Behavior Not Found</Text>;
   }
@@ -140,7 +142,12 @@ function BehaviorTitle({ icon, name, cooldownMinutes }: BehaviorTitleProps) {
       )}
       <View style={styles.titleTextRow}>
         <Text style={styles.headerTitle}>{name}</Text>
-        {cooldownMinutes ? <CooldownLabel minutes={cooldownMinutes} /> : null}
+        {cooldownMinutes ? (
+          <CooldownLabel
+            minutes={cooldownMinutes}
+            lastTimestamp={lastTimestamp}
+          />
+        ) : null}
       </View>
     </View>
   );
@@ -325,8 +332,8 @@ const styles = StyleSheet.create({
   titleTextRow: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
+    alignItems: 'baseline',
+    gap: 4,
   },
   emoji: {
     fontSize: 24,

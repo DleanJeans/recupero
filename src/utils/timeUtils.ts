@@ -9,8 +9,7 @@ export function formatCooldown(totalMinutes: number): string {
   if (!totalMinutes || totalMinutes <= 0 || isNaN(totalMinutes)) return '';
   if (totalMinutes < 60) return `${totalMinutes} min`;
   if (totalMinutes < 24 * 60) return `${Math.floor(totalMinutes / 60)}h`;
-  if (totalMinutes < 7 * 24 * 60)
-    return `${Math.floor(totalMinutes / (24 * 60))}d`;
+  if (totalMinutes < 7 * 24 * 60) return `${Math.floor(totalMinutes / (24 * 60))}d`;
   return `${Math.floor(totalMinutes / (7 * 24 * 60))}w`;
 }
 
