@@ -13,6 +13,7 @@ interface Props {
   onChangeCooldown: (v: number) => void;
   onAdd: () => void;
   onCancel: () => void;
+  submitLabel?: string;
 }
 
 export function AddBehaviorForm({
@@ -24,6 +25,7 @@ export function AddBehaviorForm({
   onChangeCooldown,
   onAdd,
   onCancel,
+  submitLabel = 'Add',
 }: Props) {
   const nameRef = useRef<import('react-native').TextInput>(null);
 
@@ -70,7 +72,7 @@ export function AddBehaviorForm({
             style={styles.addBtn}
             onPress={onAdd}
           >
-            <Text style={styles.addText}>Add</Text>
+            <Text style={styles.addText}>{submitLabel}</Text>
           </Pressable>
         </View>
       </View>

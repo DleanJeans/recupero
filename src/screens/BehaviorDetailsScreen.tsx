@@ -1,16 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Image, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CooldownInput } from '../components/CooldownInput';
+import { AddBehaviorForm } from '../components/AddBehaviorForm';
 import { LogBehaviorModal } from '../components/LogBehaviorModal';
 import { LogItem } from '../components/LogItem';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { LogEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
-import { formatCooldown } from '../utils/timeUtils';
 
 type BehaviorDetailsRouteProp = RouteProp<RootStackParamList, 'BehaviorDetails'>;
 
@@ -19,11 +19,13 @@ export function BehaviorDetailsScreen() {
   const route = useRoute<BehaviorDetailsRouteProp>();
   const { behaviorId } = route.params;
 
-  const { behaviors, removeLog, updateLog, updateBehaviorCooldown } = useBehaviorStore();
+  const { behaviors, removeLog, updateLog, updateBehavior } = useBehaviorStore();
   const behavior = behaviors.find((b) => b.id === behaviorId);
   const [editingLog, setEditingLog] = useState<LogEntry | null>(null);
-  const [editingCooldown, setEditingCooldown] = useState(false);
-  const [cooldownDraft, setCooldownDraft] = useState(0);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editIcon, setEditIcon] = useState('');
+  const [editName, setEditName] = useState('');
+  const [editCooldown, setEditCooldown] = useState(60);
 
   const handleRemoveLog = useCallback(
     (logId: string) => {
@@ -44,6 +46,30 @@ export function BehaviorDetailsScreen() {
       removeLog,
     ],
   );
+
+  const handleEditSave = useCallback(() => {
+    if (!editName.trim()) return;
+    const raw = editIcon.trim();
+    const icon = raw
+      ? raw.startsWith('http://') || raw.startsWith('https://')
+        ? {
+            uri: raw,
+          }
+        : raw
+      : undefined;
+    updateBehavior(behaviorId, {
+      name: editName.trim(),
+      icon,
+      cooldownMinutes: editCooldown,
+    });
+    setShowEditModal(false);
+  }, [
+    behaviorId,
+    editName,
+    editIcon,
+    editCooldown,
+    updateBehavior,
+  ]);
 
   if (!behavior) {
     return (
@@ -103,89 +129,32 @@ export function BehaviorDetailsScreen() {
           )}
           <Text style={styles.headerTitle}>{behavior.name}</Text>
         </View>
-      </View>
-
-      <View style={styles.cooldownRow}>
-        {behavior.cooldownMinutes ? (
-          <Text style={styles.cooldownDisplay}>{formatCooldown(behavior.cooldownMinutes)}</Text>
-        ) : null}
-        {editingCooldown ? (
-          <View style={styles.cooldownEditContainer}>
-            <CooldownInput
-              cooldownMinutes={cooldownDraft}
-              onChange={setCooldownDraft}
-            />
-            <View style={styles.cooldownEditActions}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.cooldownCancelBtn,
-                  pressed && {
-                    opacity: 0.6,
-                  },
-                ]}
-                onPress={() => {
-                  setCooldownDraft(behavior.cooldownMinutes);
-                  setEditingCooldown(false);
-                }}
-              >
-                <Text style={styles.cooldownCancelText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.cooldownSaveBtn,
-                  pressed && {
-                    opacity: 0.85,
-                  },
-                ]}
-                onPress={() => {
-                  updateBehaviorCooldown(behaviorId, cooldownDraft);
-                  setEditingCooldown(false);
-                }}
-              >
-                <Text style={styles.cooldownSaveText}>Save</Text>
-              </Pressable>
-            </View>
-          </View>
-        ) : behavior.cooldownMinutes ? (
-          <Pressable
-            style={({ pressed }) => [
-              styles.cooldownEditBtn,
-              pressed && {
-                opacity: 0.6,
-              },
-            ]}
-            onPress={() => {
-              setCooldownDraft(behavior.cooldownMinutes);
-              setEditingCooldown(true);
-            }}
-          >
-            <Ionicons
-              name="create-outline"
-              size={18}
-              color="#aaa"
-            />
-          </Pressable>
-        ) : (
-          <Pressable
-            style={({ pressed }) => [
-              styles.addCooldownBtn,
-              pressed && {
-                opacity: 0.6,
-              },
-            ]}
-            onPress={() => {
-              setCooldownDraft(30);
-              setEditingCooldown(true);
-            }}
-          >
-            <Ionicons
-              name="add-circle-outline"
-              size={18}
-              color="#888"
-            />
-            <Text style={styles.addCooldownText}>Add Cooldown</Text>
-          </Pressable>
-        )}
+        <Pressable
+          style={({ pressed }) => [
+            styles.editBehaviorBtn,
+            pressed && {
+              opacity: 0.5,
+            },
+          ]}
+          onPress={() => {
+            const iconStr =
+              typeof behavior.icon === 'object' && behavior.icon !== null
+                ? behavior.icon.uri
+                : typeof behavior.icon === 'string'
+                  ? behavior.icon
+                  : '';
+            setEditIcon(iconStr);
+            setEditName(behavior.name);
+            setEditCooldown(behavior.cooldownMinutes || 60);
+            setShowEditModal(true);
+          }}
+        >
+          <Ionicons
+            name="create-outline"
+            size={26}
+            color="#aaa"
+          />
+        </Pressable>
       </View>
 
       <FlatList
@@ -214,6 +183,34 @@ export function BehaviorDetailsScreen() {
         }}
         onCancel={() => setEditingLog(null)}
       />
+
+      <Modal
+        visible={showEditModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <KeyboardAvoidingView
+          behavior="padding"
+          style={styles.editModalOverlay}
+        >
+          <Pressable
+            style={styles.editModalBackdrop}
+            onPress={() => setShowEditModal(false)}
+          />
+          <AddBehaviorForm
+            newIcon={editIcon}
+            newName={editName}
+            cooldownMinutes={editCooldown}
+            onChangeIcon={setEditIcon}
+            onChangeName={setEditName}
+            onChangeCooldown={setEditCooldown}
+            onAdd={handleEditSave}
+            onCancel={() => setShowEditModal(false)}
+            submitLabel="Save"
+          />
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -254,66 +251,17 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
   },
-  cooldownRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
+  editBehaviorBtn: {
+    padding: 8,
   },
-  cooldownDisplay: {
-    color: '#888',
-    fontSize: 15,
-    fontWeight: '600',
+  editModalOverlay: {
     flex: 1,
+    justifyContent: 'flex-end',
+    marginBottom: 15,
   },
-  cooldownEditBtn: {
-    padding: 4,
-  },
-  cooldownEditContainer: {
+  editModalBackdrop: {
     flex: 1,
-    gap: 8,
-  },
-  cooldownEditActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  cooldownCancelBtn: {
-    flex: 1,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  cooldownCancelText: {
-    color: '#aaa',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  cooldownSaveBtn: {
-    flex: 1,
-    backgroundColor: '#EFEFEF',
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  cooldownSaveText: {
-    color: '#111',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  addCooldownBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-  },
-  addCooldownText: {
-    color: '#888',
-    fontSize: 14,
-    fontWeight: '600',
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
   emptyContainer: {
     flex: 1,

@@ -20,7 +20,7 @@ export function HomeScreen() {
   const [newName, setNewName] = useState('');
   const [newIcon, setNewIcon] = useState('');
   const [loggingBehavior, setLoggingBehavior] = useState<BehaviorEntry | null>(null);
-  const [newCooldown, setNewCooldown] = useState(0);
+  const [newCooldown, setNewCooldown] = useState(60);
 
   const sortedBehaviors = useMemo(() => {
     return [
