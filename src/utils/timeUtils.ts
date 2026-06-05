@@ -1,8 +1,26 @@
+const DAY_NAMES = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
+
 export function formatTime(timestamp: number): string {
   return new Date(timestamp).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+export function formatCooldown(totalMinutes: number): string {
+  if (!totalMinutes || totalMinutes <= 0 || isNaN(totalMinutes)) return '';
+  if (totalMinutes < 60) return `${totalMinutes} min`;
+  if (totalMinutes < 24 * 60) return `${Math.floor(totalMinutes / 60)}h`;
+  if (totalMinutes < 7 * 24 * 60) return `${Math.floor(totalMinutes / (24 * 60))}d`;
+  return `${Math.floor(totalMinutes / (7 * 24 * 60))}w`;
 }
 
 export function formatElapsed(timestamp: number | null): string {
@@ -22,7 +40,7 @@ export function formatElapsed(timestamp: number | null): string {
   const sameDay =
     date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
 
-  if (sameDay) return `Today - ${hours}h ago`;
+  if (sameDay) return `Today · ${hours}h ago`;
 
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
@@ -34,16 +52,7 @@ export function formatElapsed(timestamp: number | null): string {
   if (isYesterday) return 'Yesterday';
 
   if (days < 7) {
-    const dayNames = [
-      'Sunday',
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-    ];
-    return `${dayNames[date.getDay()]} - ${days}d ago`;
+    return `${DAY_NAMES[date.getDay()]} · ${days}d ago`;
   }
 
   // Check if event is in the previous calendar month
@@ -53,7 +62,7 @@ export function formatElapsed(timestamp: number | null): string {
 
   if (isLastMonth) {
     const w = Math.floor(days / 7);
-    return `Last month - ${w}w ago`;
+    return `Last month · ${w}w ago`;
   }
 
   if (days < 14) return 'Last week';
@@ -67,7 +76,7 @@ export function formatElapsed(timestamp: number | null): string {
   const isLastYear = date.getFullYear() === now.getFullYear() - 1 && months < 12;
 
   if (isLastYear) {
-    return `Last year - ${months}mo ago`;
+    return `Last year · ${months}mo ago`;
   }
 
   if (months < 12) return `${months}mo ago`;

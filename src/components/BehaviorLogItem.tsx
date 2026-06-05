@@ -19,7 +19,7 @@ function toDateString(timestamp: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export function LogItem({ log, nextLogTimestamp, onRemove, onEdit }: Props) {
+export function BehaviorLogItem({ log, nextLogTimestamp, onRemove, onEdit }: Props) {
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -58,8 +58,7 @@ export function LogItem({ log, nextLogTimestamp, onRemove, onEdit }: Props) {
     >
       <View style={styles.logItem}>
         <View style={styles.logContent}>
-          <Text style={styles.dateText}>{formatDateDisplay(dateString)}</Text>
-          <Text style={styles.timeText}>{formatTime(log.timestamp)}</Text>
+          <Text style={styles.dateText}>{formatDateDisplay(dateString)} · {formatTime(log.timestamp)}</Text>
           <Text style={styles.elapsedText}>{formatElapsed(log.timestamp)}</Text>
         </View>
         <Pressable
@@ -131,6 +130,23 @@ const styles = StyleSheet.create({
       },
     ],
   },
+  distanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 32,
+    marginVertical: 2,
+  },
+  distanceLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#333',
+  },
+  distanceText: {
+    color: '#666',
+    fontSize: 12,
+    fontWeight: '500',
+    marginHorizontal: 10,
+  },
   deleteButton: {
     backgroundColor: '#943030',
     justifyContent: 'center',
@@ -148,22 +164,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     marginTop: 4,
-  },
-  distanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 32,
-    marginVertical: 2,
-  },
-  distanceLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#333',
-  },
-  distanceText: {
-    color: '#666',
-    fontSize: 12,
-    fontWeight: '500',
-    marginHorizontal: 10,
   },
 });
