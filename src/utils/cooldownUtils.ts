@@ -1,5 +1,11 @@
 export type CooldownType = 'rest' | 'limit';
 
+export interface CooldownInfo {
+  minutes: number;
+  lastTimestamp?: number | null;
+  type?: CooldownType;
+}
+
 export const COLORS = {
   GREEN: '#4CAF50',
   YELLOW: '#F9A825',

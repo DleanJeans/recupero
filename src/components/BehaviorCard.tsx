@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import type { BehaviorEntry } from '../types/behavior';
+import type { CooldownInfo } from '../utils/cooldownUtils';
 import { formatElapsed } from '../utils/timeUtils';
 import { CooldownLabel } from './CooldownLabel';
 import { Text } from './Text';
@@ -37,8 +38,15 @@ export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
           <BehaviorInfo
             name={behavior.name}
             lastTimestamp={behavior.lastTimestamp}
-            cooldownMinutes={behavior.cooldownMinutes}
-            cooldownType={behavior.cooldownType}
+            cooldown={
+              behavior.cooldownMinutes
+                ? {
+                    minutes: behavior.cooldownMinutes,
+                    lastTimestamp: behavior.lastTimestamp,
+                    type: behavior.cooldownType,
+                  }
+                : undefined
+            }
           />
         </Pressable>
         <LogButton
@@ -69,22 +77,15 @@ function BehaviorIcon({ icon }: BehaviorIconProps) {
 interface BehaviorInfoProps {
   name: string;
   lastTimestamp: number | null;
-  cooldownMinutes: number;
-  cooldownType?: 'rest' | 'limit';
+  cooldown?: CooldownInfo;
 }
-function BehaviorInfo({ name, lastTimestamp, cooldownMinutes, cooldownType }: BehaviorInfoProps) {
+function BehaviorInfo({ name, lastTimestamp, cooldown }: BehaviorInfoProps) {
   return (
     <View style={styles.info}>
       <BehaviorName name={name} />
       <View style={styles.elapsedRow}>
         <BehaviorElapsed lastTimestamp={lastTimestamp} />
-        {cooldownMinutes ? (
-          <CooldownLabel
-            minutes={cooldownMinutes}
-            lastTimestamp={lastTimestamp}
-            cooldownType={cooldownType}
-          />
-        ) : null}
+        {cooldown ? <CooldownLabel cooldown={cooldown} /> : null}
       </View>
     </View>
   );

@@ -12,6 +12,7 @@ import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry, LogEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
+import type { CooldownInfo } from '../utils/cooldownUtils';
 
 type BehaviorDetailsRouteProp = RouteProp<RootStackParamList, 'BehaviorDetails'>;
 export function BehaviorDetailsScreen() {
@@ -52,9 +53,15 @@ export function BehaviorDetailsScreen() {
           <BehaviorTitle
             icon={behavior.icon}
             name={behavior.name}
-            cooldownMinutes={behavior.cooldownMinutes}
-            lastTimestamp={behavior.lastTimestamp}
-            cooldownType={behavior.cooldownType}
+            cooldown={
+              behavior.cooldownMinutes
+                ? {
+                    minutes: behavior.cooldownMinutes,
+                    lastTimestamp: behavior.lastTimestamp,
+                    type: behavior.cooldownType,
+                  }
+                : undefined
+            }
           />
         ) : (
           <BehaviorTitle />
@@ -123,11 +130,9 @@ function BackButton({ onPress }: BackButtonProps) {
 interface BehaviorTitleProps {
   icon?: BehaviorEntry['icon'];
   name?: string;
-  cooldownMinutes?: number;
-  lastTimestamp?: number | null;
-  cooldownType?: 'rest' | 'limit';
+  cooldown?: CooldownInfo;
 }
-function BehaviorTitle({ icon, name, cooldownMinutes, lastTimestamp, cooldownType }: BehaviorTitleProps) {
+function BehaviorTitle({ icon, name, cooldown }: BehaviorTitleProps) {
   if (!name) {
     return <Text style={styles.headerTitle}>Behavior Not Found</Text>;
   }
@@ -144,13 +149,7 @@ function BehaviorTitle({ icon, name, cooldownMinutes, lastTimestamp, cooldownTyp
       )}
       <View style={styles.titleTextRow}>
         <Text style={styles.headerTitle}>{name}</Text>
-        {cooldownMinutes ? (
-          <CooldownLabel
-            minutes={cooldownMinutes}
-            lastTimestamp={lastTimestamp}
-            cooldownType={cooldownType}
-          />
-        ) : null}
+        {cooldown ? <CooldownLabel cooldown={cooldown} /> : null}
       </View>
     </View>
   );
