@@ -6,11 +6,13 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddBehaviorForm } from '../components/AddBehaviorForm';
 import { BehaviorLogItem } from '../components/BehaviorLogItem';
+import { CooldownIcon } from '../components/CooldownIcon';
 import { LogBehaviorModal } from '../components/LogBehaviorModal';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry, LogEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
+import { formatCooldown } from '../utils/timeUtils';
 
 type BehaviorDetailsRouteProp = RouteProp<RootStackParamList, 'BehaviorDetails'>;
 
@@ -49,16 +51,15 @@ export function BehaviorDetailsScreen() {
       <View style={styles.header}>
         <BackButton onPress={() => navigation.goBack()} />
         {behavior ? (
-          <>
-            <BehaviorTitle
-              icon={behavior.icon}
-              name={behavior.name}
-            />
-            <EditButton onPress={() => setShowEditModal(true)} />
-          </>
+          <BehaviorTitle
+            icon={behavior.icon}
+            name={behavior.name}
+            cooldownMinutes={behavior.cooldownMinutes}
+          />
         ) : (
           <BehaviorTitle />
         )}
+        {behavior ? <EditButton onPress={() => setShowEditModal(true)} /> : null}
       </View>
 
       {behavior ? (
@@ -122,9 +123,10 @@ function BackButton({ onPress }: BackButtonProps) {
 interface BehaviorTitleProps {
   icon?: BehaviorEntry['icon'];
   name?: string;
+  cooldownMinutes?: number;
 }
 
-function BehaviorTitle({ icon, name }: BehaviorTitleProps) {
+function BehaviorTitle({ icon, name, cooldownMinutes }: BehaviorTitleProps) {
   if (!name) {
     return <Text style={styles.headerTitle}>Behavior Not Found</Text>;
   }
@@ -139,7 +141,23 @@ function BehaviorTitle({ icon, name }: BehaviorTitleProps) {
       ) : (
         <Text style={styles.emoji}>{typeof icon === 'string' ? icon : '⏱️'}</Text>
       )}
-      <Text style={styles.headerTitle}>{name}</Text>
+      <View style={styles.titleTextColumn}>
+        <Text style={styles.headerTitle}>{name}</Text>
+        {cooldownMinutes ? <CooldownLabel minutes={cooldownMinutes} /> : null}
+      </View>
+    </View>
+  );
+}
+
+interface CooldownLabelProps {
+  minutes: number;
+}
+
+function CooldownLabel({ minutes }: CooldownLabelProps) {
+  return (
+    <View style={styles.cooldownRow}>
+      <CooldownIcon />
+      <Text style={styles.cooldownText}>{formatCooldown(minutes)} cooldown</Text>
     </View>
   );
 }
@@ -305,10 +323,9 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: 8,
     paddingVertical: 8,
-    marginBottom: 8,
   },
   backBtn: {
     padding: 8,
@@ -319,6 +336,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 8,
   },
+  headerTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  titleTextColumn: {
+    flex: 1,
+    gap: 2,
+  },
+  cooldownText: {
+    color: '#888',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  cooldownRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   emoji: {
     fontSize: 24,
     marginRight: 8,
@@ -328,11 +364,6 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 6,
     marginRight: 8,
-  },
-  headerTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
   },
   editBehaviorBtn: {
     padding: 8,
