@@ -1,3 +1,13 @@
+const DAY_NAMES = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
+
 export function formatTime(timestamp: number): string {
   return new Date(timestamp).toLocaleTimeString([], {
     hour: '2-digit',
@@ -42,16 +52,7 @@ export function formatElapsed(timestamp: number | null): string {
   if (isYesterday) return 'Yesterday';
 
   if (days < 7) {
-    const dayNames = [
-      'Sunday',
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-    ];
-    return `${dayNames[date.getDay()]} · ${days}d ago`;
+    return `${DAY_NAMES[date.getDay()]} · ${days}d ago`;
   }
 
   // Check if event is in the previous calendar month

@@ -54,8 +54,7 @@ export function BehaviorLogItem({ log, onRemove, onEdit }: Props) {
     >
       <View style={styles.logItem}>
         <View style={styles.logContent}>
-          <Text style={styles.dateText}>{formatDateDisplay(dateString)}</Text>
-          <Text style={styles.timeText}>{formatTime(log.timestamp)}</Text>
+          <Text style={styles.dateText}>{formatDateDisplay(dateString)} · {formatTime(log.timestamp)}</Text>
           <Text style={styles.elapsedText}>{formatElapsed(log.timestamp)}</Text>
         </View>
         <Pressable
