@@ -5,6 +5,15 @@ export function formatTime(timestamp: number): string {
   });
 }
 
+export function formatCooldown(totalMinutes: number): string {
+  if (!totalMinutes || totalMinutes <= 0 || isNaN(totalMinutes)) return '';
+  if (totalMinutes < 60) return `${totalMinutes} min`;
+  if (totalMinutes < 24 * 60) return `${Math.floor(totalMinutes / 60)} hr${totalMinutes >= 120 ? 's' : ''}`;
+  if (totalMinutes < 7 * 24 * 60)
+    return `${Math.floor(totalMinutes / (24 * 60))} day${totalMinutes >= 2 * 24 * 60 ? 's' : ''}`;
+  return `${Math.floor(totalMinutes / (7 * 24 * 60))} week${Math.floor(totalMinutes / (7 * 24 * 60)) >= 2 ? 's' : ''}`;
+}
+
 export function formatElapsed(timestamp: number | null): string {
   if (timestamp === null) return 'Never';
 

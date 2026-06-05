@@ -1,24 +1,34 @@
 import React, { useRef } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { CooldownInput } from './CooldownInput';
 import { Text, TextInput } from './Text';
 
 interface Props {
   newIcon: string;
   newName: string;
+  cooldownMinutes: number;
   onChangeIcon: (v: string) => void;
   onChangeName: (v: string) => void;
+  onChangeCooldown: (v: number) => void;
   onAdd: () => void;
   onCancel: () => void;
 }
 
-export function AddBehaviorForm({ newIcon, newName, onChangeIcon, onChangeName, onAdd, onCancel }: Props) {
+export function AddBehaviorForm({
+  newIcon,
+  newName,
+  cooldownMinutes,
+  onChangeIcon,
+  onChangeName,
+  onChangeCooldown,
+  onAdd,
+  onCancel,
+}: Props) {
   const nameRef = useRef<import('react-native').TextInput>(null);
 
   return (
-    <KeyboardAvoidingView
-      behavior="padding" /* DO NOT change */
-    >
+    <KeyboardAvoidingView behavior="padding" /* DO NOT change */>
       <View style={styles.form}>
         <View style={styles.row}>
           <TextInput
@@ -40,6 +50,13 @@ export function AddBehaviorForm({ newIcon, newName, onChangeIcon, onChangeName, 
             autoFocus
             onSubmitEditing={onAdd}
             returnKeyType="done"
+          />
+        </View>
+        <View style={styles.cooldownSection}>
+          <Text style={styles.cooldownLabel}>Cooldown (optional)</Text>
+          <CooldownInput
+            cooldownMinutes={cooldownMinutes}
+            onChange={onChangeCooldown}
           />
         </View>
         <View style={styles.actions}>
@@ -89,6 +106,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 15,
+  },
+  cooldownSection: {
+    gap: 8,
+  },
+  cooldownLabel: {
+    color: '#888',
+    fontSize: 13,
+    fontWeight: '600',
   },
   actions: {
     flexDirection: 'row',

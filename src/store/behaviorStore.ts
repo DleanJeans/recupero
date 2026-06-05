@@ -13,7 +13,9 @@ interface BehaviorStore {
       | {
           uri: string;
         },
+    cooldownMinutes?: number,
   ) => void;
+  updateBehaviorCooldown: (behaviorId: string, cooldownMinutes: number) => void;
   logBehavior: (id: string, timestamp?: number, metadata?: Record<string, string | number>) => void;
   removeBehavior: (id: string) => void;
   removeLog: (behaviorId: string, logId: string) => void;
@@ -25,7 +27,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
   persist(
     (set, get) => ({
       behaviors: [],
-      addBehavior: (name, icon) =>
+      addBehavior: (name, icon, cooldownMinutes = 0) =>
         set((state) => ({
           behaviors: [
             ...state.behaviors,
@@ -36,6 +38,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               lastTimestamp: null,
               metadata: {},
               logs: [],
+              cooldownMinutes,
             },
           ],
         })),
@@ -77,6 +80,17 @@ export const useBehaviorStore = create<BehaviorStore>()(
                     b.logs.filter((log) => log.id !== logId).length > 0
                       ? Math.max(...b.logs.filter((log) => log.id !== logId).map((log) => log.timestamp))
                       : null,
+                }
+              : b,
+          ),
+        })),
+      updateBehaviorCooldown: (behaviorId, cooldownMinutes) =>
+        set((state) => ({
+          behaviors: state.behaviors.map((b) =>
+            b.id === behaviorId
+              ? {
+                  ...b,
+                  cooldownMinutes,
                 }
               : b,
           ),

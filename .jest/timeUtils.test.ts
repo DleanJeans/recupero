@@ -1,4 +1,36 @@
-import { formatElapsed } from '../src/utils/timeUtils';
+import { formatCooldown, formatElapsed } from '../src/utils/timeUtils';
+
+describe('formatCooldown', () => {
+  it('returns empty string for 0 or negative or NaN', () => {
+    expect(formatCooldown(0)).toBe('');
+    expect(formatCooldown(-5)).toBe('');
+    expect(formatCooldown(NaN)).toBe('');
+  });
+
+  it('returns "X min" for < 60 minutes', () => {
+    expect(formatCooldown(30)).toBe('30 min');
+    expect(formatCooldown(1)).toBe('1 min');
+    expect(formatCooldown(59)).toBe('59 min');
+  });
+
+  it('returns "X hr(s)" for 60-1439 minutes', () => {
+    expect(formatCooldown(60)).toBe('1 hr');
+    expect(formatCooldown(120)).toBe('2 hrs');
+    expect(formatCooldown(480)).toBe('8 hrs');
+  });
+
+  it('returns "X day(s)" for 1440-10079 minutes', () => {
+    expect(formatCooldown(1440)).toBe('1 day');
+    expect(formatCooldown(2880)).toBe('2 days');
+    expect(formatCooldown(7200)).toBe('5 days');
+  });
+
+  it('returns "X week(s)" for 10080+ minutes', () => {
+    expect(formatCooldown(10080)).toBe('1 week');
+    expect(formatCooldown(20160)).toBe('2 weeks');
+    expect(formatCooldown(40320)).toBe('4 weeks');
+  });
+});
 
 describe('formatElapsed', () => {
   beforeAll(() => {

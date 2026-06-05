@@ -15,4 +15,5 @@ export interface BehaviorEntry {
   lastTimestamp: number | null;
   metadata: Record<string, string | number>;
   logs: LogEntry[];
+  cooldownMinutes: number;
 }

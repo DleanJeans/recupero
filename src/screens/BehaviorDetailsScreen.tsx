@@ -3,12 +3,14 @@ import { type RouteProp, useNavigation, useRoute } from '@react-navigation/nativ
 import React, { useCallback, useState } from 'react';
 import { Alert, FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { CooldownInput } from '../components/CooldownInput';
 import { LogBehaviorModal } from '../components/LogBehaviorModal';
 import { LogItem } from '../components/LogItem';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { LogEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
+import { formatCooldown } from '../utils/timeUtils';
 
 type BehaviorDetailsRouteProp = RouteProp<RootStackParamList, 'BehaviorDetails'>;
 
@@ -17,9 +19,11 @@ export function BehaviorDetailsScreen() {
   const route = useRoute<BehaviorDetailsRouteProp>();
   const { behaviorId } = route.params;
 
-  const { behaviors, removeLog, updateLog } = useBehaviorStore();
+  const { behaviors, removeLog, updateLog, updateBehaviorCooldown } = useBehaviorStore();
   const behavior = behaviors.find((b) => b.id === behaviorId);
   const [editingLog, setEditingLog] = useState<LogEntry | null>(null);
+  const [editingCooldown, setEditingCooldown] = useState(false);
+  const [cooldownDraft, setCooldownDraft] = useState(0);
 
   const handleRemoveLog = useCallback(
     (logId: string) => {
@@ -101,6 +105,89 @@ export function BehaviorDetailsScreen() {
         </View>
       </View>
 
+      <View style={styles.cooldownRow}>
+        {behavior.cooldownMinutes ? (
+          <Text style={styles.cooldownDisplay}>{formatCooldown(behavior.cooldownMinutes)}</Text>
+        ) : null}
+        {editingCooldown ? (
+          <View style={styles.cooldownEditContainer}>
+            <CooldownInput
+              cooldownMinutes={cooldownDraft}
+              onChange={setCooldownDraft}
+            />
+            <View style={styles.cooldownEditActions}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.cooldownCancelBtn,
+                  pressed && {
+                    opacity: 0.6,
+                  },
+                ]}
+                onPress={() => {
+                  setCooldownDraft(behavior.cooldownMinutes);
+                  setEditingCooldown(false);
+                }}
+              >
+                <Text style={styles.cooldownCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.cooldownSaveBtn,
+                  pressed && {
+                    opacity: 0.85,
+                  },
+                ]}
+                onPress={() => {
+                  updateBehaviorCooldown(behaviorId, cooldownDraft);
+                  setEditingCooldown(false);
+                }}
+              >
+                <Text style={styles.cooldownSaveText}>Save</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : behavior.cooldownMinutes ? (
+          <Pressable
+            style={({ pressed }) => [
+              styles.cooldownEditBtn,
+              pressed && {
+                opacity: 0.6,
+              },
+            ]}
+            onPress={() => {
+              setCooldownDraft(behavior.cooldownMinutes);
+              setEditingCooldown(true);
+            }}
+          >
+            <Ionicons
+              name="create-outline"
+              size={18}
+              color="#aaa"
+            />
+          </Pressable>
+        ) : (
+          <Pressable
+            style={({ pressed }) => [
+              styles.addCooldownBtn,
+              pressed && {
+                opacity: 0.6,
+              },
+            ]}
+            onPress={() => {
+              setCooldownDraft(30);
+              setEditingCooldown(true);
+            }}
+          >
+            <Ionicons
+              name="add-circle-outline"
+              size={18}
+              color="#888"
+            />
+            <Text style={styles.addCooldownText}>Add Cooldown</Text>
+          </Pressable>
+        )}
+      </View>
+
       <FlatList
         data={sortedLogs}
         keyExtractor={(item) => item.id}
@@ -166,6 +253,67 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 20,
     fontWeight: '700',
+  },
+  cooldownRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  cooldownDisplay: {
+    color: '#888',
+    fontSize: 15,
+    fontWeight: '600',
+    flex: 1,
+  },
+  cooldownEditBtn: {
+    padding: 4,
+  },
+  cooldownEditContainer: {
+    flex: 1,
+    gap: 8,
+  },
+  cooldownEditActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  cooldownCancelBtn: {
+    flex: 1,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  cooldownCancelText: {
+    color: '#aaa',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  cooldownSaveBtn: {
+    flex: 1,
+    backgroundColor: '#EFEFEF',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  cooldownSaveText: {
+    color: '#111',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  addCooldownBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  addCooldownText: {
+    color: '#888',
+    fontSize: 14,
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,
