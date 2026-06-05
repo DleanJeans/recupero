@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Image, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,6 +24,22 @@ export function BehaviorDetailsScreen() {
   const behavior = behaviors.find((b) => b.id === behaviorId);
   const [editingLog, setEditingLog] = useState<LogEntry | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+
+  const behaviorCooldown = useMemo(
+    () =>
+      behavior && behavior.cooldownMinutes
+        ? {
+            minutes: behavior.cooldownMinutes,
+            lastTimestamp: behavior.lastTimestamp,
+            type: behavior.cooldownType,
+          }
+        : undefined,
+    [
+      behavior?.cooldownMinutes,
+      behavior?.lastTimestamp,
+      behavior?.cooldownType,
+    ],
+  );
 
   const handleRemoveLog = useCallback(
     (logId: string) => {
@@ -53,15 +69,7 @@ export function BehaviorDetailsScreen() {
           <BehaviorTitle
             icon={behavior.icon}
             name={behavior.name}
-            cooldown={
-              behavior.cooldownMinutes
-                ? {
-                    minutes: behavior.cooldownMinutes,
-                    lastTimestamp: behavior.lastTimestamp,
-                    type: behavior.cooldownType,
-                  }
-                : undefined
-            }
+            cooldown={behaviorCooldown}
           />
         ) : (
           <BehaviorTitle />
