@@ -18,7 +18,7 @@ function toDateString(timestamp: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export function LogItem({ log, onRemove, onEdit }: Props) {
+export function BehaviorLogItem({ log, onRemove, onEdit }: Props) {
   const [, setTick] = useState(0);
 
   useEffect(() => {
