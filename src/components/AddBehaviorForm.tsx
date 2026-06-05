@@ -39,93 +39,183 @@ export function AddBehaviorForm({
     <KeyboardAvoidingView behavior="padding" /* DO NOT change */>
       <View style={styles.form}>
         <View style={styles.row}>
-          <TextInput
-            style={styles.iconInput}
-            placeholder="🏃"
-            placeholderTextColor="#4a4a4a"
+          <BehaviorIconInput
             value={newIcon}
             onChangeText={onChangeIcon}
-            onSubmitEditing={() => nameRef.current?.focus()}
-            returnKeyType="next"
+            onNext={() => nameRef.current?.focus()}
           />
-          <TextInput
+          <BehaviorNameInput
             ref={nameRef}
-            style={styles.nameInput}
-            placeholder="Behavior name (e.g. Water, Push-ups)"
-            placeholderTextColor="#666"
             value={newName}
             onChangeText={onChangeName}
-            autoFocus
-            onSubmitEditing={onAdd}
-            returnKeyType="done"
+            onSubmit={onAdd}
           />
         </View>
         <View style={styles.cooldownSection}>
           <View style={styles.cooldownLabelRow}>
             <CooldownIcon size={14} />
             <Text style={styles.cooldownLabel}>Cooldown (optional)</Text>
-            <View style={styles.typeRow}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.typeBtn,
-                  cooldownType === 'rest' && styles.typeBtnRest,
-                  pressed && {
-                    opacity: 0.7,
-                  },
-                ]}
-                onPress={() => onChangeCooldownType('rest')}
-              >
-                <Text
-                  style={[
-                    styles.typeBtnText,
-                    cooldownType === 'rest' && styles.typeBtnTextRest,
-                  ]}
-                >
-                  Rest
-                </Text>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.typeBtn,
-                  cooldownType === 'limit' && styles.typeBtnLimit,
-                  pressed && {
-                    opacity: 0.7,
-                  },
-                ]}
-                onPress={() => onChangeCooldownType('limit')}
-              >
-                <Text
-                  style={[
-                    styles.typeBtnText,
-                    cooldownType === 'limit' && styles.typeBtnTextLimit,
-                  ]}
-                >
-                  Limit
-                </Text>
-              </Pressable>
-            </View>
+            <CooldownTypeToggle
+              value={cooldownType}
+              onChange={onChangeCooldownType}
+            />
           </View>
           <CooldownInput
             cooldownMinutes={cooldownMinutes}
             onChange={onChangeCooldown}
           />
         </View>
-        <View style={styles.actions}>
-          <Pressable
-            style={styles.cancelBtn}
-            onPress={onCancel}
-          >
-            <Text style={styles.cancelText}>Cancel</Text>
-          </Pressable>
-          <Pressable
-            style={styles.addBtn}
-            onPress={onAdd}
-          >
-            <Text style={styles.addText}>{submitLabel}</Text>
-          </Pressable>
-        </View>
+        <FormActions
+          onCancel={onCancel}
+          onSubmit={onAdd}
+          submitLabel={submitLabel}
+        />
       </View>
     </KeyboardAvoidingView>
+  );
+}
+
+interface BehaviorIconInputProps {
+  value: string;
+  onChangeText: (v: string) => void;
+  onNext: () => void;
+}
+function BehaviorIconInput({ value, onChangeText, onNext }: BehaviorIconInputProps) {
+  return (
+    <TextInput
+      style={styles.iconInput}
+      placeholder="🏃"
+      placeholderTextColor="#4a4a4a"
+      value={value}
+      onChangeText={onChangeText}
+      onSubmitEditing={onNext}
+      returnKeyType="next"
+    />
+  );
+}
+
+interface BehaviorNameInputProps {
+  value: string;
+  onChangeText: (v: string) => void;
+  onSubmit: () => void;
+}
+const BehaviorNameInput = React.forwardRef<import('react-native').TextInput, BehaviorNameInputProps>(
+  function BehaviorNameInput({ value, onChangeText, onSubmit }, ref) {
+    return (
+      <TextInput
+        ref={ref}
+        style={styles.nameInput}
+        placeholder="Behavior name (e.g. Water, Push-ups)"
+        placeholderTextColor="#666"
+        value={value}
+        onChangeText={onChangeText}
+        autoFocus
+        onSubmitEditing={onSubmit}
+        returnKeyType="done"
+      />
+    );
+  },
+);
+
+interface CooldownTypeToggleProps {
+  value: CooldownType;
+  onChange: (v: CooldownType) => void;
+}
+function CooldownTypeToggle({ value, onChange }: CooldownTypeToggleProps) {
+  return (
+    <View style={styles.typeRow}>
+      <TypeOption
+        label="Rest"
+        active={value === 'rest'}
+        activeBtnStyle={styles.typeBtnRest}
+        activeTextStyle={styles.typeBtnTextRest}
+        onPress={() => onChange('rest')}
+      />
+      <TypeOption
+        label="Limit"
+        active={value === 'limit'}
+        activeBtnStyle={styles.typeBtnLimit}
+        activeTextStyle={styles.typeBtnTextLimit}
+        onPress={() => onChange('limit')}
+      />
+    </View>
+  );
+}
+
+interface TypeOptionProps {
+  label: string;
+  active: boolean;
+  activeBtnStyle: object;
+  activeTextStyle: object;
+  onPress: () => void;
+}
+function TypeOption({ label, active, activeBtnStyle, activeTextStyle, onPress }: TypeOptionProps) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.typeBtn,
+        active && activeBtnStyle,
+        pressed && {
+          opacity: 0.7,
+        },
+      ]}
+      onPress={onPress}
+    >
+      <Text
+        style={[
+          styles.typeBtnText,
+          active && activeTextStyle,
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+interface CancelButtonProps {
+  onPress: () => void;
+}
+function CancelButton({ onPress }: CancelButtonProps) {
+  return (
+    <Pressable
+      style={styles.cancelBtn}
+      onPress={onPress}
+    >
+      <Text style={styles.cancelText}>Cancel</Text>
+    </Pressable>
+  );
+}
+
+interface ConfirmButtonProps {
+  onPress: () => void;
+  label: string;
+}
+function ConfirmButton({ onPress, label }: ConfirmButtonProps) {
+  return (
+    <Pressable
+      style={styles.addBtn}
+      onPress={onPress}
+    >
+      <Text style={styles.addText}>{label}</Text>
+    </Pressable>
+  );
+}
+
+interface FormActionsProps {
+  onCancel: () => void;
+  onSubmit: () => void;
+  submitLabel: string;
+}
+function FormActions({ onCancel, onSubmit, submitLabel }: FormActionsProps) {
+  return (
+    <View style={styles.actions}>
+      <CancelButton onPress={onCancel} />
+      <ConfirmButton
+        onPress={onSubmit}
+        label={submitLabel}
+      />
+    </View>
   );
 }
 
