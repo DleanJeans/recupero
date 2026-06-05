@@ -71,57 +71,115 @@ export function CooldownInput({ cooldownMinutes, onChange }: Props) {
 
   return (
     <View style={styles.row}>
-      <TextInput
-        style={styles.numberInput}
-        keyboardType="numeric"
+      <NumberInput
         value={displayValue}
         onChangeText={handleValueChange}
-        placeholder="0"
-        placeholderTextColor="#666"
-        selectTextOnFocus
       />
       <View style={styles.unitWrapper}>
-        <Pressable
-          style={styles.unitButton}
+        <UnitButton
+          unit={unit}
           onPress={() => setPickerOpen(!pickerOpen)}
-        >
-          <Text style={styles.unitText}>{unit}</Text>
-          <Text style={styles.chevron}>▼</Text>
-        </Pressable>
-        {pickerOpen && (
-          <>
-            <Pressable
-              style={styles.backdrop}
-              onPress={() => setPickerOpen(false)}
-            />
-            <View style={styles.dropdown}>
-              {UNITS.map((u) => (
-                <Pressable
-                  key={u}
-                  style={({ pressed }) => [
-                    styles.pickerOption,
-                    u === unit && styles.pickerOptionActive,
-                    pressed && {
-                      opacity: 0.6,
-                    },
-                  ]}
-                  onPress={() => handleUnitSelect(u)}
-                >
-                  <Text
-                    style={[
-                      styles.pickerOptionText,
-                      u === unit && styles.pickerOptionTextActive,
-                    ]}
-                  >
-                    {u}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </>
-        )}
+        />
+        <UnitPicker
+          open={pickerOpen}
+          currentUnit={unit}
+          onSelect={handleUnitSelect}
+          onClose={() => setPickerOpen(false)}
+        />
       </View>
     </View>
+  );
+}
+
+interface NumberInputProps {
+  value: string;
+  onChangeText: (text: string) => void;
+}
+function NumberInput({ value, onChangeText }: NumberInputProps) {
+  return (
+    <TextInput
+      style={styles.numberInput}
+      keyboardType="numeric"
+      value={value}
+      onChangeText={onChangeText}
+      placeholder="0"
+      placeholderTextColor="#666"
+      selectTextOnFocus
+    />
+  );
+}
+
+interface UnitButtonProps {
+  unit: CooldownUnit;
+  onPress: () => void;
+}
+function UnitButton({ unit, onPress }: UnitButtonProps) {
+  return (
+    <Pressable
+      style={styles.unitButton}
+      onPress={onPress}
+    >
+      <Text style={styles.unitText}>{unit}</Text>
+      <Text style={styles.chevron}>▼</Text>
+    </Pressable>
+  );
+}
+
+interface UnitPickerProps {
+  open: boolean;
+  currentUnit: CooldownUnit;
+  onSelect: (unit: CooldownUnit) => void;
+  onClose: () => void;
+}
+function UnitPicker({ open, currentUnit, onSelect, onClose }: UnitPickerProps) {
+  if (!open) return null;
+
+  return (
+    <>
+      <Pressable
+        style={styles.backdrop}
+        onPress={onClose}
+      />
+      <View style={styles.dropdown}>
+        {UNITS.map((u) => (
+          <UnitOption
+            key={u}
+            unit={u}
+            active={u === currentUnit}
+            onPress={() => onSelect(u)}
+          />
+        ))}
+      </View>
+    </>
+  );
+}
+
+interface UnitOptionProps {
+  unit: CooldownUnit;
+  active: boolean;
+  onPress: () => void;
+}
+function UnitOption({ unit, active, onPress }: UnitOptionProps) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.pickerOption,
+        active && styles.pickerOptionActive,
+        pressed && {
+          opacity: 0.6,
+        },
+      ]}
+      onPress={onPress}
+    >
+      <Text
+        style={[
+          styles.pickerOptionText,
+          active && styles.pickerOptionTextActive,
+        ]}
+      >
+        {unit}
+      </Text>
+    </Pressable>
   );
 }
 
