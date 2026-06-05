@@ -21,6 +21,7 @@ export function HomeScreen() {
   const [newIcon, setNewIcon] = useState('');
   const [loggingBehavior, setLoggingBehavior] = useState<BehaviorEntry | null>(null);
   const [newCooldown, setNewCooldown] = useState(60);
+  const [newCooldownType, setNewCooldownType] = useState<'rest' | 'limit'>('rest');
 
   const sortedBehaviors = useMemo(() => {
     return [
@@ -48,14 +49,16 @@ export function HomeScreen() {
           }
         : raw
       : undefined;
-    addBehavior(name, icon, newCooldown);
+    addBehavior(name, icon, newCooldown, newCooldownType);
     setNewName('');
     setNewIcon('');
-    setNewCooldown(0);
+    setNewCooldown(60);
+    setNewCooldownType('rest');
     setIsAdding(false);
   }, [
     newName,
     newIcon,
+    newCooldownType,
     newCooldown,
     addBehavior,
   ]);
@@ -107,9 +110,11 @@ export function HomeScreen() {
           newIcon={newIcon}
           newName={newName}
           cooldownMinutes={newCooldown}
+          cooldownType={newCooldownType}
           onChangeIcon={setNewIcon}
           onChangeName={setNewName}
           onChangeCooldown={setNewCooldown}
+          onChangeCooldownType={setNewCooldownType}
           onAdd={handleAdd}
           onCancel={() => setIsAdding(false)}
         />

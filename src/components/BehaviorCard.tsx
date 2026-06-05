@@ -38,6 +38,7 @@ export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
             name={behavior.name}
             lastTimestamp={behavior.lastTimestamp}
             cooldownMinutes={behavior.cooldownMinutes}
+            cooldownType={behavior.cooldownType}
           />
         </Pressable>
         <LogButton
@@ -69,8 +70,9 @@ interface BehaviorInfoProps {
   name: string;
   lastTimestamp: number | null;
   cooldownMinutes: number;
+  cooldownType?: 'rest' | 'limit';
 }
-function BehaviorInfo({ name, lastTimestamp, cooldownMinutes }: BehaviorInfoProps) {
+function BehaviorInfo({ name, lastTimestamp, cooldownMinutes, cooldownType }: BehaviorInfoProps) {
   return (
     <View style={styles.info}>
       <BehaviorName name={name} />
@@ -80,6 +82,7 @@ function BehaviorInfo({ name, lastTimestamp, cooldownMinutes }: BehaviorInfoProp
           <CooldownLabel
             minutes={cooldownMinutes}
             lastTimestamp={lastTimestamp}
+            cooldownType={cooldownType}
           />
         ) : null}
       </View>

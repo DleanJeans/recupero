@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import type { CooldownType } from '../utils/cooldownUtils';
 import { CooldownIcon } from './CooldownIcon';
 import { CooldownInput } from './CooldownInput';
 import { Text, TextInput } from './Text';
@@ -9,9 +10,11 @@ interface Props {
   newIcon: string;
   newName: string;
   cooldownMinutes: number;
+  cooldownType: CooldownType;
   onChangeIcon: (v: string) => void;
   onChangeName: (v: string) => void;
   onChangeCooldown: (v: number) => void;
+  onChangeCooldownType: (v: CooldownType) => void;
   onAdd: () => void;
   onCancel: () => void;
   submitLabel?: string;
@@ -21,9 +24,11 @@ export function AddBehaviorForm({
   newIcon,
   newName,
   cooldownMinutes,
+  cooldownType,
   onChangeIcon,
   onChangeName,
   onChangeCooldown,
+  onChangeCooldownType,
   onAdd,
   onCancel,
   submitLabel = 'Add',
@@ -59,6 +64,46 @@ export function AddBehaviorForm({
           <View style={styles.cooldownLabelRow}>
             <CooldownIcon size={14} />
             <Text style={styles.cooldownLabel}>Cooldown (optional)</Text>
+            <View style={styles.typeRow}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.typeBtn,
+                  cooldownType === 'rest' && styles.typeBtnRest,
+                  pressed && {
+                    opacity: 0.7,
+                  },
+                ]}
+                onPress={() => onChangeCooldownType('rest')}
+              >
+                <Text
+                  style={[
+                    styles.typeBtnText,
+                    cooldownType === 'rest' && styles.typeBtnTextRest,
+                  ]}
+                >
+                  Rest
+                </Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.typeBtn,
+                  cooldownType === 'limit' && styles.typeBtnLimit,
+                  pressed && {
+                    opacity: 0.7,
+                  },
+                ]}
+                onPress={() => onChangeCooldownType('limit')}
+              >
+                <Text
+                  style={[
+                    styles.typeBtnText,
+                    cooldownType === 'limit' && styles.typeBtnTextLimit,
+                  ]}
+                >
+                  Limit
+                </Text>
+              </Pressable>
+            </View>
           </View>
           <CooldownInput
             cooldownMinutes={cooldownMinutes}
@@ -124,6 +169,38 @@ const styles = StyleSheet.create({
   cooldownLabel: {
     color: '#888',
     fontSize: 13,
+    fontWeight: '600',
+  },
+  typeRow: {
+    flexDirection: 'row',
+    gap: 0,
+    marginLeft: 'auto',
+    borderRadius: 6,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  typeBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  typeBtnRest: {
+    backgroundColor: '#2E7D32',
+  },
+  typeBtnLimit: {
+    backgroundColor: '#C62828',
+  },
+  typeBtnText: {
+    color: '#666',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  typeBtnTextRest: {
+    color: '#A5D6A7',
+    fontWeight: '600',
+  },
+  typeBtnTextLimit: {
+    color: '#EF9A9A',
     fontWeight: '600',
   },
   actions: {

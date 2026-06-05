@@ -1,20 +1,22 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { getCooldownColor } from '../utils/cooldownUtils';
+import { type CooldownType, getCooldownColor } from '../utils/cooldownUtils';
 import { formatCooldown } from '../utils/timeUtils';
 import { CooldownIcon } from './CooldownIcon';
 
 interface Props {
   minutes: number;
   lastTimestamp?: number | null;
+  cooldownType?: CooldownType;
 }
 
-export function CooldownLabel({ minutes, lastTimestamp }: Props) {
+export function CooldownLabel({ minutes, lastTimestamp, cooldownType }: Props) {
   const color = useMemo(
-    () => getCooldownColor(minutes, lastTimestamp),
+    () => getCooldownColor(minutes, lastTimestamp, cooldownType),
     [
       minutes,
       lastTimestamp,
+      cooldownType,
     ],
   );
 

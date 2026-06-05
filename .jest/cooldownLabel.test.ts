@@ -10,7 +10,7 @@ afterAll(() => {
   jest.restoreAllMocks();
 });
 
-describe('getColor', () => {
+describe('getCooldownColor', () => {
   describe('no lastTimestamp', () => {
     it('returns MUTED for undefined', () => {
       expect(getCooldownColor(30, undefined)).toBe(COLORS.MUTED);
@@ -93,6 +93,28 @@ describe('getColor', () => {
         // 5 days ago, cooldown 3 days
         expect(getCooldownColor(3 * 24 * 60, NOW - 5 * 24 * 3600_000)).toBe(COLORS.YELLOW);
       });
+    });
+  });
+
+  describe('cooldownType = limit (inverted colors)', () => {
+    it('returns RED when within cooldown (opposite of rest)', () => {
+      // 10 min ago, cooldown 30 min
+      expect(getCooldownColor(30, NOW - 10 * 60_000, 'limit')).toBe(COLORS.RED);
+    });
+
+    it('returns YELLOW when past cooldown but within threshold', () => {
+      // 31 min ago, cooldown 30 min
+      expect(getCooldownColor(30, NOW - 31 * 60_000, 'limit')).toBe(COLORS.YELLOW);
+    });
+
+    it('returns GREEN when past 1 order of magnitude (opposite of rest)', () => {
+      // 25h ago, cooldown 30 min
+      expect(getCooldownColor(30, NOW - 25 * 3600_000, 'limit')).toBe(COLORS.GREEN);
+    });
+
+    it('returns GREEN at exactly 1 day boundary (limit)', () => {
+      // 24h ago, cooldown 30 min
+      expect(getCooldownColor(30, NOW - 24 * 3600_000, 'limit')).toBe(COLORS.GREEN);
     });
   });
 });

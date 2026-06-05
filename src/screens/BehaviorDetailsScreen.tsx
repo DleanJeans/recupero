@@ -54,6 +54,7 @@ export function BehaviorDetailsScreen() {
             name={behavior.name}
             cooldownMinutes={behavior.cooldownMinutes}
             lastTimestamp={behavior.lastTimestamp}
+            cooldownType={behavior.cooldownType}
           />
         ) : (
           <BehaviorTitle />
@@ -124,8 +125,9 @@ interface BehaviorTitleProps {
   name?: string;
   cooldownMinutes?: number;
   lastTimestamp?: number | null;
+  cooldownType?: 'rest' | 'limit';
 }
-function BehaviorTitle({ icon, name, cooldownMinutes, lastTimestamp }: BehaviorTitleProps) {
+function BehaviorTitle({ icon, name, cooldownMinutes, lastTimestamp, cooldownType }: BehaviorTitleProps) {
   if (!name) {
     return <Text style={styles.headerTitle}>Behavior Not Found</Text>;
   }
@@ -146,6 +148,7 @@ function BehaviorTitle({ icon, name, cooldownMinutes, lastTimestamp }: BehaviorT
           <CooldownLabel
             minutes={cooldownMinutes}
             lastTimestamp={lastTimestamp}
+            cooldownType={cooldownType}
           />
         ) : null}
       </View>
@@ -219,6 +222,7 @@ interface EditBehaviorModalProps {
         }
       | undefined;
     cooldownMinutes?: number;
+    cooldownType?: 'rest' | 'limit';
   }) => void;
   onClose: () => void;
 }
@@ -226,6 +230,7 @@ function EditBehaviorModal({ visible, behavior, onSave, onClose }: EditBehaviorM
   const [editIcon, setEditIcon] = useState('');
   const [editName, setEditName] = useState('');
   const [editCooldown, setEditCooldown] = useState(60);
+  const [editCooldownType, setEditCooldownType] = useState<'rest' | 'limit'>('rest');
 
   useEffect(() => {
     if (!visible) return;
@@ -238,6 +243,7 @@ function EditBehaviorModal({ visible, behavior, onSave, onClose }: EditBehaviorM
     setEditIcon(iconStr);
     setEditName(behavior.name);
     setEditCooldown(behavior.cooldownMinutes || 60);
+    setEditCooldownType(behavior.cooldownType || 'rest');
   }, [
     visible,
     behavior,
@@ -257,12 +263,14 @@ function EditBehaviorModal({ visible, behavior, onSave, onClose }: EditBehaviorM
       name: editName.trim(),
       icon,
       cooldownMinutes: editCooldown,
+      cooldownType: editCooldownType,
     });
     onClose();
   }, [
     editName,
     editIcon,
     editCooldown,
+    editCooldownType,
     onSave,
     onClose,
   ]);
@@ -292,9 +300,11 @@ function EditBehaviorModal({ visible, behavior, onSave, onClose }: EditBehaviorM
           newIcon={editIcon}
           newName={editName}
           cooldownMinutes={editCooldown}
+          cooldownType={editCooldownType}
           onChangeIcon={setEditIcon}
           onChangeName={setEditName}
           onChangeCooldown={setEditCooldown}
+          onChangeCooldownType={setEditCooldownType}
           onAdd={handleSave}
           onCancel={handleCancel}
           submitLabel="Save"

@@ -14,6 +14,7 @@ interface BehaviorStore {
           uri: string;
         },
     cooldownMinutes?: number,
+    cooldownType?: 'rest' | 'limit',
   ) => void;
   updateBehaviorCooldown: (behaviorId: string, cooldownMinutes: number) => void;
   updateBehavior: (
@@ -40,7 +41,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
   persist(
     (set, get) => ({
       behaviors: [],
-      addBehavior: (name, icon, cooldownMinutes = 0) =>
+      addBehavior: (name, icon, cooldownMinutes = 0, cooldownType = 'rest') =>
         set((state) => ({
           behaviors: [
             ...state.behaviors,
@@ -52,6 +53,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               metadata: {},
               logs: [],
               cooldownMinutes,
+              cooldownType,
             },
           ],
         })),

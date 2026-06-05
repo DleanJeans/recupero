@@ -16,4 +16,5 @@ export interface BehaviorEntry {
   metadata: Record<string, string | number>;
   logs: LogEntry[];
   cooldownMinutes: number;
+  cooldownType?: 'rest' | 'limit';
 }
