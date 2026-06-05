@@ -1,15 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Image, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddBehaviorForm } from '../components/AddBehaviorForm';
+import { BehaviorLogItem } from '../components/BehaviorLogItem';
 import { LogBehaviorModal } from '../components/LogBehaviorModal';
-import { LogItem } from '../components/LogItem';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
-import type { LogEntry } from '../types/behavior';
+import type { BehaviorEntry, LogEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
 
 type BehaviorDetailsRouteProp = RouteProp<RootStackParamList, 'BehaviorDetails'>;
@@ -23,9 +23,6 @@ export function BehaviorDetailsScreen() {
   const behavior = behaviors.find((b) => b.id === behaviorId);
   const [editingLog, setEditingLog] = useState<LogEntry | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editIcon, setEditIcon] = useState('');
-  const [editName, setEditName] = useState('');
-  const [editCooldown, setEditCooldown] = useState(60);
 
   const handleRemoveLog = useCallback(
     (logId: string) => {
@@ -47,7 +44,200 @@ export function BehaviorDetailsScreen() {
     ],
   );
 
-  const handleEditSave = useCallback(() => {
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <BackButton onPress={() => navigation.goBack()} />
+        {behavior ? (
+          <>
+            <BehaviorTitle
+              icon={behavior.icon}
+              name={behavior.name}
+            />
+            <EditButton onPress={() => setShowEditModal(true)} />
+          </>
+        ) : (
+          <BehaviorTitle />
+        )}
+      </View>
+
+      {behavior ? (
+        <>
+          <LogList
+            logs={behavior.logs}
+            onRemove={handleRemoveLog}
+            onEdit={setEditingLog}
+          />
+
+          <LogBehaviorModal
+            behaviorName={behavior.name}
+            visible={editingLog != null}
+            initialTimestamp={editingLog?.timestamp}
+            onConfirm={(timestamp) => {
+              if (editingLog) updateLog(behaviorId, editingLog.id, timestamp);
+              setEditingLog(null);
+            }}
+            onCancel={() => setEditingLog(null)}
+          />
+
+          <EditBehaviorModal
+            key={showEditModal ? 'open' : 'closed'}
+            visible={showEditModal}
+            behavior={behavior}
+            onSave={(updates) => updateBehavior(behaviorId, updates)}
+            onClose={() => setShowEditModal(false)}
+          />
+        </>
+      ) : null}
+    </SafeAreaView>
+  );
+}
+
+// ---- Header components ----
+
+interface BackButtonProps {
+  onPress: () => void;
+}
+
+function BackButton({ onPress }: BackButtonProps) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.backBtn,
+        pressed && {
+          opacity: 0.5,
+        },
+      ]}
+      onPress={onPress}
+    >
+      <Ionicons
+        name="chevron-back"
+        size={28}
+        color="#fff"
+      />
+    </Pressable>
+  );
+}
+
+interface BehaviorTitleProps {
+  icon?: BehaviorEntry['icon'];
+  name?: string;
+}
+
+function BehaviorTitle({ icon, name }: BehaviorTitleProps) {
+  if (!name) {
+    return <Text style={styles.headerTitle}>Behavior Not Found</Text>;
+  }
+
+  return (
+    <View style={styles.titleContainer}>
+      {icon && typeof icon === 'object' ? (
+        <Image
+          source={icon}
+          style={styles.iconImage}
+        />
+      ) : (
+        <Text style={styles.emoji}>{typeof icon === 'string' ? icon : '⏱️'}</Text>
+      )}
+      <Text style={styles.headerTitle}>{name}</Text>
+    </View>
+  );
+}
+
+interface EditButtonProps {
+  onPress: () => void;
+}
+
+function EditButton({ onPress }: EditButtonProps) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.editBehaviorBtn,
+        pressed && {
+          opacity: 0.5,
+        },
+      ]}
+      onPress={onPress}
+    >
+      <Ionicons
+        name="create-outline"
+        size={26}
+        color="#aaa"
+      />
+    </Pressable>
+  );
+}
+
+// ---- List component ----
+
+interface LogListProps {
+  logs: LogEntry[];
+  onRemove: (logId: string) => void;
+  onEdit: (log: LogEntry) => void;
+}
+
+function LogList({ logs, onRemove, onEdit }: LogListProps) {
+  const sortedLogs = [
+    ...logs,
+  ].sort((a, b) => b.timestamp - a.timestamp);
+
+  return (
+    <FlatList
+      data={sortedLogs}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => (
+        <BehaviorLogItem
+          log={item}
+          onRemove={() => onRemove(item.id)}
+          onEdit={() => onEdit(item)}
+        />
+      )}
+      ListEmptyComponent={<Text style={styles.empty}>No logs yet.{'\n'}Press the + button to log this behavior.</Text>}
+      contentContainerStyle={sortedLogs.length === 0 && styles.emptyContainer}
+    />
+  );
+}
+
+// ---- Modal components ----
+
+interface EditBehaviorModalProps {
+  visible: boolean;
+  behavior: BehaviorEntry;
+  onSave: (updates: {
+    name?: string;
+    icon?:
+      | string
+      | {
+          uri: string;
+        }
+      | undefined;
+    cooldownMinutes?: number;
+  }) => void;
+  onClose: () => void;
+}
+
+function EditBehaviorModal({ visible, behavior, onSave, onClose }: EditBehaviorModalProps) {
+  const [editIcon, setEditIcon] = useState('');
+  const [editName, setEditName] = useState('');
+  const [editCooldown, setEditCooldown] = useState(60);
+
+  useEffect(() => {
+    if (!visible) return;
+    const iconStr =
+      typeof behavior.icon === 'object' && behavior.icon !== null
+        ? behavior.icon.uri
+        : typeof behavior.icon === 'string'
+          ? behavior.icon
+          : '';
+    setEditIcon(iconStr);
+    setEditName(behavior.name);
+    setEditCooldown(behavior.cooldownMinutes || 60);
+  }, [
+    visible,
+    behavior,
+  ]);
+
+  const handleSave = useCallback(() => {
     if (!editName.trim()) return;
     const raw = editIcon.trim();
     const icon = raw
@@ -57,161 +247,54 @@ export function BehaviorDetailsScreen() {
           }
         : raw
       : undefined;
-    updateBehavior(behaviorId, {
+    onSave({
       name: editName.trim(),
       icon,
       cooldownMinutes: editCooldown,
     });
-    setShowEditModal(false);
+    onClose();
   }, [
-    behaviorId,
     editName,
     editIcon,
     editCooldown,
-    updateBehavior,
+    onSave,
+    onClose,
   ]);
 
-  if (!behavior) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.backBtn,
-              pressed && {
-                opacity: 0.5,
-              },
-            ]}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons
-              name="chevron-back"
-              size={28}
-              color="#fff"
-            />
-          </Pressable>
-          <Text style={styles.headerTitle}>Behavior Not Found</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const sortedLogs = [
-    ...behavior.logs,
-  ].sort((a, b) => b.timestamp - a.timestamp);
+  const handleCancel = useCallback(() => {
+    onClose();
+  }, [
+    onClose,
+  ]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.backBtn,
-            pressed && {
-              opacity: 0.5,
-            },
-          ]}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons
-            name="chevron-back"
-            size={28}
-            color="#fff"
-          />
-        </Pressable>
-        <View style={styles.titleContainer}>
-          {behavior.icon && typeof behavior.icon === 'object' ? (
-            <Image
-              source={behavior.icon}
-              style={styles.iconImage}
-            />
-          ) : (
-            <Text style={styles.emoji}>{typeof behavior.icon === 'string' ? behavior.icon : '⏱️'}</Text>
-          )}
-          <Text style={styles.headerTitle}>{behavior.name}</Text>
-        </View>
-        <Pressable
-          style={({ pressed }) => [
-            styles.editBehaviorBtn,
-            pressed && {
-              opacity: 0.5,
-            },
-          ]}
-          onPress={() => {
-            const iconStr =
-              typeof behavior.icon === 'object' && behavior.icon !== null
-                ? behavior.icon.uri
-                : typeof behavior.icon === 'string'
-                  ? behavior.icon
-                  : '';
-            setEditIcon(iconStr);
-            setEditName(behavior.name);
-            setEditCooldown(behavior.cooldownMinutes || 60);
-            setShowEditModal(true);
-          }}
-        >
-          <Ionicons
-            name="create-outline"
-            size={26}
-            color="#aaa"
-          />
-        </Pressable>
-      </View>
-
-      <FlatList
-        data={sortedLogs}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <LogItem
-            log={item}
-            onRemove={() => handleRemoveLog(item.id)}
-            onEdit={() => setEditingLog(item)}
-          />
-        )}
-        ListEmptyComponent={
-          <Text style={styles.empty}>No logs yet.{'\n'}Press the + button to log this behavior.</Text>
-        }
-        contentContainerStyle={sortedLogs.length === 0 && styles.emptyContainer}
-      />
-
-      <LogBehaviorModal
-        behaviorName={behavior.name}
-        visible={editingLog != null}
-        initialTimestamp={editingLog?.timestamp}
-        onConfirm={(timestamp) => {
-          if (editingLog) updateLog(behaviorId, editingLog.id, timestamp);
-          setEditingLog(null);
-        }}
-        onCancel={() => setEditingLog(null)}
-      />
-
-      <Modal
-        visible={showEditModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowEditModal(false)}
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={handleCancel}
+    >
+      <KeyboardAvoidingView
+        behavior="padding"
+        style={styles.editModalOverlay}
       >
-        <KeyboardAvoidingView
-          behavior="padding"
-          style={styles.editModalOverlay}
-        >
-          <Pressable
-            style={styles.editModalBackdrop}
-            onPress={() => setShowEditModal(false)}
-          />
-          <AddBehaviorForm
-            newIcon={editIcon}
-            newName={editName}
-            cooldownMinutes={editCooldown}
-            onChangeIcon={setEditIcon}
-            onChangeName={setEditName}
-            onChangeCooldown={setEditCooldown}
-            onAdd={handleEditSave}
-            onCancel={() => setShowEditModal(false)}
-            submitLabel="Save"
-          />
-        </KeyboardAvoidingView>
-      </Modal>
-    </SafeAreaView>
+        <Pressable
+          style={styles.editModalBackdrop}
+          onPress={handleCancel}
+        />
+        <AddBehaviorForm
+          newIcon={editIcon}
+          newName={editName}
+          cooldownMinutes={editCooldown}
+          onChangeIcon={setEditIcon}
+          onChangeName={setEditName}
+          onChangeCooldown={setEditCooldown}
+          onAdd={handleSave}
+          onCancel={handleCancel}
+          submitLabel="Save"
+        />
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
