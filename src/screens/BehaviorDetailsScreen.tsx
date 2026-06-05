@@ -15,7 +15,6 @@ import type { RootStackParamList } from '../types/navigation';
 import { formatCooldown } from '../utils/timeUtils';
 
 type BehaviorDetailsRouteProp = RouteProp<RootStackParamList, 'BehaviorDetails'>;
-
 export function BehaviorDetailsScreen() {
   const navigation = useNavigation();
   const route = useRoute<BehaviorDetailsRouteProp>();
@@ -125,7 +124,6 @@ interface BehaviorTitleProps {
   name?: string;
   cooldownMinutes?: number;
 }
-
 function BehaviorTitle({ icon, name, cooldownMinutes }: BehaviorTitleProps) {
   if (!name) {
     return <Text style={styles.headerTitle}>Behavior Not Found</Text>;
@@ -152,7 +150,6 @@ function BehaviorTitle({ icon, name, cooldownMinutes }: BehaviorTitleProps) {
 interface CooldownLabelProps {
   minutes: number;
 }
-
 function CooldownLabel({ minutes }: CooldownLabelProps) {
   return (
     <View style={styles.cooldownRow}>
@@ -165,7 +162,6 @@ function CooldownLabel({ minutes }: CooldownLabelProps) {
 interface EditButtonProps {
   onPress: () => void;
 }
-
 function EditButton({ onPress }: EditButtonProps) {
   return (
     <Pressable
@@ -193,7 +189,6 @@ interface LogListProps {
   onRemove: (logId: string) => void;
   onEdit: (log: LogEntry) => void;
 }
-
 function LogList({ logs, onRemove, onEdit }: LogListProps) {
   const sortedLogs = [
     ...logs,
@@ -233,7 +228,6 @@ interface EditBehaviorModalProps {
   }) => void;
   onClose: () => void;
 }
-
 function EditBehaviorModal({ visible, behavior, onSave, onClose }: EditBehaviorModalProps) {
   const [editIcon, setEditIcon] = useState('');
   const [editName, setEditName] = useState('');
