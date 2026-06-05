@@ -13,22 +13,22 @@ describe('formatCooldown', () => {
     expect(formatCooldown(59)).toBe('59 min');
   });
 
-  it('returns "X hr(s)" for 60-1439 minutes', () => {
-    expect(formatCooldown(60)).toBe('1 hr');
-    expect(formatCooldown(120)).toBe('2 hrs');
-    expect(formatCooldown(480)).toBe('8 hrs');
+  it('returns "Xh" for 60-1439 minutes', () => {
+    expect(formatCooldown(60)).toBe('1h');
+    expect(formatCooldown(120)).toBe('2h');
+    expect(formatCooldown(480)).toBe('8h');
   });
 
-  it('returns "X day(s)" for 1440-10079 minutes', () => {
-    expect(formatCooldown(1440)).toBe('1 day');
-    expect(formatCooldown(2880)).toBe('2 days');
-    expect(formatCooldown(7200)).toBe('5 days');
+  it('returns "Xd" for 1440-10079 minutes', () => {
+    expect(formatCooldown(1440)).toBe('1d');
+    expect(formatCooldown(2880)).toBe('2d');
+    expect(formatCooldown(7200)).toBe('5d');
   });
 
-  it('returns "X week(s)" for 10080+ minutes', () => {
-    expect(formatCooldown(10080)).toBe('1 week');
-    expect(formatCooldown(20160)).toBe('2 weeks');
-    expect(formatCooldown(40320)).toBe('4 weeks');
+  it('returns "Xw" for 10080+ minutes', () => {
+    expect(formatCooldown(10080)).toBe('1w');
+    expect(formatCooldown(20160)).toBe('2w');
+    expect(formatCooldown(40320)).toBe('4w');
   });
 });
 
@@ -67,10 +67,10 @@ describe('formatElapsed', () => {
 
   // ---- Today (same calendar day) ----
 
-  it('returns "Today - Xh ago" for same calendar day', () => {
-    expect(formatElapsed(Date.now() - 3 * 3600_000)).toBe('Today - 3h ago');
-    expect(formatElapsed(Date.now() - 1 * 3600_000)).toBe('Today - 1h ago');
-    expect(formatElapsed(Date.now() - 10 * 3600_000)).toBe('Today - 10h ago');
+  it('returns "Today · Xh ago" for same calendar day', () => {
+    expect(formatElapsed(Date.now() - 3 * 3600_000)).toBe('Today · 3h ago');
+    expect(formatElapsed(Date.now() - 1 * 3600_000)).toBe('Today · 1h ago');
+    expect(formatElapsed(Date.now() - 10 * 3600_000)).toBe('Today · 10h ago');
   });
 
   // ---- Yesterday ----
@@ -83,13 +83,13 @@ describe('formatElapsed', () => {
 
   // ---- Day of week (2-6 days ago, same month) ----
 
-  it('returns "DayName - Xd ago" for 2-6 days ago', () => {
+  it('returns "DayName · Xd ago" for 2-6 days ago', () => {
     // June 18 (Thursday), 2 days ago
-    expect(formatElapsed(Date.now() - 2 * 24 * 3600_000)).toBe('Thursday - 2d ago');
+    expect(formatElapsed(Date.now() - 2 * 24 * 3600_000)).toBe('Thursday · 2d ago');
     // June 15 (Monday), 5 days ago
-    expect(formatElapsed(Date.now() - 5 * 24 * 3600_000)).toBe('Monday - 5d ago');
+    expect(formatElapsed(Date.now() - 5 * 24 * 3600_000)).toBe('Monday · 5d ago');
     // June 14 (Sunday), 6 days ago
-    expect(formatElapsed(Date.now() - 6 * 24 * 3600_000)).toBe('Sunday - 6d ago');
+    expect(formatElapsed(Date.now() - 6 * 24 * 3600_000)).toBe('Sunday · 6d ago');
   });
 
   // ---- Last week (7-13 days ago, same month) ----
@@ -103,15 +103,15 @@ describe('formatElapsed', () => {
     expect(formatElapsed(Date.now() - 13 * 24 * 3600_000)).toBe('Last week');
   });
 
-  // ---- Last month - Xw ago (>= 7 days, in previous calendar month) ----
+  // ---- Last month · Xw ago (>= 7 days, in previous calendar month) ----
 
-  it('returns "Last month - Xw ago" for events in previous calendar month', () => {
+  it('returns "Last month · Xw ago" for events in previous calendar month', () => {
     // May 30 (Saturday), 21 days ago — in May (last month from June)
-    expect(formatElapsed(Date.now() - 21 * 24 * 3600_000)).toBe('Last month - 3w ago');
+    expect(formatElapsed(Date.now() - 21 * 24 * 3600_000)).toBe('Last month · 3w ago');
     // May 26 (Tuesday), 25 days ago
-    expect(formatElapsed(Date.now() - 25 * 24 * 3600_000)).toBe('Last month - 3w ago');
+    expect(formatElapsed(Date.now() - 25 * 24 * 3600_000)).toBe('Last month · 3w ago');
     // May 21 (Thursday), 30 days ago
-    expect(formatElapsed(Date.now() - 30 * 24 * 3600_000)).toBe('Last month - 4w ago');
+    expect(formatElapsed(Date.now() - 30 * 24 * 3600_000)).toBe('Last month · 4w ago');
   });
 
   // ---- Xw ago (14-59 days, NOT in last month) ----
@@ -130,13 +130,13 @@ describe('formatElapsed', () => {
     expect(formatElapsed(Date.now() - 90 * 24 * 3600_000)).toBe('3mo ago');
   });
 
-  // ---- Last year - Xmo ago (in previous calendar year, < 12 months) ----
+  // ---- Last year · Xmo ago (in previous calendar year, < 12 months) ----
 
-  it('returns "Last year - Xmo ago" for events in previous calendar year', () => {
+  it('returns "Last year · Xmo ago" for events in previous calendar year', () => {
     // July 25, 2025 — 330 days ago, in 2025, months = 11
-    expect(formatElapsed(Date.now() - 330 * 24 * 3600_000)).toBe('Last year - 11mo ago');
+    expect(formatElapsed(Date.now() - 330 * 24 * 3600_000)).toBe('Last year · 11mo ago');
     // December 2, 2025 — 200 days ago, months = 6
-    expect(formatElapsed(Date.now() - 200 * 24 * 3600_000)).toBe('Last year - 6mo ago');
+    expect(formatElapsed(Date.now() - 200 * 24 * 3600_000)).toBe('Last year · 6mo ago');
   });
 
   // ---- Xy ago (365+ days) ----
@@ -163,7 +163,7 @@ describe('formatElapsed — year boundary', () => {
     // January 5, 2027 — last calendar month is December 2026
     // December 25, 2026 (11 days ago, in December)
     const dec25 = new Date(2026, 11, 25, 14, 30, 0).getTime();
-    expect(formatElapsed(dec25)).toBe('Last month - 1w ago');
+    expect(formatElapsed(dec25)).toBe('Last month · 1w ago');
   });
 });
 
@@ -183,12 +183,12 @@ describe('formatElapsed — early month', () => {
     // June 1, 2026 — last month is May
     // May 25 (7 days ago)
     const may25 = new Date(2026, 4, 25, 14, 30, 0).getTime();
-    expect(formatElapsed(may25)).toBe('Last month - 1w ago');
+    expect(formatElapsed(may25)).toBe('Last month · 1w ago');
   });
 
   it('shows day name for 2-6 days ago even if in last month', () => {
     // June 1 is Monday. May 30 is Saturday (2 days ago, days=2, < 7)
     const may30 = new Date(2026, 4, 30, 14, 30, 0).getTime();
-    expect(formatElapsed(may30)).toBe('Saturday - 2d ago');
+    expect(formatElapsed(may30)).toBe('Saturday · 2d ago');
   });
 });
