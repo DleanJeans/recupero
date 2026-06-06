@@ -43,7 +43,7 @@ export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
   const renderLeftActions = () => (
     <Pressable
       style={({ pressed }) => [
-        styles.deleteButton,
+        styles.leftAction,
         pressed && {
           opacity: 0.8,
         },
@@ -55,7 +55,26 @@ export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
         size={24}
         color="#fff"
       />
-      <Text style={styles.deleteButtonText}>Delete</Text>
+      <Text style={styles.actionText}>Delete</Text>
+    </Pressable>
+  );
+
+  const renderRightActions = () => (
+    <Pressable
+      style={({ pressed }) => [
+        styles.rightAction,
+        pressed && {
+          opacity: 0.8,
+        },
+      ]}
+      onPress={onEdit}
+    >
+      <Ionicons
+        name="create-outline"
+        size={24}
+        color="#fff"
+      />
+      <Text style={styles.actionText}>Edit</Text>
     </Pressable>
   );
 
@@ -64,7 +83,9 @@ export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
   return (
     <Swipeable
       renderLeftActions={renderLeftActions}
+      renderRightActions={renderRightActions}
       overshootLeft={false}
+      overshootRight={false}
     >
       <View style={styles.logItem}>
         <View style={styles.logContent}>
@@ -73,17 +94,6 @@ export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
           </Text>
           <Text style={styles.elapsedText}>{formatElapsed(log.timestamp)}</Text>
         </View>
-        <Pressable
-          style={({ pressed }) => [styles.editBtn, pressed && styles.editBtnPressed]}
-          onPress={onEdit}
-          accessibilityLabel="Edit log"
-        >
-          <Ionicons
-            name="create-outline"
-            size={24}
-            color="#ccc"
-          />
-        </Pressable>
       </View>
     </Swipeable>
   );
@@ -118,21 +128,7 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 13,
   },
-  editBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  editBtnPressed: {
-    opacity: 0.5,
-    transform: [
-      {
-        scale: 0.92,
-      },
-    ],
-  },
-  deleteButton: {
+  leftAction: {
     backgroundColor: '#943030',
     justifyContent: 'center',
     alignItems: 'center',
@@ -144,7 +140,19 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 12,
     paddingRight: 28,
   },
-  deleteButtonText: {
+  rightAction: {
+    backgroundColor: '#3a6ea5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 100,
+    marginVertical: 6,
+    marginRight: 16,
+    marginLeft: -48,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+    paddingLeft: 28,
+  },
+  actionText: {
     color: '#fff',
     fontSize: 12,
     fontWeight: '600',
