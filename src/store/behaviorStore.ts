@@ -2,10 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { BehaviorEntry } from '../types/behavior';
+import type { BehaviorEntry, Category } from '../types/behavior';
 
 interface BehaviorStore {
   behaviors: BehaviorEntry[];
+  categories: Category[];
   addBehavior: (
     name: string,
     icon?:
@@ -15,6 +16,7 @@ interface BehaviorStore {
         },
     cooldownMinutes?: number,
     cooldownType?: 'rest' | 'limit',
+    categoryId?: string,
   ) => void;
   updateBehaviorCooldown: (behaviorId: string, cooldownMinutes: number) => void;
   updateBehavior: (
@@ -29,6 +31,7 @@ interface BehaviorStore {
         | undefined;
       cooldownMinutes?: number;
       cooldownType?: 'rest' | 'limit';
+      categoryId?: string | undefined;
     },
   ) => void;
   logBehavior: (id: string, timestamp?: number, metadata?: Record<string, string | number>) => void;
@@ -36,13 +39,17 @@ interface BehaviorStore {
   removeLog: (behaviorId: string, logId: string) => void;
   updateLog: (behaviorId: string, logId: string, timestamp: number) => void;
   getBehaviorLogs: (behaviorId: string) => BehaviorEntry['logs'];
+  addCategory: (name: string, emoji: string) => void;
+  removeCategory: (id: string) => void;
+  updateCategory: (id: string, updates: { name?: string; emoji?: string }) => void;
 }
 
 export const useBehaviorStore = create<BehaviorStore>()(
   persist(
     (set, get) => ({
       behaviors: [],
-      addBehavior: (name, icon, cooldownMinutes = 0, cooldownType = 'rest') =>
+      categories: [],
+      addBehavior: (name, icon, cooldownMinutes = 0, cooldownType = 'rest', categoryId) =>
         set((state) => ({
           behaviors: [
             ...state.behaviors,
@@ -50,6 +57,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               id: uuidv4(),
               name,
               icon,
+              categoryId,
               lastTimestamp: null,
               metadata: {},
               logs: [],
@@ -120,6 +128,30 @@ export const useBehaviorStore = create<BehaviorStore>()(
                   ...updates,
                 }
               : b,
+          ),
+        })),
+      addCategory: (name, emoji) =>
+        set((state) => ({
+          categories: [
+            ...state.categories,
+            {
+              id: uuidv4(),
+              name,
+              emoji,
+            },
+          ],
+        })),
+      removeCategory: (id) =>
+        set((state) => ({
+          categories: state.categories.filter((c) => c.id !== id),
+          behaviors: state.behaviors.map((b) =>
+            b.categoryId === id ? { ...b, categoryId: undefined } : b,
+          ),
+        })),
+      updateCategory: (id, updates) =>
+        set((state) => ({
+          categories: state.categories.map((c) =>
+            c.id === id ? { ...c, ...updates } : c,
           ),
         })),
       updateLog: (behaviorId, logId, timestamp) =>

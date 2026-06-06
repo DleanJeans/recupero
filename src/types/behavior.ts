@@ -1,3 +1,9 @@
+export interface Category {
+  id: string;
+  name: string;
+  emoji: string;
+}
+
 export interface LogEntry {
   id: string;
   timestamp: number;
@@ -12,6 +18,7 @@ export interface BehaviorEntry {
     | {
         uri: string;
       };
+  categoryId?: string;
   lastTimestamp: number | null;
   metadata: Record<string, string | number>;
   logs: LogEntry[];
