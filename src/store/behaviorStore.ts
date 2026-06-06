@@ -28,6 +28,7 @@ interface BehaviorStore {
           }
         | undefined;
       cooldownMinutes?: number;
+      cooldownType?: 'rest' | 'limit';
     },
   ) => void;
   logBehavior: (id: string, timestamp?: number, metadata?: Record<string, string | number>) => void;

@@ -15,13 +15,9 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const { behaviors, addBehavior, logBehavior, removeBehavior } = useBehaviorStore();
+  const { behaviors, logBehavior, removeBehavior } = useBehaviorStore();
   const [isAdding, setIsAdding] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newIcon, setNewIcon] = useState('');
   const [loggingBehavior, setLoggingBehavior] = useState<BehaviorEntry | null>(null);
-  const [newCooldown, setNewCooldown] = useState(60);
-  const [newCooldownType, setNewCooldownType] = useState<'rest' | 'limit'>('rest');
 
   const sortedBehaviors = useMemo(() => {
     return [
@@ -36,31 +32,6 @@ export function HomeScreen() {
     });
   }, [
     behaviors,
-  ]);
-
-  const handleAdd = useCallback(() => {
-    const name = newName.trim();
-    if (!name) return;
-    const raw = newIcon.trim();
-    const icon = raw
-      ? raw.startsWith('http://') || raw.startsWith('https://')
-        ? {
-            uri: raw,
-          }
-        : raw
-      : undefined;
-    addBehavior(name, icon, newCooldown, newCooldownType);
-    setNewName('');
-    setNewIcon('');
-    setNewCooldown(60);
-    setNewCooldownType('rest');
-    setIsAdding(false);
-  }, [
-    newName,
-    newIcon,
-    newCooldownType,
-    newCooldown,
-    addBehavior,
   ]);
 
   const handleRemove = useCallback(
@@ -106,18 +77,7 @@ export function HomeScreen() {
       />
 
       {isAdding ? (
-        <AddBehaviorForm
-          newIcon={newIcon}
-          newName={newName}
-          cooldownMinutes={newCooldown}
-          cooldownType={newCooldownType}
-          onChangeIcon={setNewIcon}
-          onChangeName={setNewName}
-          onChangeCooldown={setNewCooldown}
-          onChangeCooldownType={setNewCooldownType}
-          onAdd={handleAdd}
-          onCancel={() => setIsAdding(false)}
-        />
+        <AddBehaviorForm onClose={() => setIsAdding(false)} />
       ) : (
         <Pressable
           style={({ pressed }) => [

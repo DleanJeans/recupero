@@ -1,8 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo, useState } from 'react';
 import { Alert, FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddBehaviorForm } from '../components/AddBehaviorForm';
 import { BehaviorIcon } from '../components/BehaviorIcon';
@@ -24,17 +23,6 @@ interface BehaviorDetailsContextValues {
   saveLogEdit: (timestamp: number) => void;
   cancelLogEdit: () => void;
   removeLog: (logId: string) => void;
-  saveBehavior: (updates: {
-    name?: string;
-    icon?:
-      | string
-      | {
-          uri: string;
-        }
-      | undefined;
-    cooldownMinutes?: number;
-    cooldownType?: 'rest' | 'limit';
-  }) => void;
 }
 
 const BehaviorDetailsContext = createContext<BehaviorDetailsContextValues | null>(null);
@@ -50,7 +38,7 @@ export function BehaviorDetailsScreen() {
   const route = useRoute<BehaviorDetailsRouteProp>();
   const { behaviorId } = route.params;
 
-  const { behaviors, removeLog, updateLog, updateBehavior } = useBehaviorStore();
+  const { behaviors, removeLog, updateLog } = useBehaviorStore();
   const behavior = behaviors.find((b) => b.id === behaviorId);
   const [editingLog, setEditingLog] = useState<LogEntry | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -83,7 +71,6 @@ export function BehaviorDetailsScreen() {
       },
       cancelLogEdit: () => setEditingLog(null),
       removeLog: handleRemoveLog,
-      saveBehavior: (updates) => updateBehavior(behaviorId, updates),
     }),
     [
       behavior,
@@ -92,7 +79,6 @@ export function BehaviorDetailsScreen() {
       behaviorId,
       handleRemoveLog,
       updateLog,
-      updateBehavior,
     ],
   );
 
@@ -234,92 +220,26 @@ function LogBehaviorModalWrapper() {
 }
 
 function EditBehaviorModal() {
-  const { showEditModal, behavior, saveBehavior, closeEditModal } = useBehaviorDetails();
+  const { showEditModal, behavior, closeEditModal } = useBehaviorDetails();
   if (!behavior) return null;
-
-  const [editIcon, setEditIcon] = useState('');
-  const [editName, setEditName] = useState('');
-  const [editCooldown, setEditCooldown] = useState(60);
-  const [editCooldownType, setEditCooldownType] = useState<'rest' | 'limit'>('rest');
-
-  useEffect(() => {
-    if (!showEditModal || !behavior) return;
-    const iconStr =
-      typeof behavior.icon === 'object' && behavior.icon !== null
-        ? behavior.icon.uri
-        : typeof behavior.icon === 'string'
-          ? behavior.icon
-          : '';
-    setEditIcon(iconStr);
-    setEditName(behavior.name);
-    setEditCooldown(behavior.cooldownMinutes || 60);
-    setEditCooldownType(behavior.cooldownType || 'rest');
-  }, [
-    showEditModal,
-    behavior,
-  ]);
-
-  const handleSave = useCallback(() => {
-    if (!editName.trim()) return;
-    const raw = editIcon.trim();
-    const icon = raw
-      ? raw.startsWith('http://') || raw.startsWith('https://')
-        ? {
-            uri: raw,
-          }
-        : raw
-      : undefined;
-    saveBehavior({
-      name: editName.trim(),
-      icon,
-      cooldownMinutes: editCooldown,
-      cooldownType: editCooldownType,
-    });
-    closeEditModal();
-  }, [
-    editName,
-    editIcon,
-    editCooldown,
-    editCooldownType,
-    saveBehavior,
-    closeEditModal,
-  ]);
-
-  const handleCancel = useCallback(() => {
-    closeEditModal();
-  }, [
-    closeEditModal,
-  ]);
 
   return (
     <Modal
       visible={showEditModal}
       transparent
       animationType="slide"
-      onRequestClose={handleCancel}
+      onRequestClose={closeEditModal}
     >
-      <KeyboardAvoidingView
-        behavior="padding"
-        style={styles.editModalOverlay}
-      >
+      <View style={styles.editModalOverlay}>
         <Pressable
           style={styles.editModalBackdrop}
-          onPress={handleCancel}
+          onPress={closeEditModal}
         />
         <AddBehaviorForm
-          newIcon={editIcon}
-          newName={editName}
-          cooldownMinutes={editCooldown}
-          cooldownType={editCooldownType}
-          onChangeIcon={setEditIcon}
-          onChangeName={setEditName}
-          onChangeCooldown={setEditCooldown}
-          onChangeCooldownType={setEditCooldownType}
-          onAdd={handleSave}
-          onCancel={handleCancel}
-          submitLabel="Save"
+          behavior={behavior}
+          onClose={closeEditModal}
         />
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
