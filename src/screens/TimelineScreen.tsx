@@ -12,7 +12,7 @@ import type { BehaviorEntry, LogEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
 import type { RecencyGroup } from '../utils/behaviorUtils';
 import { GROUP_ORDER, getRecencyGroup } from '../utils/behaviorUtils';
-import { formatTime } from '../utils/timeUtils';
+import { formatCompactDate, formatTime, isOlderThanYesterday } from '../utils/timeUtils';
 
 interface TimelineEntry {
   log: LogEntry;
@@ -133,20 +133,30 @@ export function TimelineScreen() {
           sections.map(section => (
             <View key={section.title}>
               <SectionHeader title={section.title} hideLine={section.title === 'Today'} />
-              {section.data.map((group, index) => (
-                <React.Fragment key={group.minuteTimestamp}>
-                  <MinuteCircle
-                    group={group}
-                    isFirst={group === minuteGroups[0]}
-                    isLast={group === minuteGroups[minuteGroups.length - 1]}
-                  />
-                  {index < section.data.length - 1 &&
-                    group.gapMs != null &&
-                    group.gapMs >= 60_000 && (
-                      <GapRow gapMs={group.gapMs} />
-                    )}
-                </React.Fragment>
-              ))}
+              {section.data.map((group, index) => {
+                const prevGroup = index > 0 ? section.data[index - 1] : null;
+                const isFirstOfDay =
+                  !prevGroup ||
+                  !isSameCalendarDay(group.minuteTimestamp, prevGroup.minuteTimestamp);
+                const showDate =
+                  isOlderThanYesterday(group.minuteTimestamp) && isFirstOfDay;
+
+                return (
+                  <React.Fragment key={group.minuteTimestamp}>
+                    <MinuteCircle
+                      group={group}
+                      isFirst={group === minuteGroups[0]}
+                      isLast={group === minuteGroups[minuteGroups.length - 1]}
+                      showDate={showDate}
+                    />
+                    {index < section.data.length - 1 &&
+                      group.gapMs != null &&
+                      group.gapMs >= 60_000 && (
+                        <GapRow gapMs={group.gapMs} />
+                      )}
+                  </React.Fragment>
+                );
+              })}
             </View>
           ))
         )}
@@ -172,10 +182,11 @@ interface MinuteCircleProps {
   group: MinuteGroup;
   isFirst: boolean;
   isLast: boolean;
+  showDate?: boolean;
 }
 
 /** One circle on the timeline line representing all logs in a given minute. */
-function MinuteCircle({ group, isFirst, isLast }: MinuteCircleProps) {
+function MinuteCircle({ group, isFirst, isLast, showDate }: MinuteCircleProps) {
   return (
     <View style={styles.nodeContainer}>
       <View style={styles.lineColumn}>
@@ -187,7 +198,12 @@ function MinuteCircle({ group, isFirst, isLast }: MinuteCircleProps) {
       </View>
 
       <View style={styles.contentColumn}>
-        <Text style={styles.timeText}>{formatTime(group.minuteTimestamp)}</Text>
+        <Text style={styles.timeText}>
+          {formatTime(group.minuteTimestamp)}
+          {showDate && (
+            <> · {formatCompactDate(group.minuteTimestamp)}</>
+          )}
+        </Text>
 
         {group.entries.map(entry => (
           <View key={entry.log.id} style={styles.behaviorRow}>
@@ -199,6 +215,16 @@ function MinuteCircle({ group, isFirst, isLast }: MinuteCircleProps) {
         ))}
       </View>
     </View>
+  );
+}
+
+function isSameCalendarDay(a: number, b: number): boolean {
+  const dA = new Date(a);
+  const dB = new Date(b);
+  return (
+    dA.getFullYear() === dB.getFullYear() &&
+    dA.getMonth() === dB.getMonth() &&
+    dA.getDate() === dB.getDate()
   );
 }
 

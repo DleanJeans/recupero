@@ -107,6 +107,22 @@ function sub(primary: string, remaining: number, unit: string): string {
   return `${primary} ago`;
 }
 
+/** Compact date string for timeline: returns "Mar 5" for older-than-yesterday timestamps. */
+export function formatCompactDate(timestamp: number): string {
+  const date = new Date(timestamp);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+/** Check if a timestamp is from a previous calendar day (not today, not yesterday). */
+export function isOlderThanYesterday(timestamp: number): boolean {
+  const now = new Date();
+  const date = new Date(timestamp);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  return date < yesterday;
+}
+
 export function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
   if (totalSeconds < 60) return 'Just now';
