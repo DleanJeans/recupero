@@ -110,7 +110,7 @@ function BehaviorTitle() {
   return (
     <View style={styles.titleContainer}>
       <BehaviorIcon
-        icon={behavior.icon}
+        behavior={behavior}
         size={24}
       />
       <View style={styles.titleTextRow}>
@@ -174,18 +174,14 @@ function BehaviorLogList() {
 
 function EditLogModal() {
   const { behavior, editingLog, clearEditingLog } = useBehaviorDetails();
-  const { updateLog } = useBehaviorStore();
 
   return (
     <LogBehaviorModal
-      behaviorName={behavior.name}
+      behavior={behavior}
       visible={editingLog != null}
+      logId={editingLog?.id}
       initialTimestamp={editingLog?.timestamp}
-      onConfirm={timestamp => {
-        if (editingLog) updateLog(behavior.id, editingLog.id, timestamp);
-        clearEditingLog();
-      }}
-      onCancel={clearEditingLog}
+      onClose={clearEditingLog}
     />
   );
 }

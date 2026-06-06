@@ -3,11 +3,13 @@ import { Image, Text } from 'react-native';
 import type { BehaviorEntry } from '../types/behavior';
 
 interface Props {
-  icon: BehaviorEntry['icon'];
+  behavior: BehaviorEntry;
   size?: number;
 }
 
-export function BehaviorIcon({ icon, size = 32 }: Props) {
+export function BehaviorIcon({ behavior, size = 32 }: Props) {
+  const { icon } = behavior;
+
   if (icon && typeof icon === 'object') {
     return (
       <Image

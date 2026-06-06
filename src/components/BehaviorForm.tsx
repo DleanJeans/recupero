@@ -24,9 +24,7 @@ function iconFromStore(icon: BehaviorEntry['icon']): string {
 function iconForStore(raw: string): BehaviorEntry['icon'] {
   const trimmed = raw.trim();
   if (!trimmed) return undefined;
-  return trimmed.startsWith('http://') || trimmed.startsWith('https://')
-    ? { uri: trimmed }
-    : trimmed;
+  return trimmed.startsWith('http://') || trimmed.startsWith('https://') ? { uri: trimmed } : trimmed;
 }
 
 export function BehaviorForm({ behavior, onClose }: Props) {
@@ -103,7 +101,7 @@ export function BehaviorForm({ behavior, onClose }: Props) {
   );
 }
 
-// ---- Sub-components ----
+// #region Sub-components
 
 interface IconInputProps {
   value: string;
@@ -129,23 +127,24 @@ interface NameInputProps {
   onChangeText: (v: string) => void;
   onSubmit: () => void;
 }
-const NameInput = React.forwardRef<import('react-native').TextInput, NameInputProps>(
-  function NameInput({ value, onChangeText, onSubmit }, ref) {
-    return (
-      <TextInput
-        ref={ref}
-        style={styles.nameInput}
-        placeholder="Behavior name (e.g. Water, Push-ups)"
-        placeholderTextColor="#666"
-        value={value}
-        onChangeText={onChangeText}
-        autoFocus
-        onSubmitEditing={onSubmit}
-        returnKeyType="done"
-      />
-    );
-  },
-);
+const NameInput = React.forwardRef<import('react-native').TextInput, NameInputProps>(function NameInput(
+  { value, onChangeText, onSubmit },
+  ref,
+) {
+  return (
+    <TextInput
+      ref={ref}
+      style={styles.nameInput}
+      placeholder="Behavior name (e.g. Water, Push-ups)"
+      placeholderTextColor="#666"
+      value={value}
+      onChangeText={onChangeText}
+      autoFocus
+      onSubmitEditing={onSubmit}
+      returnKeyType="done"
+    />
+  );
+});
 
 interface CooldownTypeToggleProps {
   value: CooldownType;
@@ -191,14 +190,7 @@ function TypeOption({ label, active, activeBtnStyle, activeTextStyle, onPress }:
       ]}
       onPress={onPress}
     >
-      <Text
-        style={[
-          styles.typeBtnText,
-          active && activeTextStyle,
-        ]}
-      >
-        {label}
-      </Text>
+      <Text style={[styles.typeBtnText, active && activeTextStyle]}>{label}</Text>
     </Pressable>
   );
 }
@@ -241,6 +233,7 @@ function FormActions({ onCancel, onSubmit, submitLabel }: FormActionsProps) {
     </View>
   );
 }
+// #endregion
 
 const styles = StyleSheet.create({
   form: {

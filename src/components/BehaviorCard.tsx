@@ -20,13 +20,13 @@ interface Props {
 }
 export function BehaviorCard({ behavior }: Props) {
   const navigation = useNavigation<NavProp>();
-  const { logBehavior, removeBehavior } = useBehaviorStore();
+  const { removeBehavior } = useBehaviorStore();
   const swipeableRef = useRef<Swipeable>(null);
   const [, setTick] = useState(0);
-  const [logVisible, setLogVisible] = useState(false);
+  const [logModalVisible, setLogModalVisible] = useState(false);
 
   useEffect(() => {
-    const interval = setInterval(() => setTick((t) => t + 1), 1000);
+    const interval = setInterval(() => setTick(t => t + 1), 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -42,9 +42,8 @@ export function BehaviorCard({ behavior }: Props) {
     ]);
   };
 
-  const handleLog = (timestamp: number) => {
-    logBehavior(behavior.id, timestamp);
-    setLogVisible(false);
+  const handlePress = () => {
+    navigation.navigate('BehaviorDetails', { behaviorId: behavior.id });
   };
 
   return (
@@ -57,32 +56,32 @@ export function BehaviorCard({ behavior }: Props) {
         <View style={styles.card}>
           <Pressable
             style={styles.content}
-            onPress={() => navigation.navigate('BehaviorDetails', { behaviorId: behavior.id })}
+            onPress={handlePress}
           >
             <BehaviorIcon
-              icon={behavior.icon}
+              behavior={behavior}
               size={32}
             />
             <BehaviorInfo behavior={behavior} />
           </Pressable>
+
           <LogButton
-            name={behavior.name}
-            onLog={() => setLogVisible(true)}
+            behavior={behavior}
+            onPress={() => setLogModalVisible(true)}
           />
         </View>
       </Swipeable>
 
       <LogBehaviorModal
-        behaviorName={behavior.name}
-        visible={logVisible}
-        onConfirm={handleLog}
-        onCancel={() => setLogVisible(false)}
+        behavior={behavior}
+        visible={logModalVisible}
+        onClose={() => setLogModalVisible(false)}
       />
     </>
   );
 }
 
-// ---- Sub-components ----
+// #region Sub-components
 
 interface BehaviorInfoProps {
   behavior: BehaviorEntry;
@@ -90,9 +89,9 @@ interface BehaviorInfoProps {
 function BehaviorInfo({ behavior }: BehaviorInfoProps) {
   return (
     <View style={styles.info}>
-      <BehaviorName name={behavior.name} />
+      <BehaviorName behavior={behavior} />
       <View style={styles.elapsedRow}>
-        <BehaviorElapsed lastTimestamp={behavior.lastTimestamp} />
+        <BehaviorElapsed behavior={behavior} />
         <CooldownLabel behavior={behavior} />
       </View>
     </View>
@@ -100,32 +99,29 @@ function BehaviorInfo({ behavior }: BehaviorInfoProps) {
 }
 
 interface BehaviorNameProps {
-  name: string;
+  behavior: BehaviorEntry;
 }
-function BehaviorName({ name }: BehaviorNameProps) {
-  return <Text style={styles.name}>{name}</Text>;
+function BehaviorName({ behavior }: BehaviorNameProps) {
+  return <Text style={styles.name}>{behavior.name}</Text>;
 }
 
 interface BehaviorElapsedProps {
-  lastTimestamp: number | null;
+  behavior: BehaviorEntry;
 }
-function BehaviorElapsed({ lastTimestamp }: BehaviorElapsedProps) {
-  return <Text style={styles.elapsed}>{formatElapsed(lastTimestamp)}</Text>;
+function BehaviorElapsed({ behavior }: BehaviorElapsedProps) {
+  return <Text style={styles.elapsed}>{formatElapsed(behavior.lastTimestamp)}</Text>;
 }
 
 interface LogButtonProps {
-  name: string;
-  onLog: () => void;
+  behavior: BehaviorEntry;
+  onPress: () => void;
 }
-function LogButton({ name, onLog }: LogButtonProps) {
+function LogButton({ behavior, onPress }: LogButtonProps) {
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.logBtn,
-        pressed && styles.logBtnPressed,
-      ]}
-      onPress={onLog}
-      accessibilityLabel={`Log ${name}`}
+      style={({ pressed }) => [styles.logBtn, pressed && styles.logBtnPressed]}
+      onPress={onPress}
+      accessibilityLabel={`Log ${behavior.name}`}
     >
       <Ionicons
         name="add-circle-outline"
@@ -159,6 +155,7 @@ function SwipeDelete({ onRemove }: SwipeDeleteProps) {
     </Pressable>
   );
 }
+// #endregion
 
 const styles = StyleSheet.create({
   card: {
