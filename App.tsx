@@ -8,13 +8,12 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAppFonts } from './src/hooks/useAppFonts';
 import { BehaviorDetailsScreen } from './src/screens/BehaviorDetailsScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
+import { SettingsScreen } from './src/screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator();
 
 const linking = {
-  prefixes: [
-    'exp+recupero://',
-  ],
+  prefixes: ['exp+recupero://'],
   config: {
     screens: {
       Home: 'home',
@@ -49,6 +48,10 @@ export default function App() {
               <Stack.Screen
                 name="BehaviorDetails"
                 component={BehaviorDetailsScreen}
+              />
+              <Stack.Screen
+                name="Settings"
+                component={SettingsScreen}
               />
             </Stack.Navigator>
           </NavigationContainer>

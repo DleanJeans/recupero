@@ -1,17 +1,10 @@
-const DAY_NAMES = [
-  'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-];
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-export function formatTime(timestamp: number): string {
+export function formatTime(timestamp: number, hour12?: boolean): string {
   return new Date(timestamp).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
+    hour12: hour12 ?? true,
   });
 }
 

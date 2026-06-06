@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useBehaviorStore } from '../store/behaviorStore';
+import { useSettingsStore } from '../store/settingsStore';
 import type { LogEntry } from '../types/behavior';
 import { formatElapsedNumeric, formatTime } from '../utils/timeUtils';
 import { Text } from './Text';
@@ -27,6 +28,7 @@ export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
   }, []);
 
   const { removeLog } = useBehaviorStore();
+  const { timeFormat } = useSettingsStore();
 
   const handleRemove = () => {
     Alert.alert('Remove Log', 'Remove this log entry?', [
@@ -90,9 +92,7 @@ export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
         delayLongPress={300}
       >
         <View style={styles.logContent}>
-          <Text style={styles.dateText}>
-            {formatTime(log.timestamp)}
-          </Text>
+          <Text style={styles.dateText}>{formatTime(log.timestamp, timeFormat === '12h')}</Text>
           <Text style={styles.elapsedText}>{formatElapsedNumeric(log.timestamp)}</Text>
         </View>
       </Pressable>

@@ -1,5 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useMemo, useState } from 'react';
-import { SectionList, StyleSheet, View } from 'react-native';
+import { Pressable, SectionList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddBehaviorButton } from '../components/AddBehaviorButton';
 import { BehaviorCard } from '../components/BehaviorCard';
@@ -9,26 +12,24 @@ import { Text } from '../components/Text';
 import { useBackGuard } from '../hooks/useBackGuard';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
+import type { RootStackParamList } from '../types/navigation';
 import { groupBehaviorsByRecency } from '../utils/behaviorUtils';
 
 export function HomeScreen() {
-  useBackGuard()
+  useBackGuard();
   const { behaviors, categories } = useBehaviorStore();
   const [showAddButton, setShowAddButton] = useState(true);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   // Reset selection if the selected category no longer exists
   useEffect(() => {
-    if (selectedCategoryId !== null && !categories.some((c) => c.id === selectedCategoryId)) {
+    if (selectedCategoryId !== null && !categories.some(c => c.id === selectedCategoryId)) {
       setSelectedCategoryId(null);
     }
   }, [categories, selectedCategoryId]);
 
   const filteredBehaviors = useMemo(
-    () =>
-      selectedCategoryId === null
-        ? behaviors
-        : behaviors.filter((b) => b.categoryId === selectedCategoryId),
+    () => (selectedCategoryId === null ? behaviors : behaviors.filter(b => b.categoryId === selectedCategoryId)),
     [behaviors, selectedCategoryId],
   );
 
@@ -59,7 +60,23 @@ export function HomeScreen() {
 }
 
 function Title() {
-  return <Text style={styles.title}>Recupero</Text>;
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  return (
+    <View style={styles.titleRow}>
+      <Text style={styles.title}>Recupero</Text>
+      <Pressable
+        style={({ pressed }) => [styles.settingsBtn, pressed && { opacity: 0.5 }]}
+        onPress={() => navigation.navigate('Settings')}
+      >
+        <Ionicons
+          name="settings-outline"
+          size={24}
+          color="#888"
+        />
+      </Pressable>
+    </View>
+  );
 }
 
 interface BehaviorListProps {
@@ -101,14 +118,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#121212',
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 16,
+  },
   title: {
     color: '#fff',
     fontSize: 34,
     fontWeight: 'bold',
     letterSpacing: -0.5,
-    marginHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 16,
+  },
+  settingsBtn: {
+    padding: 4,
   },
   emptyContainer: {
     flex: 1,

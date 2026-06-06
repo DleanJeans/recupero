@@ -3,4 +3,5 @@ export type RootStackParamList = {
   BehaviorDetails: {
     behaviorId: string;
   };
+  Settings: undefined;
 };
