@@ -5,12 +5,11 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { LogEntry } from '../types/behavior';
 import { formatDateDisplay } from '../utils/dateUtils';
-import { formatDuration, formatElapsed, formatTime } from '../utils/timeUtils';
+import { formatElapsed, formatTime } from '../utils/timeUtils';
 import { Text } from './Text';
 
 interface Props {
   log: LogEntry;
-  nextLogTimestamp?: number;
   behaviorId: string;
   onEdit: () => void;
 }
@@ -20,7 +19,7 @@ function toDateString(timestamp: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export function BehaviorLogItem({ log, nextLogTimestamp, behaviorId, onEdit }: Props) {
+export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -62,9 +61,6 @@ export function BehaviorLogItem({ log, nextLogTimestamp, behaviorId, onEdit }: P
 
   const dateString = toDateString(log.timestamp);
 
-  const distanceLabel =
-    nextLogTimestamp != null ? formatDuration(nextLogTimestamp - log.timestamp) : null;
-
   return (
     <Swipeable
       renderLeftActions={renderLeftActions}
@@ -72,7 +68,9 @@ export function BehaviorLogItem({ log, nextLogTimestamp, behaviorId, onEdit }: P
     >
       <View style={styles.logItem}>
         <View style={styles.logContent}>
-          <Text style={styles.dateText}>{formatDateDisplay(dateString)} · {formatTime(log.timestamp)}</Text>
+          <Text style={styles.dateText}>
+            {formatDateDisplay(dateString)} · {formatTime(log.timestamp)}
+          </Text>
           <Text style={styles.elapsedText}>{formatElapsed(log.timestamp)}</Text>
         </View>
         <Pressable
@@ -87,13 +85,6 @@ export function BehaviorLogItem({ log, nextLogTimestamp, behaviorId, onEdit }: P
           />
         </Pressable>
       </View>
-      {distanceLabel && (
-        <View style={styles.distanceRow}>
-          <View style={styles.distanceLine} />
-          <Text style={styles.distanceText}>{distanceLabel}</Text>
-          <View style={styles.distanceLine} />
-        </View>
-      )}
     </Swipeable>
   );
 }
@@ -140,23 +131,6 @@ const styles = StyleSheet.create({
         scale: 0.92,
       },
     ],
-  },
-  distanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 32,
-    marginVertical: 2,
-  },
-  distanceLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#333',
-  },
-  distanceText: {
-    color: '#666',
-    fontSize: 12,
-    fontWeight: '500',
-    marginHorizontal: 10,
   },
   deleteButton: {
     backgroundColor: '#943030',

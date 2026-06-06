@@ -7,6 +7,7 @@ import { BehaviorForm } from '../components/BehaviorForm';
 import { BehaviorIcon } from '../components/BehaviorIcon';
 import { BehaviorLogItem } from '../components/BehaviorLogItem';
 import { CooldownLabel } from '../components/CooldownLabel';
+import { DistanceIndicator } from '../components/DistanceIndicator';
 import { LogBehaviorModal } from '../components/LogBehaviorModal';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
@@ -157,12 +158,14 @@ function BehaviorLogList() {
       data={sortedLogs}
       keyExtractor={item => item.id}
       renderItem={({ item, index }) => (
-        <BehaviorLogItem
-          log={item}
-          behaviorId={behavior.id}
-          nextLogTimestamp={index > 0 ? sortedLogs[index - 1].timestamp : undefined}
-          onEdit={() => startEditingLog(item)}
-        />
+        <>
+          {index > 0 && <DistanceIndicator durationMs={sortedLogs[index - 1].timestamp - item.timestamp} />}
+          <BehaviorLogItem
+            log={item}
+            behaviorId={behavior.id}
+            onEdit={() => startEditingLog(item)}
+          />
+        </>
       )}
       ListEmptyComponent={<Text style={styles.empty}>No logs yet.{'\n'}Press the + button to log this behavior.</Text>}
       contentContainerStyle={sortedLogs.length === 0 && styles.emptyContainer}
