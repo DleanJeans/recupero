@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
+import { useBehaviorStore } from '../store/behaviorStore';
+import type { BehaviorEntry } from '../types/behavior';
 import { formatDateDisplay } from '../utils/dateUtils';
 import { Text } from './Text';
 
@@ -47,9 +49,7 @@ function Wheel({ values, initialIndex, onChange }: WheelProps) {
       });
     }, 50);
     return () => clearTimeout(timer);
-  }, [
-    initialIndex,
-  ]);
+  }, [initialIndex]);
 
   const onScrollEnd = useCallback(
     (e: {
@@ -62,10 +62,7 @@ function Wheel({ values, initialIndex, onChange }: WheelProps) {
       const index = Math.max(0, Math.min(Math.round(e.nativeEvent.contentOffset.y / ITEM_HEIGHT), values.length - 1));
       onChange(index);
     },
-    [
-      onChange,
-      values.length,
-    ],
+    [onChange, values.length],
   );
 
   return (
@@ -84,7 +81,7 @@ function Wheel({ values, initialIndex, onChange }: WheelProps) {
           paddingVertical: PAD,
         }}
       >
-        {values.map((v) => (
+        {values.map(v => (
           <View
             key={v}
             style={wStyles.item}
@@ -121,21 +118,20 @@ const wStyles = StyleSheet.create({
   text: {
     color: '#ccc',
     fontSize: 22,
-    fontVariant: [
-      'tabular-nums',
-    ],
+    fontVariant: ['tabular-nums'],
   },
 });
 
 interface Props {
-  behaviorName: string;
+  behavior: BehaviorEntry;
   visible: boolean;
+  /** If provided, the modal updates the existing log instead of creating a new one. */
+  logId?: string;
   initialTimestamp?: number;
-  onConfirm: (timestamp: number) => void;
-  onCancel: () => void;
+  onClose: () => void;
 }
 
-export function LogBehaviorModal({ behaviorName, visible, initialTimestamp, onConfirm, onCancel }: Props) {
+export function LogBehaviorModal({ behavior, visible, logId, initialTimestamp, onClose }: Props) {
   const nowRef = useRef(new Date());
   const todayStr = toDateString(nowRef.current);
 
@@ -151,41 +147,36 @@ export function LogBehaviorModal({ behaviorName, visible, initialTimestamp, onCo
 
   useEffect(() => {
     if (hour > maxHour) setHour(maxHour);
-  }, [
-    maxHour,
-  ]);
+  }, [maxHour]);
 
   useEffect(() => {
     if (minute > maxMinute) setMinute(maxMinute);
-  }, [
-    maxMinute,
-  ]);
+  }, [maxMinute]);
 
   useEffect(() => {
     if (visible) {
       const n = initialTimestamp ? new Date(initialTimestamp) : new Date();
       nowRef.current = new Date();
       setSelectedDate(toDateString(n));
-      setHour(n.getHours());
+      setHour(initialTimestamp ? n.getHours() : 0);
       setMinute(n.getMinutes());
       setCalendarVisible(false);
-      setWheelKey((k) => k + 1);
+      setWheelKey(k => k + 1);
     }
-  }, [
-    visible,
-    initialTimestamp,
-  ]);
+  }, [visible, initialTimestamp]);
+
+  const { logBehavior, updateLog } = useBehaviorStore();
 
   const handleConfirm = useCallback(() => {
     const [y, m, d] = selectedDate.split('-').map(Number);
     const ts = new Date(y, m - 1, d, hour, minute, 0, 0).getTime();
-    onConfirm(ts);
-  }, [
-    selectedDate,
-    hour,
-    minute,
-    onConfirm,
-  ]);
+    if (logId) {
+      updateLog(behavior.id, logId, ts);
+    } else {
+      logBehavior(behavior.id, ts);
+    }
+    onClose();
+  }, [selectedDate, hour, minute, logId, behavior.id, logBehavior, updateLog, onClose]);
 
   const hourValues = ALL_HOURS.slice(0, maxHour + 1);
   const minuteValues = ALL_MINUTES.slice(0, maxMinute + 1);
@@ -195,15 +186,15 @@ export function LogBehaviorModal({ behaviorName, visible, initialTimestamp, onCo
       visible={visible}
       transparent
       animationType="slide"
-      onRequestClose={onCancel}
+      onRequestClose={onClose}
     >
       <Pressable
         style={styles.backdrop}
-        onPress={onCancel}
+        onPress={onClose}
       />
       <View style={styles.sheet}>
         <Text style={styles.title}>
-          {initialTimestamp ? 'Edit' : 'Log'} "{behaviorName}"
+          {initialTimestamp ? 'Edit' : 'Log'} "{behavior.name}"
         </Text>
 
         <Text style={styles.sectionLabel}>Date</Text>
@@ -249,7 +240,7 @@ export function LogBehaviorModal({ behaviorName, visible, initialTimestamp, onCo
                 ],
               },
             ]}
-            onPress={onCancel}
+            onPress={onClose}
           >
             <Text style={styles.cancelText}>Cancel</Text>
           </Pressable>
@@ -287,7 +278,7 @@ export function LogBehaviorModal({ behaviorName, visible, initialTimestamp, onCo
             <Calendar
               maxDate={todayStr}
               current={selectedDate}
-              onDayPress={(day) => {
+              onDayPress={day => {
                 setSelectedDate(day.dateString);
                 setCalendarVisible(false);
               }}

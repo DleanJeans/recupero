@@ -1,55 +1,87 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
+import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
+import type { RootStackParamList } from '../types/navigation';
 import { formatElapsed } from '../utils/timeUtils';
 import { BehaviorIcon } from './BehaviorIcon';
 import { CooldownLabel } from './CooldownLabel';
+import { LogBehaviorModal } from './LogBehaviorModal';
 import { Text } from './Text';
+
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface Props {
   behavior: BehaviorEntry;
-  onLog: () => void;
-  onRemove: () => void;
-  onPress?: () => void;
 }
-export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
+export function BehaviorCard({ behavior }: Props) {
+  const navigation = useNavigation<NavProp>();
+  const { removeBehavior } = useBehaviorStore();
   const swipeableRef = useRef<Swipeable>(null);
   const [, setTick] = useState(0);
+  const [logModalVisible, setLogModalVisible] = useState(false);
 
   useEffect(() => {
-    const interval = setInterval(() => setTick((t) => t + 1), 1000);
+    const interval = setInterval(() => setTick(t => t + 1), 60000);
     return () => clearInterval(interval);
   }, []);
 
+  const handleRemove = () => {
+    swipeableRef.current?.close();
+    Alert.alert('Remove Behavior', `Remove "${behavior.name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () => removeBehavior(behavior.id),
+      },
+    ]);
+  };
+
+  const handlePress = () => {
+    navigation.navigate('BehaviorDetails', { behaviorId: behavior.id });
+  };
+
   return (
-    <Swipeable
-      ref={swipeableRef}
-      renderLeftActions={() => <SwipeDelete onRemove={onRemove} />}
-      overshootLeft={false}
-    >
-      <View style={styles.card}>
-        <Pressable
-          style={styles.content}
-          onPress={onPress}
-        >
-          <BehaviorIcon
-            icon={behavior.icon}
-            size={32}
+    <>
+      <Swipeable
+        ref={swipeableRef}
+        renderLeftActions={() => <SwipeDelete onRemove={handleRemove} />}
+        overshootLeft={false}
+      >
+        <View style={styles.card}>
+          <Pressable
+            style={styles.content}
+            onPress={handlePress}
+          >
+            <BehaviorIcon
+              behavior={behavior}
+              size={32}
+            />
+            <BehaviorInfo behavior={behavior} />
+          </Pressable>
+
+          <LogButton
+            behavior={behavior}
+            onPress={() => setLogModalVisible(true)}
           />
-          <BehaviorInfo behavior={behavior} />
-        </Pressable>
-        <LogButton
-          name={behavior.name}
-          onLog={onLog}
-        />
-      </View>
-    </Swipeable>
+        </View>
+      </Swipeable>
+
+      <LogBehaviorModal
+        behavior={behavior}
+        visible={logModalVisible}
+        onClose={() => setLogModalVisible(false)}
+      />
+    </>
   );
 }
 
-// ---- Sub-components ----
+// #region Sub-components
 
 interface BehaviorInfoProps {
   behavior: BehaviorEntry;
@@ -57,9 +89,9 @@ interface BehaviorInfoProps {
 function BehaviorInfo({ behavior }: BehaviorInfoProps) {
   return (
     <View style={styles.info}>
-      <BehaviorName name={behavior.name} />
+      <BehaviorName behavior={behavior} />
       <View style={styles.elapsedRow}>
-        <BehaviorElapsed lastTimestamp={behavior.lastTimestamp} />
+        <BehaviorElapsed behavior={behavior} />
         <CooldownLabel behavior={behavior} />
       </View>
     </View>
@@ -67,32 +99,29 @@ function BehaviorInfo({ behavior }: BehaviorInfoProps) {
 }
 
 interface BehaviorNameProps {
-  name: string;
+  behavior: BehaviorEntry;
 }
-function BehaviorName({ name }: BehaviorNameProps) {
-  return <Text style={styles.name}>{name}</Text>;
+function BehaviorName({ behavior }: BehaviorNameProps) {
+  return <Text style={styles.name}>{behavior.name}</Text>;
 }
 
 interface BehaviorElapsedProps {
-  lastTimestamp: number | null;
+  behavior: BehaviorEntry;
 }
-function BehaviorElapsed({ lastTimestamp }: BehaviorElapsedProps) {
-  return <Text style={styles.elapsed}>{formatElapsed(lastTimestamp)}</Text>;
+function BehaviorElapsed({ behavior }: BehaviorElapsedProps) {
+  return <Text style={styles.elapsed}>{formatElapsed(behavior.lastTimestamp)}</Text>;
 }
 
 interface LogButtonProps {
-  name: string;
-  onLog: () => void;
+  behavior: BehaviorEntry;
+  onPress: () => void;
 }
-function LogButton({ name, onLog }: LogButtonProps) {
+function LogButton({ behavior, onPress }: LogButtonProps) {
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.logBtn,
-        pressed && styles.logBtnPressed,
-      ]}
-      onPress={onLog}
-      accessibilityLabel={`Log ${name}`}
+      style={({ pressed }) => [styles.logBtn, pressed && styles.logBtnPressed]}
+      onPress={onPress}
+      accessibilityLabel={`Log ${behavior.name}`}
     >
       <Ionicons
         name="add-circle-outline"
@@ -126,6 +155,7 @@ function SwipeDelete({ onRemove }: SwipeDeleteProps) {
     </Pressable>
   );
 }
+// #endregion
 
 const styles = StyleSheet.create({
   card: {
@@ -142,6 +172,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
+    gap: 12,
   },
   info: {
     flex: 1,

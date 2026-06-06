@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
+import { useBehaviorStore } from '../store/behaviorStore';
 import type { LogEntry } from '../types/behavior';
 import { formatDateDisplay } from '../utils/dateUtils';
 import { formatDuration, formatElapsed, formatTime } from '../utils/timeUtils';
@@ -10,7 +11,7 @@ import { Text } from './Text';
 interface Props {
   log: LogEntry;
   nextLogTimestamp?: number;
-  onRemove: () => void;
+  behaviorId: string;
   onEdit: () => void;
 }
 
@@ -19,13 +20,26 @@ function toDateString(timestamp: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export function BehaviorLogItem({ log, nextLogTimestamp, onRemove, onEdit }: Props) {
+export function BehaviorLogItem({ log, nextLogTimestamp, behaviorId, onEdit }: Props) {
   const [, setTick] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => setTick((t) => t + 1), 1000);
+    const interval = setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const { removeLog } = useBehaviorStore();
+
+  const handleRemove = () => {
+    Alert.alert('Remove Log', 'Remove this log entry?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () => removeLog(behaviorId, log.id),
+      },
+    ]);
+  };
 
   const renderLeftActions = () => (
     <Pressable
@@ -35,7 +49,7 @@ export function BehaviorLogItem({ log, nextLogTimestamp, onRemove, onEdit }: Pro
           opacity: 0.8,
         },
       ]}
-      onPress={() => onRemove()}
+      onPress={handleRemove}
     >
       <Ionicons
         name="trash"
@@ -62,10 +76,7 @@ export function BehaviorLogItem({ log, nextLogTimestamp, onRemove, onEdit }: Pro
           <Text style={styles.elapsedText}>{formatElapsed(log.timestamp)}</Text>
         </View>
         <Pressable
-          style={({ pressed }) => [
-            styles.editBtn,
-            pressed && styles.editBtnPressed,
-          ]}
+          style={({ pressed }) => [styles.editBtn, pressed && styles.editBtnPressed]}
           onPress={onEdit}
           accessibilityLabel="Edit log"
         >

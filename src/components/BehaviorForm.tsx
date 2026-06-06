@@ -1,54 +1,80 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { useBehaviorStore } from '../store/behaviorStore';
+import type { BehaviorEntry } from '../types/behavior';
 import type { CooldownType } from '../utils/cooldownUtils';
 import { CooldownIcon } from './CooldownIcon';
 import { CooldownInput } from './CooldownInput';
 import { Text, TextInput } from './Text';
 
 interface Props {
-  newIcon: string;
-  newName: string;
-  cooldownMinutes: number;
-  cooldownType: CooldownType;
-  onChangeIcon: (v: string) => void;
-  onChangeName: (v: string) => void;
-  onChangeCooldown: (v: number) => void;
-  onChangeCooldownType: (v: CooldownType) => void;
-  onAdd: () => void;
-  onCancel: () => void;
-  submitLabel?: string;
+  /** If provided, the form starts pre-populated in Edit mode. Omit for Create mode. */
+  behavior?: BehaviorEntry;
+  /** Called after the behavior is created/updated or the form is cancelled. */
+  onClose: () => void;
 }
 
-export function AddBehaviorForm({
-  newIcon,
-  newName,
-  cooldownMinutes,
-  cooldownType,
-  onChangeIcon,
-  onChangeName,
-  onChangeCooldown,
-  onChangeCooldownType,
-  onAdd,
-  onCancel,
-  submitLabel = 'Add',
-}: Props) {
+function iconFromStore(icon: BehaviorEntry['icon']): string {
+  if (!icon) return '';
+  if (typeof icon === 'object' && 'uri' in icon) return icon.uri;
+  return icon;
+}
+
+function iconForStore(raw: string): BehaviorEntry['icon'] {
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  return trimmed.startsWith('http://') || trimmed.startsWith('https://') ? { uri: trimmed } : trimmed;
+}
+
+export function BehaviorForm({ behavior, onClose }: Props) {
+  const isEdit = behavior != null;
   const nameRef = useRef<import('react-native').TextInput>(null);
+
+  const [name, setName] = useState('');
+  const [icon, setIcon] = useState('');
+  const [cooldownMinutes, setCooldownMinutes] = useState(60);
+  const [cooldownType, setCooldownType] = useState<CooldownType>('rest');
+
+  useEffect(() => {
+    if (!behavior) return;
+    setName(behavior.name);
+    setIcon(iconFromStore(behavior.icon));
+    setCooldownMinutes(behavior.cooldownMinutes || 60);
+    setCooldownType(behavior.cooldownType || 'rest');
+  }, [behavior]);
+
+  const handleSave = () => {
+    const { addBehavior, updateBehavior } = useBehaviorStore.getState();
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (isEdit && behavior) {
+      updateBehavior(behavior.id, {
+        name: trimmed,
+        icon: iconForStore(icon),
+        cooldownMinutes,
+        cooldownType,
+      });
+    } else {
+      addBehavior(trimmed, iconForStore(icon), cooldownMinutes, cooldownType);
+    }
+    onClose();
+  };
 
   return (
     <KeyboardAvoidingView behavior="padding" /* DO NOT change */>
       <View style={styles.form}>
         <View style={styles.row}>
-          <BehaviorIconInput
-            value={newIcon}
-            onChangeText={onChangeIcon}
+          <IconInput
+            value={icon}
+            onChangeText={setIcon}
             onNext={() => nameRef.current?.focus()}
           />
-          <BehaviorNameInput
+          <NameInput
             ref={nameRef}
-            value={newName}
-            onChangeText={onChangeName}
-            onSubmit={onAdd}
+            value={name}
+            onChangeText={setName}
+            onSubmit={handleSave}
           />
         </View>
         <View style={styles.cooldownSection}>
@@ -57,30 +83,32 @@ export function AddBehaviorForm({
             <Text style={styles.cooldownLabel}>Cooldown (optional)</Text>
             <CooldownTypeToggle
               value={cooldownType}
-              onChange={onChangeCooldownType}
+              onChange={setCooldownType}
             />
           </View>
           <CooldownInput
             cooldownMinutes={cooldownMinutes}
-            onChange={onChangeCooldown}
+            onChange={setCooldownMinutes}
           />
         </View>
         <FormActions
-          onCancel={onCancel}
-          onSubmit={onAdd}
-          submitLabel={submitLabel}
+          onCancel={onClose}
+          onSubmit={handleSave}
+          submitLabel={isEdit ? 'Save' : 'Add'}
         />
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-interface BehaviorIconInputProps {
+// #region Sub-components
+
+interface IconInputProps {
   value: string;
   onChangeText: (v: string) => void;
   onNext: () => void;
 }
-function BehaviorIconInput({ value, onChangeText, onNext }: BehaviorIconInputProps) {
+function IconInput({ value, onChangeText, onNext }: IconInputProps) {
   return (
     <TextInput
       style={styles.iconInput}
@@ -94,28 +122,29 @@ function BehaviorIconInput({ value, onChangeText, onNext }: BehaviorIconInputPro
   );
 }
 
-interface BehaviorNameInputProps {
+interface NameInputProps {
   value: string;
   onChangeText: (v: string) => void;
   onSubmit: () => void;
 }
-const BehaviorNameInput = React.forwardRef<import('react-native').TextInput, BehaviorNameInputProps>(
-  function BehaviorNameInput({ value, onChangeText, onSubmit }, ref) {
-    return (
-      <TextInput
-        ref={ref}
-        style={styles.nameInput}
-        placeholder="Behavior name (e.g. Water, Push-ups)"
-        placeholderTextColor="#666"
-        value={value}
-        onChangeText={onChangeText}
-        autoFocus
-        onSubmitEditing={onSubmit}
-        returnKeyType="done"
-      />
-    );
-  },
-);
+const NameInput = React.forwardRef<import('react-native').TextInput, NameInputProps>(function NameInput(
+  { value, onChangeText, onSubmit },
+  ref,
+) {
+  return (
+    <TextInput
+      ref={ref}
+      style={styles.nameInput}
+      placeholder="Behavior name (e.g. Water, Push-ups)"
+      placeholderTextColor="#666"
+      value={value}
+      onChangeText={onChangeText}
+      autoFocus
+      onSubmitEditing={onSubmit}
+      returnKeyType="done"
+    />
+  );
+});
 
 interface CooldownTypeToggleProps {
   value: CooldownType;
@@ -161,22 +190,12 @@ function TypeOption({ label, active, activeBtnStyle, activeTextStyle, onPress }:
       ]}
       onPress={onPress}
     >
-      <Text
-        style={[
-          styles.typeBtnText,
-          active && activeTextStyle,
-        ]}
-      >
-        {label}
-      </Text>
+      <Text style={[styles.typeBtnText, active && activeTextStyle]}>{label}</Text>
     </Pressable>
   );
 }
 
-interface CancelButtonProps {
-  onPress: () => void;
-}
-function CancelButton({ onPress }: CancelButtonProps) {
+function CancelButton({ onPress }: { onPress: () => void }) {
   return (
     <Pressable
       style={styles.cancelBtn}
@@ -187,11 +206,7 @@ function CancelButton({ onPress }: CancelButtonProps) {
   );
 }
 
-interface ConfirmButtonProps {
-  onPress: () => void;
-  label: string;
-}
-function ConfirmButton({ onPress, label }: ConfirmButtonProps) {
+function ConfirmButton({ onPress, label }: { onPress: () => void; label: string }) {
   return (
     <Pressable
       style={styles.addBtn}
@@ -218,6 +233,7 @@ function FormActions({ onCancel, onSubmit, submitLabel }: FormActionsProps) {
     </View>
   );
 }
+// #endregion
 
 const styles = StyleSheet.create({
   form: {

@@ -1,145 +1,51 @@
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { FlatList, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AddBehaviorForm } from '../components/AddBehaviorForm';
+import { AddBehaviorButton } from '../components/AddBehaviorButton';
 import { BehaviorCard } from '../components/BehaviorCard';
-import { LogBehaviorModal } from '../components/LogBehaviorModal';
+import { BehaviorForm } from '../components/BehaviorForm';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
-import type { RootStackParamList } from '../types/navigation';
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+import { sortBehaviorsByRecent } from '../utils/behaviorUtils';
 
 export function HomeScreen() {
-  const navigation = useNavigation<NavigationProp>();
-  const { behaviors, addBehavior, logBehavior, removeBehavior } = useBehaviorStore();
-  const [isAdding, setIsAdding] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newIcon, setNewIcon] = useState('');
-  const [loggingBehavior, setLoggingBehavior] = useState<BehaviorEntry | null>(null);
-  const [newCooldown, setNewCooldown] = useState(60);
-  const [newCooldownType, setNewCooldownType] = useState<'rest' | 'limit'>('rest');
-
-  const sortedBehaviors = useMemo(() => {
-    return [
-      ...behaviors,
-    ].sort((a, b) => {
-      if (a.lastTimestamp === null && b.lastTimestamp === null) return 0;
-      if (a.lastTimestamp === null) return 1;
-      if (b.lastTimestamp === null) return -1;
-      const diff = b.lastTimestamp - a.lastTimestamp;
-      if (diff !== 0) return diff;
-      return a.name.localeCompare(b.name);
-    });
-  }, [
-    behaviors,
-  ]);
-
-  const handleAdd = useCallback(() => {
-    const name = newName.trim();
-    if (!name) return;
-    const raw = newIcon.trim();
-    const icon = raw
-      ? raw.startsWith('http://') || raw.startsWith('https://')
-        ? {
-            uri: raw,
-          }
-        : raw
-      : undefined;
-    addBehavior(name, icon, newCooldown, newCooldownType);
-    setNewName('');
-    setNewIcon('');
-    setNewCooldown(60);
-    setNewCooldownType('rest');
-    setIsAdding(false);
-  }, [
-    newName,
-    newIcon,
-    newCooldownType,
-    newCooldown,
-    addBehavior,
-  ]);
-
-  const handleRemove = useCallback(
-    (behavior: BehaviorEntry) => {
-      Alert.alert('Remove Behavior', `Remove "${behavior.name}"?`, [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => removeBehavior(behavior.id),
-        },
-      ]);
-    },
-    [
-      removeBehavior,
-    ],
-  );
+  const { behaviors } = useBehaviorStore();
+  const [showAddButton, setShowAddButton] = useState(true);
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Recupero</Text>
+      <Title />
 
-      <FlatList
-        data={sortedBehaviors}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <BehaviorCard
-            behavior={item}
-            onLog={() => setLoggingBehavior(item)}
-            onRemove={() => handleRemove(item)}
-            onPress={() =>
-              navigation.navigate('BehaviorDetails', {
-                behaviorId: item.id,
-              })
-            }
-          />
-        )}
-        ListEmptyComponent={<Text style={styles.empty}>No behaviors yet.{`\n`}Add your first one.</Text>}
-        contentContainerStyle={behaviors.length === 0 && styles.emptyContainer}
-      />
+      <BehaviorList behaviors={behaviors} />
 
-      {isAdding ? (
-        <AddBehaviorForm
-          newIcon={newIcon}
-          newName={newName}
-          cooldownMinutes={newCooldown}
-          cooldownType={newCooldownType}
-          onChangeIcon={setNewIcon}
-          onChangeName={setNewName}
-          onChangeCooldown={setNewCooldown}
-          onChangeCooldownType={setNewCooldownType}
-          onAdd={handleAdd}
-          onCancel={() => setIsAdding(false)}
-        />
+      {showAddButton ? (
+        <AddBehaviorButton onPress={() => setShowAddButton(false)} />
       ) : (
-        <Pressable
-          style={({ pressed }) => [
-            styles.fab,
-            pressed && styles.fabPressed,
-          ]}
-          onPress={() => setIsAdding(true)}
-        >
-          <Text style={styles.fabText}>+ Add behavior</Text>
-        </Pressable>
+        <BehaviorForm onClose={() => setShowAddButton(true)} />
       )}
-
-      <LogBehaviorModal
-        behaviorName={loggingBehavior?.name ?? ''}
-        visible={loggingBehavior != null}
-        onConfirm={(timestamp) => {
-          if (loggingBehavior) logBehavior(loggingBehavior.id, timestamp);
-          setLoggingBehavior(null);
-        }}
-        onCancel={() => setLoggingBehavior(null)}
-      />
     </SafeAreaView>
+  );
+}
+
+function Title() {
+  return <Text style={styles.title}>Recupero</Text>;
+}
+
+interface BehaviorListProps {
+  behaviors: BehaviorEntry[];
+}
+function BehaviorList({ behaviors }: BehaviorListProps) {
+  const sortedBehaviors = useMemo(() => sortBehaviorsByRecent(behaviors), [behaviors]);
+
+  return (
+    <FlatList
+      data={sortedBehaviors}
+      keyExtractor={item => item.id}
+      renderItem={({ item }) => <BehaviorCard behavior={item} />}
+      ListEmptyComponent={<Text style={styles.empty}>No behaviors yet.{`\n`}Add your first one.</Text>}
+      contentContainerStyle={behaviors.length === 0 && styles.emptyContainer}
+    />
   );
 }
 
@@ -166,25 +72,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 15,
     padding: 32,
-  },
-  fab: {
-    margin: 16,
-    backgroundColor: '#EFEFEF',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  fabPressed: {
-    backgroundColor: '#D8D8D8',
-    transform: [
-      {
-        scale: 0.98,
-      },
-    ],
-  },
-  fabText: {
-    color: '#111111',
-    fontSize: 15,
-    fontWeight: '600',
   },
 });
