@@ -23,9 +23,18 @@ export function formatCooldown(totalMinutes: number): string {
   return `${Math.floor(totalMinutes / (7 * 24 * 60))}w`;
 }
 
-export function formatElapsed(timestamp: number | null): string {
-  if (timestamp === null) return 'Never';
+interface ElapsedInfo {
+  date: Date;
+  seconds: number;
+  minutes: number;
+  hours: number;
+  days: number;
+  weeks: number;
+  months: number;
+  years: number;
+}
 
+function computeElapsed(timestamp: number): { now: Date } & ElapsedInfo {
   const now = new Date();
   const date = new Date(timestamp);
   const elapsed = now.getTime() - timestamp;
@@ -33,58 +42,69 @@ export function formatElapsed(timestamp: number | null): string {
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
+  const weeks = Math.floor(days / 7);
+  const months = Math.floor(days / 30);
+  const years = Math.floor(days / 365);
+  return { now, date, seconds, minutes, hours, days, weeks, months, years };
+}
 
-  const hoursAgo = ` · ${hours}h ago`;
-  const daysAgo = ` · ${days}d ago`;
+function isSameCalendarDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
 
-  if (seconds < 60) return 'Just now';
-  if (hours < 1) return `${minutes}m ago`;
+function isPreviousCalendarMonth(now: Date, date: Date): boolean {
+  return (
+    (now.getMonth() === 0 && date.getFullYear() === now.getFullYear() - 1 && date.getMonth() === 11) ||
+    (date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() - 1)
+  );
+}
 
-  const sameDay =
-    date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
+/** Calendar-relative text label for a timestamp. Returns empty string when the
+ *  time is too recent or too far for a specific label (use formatElapsedNumeric instead). */
+export function formatElapsedText(timestamp: number | null): string {
+  if (timestamp === null) return '';
 
-  if (sameDay) return `Today · ${hours}h ago`;
+  const { now, date, seconds, hours, days } = computeElapsed(timestamp);
+
+  if (seconds < 60 || hours < 1) return '';
+
+  if (isSameCalendarDay(date, now)) return 'Today';
 
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
-  const isYesterday =
-    date.getFullYear() === yesterday.getFullYear() &&
-    date.getMonth() === yesterday.getMonth() &&
-    date.getDate() === yesterday.getDate();
+  if (isSameCalendarDay(date, yesterday)) return 'Yesterday';
 
-  if (isYesterday) return `Yesterday${hours < 24 ? hoursAgo : ''}`;
+  if (days < 7) return DAY_NAMES[date.getDay()];
 
-  if (days < 7) {
-    return `${DAY_NAMES[date.getDay()]} · ${days}d ago`;
-  }
+  if (isPreviousCalendarMonth(now, date)) return 'Last month';
 
-  // Check if event is in the previous calendar month
-  const isLastMonth =
-    (now.getMonth() === 0 && date.getFullYear() === now.getFullYear() - 1 && date.getMonth() === 11) ||
-    (date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() - 1);
+  if (days < 14) return 'Last week';
 
-  if (isLastMonth) {
-    const w = Math.floor(days / 7);
-    return `Last month · ${w}w ago`;
-  }
+  const { months } = computeElapsed(timestamp);
+  if (date.getFullYear() === now.getFullYear() - 1 && months < 12) return 'Last year';
 
-  if (days < 14) return `Last week${daysAgo}`;
+  return '';
+}
 
-  const weeks = Math.floor(days / 7);
+/** Combined format: shows calendar text + numeric when both are available, otherwise just one. */
+export function formatElapsed(timestamp: number | null): string {
+  const text = formatElapsedText(timestamp);
+  const numeric = formatElapsedNumeric(timestamp);
+  return text ? `${text} · ${numeric}` : numeric;
+}
+
+/** Compact relative time label for a timestamp (e.g. "2h ago", "3d ago"). */
+export function formatElapsedNumeric(timestamp: number | null): string {
+  if (timestamp === null) return 'Never';
+
+  const { seconds, minutes, hours, days, weeks, months, years } = computeElapsed(timestamp);
+
+  if (seconds < 60) return 'Just now';
+  if (hours < 1) return `${minutes}m ago`;
+  if (days < 1) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
   if (days < 60) return `${weeks}w ago`;
-
-  const months = Math.floor(days / 30);
-
-  // Check if event is in the previous calendar year
-  const isLastYear = date.getFullYear() === now.getFullYear() - 1 && months < 12;
-
-  if (isLastYear) {
-    return `Last year · ${months}mo ago`;
-  }
-
   if (months < 12) return `${months}mo ago`;
-
-  const years = Math.floor(days / 365);
   return `${years}y ago`;
 }
 
