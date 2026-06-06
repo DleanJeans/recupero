@@ -34,10 +34,12 @@ export function formatElapsed(timestamp: number | null): string {
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
+  const hoursAgo = ` · ${hours}h ago`;
+  const daysAgo = ` · ${days}d ago`;
+
   if (seconds < 60) return 'Just now';
   if (hours < 1) return `${minutes}m ago`;
 
-  const hoursAgo = ` · ${hours}h ago`;
   const sameDay =
     date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
   if (sameDay) return `Today${hoursAgo}`;
@@ -52,7 +54,7 @@ export function formatElapsed(timestamp: number | null): string {
   if (isYesterday) return `Yesterday${hours < 24 ? hoursAgo : ''}`;
 
   if (days < 7) {
-    return `${DAY_NAMES[date.getDay()]} · ${days}d ago`;
+    return `${DAY_NAMES[date.getDay()]}${daysAgo}`;
   }
 
   // Check if event is in the previous calendar month
@@ -65,7 +67,7 @@ export function formatElapsed(timestamp: number | null): string {
     return `Last month · ${w}w ago`;
   }
 
-  if (days < 14) return 'Last week';
+  if (days < 14) return `Last week${daysAgo}`;
 
   const weeks = Math.floor(days / 7);
   if (days < 60) return `${weeks}w ago`;
