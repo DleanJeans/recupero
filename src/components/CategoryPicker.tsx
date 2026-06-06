@@ -10,7 +10,7 @@ interface CategoryPickerProps {
 }
 
 function allItems(categories: Category[]): (Category | { id: undefined; emoji: string; name: string })[] {
-  return [{ id: undefined, emoji: '', name: 'None' }, ...categories];
+  return [{ id: undefined, emoji: '', name: 'None ' }, ...categories];
 }
 
 export function CategoryPicker({ categories, selectedId, onChange }: CategoryPickerProps) {
@@ -29,7 +29,7 @@ export function CategoryPicker({ categories, selectedId, onChange }: CategoryPic
               style={({ pressed }) => [styles.chip, active && styles.chipActive, pressed && { opacity: 0.7 }]}
               onPress={() => onChange(item.id)}
             >
-              {item.emoji ? <Text style={styles.chipEmoji}>{item.emoji}</Text> : null}
+              <Text style={styles.chipEmoji}>{item.emoji ?? ''}</Text>
               <Text style={[styles.chipText, active && styles.chipTextActive]}>{item.name}</Text>
             </Pressable>
           );
