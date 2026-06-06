@@ -84,14 +84,18 @@ export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
       overshootLeft={false}
       overshootRight={false}
     >
-      <View style={styles.logItem}>
+      <Pressable
+        style={styles.logItem}
+        onLongPress={onEdit}
+        delayLongPress={300}
+      >
         <View style={styles.logContent}>
           <Text style={styles.dateText}>
             {formatTime(log.timestamp)}
           </Text>
           <Text style={styles.elapsedText}>{formatElapsedNumeric(log.timestamp)}</Text>
         </View>
-      </View>
+      </Pressable>
     </Swipeable>
   );
 }
