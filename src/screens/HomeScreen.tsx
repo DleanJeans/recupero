@@ -49,7 +49,10 @@ export function HomeScreen() {
       {showAddButton ? (
         <AddBehaviorButton onPress={() => setShowAddButton(false)} />
       ) : (
-        <BehaviorForm onClose={() => setShowAddButton(true)} />
+        <BehaviorForm
+          defaultCategoryId={selectedCategoryId ?? undefined}
+          onClose={() => setShowAddButton(true)}
+        />
       )}
     </SafeAreaView>
   );

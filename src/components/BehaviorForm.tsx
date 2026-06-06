@@ -12,6 +12,8 @@ import { Text, TextInput } from './Text';
 interface Props {
   /** If provided, the form starts pre-populated in Edit mode. Omit for Create mode. */
   behavior?: BehaviorEntry;
+  /** Default category selected when creating a new behavior. */
+  defaultCategoryId?: string;
   /** Called after the behavior is created/updated or the form is cancelled. */
   onClose: () => void;
 }
@@ -28,14 +30,16 @@ function iconForStore(raw: string): BehaviorEntry['icon'] {
   return trimmed.startsWith('http://') || trimmed.startsWith('https://') ? { uri: trimmed } : trimmed;
 }
 
-export function BehaviorForm({ behavior, onClose }: Props) {
+export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
   const isEdit = behavior != null;
   const nameRef = useRef<import('react-native').TextInput>(null);
   const { categories } = useBehaviorStore();
 
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('');
-  const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
+  const [categoryId, setCategoryId] = useState<string | undefined>(
+    behavior ? behavior.categoryId : defaultCategoryId,
+  );
   const [cooldownMinutes, setCooldownMinutes] = useState(0);
   const [cooldownType, setCooldownType] = useState<CooldownType>('rest');
 
