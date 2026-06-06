@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import type { BehaviorEntry } from '../types/behavior';
-import { type CooldownInfo, toCooldownInfo } from '../utils/cooldownUtils';
 import { formatElapsed } from '../utils/timeUtils';
+import { BehaviorIcon } from './BehaviorIcon';
 import { CooldownLabel } from './CooldownLabel';
 import { Text } from './Text';
 
@@ -34,12 +34,11 @@ export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
           style={styles.content}
           onPress={onPress}
         >
-          <BehaviorIcon icon={behavior.icon} />
-          <BehaviorInfo
-            name={behavior.name}
-            lastTimestamp={behavior.lastTimestamp}
-            cooldown={toCooldownInfo(behavior)}
+          <BehaviorIcon
+            icon={behavior.icon}
+            size={32}
           />
+          <BehaviorInfo behavior={behavior} />
         </Pressable>
         <LogButton
           name={behavior.name}
@@ -52,32 +51,16 @@ export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
 
 // ---- Sub-components ----
 
-interface BehaviorIconProps {
-  icon: BehaviorEntry['icon'];
-}
-function BehaviorIcon({ icon }: BehaviorIconProps) {
-  return icon && typeof icon === 'object' ? (
-    <Image
-      source={icon}
-      style={styles.iconImage}
-    />
-  ) : (
-    <Text style={styles.emoji}>{typeof icon === 'string' ? icon : '⏱️'}</Text>
-  );
-}
-
 interface BehaviorInfoProps {
-  name: string;
-  lastTimestamp: number | null;
-  cooldown?: CooldownInfo;
+  behavior: BehaviorEntry;
 }
-function BehaviorInfo({ name, lastTimestamp, cooldown }: BehaviorInfoProps) {
+function BehaviorInfo({ behavior }: BehaviorInfoProps) {
   return (
     <View style={styles.info}>
-      <BehaviorName name={name} />
+      <BehaviorName name={behavior.name} />
       <View style={styles.elapsedRow}>
-        <BehaviorElapsed lastTimestamp={lastTimestamp} />
-        {cooldown ? <CooldownLabel cooldown={cooldown} /> : null}
+        <BehaviorElapsed lastTimestamp={behavior.lastTimestamp} />
+        <CooldownLabel behavior={behavior} />
       </View>
     </View>
   );
@@ -159,16 +142,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-  },
-  emoji: {
-    fontSize: 32,
-    marginRight: 12,
-  },
-  iconImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    marginRight: 12,
   },
   info: {
     flex: 1,

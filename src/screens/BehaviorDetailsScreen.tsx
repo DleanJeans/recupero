@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Image, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddBehaviorForm } from '../components/AddBehaviorForm';
+import { BehaviorIcon } from '../components/BehaviorIcon';
 import { BehaviorLogItem } from '../components/BehaviorLogItem';
 import { CooldownLabel } from '../components/CooldownLabel';
 import { LogBehaviorModal } from '../components/LogBehaviorModal';
@@ -12,11 +13,9 @@ import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry, LogEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
-import { type CooldownInfo, toCooldownInfo } from '../utils/cooldownUtils';
 
 interface BehaviorDetailsContextValues {
   behavior?: BehaviorEntry;
-  behaviorCooldown?: CooldownInfo;
   showEditModal: boolean;
   openEditModal: () => void;
   closeEditModal: () => void;
@@ -48,7 +47,6 @@ function useBehaviorDetails(): BehaviorDetailsContextValues {
 
 type BehaviorDetailsRouteProp = RouteProp<RootStackParamList, 'BehaviorDetails'>;
 export function BehaviorDetailsScreen() {
-  
   const route = useRoute<BehaviorDetailsRouteProp>();
   const { behaviorId } = route.params;
 
@@ -56,8 +54,6 @@ export function BehaviorDetailsScreen() {
   const behavior = behaviors.find((b) => b.id === behaviorId);
   const [editingLog, setEditingLog] = useState<LogEntry | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-
-  const behaviorCooldown = toCooldownInfo(behavior);
 
   function handleRemoveLog(logId: string) {
     Alert.alert('Remove Log', 'Remove this log entry?', [
@@ -76,7 +72,6 @@ export function BehaviorDetailsScreen() {
   const context = useMemo<BehaviorDetailsContextValues>(
     () => ({
       behavior,
-      behaviorCooldown,
       showEditModal,
       openEditModal: () => setShowEditModal(true),
       closeEditModal: () => setShowEditModal(false),
@@ -92,7 +87,6 @@ export function BehaviorDetailsScreen() {
     }),
     [
       behavior,
-      behaviorCooldown,
       showEditModal,
       editingLog,
       behaviorId,
@@ -123,7 +117,7 @@ export function BehaviorDetailsScreen() {
 
 function BackButton() {
   const navigation = useNavigation();
-  
+
   return (
     <Pressable
       style={({ pressed }) => [
@@ -144,10 +138,9 @@ function BackButton() {
 }
 
 function BehaviorTitle() {
-  const { behavior, behaviorCooldown } = useBehaviorDetails();
+  const { behavior } = useBehaviorDetails();
   const name = behavior?.name;
   const icon = behavior?.icon;
-  const cooldown = behaviorCooldown;
 
   if (!name) {
     return <Text style={styles.headerTitle}>Behavior Not Found</Text>;
@@ -155,17 +148,13 @@ function BehaviorTitle() {
 
   return (
     <View style={styles.titleContainer}>
-      {icon && typeof icon === 'object' ? (
-        <Image
-          source={icon}
-          style={styles.iconImage}
-        />
-      ) : (
-        <Text style={styles.emoji}>{typeof icon === 'string' ? icon : '⏱️'}</Text>
-      )}
+      <BehaviorIcon
+        icon={icon}
+        size={24}
+      />
       <View style={styles.titleTextRow}>
         <Text style={styles.headerTitle}>{name}</Text>
-        {cooldown ? <CooldownLabel cooldown={cooldown} /> : null}
+        <CooldownLabel behavior={behavior} />
       </View>
     </View>
   );
@@ -364,16 +353,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 4,
-  },
-  emoji: {
-    fontSize: 24,
-    marginRight: 8,
-  },
-  iconImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
-    marginRight: 8,
   },
   editBehaviorBtn: {
     padding: 8,

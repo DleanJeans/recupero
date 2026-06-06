@@ -13,21 +13,6 @@ export const COLORS = {
   MUTED: '#888',
 } as const;
 
-export function toCooldownInfo(
-  behavior?: {
-    cooldownMinutes: number;
-    lastTimestamp: number | null | undefined;
-    cooldownType?: 'rest' | 'limit';
-  } | null,
-): CooldownInfo | undefined {
-  if (!behavior || !behavior.cooldownMinutes) return undefined;
-  return {
-    minutes: behavior.cooldownMinutes,
-    lastTimestamp: behavior.lastTimestamp,
-    type: behavior.cooldownType,
-  };
-}
-
 export function getCooldownColor(
   cooldownMinutes: number,
   lastTimestamp: number | null | undefined,
