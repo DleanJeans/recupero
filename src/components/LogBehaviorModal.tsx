@@ -194,7 +194,7 @@ export function LogBehaviorModal({ behavior, visible, logId, initialTimestamp, o
       />
       <View style={styles.sheet}>
         <Text style={styles.title}>
-          {initialTimestamp ? 'Edit' : 'Log'} "{behavior.name}"
+          {initialTimestamp ? 'Edit Time' : `Log ${behavior.name}`}
         </Text>
 
         <Text style={styles.sectionLabel}>Date</Text>
