@@ -6,11 +6,11 @@ import { formatCooldown } from '../utils/timeUtils';
 import { CooldownIcon } from './CooldownIcon';
 
 interface Props {
-  behavior: BehaviorEntry | null | undefined;
+  behavior: BehaviorEntry;
 }
 
 export function CooldownLabel({ behavior }: Props) {
-  if (!behavior?.cooldownMinutes) return null;
+  if (!behavior.cooldownMinutes) return null;
 
   const minutes = behavior.cooldownMinutes;
   const color = getCooldownColor(minutes, behavior.lastTimestamp, behavior.cooldownType);

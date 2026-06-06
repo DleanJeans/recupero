@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import React, { createContext, useContext, useMemo, useState } from 'react';
-import { Alert, FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BehaviorForm } from '../components/BehaviorForm';
 import { BehaviorIcon } from '../components/BehaviorIcon';
@@ -14,15 +14,13 @@ import type { BehaviorEntry, LogEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
 
 interface BehaviorDetailsContextValues {
-  behavior?: BehaviorEntry;
+  behavior: BehaviorEntry;
   showEditModal: boolean;
   openEditModal: () => void;
   closeEditModal: () => void;
   editingLog: LogEntry | null;
   startEditingLog: (log: LogEntry) => void;
-  saveLogEdit: (timestamp: number) => void;
-  cancelLogEdit: () => void;
-  removeLog: (logId: string) => void;
+  clearEditingLog: () => void;
 }
 
 const BehaviorDetailsContext = createContext<BehaviorDetailsContextValues | null>(null);
@@ -38,24 +36,19 @@ export function BehaviorDetailsScreen() {
   const route = useRoute<BehaviorDetailsRouteProp>();
   const { behaviorId } = route.params;
 
-  const { behaviors, removeLog, updateLog } = useBehaviorStore();
-  const behavior = behaviors.find((b) => b.id === behaviorId);
+  const { behaviors } = useBehaviorStore();
+  const behavior = behaviors.find(b => b.id === behaviorId);
+
+  if (!behavior) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.headerTitle}>Behavior Not Found</Text>
+      </SafeAreaView>
+    );
+  }
+
   const [editingLog, setEditingLog] = useState<LogEntry | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-
-  function handleRemoveLog(logId: string) {
-    Alert.alert('Remove Log', 'Remove this log entry?', [
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () => removeLog(behaviorId, logId),
-      },
-    ]);
-  }
 
   const context = useMemo<BehaviorDetailsContextValues>(
     () => ({
@@ -65,21 +58,9 @@ export function BehaviorDetailsScreen() {
       closeEditModal: () => setShowEditModal(false),
       editingLog,
       startEditingLog: setEditingLog,
-      saveLogEdit: (timestamp: number) => {
-        if (editingLog) updateLog(behaviorId, editingLog.id, timestamp);
-        setEditingLog(null);
-      },
-      cancelLogEdit: () => setEditingLog(null),
-      removeLog: handleRemoveLog,
+      clearEditingLog: () => setEditingLog(null),
     }),
-    [
-      behavior,
-      showEditModal,
-      editingLog,
-      behaviorId,
-      handleRemoveLog,
-      updateLog,
-    ],
+    [behavior, showEditModal, editingLog, setEditingLog, behaviorId],
   );
 
   return (
@@ -92,14 +73,14 @@ export function BehaviorDetailsScreen() {
         </View>
 
         <BehaviorLogList />
-        <LogBehaviorModalWrapper />
+        <EditLogModal />
         <EditBehaviorModal />
       </SafeAreaView>
     </BehaviorDetailsContext.Provider>
   );
 }
 
-// ---- Header components ----
+// #region Header components
 
 function BackButton() {
   const navigation = useNavigation();
@@ -125,21 +106,15 @@ function BackButton() {
 
 function BehaviorTitle() {
   const { behavior } = useBehaviorDetails();
-  const name = behavior?.name;
-  const icon = behavior?.icon;
-
-  if (!name) {
-    return <Text style={styles.headerTitle}>Behavior Not Found</Text>;
-  }
 
   return (
     <View style={styles.titleContainer}>
       <BehaviorIcon
-        icon={icon}
+        icon={behavior.icon}
         size={24}
       />
       <View style={styles.titleTextRow}>
-        <Text style={styles.headerTitle}>{name}</Text>
+        <Text style={styles.headerTitle}>{behavior.name}</Text>
         <CooldownLabel behavior={behavior} />
       </View>
     </View>
@@ -167,32 +142,24 @@ function EditButton() {
     </Pressable>
   );
 }
+// #endregion
 
-// ---- List component ----
+// #region List component
 
 function BehaviorLogList() {
-  const { behavior, removeLog, startEditingLog } = useBehaviorDetails();
-  if (!behavior) return null;
+  const { behavior, startEditingLog } = useBehaviorDetails();
 
   const logs = behavior.logs ?? [];
-  const sortedLogs = useMemo(
-    () =>
-      [
-        ...logs,
-      ].sort((a, b) => b.timestamp - a.timestamp),
-    [
-      logs,
-    ],
-  );
+  const sortedLogs = useMemo(() => [...logs].sort((a, b) => b.timestamp - a.timestamp), [logs]);
 
   return (
     <FlatList
       data={sortedLogs}
-      keyExtractor={(item) => item.id}
+      keyExtractor={item => item.id}
       renderItem={({ item }) => (
         <BehaviorLogItem
           log={item}
-          onRemove={() => removeLog(item.id)}
+          behaviorId={behavior.id}
           onEdit={() => startEditingLog(item)}
         />
       )}
@@ -201,27 +168,30 @@ function BehaviorLogList() {
     />
   );
 }
+// #endregion
 
-// ---- Modal components ----
+// #region Modal components
 
-function LogBehaviorModalWrapper() {
-  const { behavior, editingLog, saveLogEdit, cancelLogEdit } = useBehaviorDetails();
-  if (!behavior) return null;
+function EditLogModal() {
+  const { behavior, editingLog, clearEditingLog } = useBehaviorDetails();
+  const { updateLog } = useBehaviorStore();
 
   return (
     <LogBehaviorModal
       behaviorName={behavior.name}
       visible={editingLog != null}
       initialTimestamp={editingLog?.timestamp}
-      onConfirm={saveLogEdit}
-      onCancel={cancelLogEdit}
+      onConfirm={timestamp => {
+        if (editingLog) updateLog(behavior.id, editingLog.id, timestamp);
+        clearEditingLog();
+      }}
+      onCancel={clearEditingLog}
     />
   );
 }
 
 function EditBehaviorModal() {
   const { showEditModal, behavior, closeEditModal } = useBehaviorDetails();
-  if (!behavior) return null;
 
   return (
     <Modal
@@ -243,6 +213,7 @@ function EditBehaviorModal() {
     </Modal>
   );
 }
+// #endregion
 
 const styles = StyleSheet.create({
   container: {
