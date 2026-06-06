@@ -101,11 +101,17 @@ export function formatElapsedNumeric(timestamp: number | null): string {
 
   if (seconds < 60) return 'Just now';
   if (hours < 1) return `${minutes}m ago`;
-  if (days < 1) return `${hours}h ago`;
-  if (days < 7) return `${days}d ago`;
-  if (days < 60) return `${weeks}w ago`;
-  if (months < 12) return `${months}mo ago`;
-  return `${years}y ago`;
+  if (days < 1) return sub(`${hours}h`, minutes % 60, 'm');
+  if (days < 7) return sub(`${days}d`, hours % 24, 'h');
+  if (days < 60) return sub(`${weeks}w`, days % 7, 'd');
+  if (months < 12) return sub(`${months}mo`, days % 30, 'd');
+  return sub(`${years}y`, Math.floor((days % 365) / 30), 'mo');
+}
+
+/** Append a sub-unit when non-zero: e.g. sub("3d", 5, "h") → "3d 5h ago". */
+function sub(primary: string, remaining: number, unit: string): string {
+  if (remaining > 0) return `${primary} ${remaining}${unit} ago`;
+  return `${primary} ago`;
 }
 
 export function formatDuration(ms: number): string {

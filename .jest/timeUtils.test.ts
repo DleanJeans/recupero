@@ -1,4 +1,4 @@
-import { formatCooldown, formatDuration, formatElapsed } from '../src/utils/timeUtils';
+import { formatCooldown, formatDuration, formatElapsed, formatElapsedText, formatElapsedNumeric } from '../src/utils/timeUtils';
 
 describe('formatCooldown', () => {
   it('returns empty string for 0 or negative or NaN', () => {
@@ -32,7 +32,133 @@ describe('formatCooldown', () => {
   });
 });
 
-describe('formatElapsed', () => {
+describe('formatElapsedText', () => {
+  beforeAll(() => {
+    jest.useFakeTimers({ now: new Date(2026, 5, 20, 14, 30, 0) });
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
+  it('returns empty string for null', () => {
+    expect(formatElapsedText(null)).toBe('');
+  });
+
+  it('returns empty string for < 1 hour', () => {
+    expect(formatElapsedText(Date.now() - 30_000)).toBe('');
+    expect(formatElapsedText(Date.now() - 30 * 60_000)).toBe('');
+  });
+
+  it('returns "Today" for same calendar day', () => {
+    expect(formatElapsedText(Date.now() - 3 * 3600_000)).toBe('Today');
+    expect(formatElapsedText(Date.now() - 10 * 3600_000)).toBe('Today');
+  });
+
+  it('returns "Yesterday" for previous calendar day', () => {
+    expect(formatElapsedText(Date.now() - 24 * 3600_000)).toBe('Yesterday');
+    expect(formatElapsedText(Date.now() - 30 * 3600_000)).toBe('Yesterday');
+  });
+
+  it('returns day name for 2-6 days ago', () => {
+    expect(formatElapsedText(Date.now() - 2 * 24 * 3600_000)).toBe('Thursday');
+    expect(formatElapsedText(Date.now() - 5 * 24 * 3600_000)).toBe('Monday');
+    expect(formatElapsedText(Date.now() - 6 * 24 * 3600_000)).toBe('Sunday');
+  });
+
+  it('returns "Last week" for 7-13 days ago (same month)', () => {
+    expect(formatElapsedText(Date.now() - 7 * 24 * 3600_000)).toBe('Last week');
+    expect(formatElapsedText(Date.now() - 10 * 24 * 3600_000)).toBe('Last week');
+    expect(formatElapsedText(Date.now() - 13 * 24 * 3600_000)).toBe('Last week');
+  });
+
+  it('returns "Last month" for events in previous calendar month', () => {
+    expect(formatElapsedText(Date.now() - 21 * 24 * 3600_000)).toBe('Last month');
+    expect(formatElapsedText(Date.now() - 30 * 24 * 3600_000)).toBe('Last month');
+  });
+
+  it('returns empty string for 14+ days not in last month or last year', () => {
+    expect(formatElapsedText(Date.now() - 14 * 24 * 3600_000)).toBe('');
+    expect(formatElapsedText(Date.now() - 56 * 24 * 3600_000)).toBe('');
+    expect(formatElapsedText(Date.now() - 90 * 24 * 3600_000)).toBe('');
+  });
+
+  it('returns "Last year" for events in previous calendar year', () => {
+    expect(formatElapsedText(Date.now() - 330 * 24 * 3600_000)).toBe('Last year');
+    expect(formatElapsedText(Date.now() - 200 * 24 * 3600_000)).toBe('Last year');
+  });
+
+  it('returns empty string for 365+ days', () => {
+    expect(formatElapsedText(Date.now() - 365 * 24 * 3600_000)).toBe('');
+    expect(formatElapsedText(Date.now() - 730 * 24 * 3600_000)).toBe('');
+  });
+});
+
+describe('formatElapsedNumeric', () => {
+  beforeAll(() => {
+    jest.useFakeTimers({ now: new Date(2026, 5, 20, 14, 30, 0) });
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
+  it('returns "Never" for null', () => {
+    expect(formatElapsedNumeric(null)).toBe('Never');
+  });
+
+  it('returns "Just now" within 60 seconds', () => {
+    expect(formatElapsedNumeric(Date.now() - 30_000)).toBe('Just now');
+    expect(formatElapsedNumeric(Date.now())).toBe('Just now');
+  });
+
+  it('returns "Xm ago" for < 1 hour', () => {
+    expect(formatElapsedNumeric(Date.now() - 5 * 60_000)).toBe('5m ago');
+    expect(formatElapsedNumeric(Date.now() - 59 * 60_000)).toBe('59m ago');
+  });
+
+  it('includes remaining minutes in hours', () => {
+    expect(formatElapsedNumeric(Date.now() - 3 * 3600_000 - 15 * 60_000)).toBe('3h 15m ago');
+  });
+
+  it('omits sub-unit when zero for hours', () => {
+    expect(formatElapsedNumeric(Date.now() - 3 * 3600_000)).toBe('3h ago');
+  });
+
+  it('includes remaining hours in days', () => {
+    expect(formatElapsedNumeric(Date.now() - 3 * 24 * 3600_000 - 5 * 3600_000)).toBe('3d 5h ago');
+  });
+
+  it('omits sub-unit when zero for days', () => {
+    expect(formatElapsedNumeric(Date.now() - 3 * 24 * 3600_000)).toBe('3d ago');
+  });
+
+  it('includes remaining days in weeks', () => {
+    expect(formatElapsedNumeric(Date.now() - 3 * 7 * 24 * 3600_000 - 2 * 24 * 3600_000)).toBe('3w 2d ago');
+  });
+
+  it('omits sub-unit when zero for weeks', () => {
+    expect(formatElapsedNumeric(Date.now() - 3 * 7 * 24 * 3600_000)).toBe('3w ago');
+  });
+
+  it('includes remaining days in months', () => {
+    expect(formatElapsedNumeric(Date.now() - 4 * 30 * 24 * 3600_000 - 10 * 24 * 3600_000)).toBe('4mo 10d ago');
+  });
+
+  it('omits sub-unit when zero for months', () => {
+    expect(formatElapsedNumeric(Date.now() - 4 * 30 * 24 * 3600_000)).toBe('4mo ago');
+  });
+
+  it('includes remaining months in years', () => {
+    expect(formatElapsedNumeric(Date.now() - 3 * 365 * 24 * 3600_000 - 2 * 30 * 24 * 3600_000)).toBe('3y 2mo ago');
+  });
+
+  it('omits sub-unit when zero for years', () => {
+    expect(formatElapsedNumeric(Date.now() - 3 * 365 * 24 * 3600_000)).toBe('3y ago');
+  });
+});
+
+describe('formatElapsed (combined)', () => {
   beforeAll(() => {
     // June 20, 2026 14:30:00 local time (Saturday)
     jest.useFakeTimers({
@@ -75,10 +201,11 @@ describe('formatElapsed', () => {
 
   // ---- Yesterday ----
 
-  it('returns "Yesterday" for previous calendar day', () => {
-    // June 19 (Friday)
-    expect(formatElapsed(Date.now() - 24 * 3600_000)).toBe('Yesterday');
-    expect(formatElapsed(Date.now() - 30 * 3600_000)).toBe('Yesterday');
+  it('returns "Yesterday · Xd ago" for previous calendar day', () => {
+    // June 19 (Friday), exactly 24h ago → 1d ago
+    expect(formatElapsed(Date.now() - 24 * 3600_000)).toBe('Yesterday · 1d ago');
+    // June 19, 30h ago → 1d 6h ago
+    expect(formatElapsed(Date.now() - 30 * 3600_000)).toBe('Yesterday · 1d 6h ago');
   });
 
   // ---- Day of week (2-6 days ago, same month) ----
@@ -94,24 +221,24 @@ describe('formatElapsed', () => {
 
   // ---- Last week (7-13 days ago, same month) ----
 
-  it('returns "Last week" for 7-13 days ago (same month)', () => {
-    // June 13 (Saturday), 7 days ago — still in June
-    expect(formatElapsed(Date.now() - 7 * 24 * 3600_000)).toBe('Last week · 7d ago');
-    // June 10 (Wednesday), 10 days ago
-    expect(formatElapsed(Date.now() - 10 * 24 * 3600_000)).toBe('Last week · 10d ago');
-    // June 7 (Sunday), 13 days ago
-    expect(formatElapsed(Date.now() - 13 * 24 * 3600_000)).toBe('Last week · 13d ago');
+  it('returns "Last week · Xw ago" for 7-13 days ago (same month)', () => {
+    // June 13 (Saturday), 7 days ago — exact 1 week
+    expect(formatElapsed(Date.now() - 7 * 24 * 3600_000)).toBe('Last week · 1w ago');
+    // June 10 (Wednesday), 10 days ago → 1w 3d
+    expect(formatElapsed(Date.now() - 10 * 24 * 3600_000)).toBe('Last week · 1w 3d ago');
+    // June 7 (Sunday), 13 days ago → 1w 6d
+    expect(formatElapsed(Date.now() - 13 * 24 * 3600_000)).toBe('Last week · 1w 6d ago');
   });
 
   // ---- Last month · Xw ago (>= 7 days, in previous calendar month) ----
 
   it('returns "Last month · Xw ago" for events in previous calendar month', () => {
-    // May 30 (Saturday), 21 days ago — in May (last month from June)
+    // May 30 (Saturday), 21 days ago — exact 3 weeks
     expect(formatElapsed(Date.now() - 21 * 24 * 3600_000)).toBe('Last month · 3w ago');
-    // May 26 (Tuesday), 25 days ago
-    expect(formatElapsed(Date.now() - 25 * 24 * 3600_000)).toBe('Last month · 3w ago');
-    // May 21 (Thursday), 30 days ago
-    expect(formatElapsed(Date.now() - 30 * 24 * 3600_000)).toBe('Last month · 4w ago');
+    // May 26 (Tuesday), 25 days ago → 3w 4d
+    expect(formatElapsed(Date.now() - 25 * 24 * 3600_000)).toBe('Last month · 3w 4d ago');
+    // May 21 (Thursday), 30 days ago → 4w 2d
+    expect(formatElapsed(Date.now() - 30 * 24 * 3600_000)).toBe('Last month · 4w 2d ago');
   });
 
   // ---- Xw ago (14-59 days, NOT in last month) ----
@@ -135,8 +262,8 @@ describe('formatElapsed', () => {
   it('returns "Last year · Xmo ago" for events in previous calendar year', () => {
     // July 25, 2025 — 330 days ago, in 2025, months = 11
     expect(formatElapsed(Date.now() - 330 * 24 * 3600_000)).toBe('Last year · 11mo ago');
-    // December 2, 2025 — 200 days ago, months = 6
-    expect(formatElapsed(Date.now() - 200 * 24 * 3600_000)).toBe('Last year · 6mo ago');
+    // December 2, 2025 — 200 days ago, months = 6, remaining days = 20
+    expect(formatElapsed(Date.now() - 200 * 24 * 3600_000)).toBe('Last year · 6mo 20d ago');
   });
 
   // ---- Xy ago (365+ days) ----
@@ -192,7 +319,7 @@ describe('formatElapsed — year boundary', () => {
     // January 5, 2027 — last calendar month is December 2026
     // December 25, 2026 (11 days ago, in December)
     const dec25 = new Date(2026, 11, 25, 14, 30, 0).getTime();
-    expect(formatElapsed(dec25)).toBe('Last month · 1w ago');
+    expect(formatElapsed(dec25)).toBe('Last month · 1w 4d ago');
   });
 });
 

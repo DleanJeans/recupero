@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import React, { createContext, useContext, useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, SectionList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BehaviorForm } from '../components/BehaviorForm';
 import { BehaviorIcon } from '../components/BehaviorIcon';
@@ -13,6 +13,7 @@ import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry, LogEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
+import { groupLogsByRecency } from '../utils/behaviorUtils';
 
 interface BehaviorDetailsContextValues {
   behavior: BehaviorEntry;
@@ -151,15 +152,15 @@ function BehaviorLogList() {
   const { behavior, startEditingLog } = useBehaviorDetails();
 
   const logs = behavior.logs ?? [];
-  const sortedLogs = useMemo(() => [...logs].sort((a, b) => b.timestamp - a.timestamp), [logs]);
+  const sections = useMemo(() => groupLogsByRecency(logs), [logs]);
 
   return (
-    <FlatList
-      data={sortedLogs}
+    <SectionList
+      sections={sections}
       keyExtractor={item => item.id}
-      renderItem={({ item, index }) => (
+      renderItem={({ item, index, section }) => (
         <>
-          {index > 0 && <DistanceIndicator durationMs={sortedLogs[index - 1].timestamp - item.timestamp} />}
+          {index > 0 && <DistanceIndicator durationMs={section.data[index - 1].timestamp - item.timestamp} />}
           <BehaviorLogItem
             log={item}
             behaviorId={behavior.id}
@@ -167,8 +168,13 @@ function BehaviorLogList() {
           />
         </>
       )}
+      renderSectionHeader={({ section }) => (
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionHeaderText}>{section.title}</Text>
+        </View>
+      )}
       ListEmptyComponent={<Text style={styles.empty}>No logs yet.{'\n'}Press the + button to log this behavior.</Text>}
-      contentContainerStyle={sortedLogs.length === 0 && styles.emptyContainer}
+      contentContainerStyle={logs.length === 0 && styles.emptyContainer}
     />
   );
 }
@@ -267,5 +273,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 15,
     padding: 32,
+  },
+  sectionHeader: {
+    marginTop: 12,
+    marginBottom: 4,
+    marginHorizontal: 16,
+  },
+  sectionHeaderText: {
+    color: '#666',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });

@@ -1,4 +1,4 @@
-import type { BehaviorEntry } from '../types/behavior';
+import type { BehaviorEntry, LogEntry } from '../types/behavior';
 
 /**
  * Sort behaviors by most recent activity (lastTimestamp descending),
@@ -45,9 +45,9 @@ function getRecencyGroup(lastTimestamp: number | null): RecencyGroup {
   return 'Older';
 }
 
-export interface RecencySection {
+export interface RecencySection<T = BehaviorEntry> {
   title: RecencyGroup;
-  data: BehaviorEntry[];
+  data: T[];
 }
 
 export function groupBehaviorsByRecency(behaviors: BehaviorEntry[]): RecencySection[] {
@@ -61,6 +61,25 @@ export function groupBehaviorsByRecency(behaviors: BehaviorEntry[]): RecencySect
   for (const behavior of sorted) {
     const group = getRecencyGroup(behavior.lastTimestamp);
     groups.get(group)!.push(behavior);
+  }
+
+  return GROUP_ORDER.filter(group => (groups.get(group)?.length ?? 0) > 0).map(title => ({
+    title,
+    data: groups.get(title)!,
+  }));
+}
+
+export function groupLogsByRecency(logs: LogEntry[]): RecencySection<LogEntry>[] {
+  const sorted = [...logs].sort((a, b) => b.timestamp - a.timestamp);
+  const groups = new Map<RecencyGroup, LogEntry[]>();
+
+  for (const group of GROUP_ORDER) {
+    groups.set(group, []);
+  }
+
+  for (const log of sorted) {
+    const group = getRecencyGroup(log.timestamp);
+    groups.get(group)!.push(log);
   }
 
   return GROUP_ORDER.filter(group => (groups.get(group)?.length ?? 0) > 0).map(title => ({

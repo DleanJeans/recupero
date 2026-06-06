@@ -4,8 +4,7 @@ import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { LogEntry } from '../types/behavior';
-import { formatDateDisplay } from '../utils/dateUtils';
-import { formatElapsed, formatTime } from '../utils/timeUtils';
+import { formatElapsedNumeric, formatTime } from '../utils/timeUtils';
 import { Text } from './Text';
 
 interface Props {
@@ -78,8 +77,6 @@ export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
     </Pressable>
   );
 
-  const dateString = toDateString(log.timestamp);
-
   return (
     <Swipeable
       renderLeftActions={renderLeftActions}
@@ -90,9 +87,9 @@ export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
       <View style={styles.logItem}>
         <View style={styles.logContent}>
           <Text style={styles.dateText}>
-            {formatDateDisplay(dateString)} · {formatTime(log.timestamp)}
+            {formatTime(log.timestamp)}
           </Text>
-          <Text style={styles.elapsedText}>{formatElapsed(log.timestamp)}</Text>
+          <Text style={styles.elapsedText}>{formatElapsedNumeric(log.timestamp)}</Text>
         </View>
       </View>
     </Swipeable>
