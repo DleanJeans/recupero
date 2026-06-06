@@ -1,45 +1,18 @@
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { FlatList, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AddBehaviorButton } from '../components/AddBehaviorButton';
 import { BehaviorCard } from '../components/BehaviorCard';
 import { BehaviorForm } from '../components/BehaviorForm';
-import { LogBehaviorModal } from '../components/LogBehaviorModal';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
-import type { BehaviorEntry } from '../types/behavior';
-import type { RootStackParamList } from '../types/navigation';
 import { sortBehaviorsByRecent } from '../utils/behaviorUtils';
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
 export function HomeScreen() {
-  const navigation = useNavigation<NavigationProp>();
-  const { behaviors, logBehavior, removeBehavior } = useBehaviorStore();
+  const { behaviors } = useBehaviorStore();
   const [isAdding, setIsAdding] = useState(false);
-  const [loggingBehavior, setLoggingBehavior] = useState<BehaviorEntry | null>(null);
 
   const sortedBehaviors = useMemo(() => sortBehaviorsByRecent(behaviors), [behaviors]);
-
-  const handleRemove = useCallback(
-    (behavior: BehaviorEntry) => {
-      Alert.alert('Remove Behavior', `Remove "${behavior.name}"?`, [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => removeBehavior(behavior.id),
-        },
-      ]);
-    },
-    [
-      removeBehavior,
-    ],
-  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -48,18 +21,7 @@ export function HomeScreen() {
       <FlatList
         data={sortedBehaviors}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <BehaviorCard
-            behavior={item}
-            onLog={() => setLoggingBehavior(item)}
-            onRemove={() => handleRemove(item)}
-            onPress={() =>
-              navigation.navigate('BehaviorDetails', {
-                behaviorId: item.id,
-              })
-            }
-          />
-        )}
+        renderItem={({ item }) => <BehaviorCard behavior={item} />}
         ListEmptyComponent={<Text style={styles.empty}>No behaviors yet.{`\n`}Add your first one.</Text>}
         contentContainerStyle={behaviors.length === 0 && styles.emptyContainer}
       />
@@ -77,16 +39,6 @@ export function HomeScreen() {
           <Text style={styles.fabText}>+ Add behavior</Text>
         </Pressable>
       )}
-
-      <LogBehaviorModal
-        behaviorName={loggingBehavior?.name ?? ''}
-        visible={loggingBehavior != null}
-        onConfirm={(timestamp) => {
-          if (loggingBehavior) logBehavior(loggingBehavior.id, timestamp);
-          setLoggingBehavior(null);
-        }}
-        onCancel={() => setLoggingBehavior(null)}
-      />
     </SafeAreaView>
   );
 }

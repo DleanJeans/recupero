@@ -1,51 +1,84 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
+import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
+import type { RootStackParamList } from '../types/navigation';
 import { formatElapsed } from '../utils/timeUtils';
 import { BehaviorIcon } from './BehaviorIcon';
 import { CooldownLabel } from './CooldownLabel';
+import { LogBehaviorModal } from './LogBehaviorModal';
 import { Text } from './Text';
+
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface Props {
   behavior: BehaviorEntry;
-  onLog: () => void;
-  onRemove: () => void;
-  onPress?: () => void;
 }
-export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
+export function BehaviorCard({ behavior }: Props) {
+  const navigation = useNavigation<NavProp>();
+  const { logBehavior, removeBehavior } = useBehaviorStore();
   const swipeableRef = useRef<Swipeable>(null);
   const [, setTick] = useState(0);
+  const [logVisible, setLogVisible] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(interval);
   }, []);
 
+  const handleRemove = () => {
+    swipeableRef.current?.close();
+    Alert.alert('Remove Behavior', `Remove "${behavior.name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () => removeBehavior(behavior.id),
+      },
+    ]);
+  };
+
+  const handleLog = (timestamp: number) => {
+    logBehavior(behavior.id, timestamp);
+    setLogVisible(false);
+  };
+
   return (
-    <Swipeable
-      ref={swipeableRef}
-      renderLeftActions={() => <SwipeDelete onRemove={onRemove} />}
-      overshootLeft={false}
-    >
-      <View style={styles.card}>
-        <Pressable
-          style={styles.content}
-          onPress={onPress}
-        >
-          <BehaviorIcon
-            icon={behavior.icon}
-            size={32}
+    <>
+      <Swipeable
+        ref={swipeableRef}
+        renderLeftActions={() => <SwipeDelete onRemove={handleRemove} />}
+        overshootLeft={false}
+      >
+        <View style={styles.card}>
+          <Pressable
+            style={styles.content}
+            onPress={() => navigation.navigate('BehaviorDetails', { behaviorId: behavior.id })}
+          >
+            <BehaviorIcon
+              icon={behavior.icon}
+              size={32}
+            />
+            <BehaviorInfo behavior={behavior} />
+          </Pressable>
+          <LogButton
+            name={behavior.name}
+            onLog={() => setLogVisible(true)}
           />
-          <BehaviorInfo behavior={behavior} />
-        </Pressable>
-        <LogButton
-          name={behavior.name}
-          onLog={onLog}
-        />
-      </View>
-    </Swipeable>
+        </View>
+      </Swipeable>
+
+      <LogBehaviorModal
+        behaviorName={behavior.name}
+        visible={logVisible}
+        onConfirm={handleLog}
+        onCancel={() => setLogVisible(false)}
+      />
+    </>
   );
 }
 
