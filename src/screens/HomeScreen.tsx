@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, StyleSheet } from 'react-native';
+import { SectionList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddBehaviorButton } from '../components/AddBehaviorButton';
 import { BehaviorCard } from '../components/BehaviorCard';
@@ -7,7 +7,7 @@ import { BehaviorForm } from '../components/BehaviorForm';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
-import { sortBehaviorsByRecent } from '../utils/behaviorUtils';
+import { groupBehaviorsByRecency } from '../utils/behaviorUtils';
 
 export function HomeScreen() {
   const { behaviors } = useBehaviorStore();
@@ -36,14 +36,19 @@ interface BehaviorListProps {
   behaviors: BehaviorEntry[];
 }
 function BehaviorList({ behaviors }: BehaviorListProps) {
-  const sortedBehaviors = useMemo(() => sortBehaviorsByRecent(behaviors), [behaviors]);
+  const sections = useMemo(() => groupBehaviorsByRecency(behaviors), [behaviors]);
 
   return (
-    <FlatList
-      data={sortedBehaviors}
+    <SectionList
+      sections={sections}
       keyExtractor={item => item.id}
       renderItem={({ item }) => <BehaviorCard behavior={item} />}
-      ListEmptyComponent={<Text style={styles.empty}>No behaviors yet.{`\n`}Add your first one.</Text>}
+      renderSectionHeader={({ section }) => (
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionHeaderText}>{section.title}</Text>
+        </View>
+      )}
+      ListEmptyComponent={<Text style={styles.empty}>No behaviors yet.{'\n'}Add your first one.</Text>}
       contentContainerStyle={behaviors.length === 0 && styles.emptyContainer}
     />
   );
@@ -72,5 +77,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 15,
     padding: 32,
+  },
+  sectionHeader: {
+    marginTop: 12,
+    marginBottom: 4,
+    marginHorizontal: 16,
+  },
+  sectionHeaderText: {
+    color: '#666',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });

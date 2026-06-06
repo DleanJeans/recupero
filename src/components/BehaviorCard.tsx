@@ -7,7 +7,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
-import { formatElapsed } from '../utils/timeUtils';
+import { formatElapsedNumeric } from '../utils/timeUtils';
 import { BehaviorIcon } from './BehaviorIcon';
 import { BehaviorLogModal } from './BehaviorLogModal';
 import { CooldownLabel } from './CooldownLabel';
@@ -109,7 +109,7 @@ interface BehaviorElapsedProps {
   behavior: BehaviorEntry;
 }
 function BehaviorElapsed({ behavior }: BehaviorElapsedProps) {
-  return <Text style={styles.elapsed}>{formatElapsed(behavior.lastTimestamp)}</Text>;
+  return <Text style={styles.elapsed}>{formatElapsedNumeric(behavior.lastTimestamp)}</Text>;
 }
 
 interface LogButtonProps {
