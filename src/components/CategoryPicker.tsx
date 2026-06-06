@@ -20,6 +20,9 @@ export function CategoryPicker({ categories, selectedId, onChange }: CategoryPic
         >
           <Text style={[styles.chipText, !selectedId && styles.chipTextActive]}>None</Text>
         </Pressable>
+        {categories.length === 0 && (
+          <Text style={styles.emptyHint}>Tap + to create one on the home screen</Text>
+        )}
         {categories.map(cat => (
           <Pressable
             key={cat.id}
@@ -77,5 +80,11 @@ const styles = StyleSheet.create({
   },
   chipTextActive: {
     color: '#fff',
+  },
+  emptyHint: {
+    color: '#555',
+    fontSize: 12,
+    fontStyle: 'italic',
+    paddingVertical: 6,
   },
 });

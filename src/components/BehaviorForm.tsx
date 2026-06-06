@@ -67,7 +67,7 @@ export function BehaviorForm({ behavior, onClose }: Props) {
   };
 
   return (
-    <KeyboardAvoidingView behavior="padding" /* DO NOT change */>
+    <KeyboardAvoidingView behavior="position" /* DO NOT change */>
       <View style={styles.form}>
         <View style={styles.row}>
           <IconInput
@@ -96,13 +96,11 @@ export function BehaviorForm({ behavior, onClose }: Props) {
             onChange={setCooldownMinutes}
           />
         </View>
-        {categories.length > 0 && (
-          <CategoryPicker
-            categories={categories}
-            selectedId={categoryId}
-            onChange={setCategoryId}
-          />
-        )}
+        <CategoryPicker
+          categories={categories}
+          selectedId={categoryId}
+          onChange={setCategoryId}
+        />
         <FormActions
           onCancel={onClose}
           onSubmit={handleSave}
