@@ -9,34 +9,31 @@ interface CategoryPickerProps {
   onChange: (id: string | undefined) => void;
 }
 
+function allItems(categories: Category[]): (Category | { id: undefined; emoji: string; name: string })[] {
+  return [{ id: undefined, emoji: '', name: 'None' }, ...categories];
+}
+
 export function CategoryPicker({ categories, selectedId, onChange }: CategoryPickerProps) {
+  const items = allItems(categories);
+
   return (
     <View style={styles.section}>
       <Text style={styles.label}>Category</Text>
       <View style={styles.row}>
-        <Pressable
-          style={({ pressed }) => [styles.chip, !selectedId && styles.chipActive, pressed && { opacity: 0.7 }]}
-          onPress={() => onChange(undefined)}
-        >
-          <Text style={[styles.chipText, !selectedId && styles.chipTextActive]}>None</Text>
-        </Pressable>
-        {categories.length === 0 && (
-          <Text style={styles.emptyHint}>Tap + to create one on the home screen</Text>
-        )}
-        {categories.map(cat => (
-          <Pressable
-            key={cat.id}
-            style={({ pressed }) => [
-              styles.chip,
-              selectedId === cat.id && styles.chipActive,
-              pressed && { opacity: 0.7 },
-            ]}
-            onPress={() => onChange(cat.id)}
-          >
-            <Text style={styles.chipEmoji}>{cat.emoji}</Text>
-            <Text style={[styles.chipText, selectedId === cat.id && styles.chipTextActive]}>{cat.name}</Text>
-          </Pressable>
-        ))}
+        {items.length === 1 && <Text style={styles.emptyHint}>Tap + to create one on the home screen</Text>}
+        {items.map((item, index) => {
+          const active = selectedId === item.id;
+          return (
+            <Pressable
+              key={item.id}
+              style={({ pressed }) => [styles.chip, active && styles.chipActive, pressed && { opacity: 0.7 }]}
+              onPress={() => onChange(item.id)}
+            >
+              {item.emoji ? <Text style={styles.chipEmoji}>{item.emoji}</Text> : null}
+              <Text style={[styles.chipText, active && styles.chipTextActive]}>{item.name}</Text>
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
