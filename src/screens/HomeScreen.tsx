@@ -29,15 +29,7 @@ export function HomeScreen() {
       {isAdding ? (
         <BehaviorForm onClose={() => setIsAdding(false)} />
       ) : (
-        <Pressable
-          style={({ pressed }) => [
-            styles.fab,
-            pressed && styles.fabPressed,
-          ]}
-          onPress={() => setIsAdding(true)}
-        >
-          <Text style={styles.fabText}>+ Add behavior</Text>
-        </Pressable>
+        <AddBehaviorButton onPress={() => setIsAdding(true)} />
       )}
     </SafeAreaView>
   );
@@ -66,25 +58,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 15,
     padding: 32,
-  },
-  fab: {
-    margin: 16,
-    backgroundColor: '#EFEFEF',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  fabPressed: {
-    backgroundColor: '#D8D8D8',
-    transform: [
-      {
-        scale: 0.98,
-      },
-    ],
-  },
-  fabText: {
-    color: '#111111',
-    fontSize: 15,
-    fontWeight: '600',
   },
 });
