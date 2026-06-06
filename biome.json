@@ -11,7 +11,8 @@
       "quoteStyle": "single",
       "trailingCommas": "all",
       "arrowParentheses": "asNeeded",
-      "attributePosition": "multiline"
+      "attributePosition": "multiline",
+      "expand": "auto"
     }
   },
   "linter": {

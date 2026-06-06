@@ -8,7 +8,7 @@ import { CategoryPicker } from './CategoryPicker';
 import { CooldownIcon } from './CooldownIcon';
 import type { CooldownUnit } from './CooldownInput';
 import { CooldownInput } from './CooldownInput';
-import { EmojiInput } from './EmojiInput';
+import { EmojiPicker as EmojiInput } from './EmojiPicker';
 import { Text, TextInput } from './Text';
 
 interface Props {
@@ -87,8 +87,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
           <EmojiInput
             value={icon}
             onChangeText={setIcon}
-            onSubmitEditing={() => nameRef.current?.focus()}
-            returnKeyType="next"
+            onPick={() => nameRef.current?.focus()}
           />
           <NameInput
             ref={nameRef}

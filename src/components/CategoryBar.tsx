@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { Category } from '../types/behavior';
-import { EmojiInput } from './EmojiInput';
-import { Text } from './Text';
+import { EmojiPicker } from './EmojiPicker';
+import { Text, TextInput } from './Text';
 
 interface CategoryBarProps {
   selectedCategoryId: string | null;
@@ -108,7 +108,7 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBa
       {(showForm || editingCategory) && (
         <View style={styles.form}>
           <View style={styles.formRow}>
-            <EmojiInput
+            <EmojiPicker
               value={emoji}
               onChangeText={setEmoji}
             />
