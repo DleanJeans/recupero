@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Alert, FlatList, Image, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,11 +12,43 @@ import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry, LogEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
-import type { CooldownInfo } from '../utils/cooldownUtils';
+import { type CooldownInfo, toCooldownInfo } from '../utils/cooldownUtils';
+
+interface BehaviorDetailsContextValues {
+  behavior?: BehaviorEntry;
+  behaviorCooldown?: CooldownInfo;
+  showEditModal: boolean;
+  openEditModal: () => void;
+  closeEditModal: () => void;
+  editingLog: LogEntry | null;
+  startEditingLog: (log: LogEntry) => void;
+  saveLogEdit: (timestamp: number) => void;
+  cancelLogEdit: () => void;
+  removeLog: (logId: string) => void;
+  saveBehavior: (updates: {
+    name?: string;
+    icon?:
+      | string
+      | {
+          uri: string;
+        }
+      | undefined;
+    cooldownMinutes?: number;
+    cooldownType?: 'rest' | 'limit';
+  }) => void;
+}
+
+const BehaviorDetailsContext = createContext<BehaviorDetailsContextValues | null>(null);
+
+function useBehaviorDetails(): BehaviorDetailsContextValues {
+  const ctx = useContext(BehaviorDetailsContext);
+  if (!ctx) throw new Error('useBehaviorDetails must be used within BehaviorDetailsScreen');
+  return ctx;
+}
 
 type BehaviorDetailsRouteProp = RouteProp<RootStackParamList, 'BehaviorDetails'>;
 export function BehaviorDetailsScreen() {
-  const navigation = useNavigation();
+  
   const route = useRoute<BehaviorDetailsRouteProp>();
   const { behaviorId } = route.params;
 
@@ -25,97 +57,73 @@ export function BehaviorDetailsScreen() {
   const [editingLog, setEditingLog] = useState<LogEntry | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  const behaviorCooldown = useMemo(
-    () =>
-      behavior && behavior.cooldownMinutes
-        ? {
-            minutes: behavior.cooldownMinutes,
-            lastTimestamp: behavior.lastTimestamp,
-            type: behavior.cooldownType,
-          }
-        : undefined,
-    [
-      behavior?.cooldownMinutes,
-      behavior?.lastTimestamp,
-      behavior?.cooldownType,
-    ],
-  );
+  const behaviorCooldown = toCooldownInfo(behavior);
 
-  const handleRemoveLog = useCallback(
-    (logId: string) => {
-      Alert.alert('Remove Log', 'Remove this log entry?', [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => removeLog(behaviorId, logId),
-        },
-      ]);
-    },
+  function handleRemoveLog(logId: string) {
+    Alert.alert('Remove Log', 'Remove this log entry?', [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () => removeLog(behaviorId, logId),
+      },
+    ]);
+  }
+
+  const context = useMemo<BehaviorDetailsContextValues>(
+    () => ({
+      behavior,
+      behaviorCooldown,
+      showEditModal,
+      openEditModal: () => setShowEditModal(true),
+      closeEditModal: () => setShowEditModal(false),
+      editingLog,
+      startEditingLog: setEditingLog,
+      saveLogEdit: (timestamp: number) => {
+        if (editingLog) updateLog(behaviorId, editingLog.id, timestamp);
+        setEditingLog(null);
+      },
+      cancelLogEdit: () => setEditingLog(null),
+      removeLog: handleRemoveLog,
+      saveBehavior: (updates) => updateBehavior(behaviorId, updates),
+    }),
     [
+      behavior,
+      behaviorCooldown,
+      showEditModal,
+      editingLog,
       behaviorId,
-      removeLog,
+      handleRemoveLog,
+      updateLog,
+      updateBehavior,
     ],
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        {behavior ? (
-          <BehaviorTitle
-            icon={behavior.icon}
-            name={behavior.name}
-            cooldown={behaviorCooldown}
-          />
-        ) : (
+    <BehaviorDetailsContext.Provider value={context}>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <BackButton />
           <BehaviorTitle />
-        )}
-        {behavior ? <EditButton onPress={() => setShowEditModal(true)} /> : null}
-      </View>
+          <EditButton />
+        </View>
 
-      {behavior ? (
-        <>
-          <LogList
-            logs={behavior.logs}
-            onRemove={handleRemoveLog}
-            onEdit={setEditingLog}
-          />
-
-          <LogBehaviorModal
-            behaviorName={behavior.name}
-            visible={editingLog != null}
-            initialTimestamp={editingLog?.timestamp}
-            onConfirm={(timestamp) => {
-              if (editingLog) updateLog(behaviorId, editingLog.id, timestamp);
-              setEditingLog(null);
-            }}
-            onCancel={() => setEditingLog(null)}
-          />
-
-          <EditBehaviorModal
-            key={showEditModal ? 'open' : 'closed'}
-            visible={showEditModal}
-            behavior={behavior}
-            onSave={(updates) => updateBehavior(behaviorId, updates)}
-            onClose={() => setShowEditModal(false)}
-          />
-        </>
-      ) : null}
-    </SafeAreaView>
+        <BehaviorLogList />
+        <LogBehaviorModalWrapper />
+        <EditBehaviorModal />
+      </SafeAreaView>
+    </BehaviorDetailsContext.Provider>
   );
 }
 
 // ---- Header components ----
 
-interface BackButtonProps {
-  onPress: () => void;
-}
-
-function BackButton({ onPress }: BackButtonProps) {
+function BackButton() {
+  const navigation = useNavigation();
+  
   return (
     <Pressable
       style={({ pressed }) => [
@@ -124,7 +132,7 @@ function BackButton({ onPress }: BackButtonProps) {
           opacity: 0.5,
         },
       ]}
-      onPress={onPress}
+      onPress={navigation.goBack}
     >
       <Ionicons
         name="chevron-back"
@@ -135,12 +143,12 @@ function BackButton({ onPress }: BackButtonProps) {
   );
 }
 
-interface BehaviorTitleProps {
-  icon?: BehaviorEntry['icon'];
-  name?: string;
-  cooldown?: CooldownInfo;
-}
-function BehaviorTitle({ icon, name, cooldown }: BehaviorTitleProps) {
+function BehaviorTitle() {
+  const { behavior, behaviorCooldown } = useBehaviorDetails();
+  const name = behavior?.name;
+  const icon = behavior?.icon;
+  const cooldown = behaviorCooldown;
+
   if (!name) {
     return <Text style={styles.headerTitle}>Behavior Not Found</Text>;
   }
@@ -163,10 +171,9 @@ function BehaviorTitle({ icon, name, cooldown }: BehaviorTitleProps) {
   );
 }
 
-interface EditButtonProps {
-  onPress: () => void;
-}
-function EditButton({ onPress }: EditButtonProps) {
+function EditButton() {
+  const { openEditModal } = useBehaviorDetails();
+
   return (
     <Pressable
       style={({ pressed }) => [
@@ -175,7 +182,7 @@ function EditButton({ onPress }: EditButtonProps) {
           opacity: 0.5,
         },
       ]}
-      onPress={onPress}
+      onPress={openEditModal}
     >
       <Ionicons
         name="create-outline"
@@ -188,15 +195,20 @@ function EditButton({ onPress }: EditButtonProps) {
 
 // ---- List component ----
 
-interface LogListProps {
-  logs: LogEntry[];
-  onRemove: (logId: string) => void;
-  onEdit: (log: LogEntry) => void;
-}
-function LogList({ logs, onRemove, onEdit }: LogListProps) {
-  const sortedLogs = [
-    ...logs,
-  ].sort((a, b) => b.timestamp - a.timestamp);
+function BehaviorLogList() {
+  const { behavior, removeLog, startEditingLog } = useBehaviorDetails();
+  if (!behavior) return null;
+
+  const logs = behavior.logs ?? [];
+  const sortedLogs = useMemo(
+    () =>
+      [
+        ...logs,
+      ].sort((a, b) => b.timestamp - a.timestamp),
+    [
+      logs,
+    ],
+  );
 
   return (
     <FlatList
@@ -205,8 +217,8 @@ function LogList({ logs, onRemove, onEdit }: LogListProps) {
       renderItem={({ item }) => (
         <BehaviorLogItem
           log={item}
-          onRemove={() => onRemove(item.id)}
-          onEdit={() => onEdit(item)}
+          onRemove={() => removeLog(item.id)}
+          onEdit={() => startEditingLog(item)}
         />
       )}
       ListEmptyComponent={<Text style={styles.empty}>No logs yet.{'\n'}Press the + button to log this behavior.</Text>}
@@ -217,30 +229,32 @@ function LogList({ logs, onRemove, onEdit }: LogListProps) {
 
 // ---- Modal components ----
 
-interface EditBehaviorModalProps {
-  visible: boolean;
-  behavior: BehaviorEntry;
-  onSave: (updates: {
-    name?: string;
-    icon?:
-      | string
-      | {
-          uri: string;
-        }
-      | undefined;
-    cooldownMinutes?: number;
-    cooldownType?: 'rest' | 'limit';
-  }) => void;
-  onClose: () => void;
+function LogBehaviorModalWrapper() {
+  const { behavior, editingLog, saveLogEdit, cancelLogEdit } = useBehaviorDetails();
+  if (!behavior) return null;
+
+  return (
+    <LogBehaviorModal
+      behaviorName={behavior.name}
+      visible={editingLog != null}
+      initialTimestamp={editingLog?.timestamp}
+      onConfirm={saveLogEdit}
+      onCancel={cancelLogEdit}
+    />
+  );
 }
-function EditBehaviorModal({ visible, behavior, onSave, onClose }: EditBehaviorModalProps) {
+
+function EditBehaviorModal() {
+  const { showEditModal, behavior, saveBehavior, closeEditModal } = useBehaviorDetails();
+  if (!behavior) return null;
+
   const [editIcon, setEditIcon] = useState('');
   const [editName, setEditName] = useState('');
   const [editCooldown, setEditCooldown] = useState(60);
   const [editCooldownType, setEditCooldownType] = useState<'rest' | 'limit'>('rest');
 
   useEffect(() => {
-    if (!visible) return;
+    if (!showEditModal || !behavior) return;
     const iconStr =
       typeof behavior.icon === 'object' && behavior.icon !== null
         ? behavior.icon.uri
@@ -252,7 +266,7 @@ function EditBehaviorModal({ visible, behavior, onSave, onClose }: EditBehaviorM
     setEditCooldown(behavior.cooldownMinutes || 60);
     setEditCooldownType(behavior.cooldownType || 'rest');
   }, [
-    visible,
+    showEditModal,
     behavior,
   ]);
 
@@ -266,31 +280,31 @@ function EditBehaviorModal({ visible, behavior, onSave, onClose }: EditBehaviorM
           }
         : raw
       : undefined;
-    onSave({
+    saveBehavior({
       name: editName.trim(),
       icon,
       cooldownMinutes: editCooldown,
       cooldownType: editCooldownType,
     });
-    onClose();
+    closeEditModal();
   }, [
     editName,
     editIcon,
     editCooldown,
     editCooldownType,
-    onSave,
-    onClose,
+    saveBehavior,
+    closeEditModal,
   ]);
 
   const handleCancel = useCallback(() => {
-    onClose();
+    closeEditModal();
   }, [
-    onClose,
+    closeEditModal,
   ]);
 
   return (
     <Modal
-      visible={visible}
+      visible={showEditModal}
       transparent
       animationType="slide"
       onRequestClose={handleCancel}

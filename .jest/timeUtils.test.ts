@@ -96,11 +96,11 @@ describe('formatElapsed', () => {
 
   it('returns "Last week" for 7-13 days ago (same month)', () => {
     // June 13 (Saturday), 7 days ago — still in June
-    expect(formatElapsed(Date.now() - 7 * 24 * 3600_000)).toBe('Last week');
+    expect(formatElapsed(Date.now() - 7 * 24 * 3600_000)).toBe('Last week · 7d ago');
     // June 10 (Wednesday), 10 days ago
-    expect(formatElapsed(Date.now() - 10 * 24 * 3600_000)).toBe('Last week');
+    expect(formatElapsed(Date.now() - 10 * 24 * 3600_000)).toBe('Last week · 10d ago');
     // June 7 (Sunday), 13 days ago
-    expect(formatElapsed(Date.now() - 13 * 24 * 3600_000)).toBe('Last week');
+    expect(formatElapsed(Date.now() - 13 * 24 * 3600_000)).toBe('Last week · 13d ago');
   });
 
   // ---- Last month · Xw ago (>= 7 days, in previous calendar month) ----

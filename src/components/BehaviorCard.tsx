@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import type { BehaviorEntry } from '../types/behavior';
-import type { CooldownInfo } from '../utils/cooldownUtils';
+import { type CooldownInfo, toCooldownInfo } from '../utils/cooldownUtils';
 import { formatElapsed } from '../utils/timeUtils';
 import { CooldownLabel } from './CooldownLabel';
 import { Text } from './Text';
@@ -38,15 +38,7 @@ export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
           <BehaviorInfo
             name={behavior.name}
             lastTimestamp={behavior.lastTimestamp}
-            cooldown={
-              behavior.cooldownMinutes
-                ? {
-                    minutes: behavior.cooldownMinutes,
-                    lastTimestamp: behavior.lastTimestamp,
-                    type: behavior.cooldownType,
-                  }
-                : undefined
-            }
+            cooldown={toCooldownInfo(behavior)}
           />
         </Pressable>
         <LogButton
