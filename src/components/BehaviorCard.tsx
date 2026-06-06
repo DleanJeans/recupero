@@ -18,8 +18,9 @@ type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface Props {
   behavior: BehaviorEntry;
+  showCategory?: boolean;
 }
-export function BehaviorCard({ behavior }: Props) {
+export function BehaviorCard({ behavior, showCategory }: Props) {
   const navigation = useNavigation<NavProp>();
   const { removeBehavior } = useBehaviorStore();
   const swipeableRef = useRef<Swipeable>(null);
@@ -69,7 +70,10 @@ export function BehaviorCard({ behavior }: Props) {
               behavior={behavior}
               size={32}
             />
-            <BehaviorInfo behavior={behavior} />
+            <BehaviorInfo
+              behavior={behavior}
+              showCategory={showCategory}
+            />
           </Pressable>
 
           <LogButton
@@ -110,11 +114,20 @@ export function BehaviorCard({ behavior }: Props) {
 
 interface BehaviorInfoProps {
   behavior: BehaviorEntry;
+  showCategory?: boolean;
 }
-function BehaviorInfo({ behavior }: BehaviorInfoProps) {
+function BehaviorInfo({ behavior, showCategory }: BehaviorInfoProps) {
+  const { categories } = useBehaviorStore();
+  const category = showCategory && behavior.categoryId
+    ? categories.find((c) => c.id === behavior.categoryId)
+    : undefined;
+
   return (
     <View style={styles.info}>
-      <BehaviorName behavior={behavior} />
+      <View style={styles.nameRow}>
+        <BehaviorName behavior={behavior} />
+        {category && <Text style={styles.categoryBadge}>{category.emoji}</Text>}
+      </View>
       <View style={styles.elapsedRow}>
         <BehaviorElapsed behavior={behavior} />
         <CooldownLabel behavior={behavior} />
@@ -208,10 +221,18 @@ const styles = StyleSheet.create({
     gap: 4,
     marginTop: 2,
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   name: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  categoryBadge: {
+    fontSize: 15,
   },
   elapsed: {
     color: '#888',

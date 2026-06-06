@@ -73,7 +73,12 @@ function BehaviorList({ behaviors, selectedCategoryId }: BehaviorListProps) {
     <SectionList
       sections={sections}
       keyExtractor={item => item.id}
-      renderItem={({ item }) => <BehaviorCard behavior={item} />}
+      renderItem={({ item }) => (
+        <BehaviorCard
+          behavior={item}
+          showCategory={selectedCategoryId === null}
+        />
+      )}
       renderSectionHeader={({ section }) => (
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionHeaderText}>{section.title}</Text>
