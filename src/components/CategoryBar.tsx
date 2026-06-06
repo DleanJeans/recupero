@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { Category } from '../types/behavior';
-import { Text, TextInput } from './Text';
+import { EmojiInput } from './EmojiInput';
+import { Text } from './Text';
 
 interface CategoryBarProps {
   selectedCategoryId: string | null;
@@ -10,8 +11,7 @@ interface CategoryBarProps {
 }
 
 export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBarProps) {
-  const { categories, addCategory, removeCategory, updateCategory } =
-    useBehaviorStore();
+  const { categories, addCategory, removeCategory, updateCategory } = useBehaviorStore();
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [emoji, setEmoji] = useState('');
@@ -48,23 +48,19 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBa
     if (!editingCategory) return;
     const cat = editingCategory;
     resetForm();
-    Alert.alert(
-      `Delete "${cat.name}"?`,
-      `Behaviors in this category will lose their category assignment.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => removeCategory(cat.id),
-        },
-      ],
-    );
+    Alert.alert(`Delete "${cat.name}"?`, `Behaviors in this category will lose their category assignment.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => removeCategory(cat.id),
+      },
+    ]);
   };
 
   const openAddForm = () => {
     setEditingCategory(null);
-    setShowForm((v) => !v);
+    setShowForm(v => !v);
   };
 
   return (
@@ -82,17 +78,10 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBa
           ]}
           onPress={() => onSelectCategory(null)}
         >
-          <Text
-            style={[
-              styles.chipText,
-              selectedCategoryId === null && styles.chipTextActive,
-            ]}
-          >
-            All
-          </Text>
+          <Text style={[styles.chipText, selectedCategoryId === null && styles.chipTextActive]}>All</Text>
         </Pressable>
 
-        {categories.map((cat) => (
+        {categories.map(cat => (
           <Pressable
             key={cat.id}
             style={({ pressed }) => [
@@ -104,14 +93,7 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBa
             onLongPress={() => setEditingCategory(cat)}
           >
             <Text style={styles.chipEmoji}>{cat.emoji}</Text>
-            <Text
-              style={[
-                styles.chipText,
-                selectedCategoryId === cat.id && styles.chipTextActive,
-              ]}
-            >
-              {cat.name}
-            </Text>
+            <Text style={[styles.chipText, selectedCategoryId === cat.id && styles.chipTextActive]}>{cat.name}</Text>
           </Pressable>
         ))}
 
@@ -126,14 +108,9 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBa
       {(showForm || editingCategory) && (
         <View style={styles.form}>
           <View style={styles.formRow}>
-            <TextInput
-              style={styles.emojiInput}
-              placeholder="🏃"
-              placeholderTextColor="#4a4a4a"
+            <EmojiInput
               value={emoji}
               onChangeText={setEmoji}
-              maxLength={2}
-              autoFocus
             />
             <TextInput
               style={styles.nameInput}
@@ -169,12 +146,7 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBa
               onPress={handleSave}
               disabled={!emoji.trim() || !name.trim()}
             >
-              <Text
-                style={[
-                  styles.formAddText,
-                  (!emoji.trim() || !name.trim()) && styles.formAddTextDisabled,
-                ]}
-              >
+              <Text style={[styles.formAddText, (!emoji.trim() || !name.trim()) && styles.formAddTextDisabled]}>
                 {isEditing ? 'Save' : 'Add'}
               </Text>
             </Pressable>
@@ -242,16 +214,6 @@ const styles = StyleSheet.create({
   formRow: {
     flexDirection: 'row',
     gap: 8,
-  },
-  emojiInput: {
-    backgroundColor: '#2a2a2a',
-    color: '#fff',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 20,
-    width: 48,
-    textAlign: 'center',
   },
   nameInput: {
     flex: 1,

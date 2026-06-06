@@ -8,6 +8,7 @@ import { CategoryPicker } from './CategoryPicker';
 import { CooldownIcon } from './CooldownIcon';
 import type { CooldownUnit } from './CooldownInput';
 import { CooldownInput } from './CooldownInput';
+import { EmojiInput } from './EmojiInput';
 import { Text, TextInput } from './Text';
 
 interface Props {
@@ -83,10 +84,11 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
     <KeyboardAvoidingView behavior="position" /* DO NOT change */>
       <View style={styles.form}>
         <View style={styles.row}>
-          <IconInput
+          <EmojiInput
             value={icon}
             onChangeText={setIcon}
-            onNext={() => nameRef.current?.focus()}
+            onSubmitEditing={() => nameRef.current?.focus()}
+            returnKeyType="next"
           />
           <NameInput
             ref={nameRef}
@@ -127,25 +129,6 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
 }
 
 // #region Sub-components
-
-interface IconInputProps {
-  value: string;
-  onChangeText: (v: string) => void;
-  onNext: () => void;
-}
-function IconInput({ value, onChangeText, onNext }: IconInputProps) {
-  return (
-    <TextInput
-      style={styles.iconInput}
-      placeholder="🏃"
-      placeholderTextColor="#4a4a4a"
-      value={value}
-      onChangeText={onChangeText}
-      onSubmitEditing={onNext}
-      returnKeyType="next"
-    />
-  );
-}
 
 interface NameInputProps {
   value: string;
@@ -269,16 +252,6 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     gap: 10,
-  },
-  iconInput: {
-    backgroundColor: '#2a2a2a',
-    color: '#fff',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 22,
-    width: 56,
-    textAlign: 'center',
   },
   nameInput: {
     flex: 1,
