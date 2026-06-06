@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import type { BehaviorEntry } from '../types/behavior';
 import { formatElapsed } from '../utils/timeUtils';
+import { BehaviorIcon } from './BehaviorIcon';
+import { CooldownLabel } from './CooldownLabel';
 import { Text } from './Text';
 
 interface Props {
@@ -12,7 +14,6 @@ interface Props {
   onRemove: () => void;
   onPress?: () => void;
 }
-
 export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
   const swipeableRef = useRef<Swipeable>(null);
   const [, setTick] = useState(0);
@@ -22,7 +23,91 @@ export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
     return () => clearInterval(interval);
   }, []);
 
-  const renderLeftActions = () => (
+  return (
+    <Swipeable
+      ref={swipeableRef}
+      renderLeftActions={() => <SwipeDelete onRemove={onRemove} />}
+      overshootLeft={false}
+    >
+      <View style={styles.card}>
+        <Pressable
+          style={styles.content}
+          onPress={onPress}
+        >
+          <BehaviorIcon
+            icon={behavior.icon}
+            size={32}
+          />
+          <BehaviorInfo behavior={behavior} />
+        </Pressable>
+        <LogButton
+          name={behavior.name}
+          onLog={onLog}
+        />
+      </View>
+    </Swipeable>
+  );
+}
+
+// ---- Sub-components ----
+
+interface BehaviorInfoProps {
+  behavior: BehaviorEntry;
+}
+function BehaviorInfo({ behavior }: BehaviorInfoProps) {
+  return (
+    <View style={styles.info}>
+      <BehaviorName name={behavior.name} />
+      <View style={styles.elapsedRow}>
+        <BehaviorElapsed lastTimestamp={behavior.lastTimestamp} />
+        <CooldownLabel behavior={behavior} />
+      </View>
+    </View>
+  );
+}
+
+interface BehaviorNameProps {
+  name: string;
+}
+function BehaviorName({ name }: BehaviorNameProps) {
+  return <Text style={styles.name}>{name}</Text>;
+}
+
+interface BehaviorElapsedProps {
+  lastTimestamp: number | null;
+}
+function BehaviorElapsed({ lastTimestamp }: BehaviorElapsedProps) {
+  return <Text style={styles.elapsed}>{formatElapsed(lastTimestamp)}</Text>;
+}
+
+interface LogButtonProps {
+  name: string;
+  onLog: () => void;
+}
+function LogButton({ name, onLog }: LogButtonProps) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.logBtn,
+        pressed && styles.logBtnPressed,
+      ]}
+      onPress={onLog}
+      accessibilityLabel={`Log ${name}`}
+    >
+      <Ionicons
+        name="add-circle-outline"
+        size={28}
+        color="#ccc"
+      />
+    </Pressable>
+  );
+}
+
+interface SwipeDeleteProps {
+  onRemove: () => void;
+}
+function SwipeDelete({ onRemove }: SwipeDeleteProps) {
+  return (
     <Pressable
       style={({ pressed }) => [
         styles.deleteButton,
@@ -30,7 +115,7 @@ export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
           opacity: 0.8,
         },
       ]}
-      onPress={() => onRemove()}
+      onPress={onRemove}
     >
       <Ionicons
         name="trash"
@@ -39,48 +124,6 @@ export function BehaviorCard({ behavior, onLog, onRemove, onPress }: Props) {
       />
       <Text style={styles.deleteButtonText}>Delete</Text>
     </Pressable>
-  );
-
-  return (
-    <Swipeable
-      ref={swipeableRef}
-      renderLeftActions={renderLeftActions}
-      overshootLeft={false}
-    >
-      <View style={styles.card}>
-        <Pressable
-          style={styles.content}
-          onPress={onPress}
-        >
-          {behavior.icon && typeof behavior.icon === 'object' ? (
-            <Image
-              source={behavior.icon}
-              style={styles.iconImage}
-            />
-          ) : (
-            <Text style={styles.emoji}>{typeof behavior.icon === 'string' ? behavior.icon : '⏱️'}</Text>
-          )}
-          <View style={styles.info}>
-            <Text style={styles.name}>{behavior.name}</Text>
-            <Text style={styles.elapsed}>{formatElapsed(behavior.lastTimestamp)}</Text>
-          </View>
-        </Pressable>
-        <Pressable
-          style={({ pressed }) => [
-            styles.logBtn,
-            pressed && styles.logBtnPressed,
-          ]}
-          onPress={onLog}
-          accessibilityLabel={`Log ${behavior.name}`}
-        >
-          <Ionicons
-            name="add-circle-outline"
-            size={28}
-            color="#ccc"
-          />
-        </Pressable>
-      </View>
-    </Swipeable>
   );
 }
 
@@ -100,18 +143,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
   },
-  emoji: {
-    fontSize: 32,
-    marginRight: 12,
-  },
-  iconImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    marginRight: 12,
-  },
   info: {
     flex: 1,
+  },
+  elapsedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
   },
   name: {
     color: '#fff',
@@ -121,7 +160,6 @@ const styles = StyleSheet.create({
   elapsed: {
     color: '#888',
     fontSize: 13,
-    marginTop: 2,
   },
   logBtn: {
     paddingHorizontal: 16,
