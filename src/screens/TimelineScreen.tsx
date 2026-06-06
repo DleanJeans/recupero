@@ -133,13 +133,19 @@ export function TimelineScreen() {
           sections.map(section => (
             <View key={section.title}>
               <SectionHeader title={section.title} hideLine={section.title === 'Today'} />
-              {section.data.map(group => (
-                <MinuteCircle
-                  key={group.minuteTimestamp}
-                  group={group}
-                  isFirst={group === minuteGroups[0]}
-                  isLast={group === minuteGroups[minuteGroups.length - 1]}
-                />
+              {section.data.map((group, index) => (
+                <React.Fragment key={group.minuteTimestamp}>
+                  <MinuteCircle
+                    group={group}
+                    isFirst={group === minuteGroups[0]}
+                    isLast={group === minuteGroups[minuteGroups.length - 1]}
+                  />
+                  {index < section.data.length - 1 &&
+                    group.gapMs != null &&
+                    group.gapMs >= 60_000 && (
+                      <GapRow gapMs={group.gapMs} />
+                    )}
+                </React.Fragment>
               ))}
             </View>
           ))
@@ -191,11 +197,20 @@ function MinuteCircle({ group, isFirst, isLast }: MinuteCircleProps) {
             </Text>
           </View>
         ))}
-
-        {!isLast && group.gapMs != null && group.gapMs >= 60_000 && (
-          <Text style={styles.gapText}>{formatGap(group.gapMs)}</Text>
-        )}
       </View>
+    </View>
+  );
+}
+
+/** Rotated gap text sitting on the timeline line between two minute circles. */
+function GapRow({ gapMs }: { gapMs: number }) {
+  return (
+    <View style={styles.gapRow}>
+      <View style={styles.gapLineColumn}>
+        <View style={styles.gapLineSeg} />
+        <Text style={styles.gapText}>{formatGap(gapMs)}</Text>
+      </View>
+      <View style={styles.gapSpacer} />
     </View>
   );
 }
@@ -263,6 +278,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    marginVertical: 15,
   },
 
   // -- Minute group --
@@ -300,19 +316,18 @@ const styles = StyleSheet.create({
   contentColumn: {
     flex: 1,
     paddingRight: 16,
-    paddingVertical: 6,
+    paddingVertical: 4,
+    marginTop: -15,
   },
   timeText: {
     color: '#888',
     fontSize: 12,
     fontWeight: '600',
-    marginBottom: 4,
   },
   behaviorRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 2,
   },
   behaviorName: {
     color: '#fff',
@@ -320,10 +335,32 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flexShrink: 1,
   },
+  // -- Gap between minute groups --
+  gapRow: {
+    flexDirection: 'row',
+    height: 32,
+  },
+  gapLineColumn: {
+    width: GUTTER_WIDTH,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gapLineSeg: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: (GUTTER_WIDTH - LINE_WIDTH) / 2,
+    width: LINE_WIDTH,
+    backgroundColor: LINE_COLOR,
+  },
   gapText: {
     color: '#666',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
-    marginTop: 2,
+    transform: [{ rotate: '90deg' }],
+    marginRight: -16,
+  },
+  gapSpacer: {
+    flex: 1,
   },
 });
