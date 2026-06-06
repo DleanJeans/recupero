@@ -11,7 +11,7 @@ import { sortBehaviorsByRecent } from '../utils/behaviorUtils';
 
 export function HomeScreen() {
   const { behaviors } = useBehaviorStore();
-  const [isAdding, setIsAdding] = useState(false);
+  const [showAddButton, setShowAddButton] = useState(true);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -19,10 +19,10 @@ export function HomeScreen() {
 
       <BehaviorList behaviors={behaviors} />
 
-      {isAdding ? (
-        <BehaviorForm onClose={() => setIsAdding(false)} />
+      {showAddButton ? (
+        <AddBehaviorButton onPress={() => setShowAddButton(false)} />
       ) : (
-        <AddBehaviorButton onPress={() => setIsAdding(true)} />
+        <BehaviorForm onClose={() => setShowAddButton(true)} />
       )}
     </SafeAreaView>
   );
