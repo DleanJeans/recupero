@@ -3,13 +3,14 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BehaviorForm } from '../components/BehaviorForm';
 import { BehaviorCard } from '../components/BehaviorCard';
+import { BehaviorForm } from '../components/BehaviorForm';
 import { LogBehaviorModal } from '../components/LogBehaviorModal';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
+import { sortBehaviorsByRecent } from '../utils/behaviorUtils';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -19,20 +20,7 @@ export function HomeScreen() {
   const [isAdding, setIsAdding] = useState(false);
   const [loggingBehavior, setLoggingBehavior] = useState<BehaviorEntry | null>(null);
 
-  const sortedBehaviors = useMemo(() => {
-    return [
-      ...behaviors,
-    ].sort((a, b) => {
-      if (a.lastTimestamp === null && b.lastTimestamp === null) return 0;
-      if (a.lastTimestamp === null) return 1;
-      if (b.lastTimestamp === null) return -1;
-      const diff = b.lastTimestamp - a.lastTimestamp;
-      if (diff !== 0) return diff;
-      return a.name.localeCompare(b.name);
-    });
-  }, [
-    behaviors,
-  ]);
+  const sortedBehaviors = useMemo(() => sortBehaviorsByRecent(behaviors), [behaviors]);
 
   const handleRemove = useCallback(
     (behavior: BehaviorEntry) => {
