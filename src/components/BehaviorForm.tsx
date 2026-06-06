@@ -29,7 +29,7 @@ function iconForStore(raw: string): BehaviorEntry['icon'] {
     : trimmed;
 }
 
-export function AddBehaviorForm({ behavior, onClose }: Props) {
+export function BehaviorForm({ behavior, onClose }: Props) {
   const isEdit = behavior != null;
   const nameRef = useRef<import('react-native').TextInput>(null);
 

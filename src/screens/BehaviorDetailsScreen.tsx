@@ -3,7 +3,7 @@ import { type RouteProp, useNavigation, useRoute } from '@react-navigation/nativ
 import React, { createContext, useContext, useMemo, useState } from 'react';
 import { Alert, FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AddBehaviorForm } from '../components/AddBehaviorForm';
+import { BehaviorForm } from '../components/BehaviorForm';
 import { BehaviorIcon } from '../components/BehaviorIcon';
 import { BehaviorLogItem } from '../components/BehaviorLogItem';
 import { CooldownLabel } from '../components/CooldownLabel';
@@ -235,7 +235,7 @@ function EditBehaviorModal() {
           style={styles.editModalBackdrop}
           onPress={closeEditModal}
         />
-        <AddBehaviorForm
+        <BehaviorForm
           behavior={behavior}
           onClose={closeEditModal}
         />

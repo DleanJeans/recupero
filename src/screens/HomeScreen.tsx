@@ -3,7 +3,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AddBehaviorForm } from '../components/AddBehaviorForm';
+import { BehaviorForm } from '../components/BehaviorForm';
 import { BehaviorCard } from '../components/BehaviorCard';
 import { LogBehaviorModal } from '../components/LogBehaviorModal';
 import { Text } from '../components/Text';
@@ -77,7 +77,7 @@ export function HomeScreen() {
       />
 
       {isAdding ? (
-        <AddBehaviorForm onClose={() => setIsAdding(false)} />
+        <BehaviorForm onClose={() => setIsAdding(false)} />
       ) : (
         <Pressable
           style={({ pressed }) => [
