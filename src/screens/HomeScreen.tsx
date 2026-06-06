@@ -65,16 +65,28 @@ function Title() {
   return (
     <View style={styles.titleRow}>
       <Text style={styles.title}>Recupero</Text>
-      <Pressable
-        style={({ pressed }) => [styles.settingsBtn, pressed && { opacity: 0.5 }]}
-        onPress={() => navigation.navigate('Settings')}
-      >
-        <Ionicons
-          name="settings-outline"
-          size={24}
-          color="#888"
-        />
-      </Pressable>
+      <View style={styles.titleActions}>
+        <Pressable
+          style={({ pressed }) => [styles.titleBtn, pressed && { opacity: 0.5 }]}
+          onPress={() => navigation.navigate('Timeline')}
+        >
+          <Ionicons
+            name="time-outline"
+            size={22}
+            color="#888"
+          />
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [styles.titleBtn, pressed && { opacity: 0.5 }]}
+          onPress={() => navigation.navigate('Settings')}
+        >
+          <Ionicons
+            name="settings-outline"
+            size={22}
+            color="#888"
+          />
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -132,7 +144,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: -0.5,
   },
-  settingsBtn: {
+  titleActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  titleBtn: {
     padding: 4,
   },
   emptyContainer: {

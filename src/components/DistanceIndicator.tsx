@@ -1,15 +1,16 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type ViewStyle } from 'react-native';
 import { formatDuration } from '../utils/timeUtils';
 import { Text } from './Text';
 
 interface Props {
   durationMs: number;
+  style?: ViewStyle;
 }
 
-export function DistanceIndicator({ durationMs }: Props) {
+export function DistanceIndicator({ durationMs, style }: Props) {
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, style]}>
       <Text style={styles.text}>{formatDuration(durationMs)}</Text>
     </View>
   );

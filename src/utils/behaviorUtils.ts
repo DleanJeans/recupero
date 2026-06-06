@@ -17,9 +17,9 @@ export function sortBehaviorsByRecent(behaviors: BehaviorEntry[]): BehaviorEntry
 
 export type RecencyGroup = 'Today' | 'Yesterday' | 'This Week' | 'Last Week' | 'Last Month' | 'Older';
 
-const GROUP_ORDER: RecencyGroup[] = ['Today', 'Yesterday', 'This Week', 'Last Week', 'Last Month', 'Older'];
+export const GROUP_ORDER: RecencyGroup[] = ['Today', 'Yesterday', 'This Week', 'Last Week', 'Last Month', 'Older'];
 
-function getRecencyGroup(lastTimestamp: number | null): RecencyGroup {
+export function getRecencyGroup(lastTimestamp: number | null): RecencyGroup {
   if (lastTimestamp === null) return 'Older';
 
   const now = new Date();

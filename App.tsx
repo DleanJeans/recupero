@@ -9,6 +9,7 @@ import { useAppFonts } from './src/hooks/useAppFonts';
 import { BehaviorDetailsScreen } from './src/screens/BehaviorDetailsScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
+import { TimelineScreen } from './src/screens/TimelineScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -17,6 +18,7 @@ const linking = {
   config: {
     screens: {
       Home: 'home',
+      Timeline: 'timeline',
       BehaviorDetails: 'behavior/:behaviorId',
     },
   },
@@ -44,6 +46,10 @@ export default function App() {
               <Stack.Screen
                 name="Home"
                 component={HomeScreen}
+              />
+              <Stack.Screen
+                name="Timeline"
+                component={TimelineScreen}
               />
               <Stack.Screen
                 name="BehaviorDetails"
