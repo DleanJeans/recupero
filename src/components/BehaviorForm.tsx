@@ -40,6 +40,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('');
   const [categoryId, setCategoryId] = useState<string | undefined>(behavior ? behavior.categoryId : defaultCategoryId);
+  const [emojiKeyboardOpen, setEmojiKeyboardOpen] = useState(false);
   const [cooldownMinutes, setCooldownMinutes] = useState(0);
   const [cooldownType, setCooldownType] = useState<CooldownType>('rest');
   const [cooldownUnit, setCooldownUnit] = useState<CooldownUnit | undefined>(undefined);
@@ -82,12 +83,13 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
 
   return (
     <KeyboardAvoidingView behavior="position" /* DO NOT change */>
-      <View style={styles.form}>
+      <View style={[styles.form, emojiKeyboardOpen && styles.formWithEmojiOpen]}>
         <View style={styles.row}>
           <EmojiInput
             value={icon}
             onChangeText={setIcon}
             onPick={() => nameRef.current?.focus()}
+            onOpenChange={setEmojiKeyboardOpen}
           />
           <NameInput
             ref={nameRef}
@@ -251,6 +253,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e1e1e',
     padding: 16,
     gap: 10,
+  },
+  formWithEmojiOpen: {
+    paddingBottom: 320,
   },
   row: {
     flexDirection: 'row',

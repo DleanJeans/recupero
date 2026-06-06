@@ -34,14 +34,26 @@ interface Props {
   onChangeText: (v: string) => void;
   /** Called after an emoji is selected (e.g. to focus the next input). */
   onPick?: () => void;
+  /** Called when the emoji keyboard opens or closes. */
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function EmojiPicker({ value, onChangeText, onPick }: Props) {
+export function EmojiPicker({ value, onChangeText, onPick, onOpenChange }: Props) {
   const [open, setOpen] = useState(false);
+
+  const handleOpen = () => {
+    setOpen(true);
+    onOpenChange?.(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    onOpenChange?.(false);
+  };
 
   const handlePick = (emojiObject: EmojiType) => {
     onChangeText(emojiObject.emoji);
-    setOpen(false);
+    handleClose();
     onPick?.();
   };
 
@@ -49,7 +61,7 @@ export function EmojiPicker({ value, onChangeText, onPick }: Props) {
     <>
       <Pressable
         style={styles.input}
-        onPress={() => setOpen(true)}
+        onPress={handleOpen}
       >
         {value ? (
           <Text style={styles.emoji}>{value}</Text>
@@ -64,7 +76,7 @@ export function EmojiPicker({ value, onChangeText, onPick }: Props) {
       <EmojiKeyboard
         open={open}
         onEmojiSelected={handlePick}
-        onClose={() => setOpen(false)}
+        onClose={handleClose}
         enableSearchBar
         theme={pickerTheme}
         emojisByCategory={emojiData}
