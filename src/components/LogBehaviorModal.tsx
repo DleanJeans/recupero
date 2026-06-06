@@ -158,7 +158,7 @@ export function LogBehaviorModal({ behavior, visible, logId, initialTimestamp, o
       const n = initialTimestamp ? new Date(initialTimestamp) : new Date();
       nowRef.current = new Date();
       setSelectedDate(toDateString(n));
-      setHour(initialTimestamp ? n.getHours() : 0);
+      setHour(n.getHours());
       setMinute(n.getMinutes());
       setCalendarVisible(false);
       setWheelKey(k => k + 1);
