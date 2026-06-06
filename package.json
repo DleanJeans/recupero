@@ -11,7 +11,9 @@
     "test:maestro:all": "maestro test .maestro",
     "emulator": "$ANDROID_HOME/emulator/emulator -netdelay none -netspeed full -no-snapshot-load -avd maestro_test",
     "emulator:stop": "adb emu kill",
-    "test:unit": "jest"
+    "test:unit": "jest",
+    "ota:android:dev": "eas update --platform android --branch development --environment development --auto",
+    "ota:android:pre": "eas update --platform android --branch preview --environment preview --auto"
   },
   "dependencies": {
     "@expo/metro-runtime": "^55.0.10",
