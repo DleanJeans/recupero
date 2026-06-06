@@ -5,11 +5,13 @@ import { AddBehaviorButton } from '../components/AddBehaviorButton';
 import { BehaviorCard } from '../components/BehaviorCard';
 import { BehaviorForm } from '../components/BehaviorForm';
 import { Text } from '../components/Text';
+import { useBackGuard } from '../hooks/useBackGuard';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
 import { groupBehaviorsByRecency } from '../utils/behaviorUtils';
 
 export function HomeScreen() {
+  useBackGuard()
   const { behaviors } = useBehaviorStore();
   const [showAddButton, setShowAddButton] = useState(true);
 
