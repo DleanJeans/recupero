@@ -6,25 +6,18 @@ import { BehaviorCard } from '../components/BehaviorCard';
 import { BehaviorForm } from '../components/BehaviorForm';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
+import type { BehaviorEntry } from '../types/behavior';
 import { sortBehaviorsByRecent } from '../utils/behaviorUtils';
 
 export function HomeScreen() {
   const { behaviors } = useBehaviorStore();
   const [isAdding, setIsAdding] = useState(false);
 
-  const sortedBehaviors = useMemo(() => sortBehaviorsByRecent(behaviors), [behaviors]);
-
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Recupero</Text>
+      <Title />
 
-      <FlatList
-        data={sortedBehaviors}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <BehaviorCard behavior={item} />}
-        ListEmptyComponent={<Text style={styles.empty}>No behaviors yet.{`\n`}Add your first one.</Text>}
-        contentContainerStyle={behaviors.length === 0 && styles.emptyContainer}
-      />
+      <BehaviorList behaviors={behaviors} />
 
       {isAdding ? (
         <BehaviorForm onClose={() => setIsAdding(false)} />
@@ -32,6 +25,27 @@ export function HomeScreen() {
         <AddBehaviorButton onPress={() => setIsAdding(true)} />
       )}
     </SafeAreaView>
+  );
+}
+
+function Title() {
+  return <Text style={styles.title}>Recupero</Text>;
+}
+
+interface BehaviorListProps {
+  behaviors: BehaviorEntry[];
+}
+function BehaviorList({ behaviors }: BehaviorListProps) {
+  const sortedBehaviors = useMemo(() => sortBehaviorsByRecent(behaviors), [behaviors]);
+
+  return (
+    <FlatList
+      data={sortedBehaviors}
+      keyExtractor={item => item.id}
+      renderItem={({ item }) => <BehaviorCard behavior={item} />}
+      ListEmptyComponent={<Text style={styles.empty}>No behaviors yet.{`\n`}Add your first one.</Text>}
+      contentContainerStyle={behaviors.length === 0 && styles.emptyContainer}
+    />
   );
 }
 
