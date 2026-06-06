@@ -88,6 +88,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
           <EmojiInput
             value={icon}
             onChangeText={setIcon}
+            nameHint={name}
             onPick={() => nameRef.current?.focus()}
             onOpenChange={setEmojiKeyboardOpen}
           />

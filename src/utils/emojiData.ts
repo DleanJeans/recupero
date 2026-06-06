@@ -69,3 +69,22 @@ function buildEmojiData(): EmojisByCategory[] {
 }
 
 export const emojiData = buildEmojiData();
+
+/**
+ * Find the first emoji whose name contains any word from the given keyword string.
+ * Uses the same unicode-emoji-json data that builds the emoji keyboard.
+ *
+ * @example findEmojiByKeyword('Water') // returns '💧'
+ */
+export function findEmojiByKeyword(keyword: string): string | null {
+  const words = keyword.toLowerCase().trim().split(/\s+/);
+
+  for (const [emoji, entry] of Object.entries(unicodeData as Record<string, UnicodeEmojiEntry>)) {
+    const name = entry.name.toLowerCase();
+    if (words.some(word => name.includes(word))) {
+      return emoji;
+    }
+  }
+
+  return null;
+}

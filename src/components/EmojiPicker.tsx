@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import type { EmojiType } from 'rn-emoji-keyboard';
 import EmojiKeyboard from 'rn-emoji-keyboard';
-import { emojiData } from '../utils/emojiData';
+import { emojiData, findEmojiByKeyword } from '../utils/emojiData';
 import { Text } from './Text';
 
 const pickerTheme = {
@@ -32,16 +32,27 @@ const pickerTheme = {
 interface Props {
   value: string;
   onChangeText: (v: string) => void;
+  /** Current name input value, used to suggest a matching emoji as placeholder. */
+  nameHint?: string;
   /** Called after an emoji is selected (e.g. to focus the next input). */
   onPick?: () => void;
   /** Called when the emoji keyboard opens or closes. */
   onOpenChange?: (open: boolean) => void;
 }
 
-export function EmojiPicker({ value, onChangeText, onPick, onOpenChange }: Props) {
+export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChange }: Props) {
   const [open, setOpen] = useState(false);
 
-  const handleOpen = () => {
+  const suggestedEmoji = useMemo(() => {
+    if (value || !nameHint?.trim()) return null;
+    return findEmojiByKeyword(nameHint);
+  }, [nameHint, value]);
+
+  const handlePress = () => {
+    if (!value && suggestedEmoji) {
+      onChangeText(suggestedEmoji);
+      onPick?.();
+    }
     setOpen(true);
     onOpenChange?.(true);
   };
@@ -61,10 +72,12 @@ export function EmojiPicker({ value, onChangeText, onPick, onOpenChange }: Props
     <>
       <Pressable
         style={styles.input}
-        onPress={handleOpen}
+        onPress={handlePress}
       >
         {value ? (
           <Text style={styles.emoji}>{value}</Text>
+        ) : suggestedEmoji ? (
+          <Text style={styles.emojiPlaceholder}>{suggestedEmoji}</Text>
         ) : (
           <Ionicons
             name="happy-outline"
@@ -97,5 +110,10 @@ const styles = StyleSheet.create({
   emoji: {
     color: '#fff',
     fontSize: 20,
+  },
+  emojiPlaceholder: {
+    color: '#fff',
+    fontSize: 20,
+    opacity: 0.3,
   },
 });
