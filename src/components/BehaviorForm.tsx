@@ -33,14 +33,14 @@ export function BehaviorForm({ behavior, onClose }: Props) {
 
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('');
-  const [cooldownMinutes, setCooldownMinutes] = useState(60);
+  const [cooldownMinutes, setCooldownMinutes] = useState(0);
   const [cooldownType, setCooldownType] = useState<CooldownType>('rest');
 
   useEffect(() => {
     if (!behavior) return;
     setName(behavior.name);
     setIcon(iconFromStore(behavior.icon));
-    setCooldownMinutes(behavior.cooldownMinutes || 60);
+    setCooldownMinutes(behavior.cooldownMinutes || 0);
     setCooldownType(behavior.cooldownType || 'rest');
   }, [behavior]);
 
