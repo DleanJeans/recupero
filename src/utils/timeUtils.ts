@@ -42,7 +42,8 @@ export function formatElapsed(timestamp: number | null): string {
 
   const sameDay =
     date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
-  if (sameDay) return `Today${hoursAgo}`;
+
+  if (sameDay) return `Today · ${hours}h ago`;
 
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
@@ -54,7 +55,7 @@ export function formatElapsed(timestamp: number | null): string {
   if (isYesterday) return `Yesterday${hours < 24 ? hoursAgo : ''}`;
 
   if (days < 7) {
-    return `${DAY_NAMES[date.getDay()]}${daysAgo}`;
+    return `${DAY_NAMES[date.getDay()]} · ${days}d ago`;
   }
 
   // Check if event is in the previous calendar month
@@ -85,4 +86,32 @@ export function formatElapsed(timestamp: number | null): string {
 
   const years = Math.floor(days / 365);
   return `${years}y ago`;
+}
+
+export function formatDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  if (totalSeconds < 60) return 'Just now';
+
+  const minutes = Math.floor(totalSeconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) {
+    const remainingHours = hours % 24;
+    const remainingMinutes = minutes % 60;
+    if (remainingHours > 0) {
+      return `${days}d ${remainingHours}h`;
+    }
+    if (remainingMinutes > 0) {
+      return `${days}d ${remainingMinutes}m`;
+    }
+    return `${days}d`;
+  }
+
+  if (hours > 0) {
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+  }
+
+  return `${minutes}m`;
 }
