@@ -233,6 +233,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
+    gap: 8,
   },
   headerTitle: {
     color: '#fff',
