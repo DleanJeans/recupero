@@ -1,9 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { SectionList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddBehaviorButton } from '../components/AddBehaviorButton';
 import { BehaviorCard } from '../components/BehaviorCard';
 import { BehaviorForm } from '../components/BehaviorForm';
+import { CategoryBar } from '../components/CategoryBar';
 import { Text } from '../components/Text';
 import { useBackGuard } from '../hooks/useBackGuard';
 import { useBehaviorStore } from '../store/behaviorStore';
@@ -12,14 +13,38 @@ import { groupBehaviorsByRecency } from '../utils/behaviorUtils';
 
 export function HomeScreen() {
   useBackGuard()
-  const { behaviors } = useBehaviorStore();
+  const { behaviors, categories } = useBehaviorStore();
   const [showAddButton, setShowAddButton] = useState(true);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+
+  // Reset selection if the selected category no longer exists
+  useEffect(() => {
+    if (selectedCategoryId !== null && !categories.some((c) => c.id === selectedCategoryId)) {
+      setSelectedCategoryId(null);
+    }
+  }, [categories, selectedCategoryId]);
+
+  const filteredBehaviors = useMemo(
+    () =>
+      selectedCategoryId === null
+        ? behaviors
+        : behaviors.filter((b) => b.categoryId === selectedCategoryId),
+    [behaviors, selectedCategoryId],
+  );
 
   return (
     <SafeAreaView style={styles.container}>
       <Title />
 
-      <BehaviorList behaviors={behaviors} />
+      <CategoryBar
+        selectedCategoryId={selectedCategoryId}
+        onSelectCategory={setSelectedCategoryId}
+      />
+
+      <BehaviorList
+        behaviors={filteredBehaviors}
+        selectedCategoryId={selectedCategoryId}
+      />
 
       {showAddButton ? (
         <AddBehaviorButton onPress={() => setShowAddButton(false)} />
@@ -36,8 +61,9 @@ function Title() {
 
 interface BehaviorListProps {
   behaviors: BehaviorEntry[];
+  selectedCategoryId: string | null;
 }
-function BehaviorList({ behaviors }: BehaviorListProps) {
+function BehaviorList({ behaviors, selectedCategoryId }: BehaviorListProps) {
   const sections = useMemo(() => groupBehaviorsByRecency(behaviors), [behaviors]);
 
   return (
@@ -50,7 +76,13 @@ function BehaviorList({ behaviors }: BehaviorListProps) {
           <Text style={styles.sectionHeaderText}>{section.title}</Text>
         </View>
       )}
-      ListEmptyComponent={<Text style={styles.empty}>No behaviors yet.{'\n'}Add your first one.</Text>}
+      ListEmptyComponent={
+        <Text style={styles.empty}>
+          {selectedCategoryId !== null
+            ? 'No behaviors in this category.\nTap + to add one.'
+            : 'No behaviors yet.\nAdd your first one.'}
+        </Text>
+      }
       contentContainerStyle={behaviors.length === 0 && styles.emptyContainer}
     />
   );
