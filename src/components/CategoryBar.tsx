@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useBehaviorStore } from '../store/behaviorStore';
 import { Text, TextInput } from './Text';
 
@@ -9,7 +9,7 @@ interface CategoryBarProps {
 }
 
 export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBarProps) {
-  const { categories, addCategory } = useBehaviorStore();
+  const { categories, addCategory, removeCategory } = useBehaviorStore();
   const [showForm, setShowForm] = useState(false);
   const [emoji, setEmoji] = useState('');
   const [name, setName] = useState('');
@@ -64,6 +64,20 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBa
               pressed && { opacity: 0.7 },
             ]}
             onPress={() => onSelectCategory(cat.id)}
+            onLongPress={() =>
+              Alert.alert(
+                `Delete "${cat.name}"?`,
+                `Behaviors in this category will lose their category assignment.`,
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: () => removeCategory(cat.id),
+                  },
+                ],
+              )
+            }
           >
             <Text style={styles.chipEmoji}>{cat.emoji}</Text>
             <Text
