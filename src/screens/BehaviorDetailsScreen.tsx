@@ -6,9 +6,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BehaviorForm } from '../components/BehaviorForm';
 import { BehaviorIcon } from '../components/BehaviorIcon';
 import { BehaviorLogItem } from '../components/BehaviorLogItem';
+import { BehaviorLogModal } from '../components/BehaviorLogModal';
 import { CooldownLabel } from '../components/CooldownLabel';
 import { DistanceIndicator } from '../components/DistanceIndicator';
-import { LogBehaviorModal } from '../components/LogBehaviorModal';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry, LogEntry } from '../types/behavior';
@@ -180,7 +180,7 @@ function EditLogModal() {
   const { behavior, editingLog, clearEditingLog } = useBehaviorDetails();
 
   return (
-    <LogBehaviorModal
+    <BehaviorLogModal
       behavior={behavior}
       visible={editingLog != null}
       logId={editingLog?.id}

@@ -131,7 +131,7 @@ interface Props {
   onClose: () => void;
 }
 
-export function LogBehaviorModal({ behavior, visible, logId, initialTimestamp, onClose }: Props) {
+export function BehaviorLogModal({ behavior, visible, logId, initialTimestamp, onClose }: Props) {
   const nowRef = useRef(new Date());
   const todayStr = toDateString(nowRef.current);
 

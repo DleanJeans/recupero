@@ -9,8 +9,8 @@ import type { BehaviorEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
 import { formatElapsed } from '../utils/timeUtils';
 import { BehaviorIcon } from './BehaviorIcon';
+import { BehaviorLogModal } from './BehaviorLogModal';
 import { CooldownLabel } from './CooldownLabel';
-import { LogBehaviorModal } from './LogBehaviorModal';
 import { Text } from './Text';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -72,7 +72,7 @@ export function BehaviorCard({ behavior }: Props) {
         </View>
       </Swipeable>
 
-      <LogBehaviorModal
+      <BehaviorLogModal
         behavior={behavior}
         visible={logModalVisible}
         onClose={() => setLogModalVisible(false)}
