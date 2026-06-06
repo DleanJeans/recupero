@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useBehaviorStore } from '../store/behaviorStore';
-import type { BehaviorEntry } from '../types/behavior';
+import type { BehaviorEntry, Category } from '../types/behavior';
 import type { CooldownType } from '../utils/cooldownUtils';
 import { CooldownIcon } from './CooldownIcon';
 import { CooldownInput } from './CooldownInput';
@@ -30,9 +30,11 @@ function iconForStore(raw: string): BehaviorEntry['icon'] {
 export function BehaviorForm({ behavior, onClose }: Props) {
   const isEdit = behavior != null;
   const nameRef = useRef<import('react-native').TextInput>(null);
+  const { categories } = useBehaviorStore();
 
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('');
+  const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
   const [cooldownMinutes, setCooldownMinutes] = useState(0);
   const [cooldownType, setCooldownType] = useState<CooldownType>('rest');
 
@@ -40,6 +42,7 @@ export function BehaviorForm({ behavior, onClose }: Props) {
     if (!behavior) return;
     setName(behavior.name);
     setIcon(iconFromStore(behavior.icon));
+    setCategoryId(behavior.categoryId);
     setCooldownMinutes(behavior.cooldownMinutes || 0);
     setCooldownType(behavior.cooldownType || 'rest');
   }, [behavior]);
@@ -54,9 +57,10 @@ export function BehaviorForm({ behavior, onClose }: Props) {
         icon: iconForStore(icon),
         cooldownMinutes,
         cooldownType,
+        categoryId: categoryId || undefined,
       });
     } else {
-      addBehavior(trimmed, iconForStore(icon), cooldownMinutes, cooldownType);
+      addBehavior(trimmed, iconForStore(icon), cooldownMinutes, cooldownType, categoryId || undefined);
     }
     onClose();
   };
@@ -91,6 +95,13 @@ export function BehaviorForm({ behavior, onClose }: Props) {
             onChange={setCooldownMinutes}
           />
         </View>
+        {categories.length > 0 && (
+          <CategoryPicker
+            categories={categories}
+            selectedId={categoryId}
+            onChange={setCategoryId}
+          />
+        )}
         <FormActions
           onCancel={onClose}
           onSubmit={handleSave}
@@ -192,6 +203,54 @@ function TypeOption({ label, active, activeBtnStyle, activeTextStyle, onPress }:
     >
       <Text style={[styles.typeBtnText, active && activeTextStyle]}>{label}</Text>
     </Pressable>
+  );
+}
+
+interface CategoryPickerProps {
+  categories: Category[];
+  selectedId: string | undefined;
+  onChange: (id: string | undefined) => void;
+}
+function CategoryPicker({ categories, selectedId, onChange }: CategoryPickerProps) {
+  return (
+    <View style={styles.categorySection}>
+      <Text style={styles.categoryLabel}>Category</Text>
+      <View style={styles.categoryRow}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.categoryChip,
+            !selectedId && styles.categoryChipActive,
+            pressed && { opacity: 0.7 },
+          ]}
+          onPress={() => onChange(undefined)}
+        >
+          <Text style={[styles.categoryChipText, !selectedId && styles.categoryChipTextActive]}>
+            None
+          </Text>
+        </Pressable>
+        {categories.map((cat) => (
+          <Pressable
+            key={cat.id}
+            style={({ pressed }) => [
+              styles.categoryChip,
+              selectedId === cat.id && styles.categoryChipActive,
+              pressed && { opacity: 0.7 },
+            ]}
+            onPress={() => onChange(cat.id)}
+          >
+            <Text style={styles.categoryChipEmoji}>{cat.emoji}</Text>
+            <Text
+              style={[
+                styles.categoryChipText,
+                selectedId === cat.id && styles.categoryChipTextActive,
+              ]}
+            >
+              {cat.name}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -308,6 +367,44 @@ const styles = StyleSheet.create({
   typeBtnTextLimit: {
     color: '#EF9A9A',
     fontWeight: '600',
+  },
+  categorySection: {
+    gap: 6,
+  },
+  categoryLabel: {
+    color: '#888',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    gap: 4,
+  },
+  categoryChipActive: {
+    backgroundColor: '#3a3a3a',
+    borderWidth: 1,
+    borderColor: '#666',
+  },
+  categoryChipEmoji: {
+    fontSize: 16,
+  },
+  categoryChipText: {
+    color: '#666',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  categoryChipTextActive: {
+    color: '#fff',
   },
   actions: {
     flexDirection: 'row',
