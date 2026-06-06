@@ -47,7 +47,7 @@ export function CooldownInput({ cooldownMinutes, onChange, preferredUnit, onUnit
   }, [cooldownMinutes, preferredUnit]);
 
   const displayValue = useMemo(
-    () => String(Math.round(cooldownMinutes / UNIT_MULTIPLIER[unit])),
+    () => (cooldownMinutes === 0 ? '' : String(Math.round(cooldownMinutes / UNIT_MULTIPLIER[unit]))),
     [cooldownMinutes, unit],
   );
 
