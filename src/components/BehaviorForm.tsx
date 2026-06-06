@@ -122,6 +122,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
           onCancel={onClose}
           onSubmit={handleSave}
           submitLabel={isEdit ? 'Save' : 'Add'}
+          disabled={!isEdit && (!name.trim() || !icon.trim())}
         />
       </View>
     </KeyboardAvoidingView>
@@ -143,7 +144,7 @@ const NameInput = React.forwardRef<import('react-native').TextInput, NameInputPr
     <TextInput
       ref={ref}
       style={styles.nameInput}
-      placeholder="Behavior name (e.g. Water, Push-ups)"
+      placeholder="e.g. Water, Push-ups"
       placeholderTextColor="#666"
       value={value}
       onChangeText={onChangeText}
@@ -214,13 +215,14 @@ function CancelButton({ onPress }: { onPress: () => void }) {
   );
 }
 
-function ConfirmButton({ onPress, label }: { onPress: () => void; label: string }) {
+function ConfirmButton({ onPress, label, disabled }: { onPress: () => void; label: string; disabled?: boolean }) {
   return (
     <Pressable
-      style={styles.addBtn}
+      style={[styles.addBtn, disabled && styles.addBtnDisabled]}
       onPress={onPress}
+      disabled={disabled}
     >
-      <Text style={styles.addText}>{label}</Text>
+      <Text style={[styles.addText, disabled && styles.addTextDisabled]}>{label}</Text>
     </Pressable>
   );
 }
@@ -229,14 +231,16 @@ interface FormActionsProps {
   onCancel: () => void;
   onSubmit: () => void;
   submitLabel: string;
+  disabled?: boolean;
 }
-function FormActions({ onCancel, onSubmit, submitLabel }: FormActionsProps) {
+function FormActions({ onCancel, onSubmit, submitLabel, disabled }: FormActionsProps) {
   return (
     <View style={styles.actions}>
       <CancelButton onPress={onCancel} />
       <ConfirmButton
         onPress={onSubmit}
         label={submitLabel}
+        disabled={disabled}
       />
     </View>
   );
@@ -330,9 +334,15 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
   },
+  addBtnDisabled: {
+    backgroundColor: '#2a2a2a',
+  },
   addText: {
     color: '#111111',
     fontSize: 15,
     fontWeight: '600',
+  },
+  addTextDisabled: {
+    color: '#555',
   },
 });
