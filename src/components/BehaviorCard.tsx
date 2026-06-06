@@ -2,12 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
 import { formatElapsedNumeric } from '../utils/timeUtils';
+import { BehaviorForm } from './BehaviorForm';
 import { BehaviorIcon } from './BehaviorIcon';
 import { BehaviorLogModal } from './BehaviorLogModal';
 import { CooldownLabel } from './CooldownLabel';
@@ -24,6 +25,7 @@ export function BehaviorCard({ behavior }: Props) {
   const swipeableRef = useRef<Swipeable>(null);
   const [, setTick] = useState(0);
   const [logModalVisible, setLogModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 60000);
@@ -46,6 +48,10 @@ export function BehaviorCard({ behavior }: Props) {
     navigation.navigate('BehaviorDetails', { behaviorId: behavior.id });
   };
 
+  const handleLongPress = () => {
+    setEditModalVisible(true);
+  };
+
   return (
     <>
       <Swipeable
@@ -57,6 +63,7 @@ export function BehaviorCard({ behavior }: Props) {
           <Pressable
             style={styles.content}
             onPress={handlePress}
+            onLongPress={handleLongPress}
           >
             <BehaviorIcon
               behavior={behavior}
@@ -77,6 +84,24 @@ export function BehaviorCard({ behavior }: Props) {
         visible={logModalVisible}
         onClose={() => setLogModalVisible(false)}
       />
+
+      <Modal
+        visible={editModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <View style={styles.editModalOverlay}>
+          <Pressable
+            style={styles.editModalBackdrop}
+            onPress={() => setEditModalVisible(false)}
+          />
+          <BehaviorForm
+            behavior={behavior}
+            onClose={() => setEditModalVisible(false)}
+          />
+        </View>
+      </Modal>
     </>
   );
 }
@@ -223,5 +248,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     marginTop: 4,
+  },
+  editModalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    marginBottom: 15,
+  },
+  editModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
 });
