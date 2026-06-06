@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useBehaviorStore } from '../store/behaviorStore';
+import type { Category } from '../types/behavior';
 import { Text, TextInput } from './Text';
 
 interface CategoryBarProps {
@@ -9,25 +10,61 @@ interface CategoryBarProps {
 }
 
 export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBarProps) {
-  const { categories, addCategory, removeCategory } = useBehaviorStore();
+  const { categories, addCategory, removeCategory, updateCategory } =
+    useBehaviorStore();
   const [showForm, setShowForm] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [emoji, setEmoji] = useState('');
   const [name, setName] = useState('');
 
-  const handleAdd = () => {
+  const isEditing = editingCategory != null;
+
+  useEffect(() => {
+    if (!editingCategory) return;
+    setEmoji(editingCategory.emoji);
+    setName(editingCategory.name);
+  }, [editingCategory]);
+
+  const resetForm = () => {
+    setEmoji('');
+    setName('');
+    setShowForm(false);
+    setEditingCategory(null);
+  };
+
+  const handleSave = () => {
     const trimmedName = name.trim();
     const trimmedEmoji = emoji.trim();
     if (!trimmedEmoji || !trimmedName) return;
-    addCategory(trimmedName, trimmedEmoji);
-    setEmoji('');
-    setName('');
-    setShowForm(false);
+    if (isEditing && editingCategory) {
+      updateCategory(editingCategory.id, { name: trimmedName, emoji: trimmedEmoji });
+    } else {
+      addCategory(trimmedName, trimmedEmoji);
+    }
+    resetForm();
   };
 
-  const handleCancel = () => {
-    setEmoji('');
-    setName('');
-    setShowForm(false);
+  const handleDelete = () => {
+    if (!editingCategory) return;
+    const cat = editingCategory;
+    resetForm();
+    Alert.alert(
+      `Delete "${cat.name}"?`,
+      `Behaviors in this category will lose their category assignment.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => removeCategory(cat.id),
+        },
+      ],
+    );
+  };
+
+  const openAddForm = () => {
+    setEditingCategory(null);
+    setShowForm((v) => !v);
   };
 
   return (
@@ -64,20 +101,7 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBa
               pressed && { opacity: 0.7 },
             ]}
             onPress={() => onSelectCategory(cat.id)}
-            onLongPress={() =>
-              Alert.alert(
-                `Delete "${cat.name}"?`,
-                `Behaviors in this category will lose their category assignment.`,
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: () => removeCategory(cat.id),
-                  },
-                ],
-              )
-            }
+            onLongPress={() => setEditingCategory(cat)}
           >
             <Text style={styles.chipEmoji}>{cat.emoji}</Text>
             <Text
@@ -93,13 +117,13 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBa
 
         <Pressable
           style={({ pressed }) => [styles.addChip, pressed && { opacity: 0.7 }]}
-          onPress={() => setShowForm((v) => !v)}
+          onPress={openAddForm}
         >
-          <Text style={styles.addChipText}>{showForm ? '✕' : '+'}</Text>
+          <Text style={styles.addChipText}>{showForm || editingCategory ? '✕' : '+'}</Text>
         </Pressable>
       </ScrollView>
 
-      {showForm && (
+      {(showForm || editingCategory) && (
         <View style={styles.form}>
           <View style={styles.formRow}>
             <TextInput
@@ -117,14 +141,22 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBa
               placeholderTextColor="#666"
               value={name}
               onChangeText={setName}
-              onSubmitEditing={handleAdd}
+              onSubmitEditing={handleSave}
               returnKeyType="done"
             />
           </View>
           <View style={styles.formActions}>
+            {isEditing && (
+              <Pressable
+                style={({ pressed }) => [styles.formDeleteBtn, pressed && { opacity: 0.7 }]}
+                onPress={handleDelete}
+              >
+                <Text style={styles.formDeleteText}>Delete</Text>
+              </Pressable>
+            )}
             <Pressable
               style={({ pressed }) => [styles.formCancelBtn, pressed && { opacity: 0.7 }]}
-              onPress={handleCancel}
+              onPress={resetForm}
             >
               <Text style={styles.formCancelText}>Cancel</Text>
             </Pressable>
@@ -134,7 +166,7 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBa
                 pressed && { opacity: 0.7 },
                 (!emoji.trim() || !name.trim()) && styles.formAddBtnDisabled,
               ]}
-              onPress={handleAdd}
+              onPress={handleSave}
               disabled={!emoji.trim() || !name.trim()}
             >
               <Text
@@ -143,7 +175,7 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBa
                   (!emoji.trim() || !name.trim()) && styles.formAddTextDisabled,
                 ]}
               >
-                Add
+                {isEditing ? 'Save' : 'Add'}
               </Text>
             </Pressable>
           </View>
@@ -233,6 +265,18 @@ const styles = StyleSheet.create({
   formActions: {
     flexDirection: 'row',
     gap: 8,
+  },
+  formDeleteBtn: {
+    backgroundColor: '#3a1a1a',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+  },
+  formDeleteText: {
+    color: '#EF9A9A',
+    fontSize: 14,
+    fontWeight: '600',
   },
   formCancelBtn: {
     flex: 1,
