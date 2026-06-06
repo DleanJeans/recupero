@@ -17,6 +17,7 @@ interface BehaviorStore {
     cooldownMinutes?: number,
     cooldownType?: 'rest' | 'limit',
     categoryId?: string,
+    cooldownUnit?: 'minutes' | 'hours' | 'days' | 'weeks',
   ) => void;
   updateBehaviorCooldown: (behaviorId: string, cooldownMinutes: number) => void;
   updateBehavior: (
@@ -32,6 +33,7 @@ interface BehaviorStore {
       cooldownMinutes?: number;
       cooldownType?: 'rest' | 'limit';
       categoryId?: string | undefined;
+      cooldownUnit?: 'minutes' | 'hours' | 'days' | 'weeks' | undefined;
     },
   ) => void;
   logBehavior: (id: string, timestamp?: number, metadata?: Record<string, string | number>) => void;
@@ -49,7 +51,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
     (set, get) => ({
       behaviors: [],
       categories: [],
-      addBehavior: (name, icon, cooldownMinutes = 0, cooldownType = 'rest', categoryId) =>
+      addBehavior: (name, icon, cooldownMinutes = 0, cooldownType = 'rest', categoryId, cooldownUnit) =>
         set((state) => ({
           behaviors: [
             ...state.behaviors,
@@ -63,6 +65,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               logs: [],
               cooldownMinutes,
               cooldownType,
+              cooldownUnit,
             },
           ],
         })),

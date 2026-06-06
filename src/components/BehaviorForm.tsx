@@ -6,6 +6,7 @@ import type { BehaviorEntry } from '../types/behavior';
 import type { CooldownType } from '../utils/cooldownUtils';
 import { CategoryPicker } from './CategoryPicker';
 import { CooldownIcon } from './CooldownIcon';
+import type { CooldownUnit } from './CooldownInput';
 import { CooldownInput } from './CooldownInput';
 import { Text, TextInput } from './Text';
 
@@ -37,11 +38,10 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
 
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('');
-  const [categoryId, setCategoryId] = useState<string | undefined>(
-    behavior ? behavior.categoryId : defaultCategoryId,
-  );
+  const [categoryId, setCategoryId] = useState<string | undefined>(behavior ? behavior.categoryId : defaultCategoryId);
   const [cooldownMinutes, setCooldownMinutes] = useState(0);
   const [cooldownType, setCooldownType] = useState<CooldownType>('rest');
+  const [cooldownUnit, setCooldownUnit] = useState<CooldownUnit | undefined>(undefined);
 
   useEffect(() => {
     if (!behavior) return;
@@ -50,6 +50,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
     setCategoryId(behavior.categoryId);
     setCooldownMinutes(behavior.cooldownMinutes || 0);
     setCooldownType(behavior.cooldownType || 'rest');
+    setCooldownUnit(behavior.cooldownUnit);
   }, [behavior]);
 
   const handleSave = () => {
@@ -63,9 +64,17 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
         cooldownMinutes,
         cooldownType,
         categoryId: categoryId || undefined,
+        cooldownUnit: cooldownUnit || undefined,
       });
     } else {
-      addBehavior(trimmed, iconForStore(icon), cooldownMinutes, cooldownType, categoryId || undefined);
+      addBehavior(
+        trimmed,
+        iconForStore(icon),
+        cooldownMinutes,
+        cooldownType,
+        categoryId || undefined,
+        cooldownUnit || undefined,
+      );
     }
     onClose();
   };
@@ -98,6 +107,8 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
           <CooldownInput
             cooldownMinutes={cooldownMinutes}
             onChange={setCooldownMinutes}
+            preferredUnit={cooldownUnit}
+            onUnitChange={setCooldownUnit}
           />
         </View>
         <CategoryPicker

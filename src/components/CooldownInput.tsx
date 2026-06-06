@@ -1,15 +1,10 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from './Text';
 
-type CooldownUnit = 'minutes' | 'hours' | 'days' | 'weeks';
+export type CooldownUnit = 'minutes' | 'hours' | 'days' | 'weeks';
 
-const UNITS: CooldownUnit[] = [
-  'minutes',
-  'hours',
-  'days',
-  'weeks',
-];
+const UNITS: CooldownUnit[] = ['minutes', 'hours', 'days', 'weeks'];
 
 const UNIT_MULTIPLIER: Record<CooldownUnit, number> = {
   minutes: 1,
@@ -18,29 +13,42 @@ const UNIT_MULTIPLIER: Record<CooldownUnit, number> = {
   weeks: 10080,
 };
 
-function bestUnit(minutes: number): CooldownUnit {
-  if (minutes === 0) return 'minutes';
-  if (minutes % 10080 === 0) return 'weeks';
-  if (minutes % 1440 === 0) return 'days';
-  if (minutes % 60 === 0) return 'hours';
+const NICE_FRACTIONS = [0, 0.25, 0.5, 0.75];
+
+function detectBestUnit(minutes: number): CooldownUnit {
+  if (minutes === 0) return 'hours';
+  const units: CooldownUnit[] = ['weeks', 'days', 'hours', 'minutes'];
+  for (const u of units) {
+    const value = minutes / UNIT_MULTIPLIER[u];
+    const fraction = value - Math.floor(value);
+    if (NICE_FRACTIONS.includes(fraction)) {
+      return u;
+    }
+  }
   return 'minutes';
 }
 
 interface Props {
   cooldownMinutes: number;
   onChange: (cooldownMinutes: number) => void;
+  preferredUnit?: CooldownUnit;
+  onUnitChange?: (unit: CooldownUnit) => void;
 }
 
-export function CooldownInput({ cooldownMinutes, onChange }: Props) {
+export function CooldownInput({ cooldownMinutes, onChange, preferredUnit, onUnitChange }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [unit, setUnit] = useState<CooldownUnit>(() => bestUnit(cooldownMinutes));
+  const [unit, setUnit] = useState<CooldownUnit>('hours');
+
+  // Sync unit when the actual cooldown minutes are known (handles edit-mode data arriving via useEffect in the parent)
+  useEffect(() => {
+    if (!preferredUnit) {
+      setUnit(detectBestUnit(cooldownMinutes));
+    }
+  }, [cooldownMinutes, preferredUnit]);
 
   const displayValue = useMemo(
     () => String(Math.round(cooldownMinutes / UNIT_MULTIPLIER[unit])),
-    [
-      cooldownMinutes,
-      unit,
-    ],
+    [cooldownMinutes, unit],
   );
 
   const handleValueChange = useCallback(
@@ -50,23 +58,16 @@ export function CooldownInput({ cooldownMinutes, onChange }: Props) {
         onChange(Math.round(num * UNIT_MULTIPLIER[unit]));
       }
     },
-    [
-      onChange,
-      unit,
-    ],
+    [onChange, unit],
   );
 
   const handleUnitSelect = useCallback(
     (newUnit: CooldownUnit) => {
-      const num = Number(displayValue) || 0;
-      onChange(Math.round(num * UNIT_MULTIPLIER[newUnit]));
       setUnit(newUnit);
+      onUnitChange?.(newUnit);
       setPickerOpen(false);
     },
-    [
-      displayValue,
-      onChange,
-    ],
+    [onUnitChange],
   );
 
   return (
@@ -141,7 +142,7 @@ function UnitPicker({ open, currentUnit, onSelect, onClose }: UnitPickerProps) {
         onPress={onClose}
       />
       <View style={styles.dropdown}>
-        {UNITS.map((u) => (
+        {UNITS.map(u => (
           <UnitOption
             key={u}
             unit={u}
@@ -171,14 +172,7 @@ function UnitOption({ unit, active, onPress }: UnitOptionProps) {
       ]}
       onPress={onPress}
     >
-      <Text
-        style={[
-          styles.pickerOptionText,
-          active && styles.pickerOptionTextActive,
-        ]}
-      >
-        {unit}
-      </Text>
+      <Text style={[styles.pickerOptionText, active && styles.pickerOptionTextActive]}>{unit}</Text>
     </Pressable>
   );
 }

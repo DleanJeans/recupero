@@ -24,4 +24,5 @@ export interface BehaviorEntry {
   logs: LogEntry[];
   cooldownMinutes: number;
   cooldownType?: 'rest' | 'limit';
+  cooldownUnit?: 'minutes' | 'hours' | 'days' | 'weeks';
 }
