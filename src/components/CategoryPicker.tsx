@@ -21,11 +21,11 @@ export function CategoryPicker({ categories, selectedId, onChange }: CategoryPic
       <Text style={styles.label}>Category</Text>
       <View style={styles.row}>
         {items.length === 1 && <Text style={styles.emptyHint}>Tap + to create one on the home screen</Text>}
-        {items.map((item, index) => {
+        {items.map(item => {
           const active = selectedId === item.id;
           return (
             <Pressable
-              key={item.id}
+              key={item.id ?? 'none'}
               style={({ pressed }) => [styles.chip, active && styles.chipActive, pressed && { opacity: 0.7 }]}
               onPress={() => onChange(item.id)}
             >
