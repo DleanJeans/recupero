@@ -3,6 +3,7 @@ import { type RouteProp, useNavigation, useRoute } from '@react-navigation/nativ
 import React, { createContext, useContext, useMemo, useState } from 'react';
 import { Modal, Pressable, SectionList, StyleSheet, View, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BackButton } from '../components/BackButton';
 import { BehaviorForm } from '../components/BehaviorForm';
 import { BehaviorIcon } from '../components/BehaviorIcon';
 import { BehaviorLogItem } from '../components/BehaviorLogItem';
@@ -83,28 +84,6 @@ export function BehaviorDetailsScreen() {
 }
 
 // #region Header components
-
-function BackButton() {
-  const navigation = useNavigation();
-
-  return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.backBtn,
-        pressed && {
-          opacity: 0.5,
-        },
-      ]}
-      onPress={navigation.goBack}
-    >
-      <Ionicons
-        name="chevron-back"
-        size={28}
-        color="#fff"
-      />
-    </Pressable>
-  );
-}
 
 function BehaviorTitle() {
   const { behavior } = useBehaviorDetails();
@@ -248,9 +227,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingBottom: 8,
   },
-  backBtn: {
-    padding: 8,
-  },
+
   titleContainer: {
     flex: 1,
     flexDirection: 'row',

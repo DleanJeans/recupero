@@ -1,9 +1,9 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BackButton } from '../components/BackButton';
 import { BehaviorIcon } from '../components/BehaviorIcon';
 import { CategoryBar } from '../components/CategoryBar';
 import { Text } from '../components/Text';
@@ -107,12 +107,7 @@ export function TimelineScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Pressable
-          style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.5 }]}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="chevron-back" size={28} color="#fff" />
-        </Pressable>
+        <BackButton />
         <Text style={styles.title}>Timeline</Text>
       </View>
 
@@ -265,9 +260,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingBottom: 8,
   },
-  backBtn: {
-    padding: 8,
-  },
+
   title: {
     color: '#fff',
     fontSize: 28,
