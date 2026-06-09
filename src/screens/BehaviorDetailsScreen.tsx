@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { type RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { type RouteProp, useRoute } from '@react-navigation/native';
 import React, { createContext, useContext, useMemo, useState } from 'react';
-import { Modal, Pressable, SectionList, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Modal, Pressable, SectionList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../components/BackButton';
 import { BehaviorForm } from '../components/BehaviorForm';
@@ -10,6 +10,7 @@ import { BehaviorLogItem } from '../components/BehaviorLogItem';
 import { BehaviorLogModal } from '../components/BehaviorLogModal';
 import { CooldownLabel } from '../components/CooldownLabel';
 import { DistanceConnector } from '../components/DistanceConnector';
+import { ScreenTitle } from '../components/ScreenTitle';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry, LogEntry } from '../types/behavior';
@@ -95,7 +96,7 @@ function BehaviorTitle() {
         size={24}
       />
       <View style={styles.titleTextRow}>
-        <Text style={styles.headerTitle}>{behavior.name}</Text>
+        <ScreenTitle>{behavior.name}</ScreenTitle>
         <CooldownLabel behavior={behavior} />
       </View>
     </View>

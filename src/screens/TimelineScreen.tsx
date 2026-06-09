@@ -1,11 +1,12 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../components/BackButton';
 import { BehaviorIcon } from '../components/BehaviorIcon';
 import { CategoryBar } from '../components/CategoryBar';
+import { ScreenTitle } from '../components/ScreenTitle';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry, LogEntry } from '../types/behavior';
@@ -108,7 +109,7 @@ export function TimelineScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <BackButton />
-        <Text style={styles.title}>Timeline</Text>
+        <ScreenTitle>Timeline</ScreenTitle>
       </View>
 
       <CategoryBar selectedCategoryId={selectedCategoryId} onSelectCategory={setSelectedCategoryId} />
@@ -261,12 +262,6 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
 
-  title: {
-    color: '#fff',
-    fontSize: 28,
-    fontWeight: 'bold',
-    letterSpacing: -0.5,
-  },
   scrollView: {
     flex: 1,
   },
