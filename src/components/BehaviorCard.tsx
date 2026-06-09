@@ -7,6 +7,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
+import { getBehaviorTypeColor } from '../utils/behaviorTypeUtils';
 import { getCooldownColor } from '../utils/cooldownUtils';
 import { formatElapsedNumeric } from '../utils/timeUtils';
 import { BehaviorForm } from './BehaviorForm';
@@ -121,7 +122,7 @@ function BehaviorInfo({ behavior, showCategory }: BehaviorInfoProps) {
         <BehaviorElapsed behavior={behavior} />
         <CooldownLabel behavior={behavior} />
       </View>
-      <XpBar logCount={behavior.logs.length} />
+      <XpBar logCount={behavior.logs.length} color={getBehaviorTypeColor(behavior.type)} />
     </View>
   );
 }

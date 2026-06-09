@@ -10,9 +10,12 @@ export interface LogEntry {
   metadata?: Record<string, string | number>;
 }
 
+export type BehaviorType = 'undesirable' | 'neutral' | 'desirable';
+
 export interface BehaviorEntry {
   id: string;
   name: string;
+  type: BehaviorType;
   icon?:
     | string
     | {

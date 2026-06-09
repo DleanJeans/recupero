@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useBehaviorStore } from '../store/behaviorStore';
-import type { BehaviorEntry } from '../types/behavior';
+import type { BehaviorEntry, BehaviorType } from '../types/behavior';
 import type { CooldownType } from '../utils/cooldownUtils';
 import { Button } from './Button';
 import { CategoryPicker } from './CategoryPicker';
@@ -44,6 +44,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
   const handleCategoryChange = (id: string | undefined | null) => setCategoryId(id ?? undefined);
   const [emojiKeyboardOpen, setEmojiKeyboardOpen] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
+  const [type, setType] = useState<BehaviorType>(behavior?.type ?? 'neutral');
   const [cooldownMinutes, setCooldownMinutes] = useState(0);
   const [cooldownType, setCooldownType] = useState<CooldownType>('rest');
   const [cooldownUnit, setCooldownUnit] = useState<CooldownUnit | undefined>(undefined);
@@ -54,6 +55,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
   useEffect(() => {
     if (!behavior) return;
     setName(behavior.name);
+    setType(behavior.type);
     setIcon(iconFromStore(behavior.icon));
     setCategoryId(behavior.categoryId);
     setIsPrivate(behavior.private ?? false);
@@ -64,6 +66,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
 
   const hasChanges = isEdit && behavior && (
     name.trim() !== behavior.name ||
+    type !== behavior.type ||
     icon.trim() !== iconFromStore(behavior.icon) ||
     categoryId !== behavior.categoryId ||
     isPrivate !== (behavior.private ?? false) ||
@@ -79,6 +82,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
     if (isEdit && behavior) {
       updateBehavior(behavior.id, {
         name: trimmed,
+        type,
         icon: iconForStore(icon),
         cooldownMinutes,
         cooldownType,
@@ -89,6 +93,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
     } else {
       addBehavior(
         trimmed,
+        type,
         iconForStore(icon),
         cooldownMinutes,
         cooldownType,
@@ -118,6 +123,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
             onSubmit={handleSave}
           />
         </View>
+        <TypePicker value={type} onChange={setType} />
         <View style={styles.cooldownSection}>
           <View style={styles.cooldownLabelRow}>
             <CooldownIcon size={14} />
@@ -217,6 +223,38 @@ const NameInput = React.forwardRef<import('react-native').TextInput, NameInputPr
     />
   );
 });
+
+interface TypePickerProps {
+  value: BehaviorType;
+  onChange: (v: BehaviorType) => void;
+}
+function TypePicker({ value, onChange }: TypePickerProps) {
+  return (
+    <View style={styles.typeRow}>
+      <TypeOption
+        label="Undesirable"
+        active={value === 'undesirable'}
+        activeBtnStyle={styles.typeBtnUndesirable}
+        activeTextStyle={styles.typeBtnTextUndesirable}
+        onPress={() => onChange('undesirable')}
+      />
+      <TypeOption
+        label="Neutral"
+        active={value === 'neutral'}
+        activeBtnStyle={styles.typeBtnNeutral}
+        activeTextStyle={styles.typeBtnTextNeutral}
+        onPress={() => onChange('neutral')}
+      />
+      <TypeOption
+        label="Desirable"
+        active={value === 'desirable'}
+        activeBtnStyle={styles.typeBtnDesirable}
+        activeTextStyle={styles.typeBtnTextDesirable}
+        onPress={() => onChange('desirable')}
+      />
+    </View>
+  );
+}
 
 interface CooldownTypeToggleProps {
   value: CooldownType;
@@ -344,6 +382,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
+  typeBtnUndesirable: {
+    backgroundColor: '#7f1d1d',
+  },
+  typeBtnNeutral: {
+    backgroundColor: '#1e3a5f',
+  },
+  typeBtnDesirable: {
+    backgroundColor: '#14532d',
+  },
   typeBtnRest: {
     backgroundColor: '#2E7D32',
   },
@@ -354,6 +401,18 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 12,
     fontWeight: '500',
+  },
+  typeBtnTextUndesirable: {
+    color: '#f87171',
+    fontWeight: '600',
+  },
+  typeBtnTextNeutral: {
+    color: '#60a5fa',
+    fontWeight: '600',
+  },
+  typeBtnTextDesirable: {
+    color: '#4ade80',
+    fontWeight: '600',
   },
   typeBtnTextRest: {
     color: '#A5D6A7',

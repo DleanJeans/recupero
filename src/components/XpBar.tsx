@@ -5,8 +5,9 @@ import { Text } from './Text';
 
 interface XpBarProps {
   logCount: number;
+  color?: string;
 }
-export function XpBar({ logCount }: XpBarProps) {
+export function XpBar({ logCount, color = '#4ade80' }: XpBarProps) {
   const xp = getXp(logCount);
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
@@ -15,7 +16,7 @@ export function XpBar({ logCount }: XpBarProps) {
     <View style={styles.row}>
       <Text style={styles.label}>Lv{level}</Text>
       <View style={styles.track}>
-        <View style={[styles.fill, { width: `${progress * 100}%` }]} />
+        <View style={[styles.fill, { width: `${progress * 100}%`, backgroundColor: color }]} />
       </View>
       <Text style={styles.value}>
         {xp % XP_PER_LEVEL}/{XP_PER_LEVEL}
@@ -45,7 +46,6 @@ const styles = StyleSheet.create({
   },
   fill: {
     height: '100%',
-    backgroundColor: '#4ade80',
     borderRadius: 2,
   },
   value: {

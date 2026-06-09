@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { BehaviorEntry, Category } from '../types/behavior';
+import type { BehaviorEntry, BehaviorType, Category } from '../types/behavior';
 import { XP_PER_LOG } from '../utils/xpUtils';
 
 interface BehaviorStore {
@@ -10,6 +10,7 @@ interface BehaviorStore {
   categories: Category[];
   addBehavior: (
     name: string,
+    type: BehaviorType,
     icon?:
       | string
       | {
@@ -26,6 +27,7 @@ interface BehaviorStore {
     behaviorId: string,
     updates: {
       name?: string;
+      type?: BehaviorType;
       icon?:
         | string
         | {
@@ -59,13 +61,14 @@ export const useBehaviorStore = create<BehaviorStore>()(
     (set, get) => ({
       behaviors: [],
       categories: [],
-      addBehavior: (name, icon, cooldownMinutes = 0, cooldownType = 'rest', categoryId, cooldownUnit, isPrivate = false) =>
+      addBehavior: (name, type, icon, cooldownMinutes = 0, cooldownType = 'rest', categoryId, cooldownUnit, isPrivate = false) =>
         set((state) => ({
           behaviors: [
             ...state.behaviors,
             {
               id: uuidv4(),
               name,
+              type,
               icon,
               categoryId,
               private: isPrivate,
