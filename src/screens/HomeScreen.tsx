@@ -10,6 +10,7 @@ import { BehaviorForm } from '../components/BehaviorForm';
 import { Button } from '../components/Button';
 import { CategoryFilter } from '../components/CategoryFilter';
 import { CategoryXpBar } from '../components/CategoryXpBar';
+import { StatsIcon } from '../components/StatsIcon';
 import { Text } from '../components/Text';
 import { TypeXpBar } from '../components/TypeXpBar';
 import { useBackGuard } from '../hooks/useBackGuard';
@@ -41,18 +42,23 @@ export function HomeScreen() {
     return result;
   }, [behaviors, selectedCategoryId, hidePrivate]);
 
+  const [showXp, setShowXp] = useState(true);
+
   return (
     <SafeAreaView style={styles.container}>
-      <Title />
+      <HomeHeader
+        showXp={showXp}
+        onToggleXp={() => setShowXp(v => !v)}
+      />
 
-      <TypeXpBar selectedCategoryId={selectedCategoryId} />
+      {showXp && <TypeXpBar selectedCategoryId={selectedCategoryId} />}
 
       <CategoryFilter
         selectedCategoryId={selectedCategoryId}
         onSelectCategory={setSelectedCategoryId}
       />
 
-      <CategoryXpBar selectedCategoryId={selectedCategoryId} />
+      {showXp && <CategoryXpBar selectedCategoryId={selectedCategoryId} />}
 
       <BehaviorList
         behaviors={filteredBehaviors}
@@ -71,35 +77,64 @@ export function HomeScreen() {
   );
 }
 
-function Title() {
+interface HomeHeaderProps {
+  showXp: boolean;
+  onToggleXp: () => void;
+}
+function HomeHeader({ showXp, onToggleXp }: HomeHeaderProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
     <View style={styles.titleRow}>
       <Text style={styles.title}>Recupero</Text>
       <View style={styles.titleActions}>
-        <Button
-          variant="icon"
+        <HeaderIcon
+          icon={
+            <StatsIcon
+              size={22}
+              active={showXp}
+            />
+          }
+          onPress={onToggleXp}
+          accessibilityLabel={showXp ? 'Hide XP' : 'Show XP'}
+        />
+        <HeaderIcon
+          name="analytics-outline"
           onPress={() => navigation.navigate('Timeline')}
-        >
-          <Ionicons
-            name="analytics-outline"
-            size={22}
-            color="#888"
-          />
-        </Button>
-        <Button
-          variant="icon"
+          accessibilityLabel="Timeline"
+        />
+        <HeaderIcon
+          name="settings-outline"
           onPress={() => navigation.navigate('Settings')}
-        >
-          <Ionicons
-            name="settings-outline"
-            size={22}
-            color="#888"
-          />
-        </Button>
+          accessibilityLabel="Settings"
+        />
       </View>
     </View>
+  );
+}
+
+interface HeaderIconProps {
+  icon?: React.ReactNode;
+  name?: React.ComponentProps<typeof Ionicons>['name'];
+  onPress: () => void;
+  accessibilityLabel: string;
+}
+function HeaderIcon({ icon, name, onPress, accessibilityLabel }: HeaderIconProps) {
+  return (
+    <Button
+      variant="icon"
+      onPress={onPress}
+      accessibilityLabel={accessibilityLabel}
+    >
+      {icon ??
+        (name ? (
+          <Ionicons
+            name={name}
+            size={22}
+            color="#888"
+          />
+        ) : null)}
+    </Button>
   );
 }
 
