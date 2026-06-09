@@ -33,4 +33,15 @@ export const Colors = {
   success: '#2E7D32',
   successLight: '#A5D6A7',
   info: '#3a6ea5',
+
+  // ── Type Button Backgrounds ──
+  typeBtnUndesirable: '#7f1d1d',
+  typeBtnNeutral: '#1e3a5f',
+  typeBtnDesirable: '#14532d',
+  typeBtnRest: '#2E7D32',
+  typeBtnLimit: '#C62828',
+
+  // ── Type Button Text ──
+  typeTextUndesirable: '#fca5a5',
+  typeTextDesirable: '#86efac',
 } as const;
