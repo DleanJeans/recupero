@@ -8,7 +8,7 @@ import { AddBehaviorButton } from '../components/AddBehaviorButton';
 import { BehaviorCard } from '../components/BehaviorCard';
 import { BehaviorForm } from '../components/BehaviorForm';
 import { Button } from '../components/Button';
-import { CategoryBar } from '../components/CategoryBar';
+import { CategoryFilter } from '../components/CategoryFilter';
 import { Text } from '../components/Text';
 import { useBackGuard } from '../hooks/useBackGuard';
 import { useBehaviorStore } from '../store/behaviorStore';
@@ -38,7 +38,7 @@ export function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <Title />
 
-      <CategoryBar
+      <CategoryFilter
         selectedCategoryId={selectedCategoryId}
         onSelectCategory={setSelectedCategoryId}
       />

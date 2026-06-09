@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../components/BackButton';
 import { BehaviorIcon } from '../components/BehaviorIcon';
-import { CategoryBar } from '../components/CategoryBar';
+import { CategoryFilter } from '../components/CategoryFilter';
 import { ScreenTitle } from '../components/ScreenTitle';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
@@ -48,9 +48,7 @@ export function TimelineScreen() {
     const entries: TimelineEntry[] = [];
 
     const filteredBehaviors =
-      selectedCategoryId === null
-        ? behaviors
-        : behaviors.filter(b => b.categoryId === selectedCategoryId);
+      selectedCategoryId === null ? behaviors : behaviors.filter(b => b.categoryId === selectedCategoryId);
 
     for (const behavior of filteredBehaviors) {
       for (const log of behavior.logs) {
@@ -112,7 +110,10 @@ export function TimelineScreen() {
         <ScreenTitle>Timeline</ScreenTitle>
       </View>
 
-      <CategoryBar selectedCategoryId={selectedCategoryId} onSelectCategory={setSelectedCategoryId} />
+      <CategoryFilter
+        selectedCategoryId={selectedCategoryId}
+        onSelectCategory={setSelectedCategoryId}
+      />
 
       <ScrollView
         style={styles.scrollView}
@@ -128,14 +129,14 @@ export function TimelineScreen() {
         ) : (
           sections.map(section => (
             <View key={section.title}>
-              <SectionHeader title={section.title} hideLine={section.title === 'Today'} />
+              <SectionHeader
+                title={section.title}
+                hideLine={section.title === 'Today'}
+              />
               {section.data.map((group, index) => {
                 const prevGroup = index > 0 ? section.data[index - 1] : null;
-                const isFirstOfDay =
-                  !prevGroup ||
-                  !isSameCalendarDay(group.minuteTimestamp, prevGroup.minuteTimestamp);
-                const showDate =
-                  isOlderThanYesterday(group.minuteTimestamp) && isFirstOfDay;
+                const isFirstOfDay = !prevGroup || !isSameCalendarDay(group.minuteTimestamp, prevGroup.minuteTimestamp);
+                const showDate = isOlderThanYesterday(group.minuteTimestamp) && isFirstOfDay;
 
                 return (
                   <React.Fragment key={group.minuteTimestamp}>
@@ -145,11 +146,9 @@ export function TimelineScreen() {
                       isLast={group === minuteGroups[minuteGroups.length - 1]}
                       showDate={showDate}
                     />
-                    {index < section.data.length - 1 &&
-                      group.gapMs != null &&
-                      group.gapMs >= 60_000 && (
-                        <GapRow gapMs={group.gapMs} />
-                      )}
+                    {index < section.data.length - 1 && group.gapMs != null && group.gapMs >= 60_000 && (
+                      <GapRow gapMs={group.gapMs} />
+                    )}
                   </React.Fragment>
                 );
               })}
@@ -196,15 +195,22 @@ function MinuteCircle({ group, isFirst, isLast, showDate }: MinuteCircleProps) {
       <View style={styles.contentColumn}>
         <Text style={styles.timeText}>
           {formatTime(group.minuteTimestamp)}
-          {showDate && (
-            <> · {formatCompactDate(group.minuteTimestamp)}</>
-          )}
+          {showDate && <> · {formatCompactDate(group.minuteTimestamp)}</>}
         </Text>
 
         {group.entries.map(entry => (
-          <View key={entry.log.id} style={styles.behaviorRow}>
-            <BehaviorIcon behavior={entry.behavior} size={18} />
-            <Text style={styles.behaviorName} numberOfLines={1}>
+          <View
+            key={entry.log.id}
+            style={styles.behaviorRow}
+          >
+            <BehaviorIcon
+              behavior={entry.behavior}
+              size={18}
+            />
+            <Text
+              style={styles.behaviorName}
+              numberOfLines={1}
+            >
               {entry.behavior.name}
             </Text>
           </View>
@@ -217,11 +223,7 @@ function MinuteCircle({ group, isFirst, isLast, showDate }: MinuteCircleProps) {
 function isSameCalendarDay(a: number, b: number): boolean {
   const dA = new Date(a);
   const dB = new Date(b);
-  return (
-    dA.getFullYear() === dB.getFullYear() &&
-    dA.getMonth() === dB.getMonth() &&
-    dA.getDate() === dB.getDate()
-  );
+  return dA.getFullYear() === dB.getFullYear() && dA.getMonth() === dB.getMonth() && dA.getDate() === dB.getDate();
 }
 
 /** Rotated gap text sitting on the timeline line between two minute circles. */

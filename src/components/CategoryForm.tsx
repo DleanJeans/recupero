@@ -4,7 +4,7 @@ import { Button } from './Button';
 import { EmojiPicker } from './EmojiPicker';
 import { TextInput } from './Text';
 
-interface Props {
+export interface CategoryFormProps {
   emoji: string;
   name: string;
   isEditing: boolean;
@@ -13,6 +13,8 @@ interface Props {
   onSave: () => void;
   onCancel: () => void;
   onDelete: () => void;
+  /** Use darker background for nested contexts */
+  dark?: boolean;
 }
 
 export function CategoryForm({
@@ -24,11 +26,12 @@ export function CategoryForm({
   onSave,
   onCancel,
   onDelete,
-}: Props) {
+  dark,
+}: CategoryFormProps) {
   const canSave = emoji.trim() && name.trim();
 
   return (
-    <View style={styles.form}>
+    <View style={[styles.form, dark && styles.formDark]}>
       <View style={styles.formRow}>
         <EmojiPicker
           value={emoji}
@@ -69,7 +72,7 @@ export function CategoryForm({
           size="sm"
           onPress={onSave}
           disabled={!canSave}
-          style={[styles.formAddBtn, !canSave && styles.formAddBtnDisabled]}
+          style={styles.formAddBtn}
         >
           {isEditing ? 'Save' : 'Add'}
         </Button>
@@ -80,12 +83,15 @@ export function CategoryForm({
 
 const styles = StyleSheet.create({
   form: {
-    marginHorizontal: 16,
-    marginTop: 8,
     backgroundColor: '#1e1e1e',
     borderRadius: 12,
     padding: 12,
+    marginHorizontal: 16,
+    marginTop: 8,
     gap: 10,
+  },
+  formDark: {
+    backgroundColor: '#191919',
   },
   formRow: {
     flexDirection: 'row',
@@ -114,10 +120,6 @@ const styles = StyleSheet.create({
   },
   formAddBtn: {
     flex: 1,
-    borderRadius: 6,
-  },
-  formAddBtnDisabled: {
-    backgroundColor: '#2a2a2a',
     borderRadius: 6,
   },
 });

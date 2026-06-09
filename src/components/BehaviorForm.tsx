@@ -4,6 +4,7 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
 import type { CooldownType } from '../utils/cooldownUtils';
+import { Button } from './Button';
 import { CategoryPicker } from './CategoryPicker';
 import { CooldownIcon } from './CooldownIcon';
 import type { CooldownUnit } from './CooldownInput';
@@ -40,10 +41,14 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('');
   const [categoryId, setCategoryId] = useState<string | undefined>(behavior ? behavior.categoryId : defaultCategoryId);
+  const handleCategoryChange = (id: string | undefined | null) => setCategoryId(id ?? undefined);
   const [emojiKeyboardOpen, setEmojiKeyboardOpen] = useState(false);
   const [cooldownMinutes, setCooldownMinutes] = useState(0);
   const [cooldownType, setCooldownType] = useState<CooldownType>('rest');
   const [cooldownUnit, setCooldownUnit] = useState<CooldownUnit | undefined>(undefined);
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [categoryEmoji, setCategoryEmoji] = useState('');
+  const [categoryName, setCategoryName] = useState('');
 
   useEffect(() => {
     if (!behavior) return;
@@ -92,13 +97,21 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
             onPick={() => nameRef.current?.focus()}
             onOpenChange={setEmojiKeyboardOpen}
           />
-          <NameInput ref={nameRef} value={name} onChangeText={setName} onSubmit={handleSave} />
+          <NameInput
+            ref={nameRef}
+            value={name}
+            onChangeText={setName}
+            onSubmit={handleSave}
+          />
         </View>
         <View style={styles.cooldownSection}>
           <View style={styles.cooldownLabelRow}>
             <CooldownIcon size={14} />
             <Text style={styles.cooldownLabel}>Cooldown (optional)</Text>
-            <CooldownTypeToggle value={cooldownType} onChange={setCooldownType} />
+            <CooldownTypeToggle
+              value={cooldownType}
+              onChange={setCooldownType}
+            />
           </View>
           <CooldownInput
             cooldownMinutes={cooldownMinutes}
@@ -107,7 +120,40 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
             onUnitChange={setCooldownUnit}
           />
         </View>
-        <CategoryPicker categories={categories} selectedId={categoryId} onChange={setCategoryId} />
+        <CategoryPicker
+          categories={categories}
+          selectedId={categoryId}
+          onChange={handleCategoryChange}
+          isFormOpen={showCategoryForm}
+          onToggleForm={() => setShowCategoryForm(v => !v)}
+          form={{
+            emoji: categoryEmoji,
+            name: categoryName,
+            isEditing: false,
+            onEmojiChange: setCategoryEmoji,
+            onNameChange: setCategoryName,
+            onSave: () => {
+              const trimmedName = categoryName.trim();
+              const trimmedEmoji = categoryEmoji.trim();
+              if (!trimmedEmoji || !trimmedName) return;
+              const { addCategory, categories: cats } = useBehaviorStore.getState();
+              addCategory(trimmedName, trimmedEmoji);
+              const newCats = useBehaviorStore.getState().categories;
+              const newCat = newCats[newCats.length - 1];
+              if (newCat) setCategoryId(newCat.id);
+              setShowCategoryForm(false);
+              setCategoryEmoji('');
+              setCategoryName('');
+            },
+            onCancel: () => {
+              setShowCategoryForm(false);
+              setCategoryEmoji('');
+              setCategoryName('');
+            },
+            onDelete: () => {},
+            dark: true,
+          }}
+        />
         <FormActions
           onCancel={onClose}
           onSubmit={handleSave}
@@ -194,22 +240,6 @@ function TypeOption({ label, active, activeBtnStyle, activeTextStyle, onPress }:
   );
 }
 
-function CancelButton({ onPress }: { onPress: () => void }) {
-  return (
-    <Pressable style={styles.cancelBtn} onPress={onPress}>
-      <Text style={styles.cancelText}>Cancel</Text>
-    </Pressable>
-  );
-}
-
-function ConfirmButton({ onPress, label, disabled }: { onPress: () => void; label: string; disabled?: boolean }) {
-  return (
-    <Pressable style={[styles.addBtn, disabled && styles.addBtnDisabled]} onPress={onPress} disabled={disabled}>
-      <Text style={[styles.addText, disabled && styles.addTextDisabled]}>{label}</Text>
-    </Pressable>
-  );
-}
-
 interface FormActionsProps {
   onCancel: () => void;
   onSubmit: () => void;
@@ -219,8 +249,21 @@ interface FormActionsProps {
 function FormActions({ onCancel, onSubmit, submitLabel, disabled }: FormActionsProps) {
   return (
     <View style={styles.actions}>
-      <CancelButton onPress={onCancel} />
-      <ConfirmButton onPress={onSubmit} label={submitLabel} disabled={disabled} />
+      <Button
+        variant="secondary"
+        size="lg"
+        onPress={onCancel}
+      >
+        Cancel
+      </Button>
+      <Button
+        variant="primary"
+        size="lg"
+        onPress={onSubmit}
+        disabled={disabled}
+      >
+        {submitLabel}
+      </Button>
     </View>
   );
 }
@@ -296,35 +339,5 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     gap: 10,
-  },
-  cancelBtn: {
-    flex: 1,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  cancelText: {
-    color: '#aaa',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  addBtn: {
-    flex: 1,
-    backgroundColor: '#EFEFEF',
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  addBtnDisabled: {
-    backgroundColor: '#2a2a2a',
-  },
-  addText: {
-    color: '#111111',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  addTextDisabled: {
-    color: '#555',
   },
 });

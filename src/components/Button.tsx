@@ -43,6 +43,7 @@ export function Button({
   return (
     <Pressable
       style={({ pressed }) => [
+        commonStyles.base,
         baseStyles[variant],
         variant !== 'icon' && sizeStyles[size],
         active && activeStyles[variant],
@@ -55,17 +56,21 @@ export function Button({
       disabled={disabled}
       accessibilityLabel={accessibilityLabel}
     >
-      {isText ? <Text style={[textStyles[variant], active && textActiveStyles[variant]]}>{children}</Text> : children}
+      {isText ? <Text style={[commonTextStyles.base, textStyles[variant], active && textActiveStyles[variant]]}>{children}</Text> : children}
     </Pressable>
   );
 }
 
+const commonStyles = StyleSheet.create({
+  base: { borderRadius: 8, alignItems: 'center' },
+});
+
 const baseStyles = StyleSheet.create({
-  primary: { backgroundColor: '#fff', borderRadius: 12, alignItems: 'center' },
-  secondary: { backgroundColor: '#2a2a2a', borderRadius: 12, alignItems: 'center' },
-  danger: { backgroundColor: '#943030', borderRadius: 12, alignItems: 'center' },
-  ghost: { backgroundColor: '#1e1e1e', borderRadius: 8, alignItems: 'center' },
-  icon: { borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  primary: { backgroundColor: '#fff' },
+  secondary: { backgroundColor: '#2a2a2a' },
+  danger: { backgroundColor: '#943030' },
+  ghost: { backgroundColor: '#1e1e1e' },
+  icon: { justifyContent: 'center' },
 });
 
 const sizeStyles = StyleSheet.create({
@@ -82,11 +87,15 @@ const activeStyles = StyleSheet.create({
   icon: {},
 });
 
+const commonTextStyles = StyleSheet.create({
+  base: { fontWeight: '600' as const },
+});
+
 const textStyles = StyleSheet.create({
-  primary: { color: '#000', fontSize: 16, fontWeight: '600' },
-  secondary: { color: '#aaa', fontSize: 16, fontWeight: '600' },
-  danger: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  ghost: { color: '#666', fontSize: 13, fontWeight: '600' },
+  primary: { color: '#000', fontSize: 16 },
+  secondary: { color: '#aaa', fontSize: 16 },
+  danger: { color: '#fff', fontSize: 13 },
+  ghost: { color: '#666', fontSize: 13 },
   icon: { color: '#fff', fontSize: 16 },
 });
 
