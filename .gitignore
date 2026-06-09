@@ -45,3 +45,4 @@ android/
 ios/
 # Local Pi runtime state
 .atl/
+builds/
