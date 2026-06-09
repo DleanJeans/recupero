@@ -188,6 +188,7 @@ function EditLogModal() {
       visible={editingLog != null}
       logId={editingLog?.id}
       initialTimestamp={editingLog?.timestamp}
+      initialNotes={(editingLog?.metadata?.notes as string) ?? ''}
       onClose={clearEditingLog}
     />
   );

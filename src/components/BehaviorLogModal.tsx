@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
@@ -18,10 +18,11 @@ interface Props {
   /** If provided, the modal updates the existing log instead of creating a new one. */
   logId?: string;
   initialTimestamp?: number;
+  initialNotes?: string;
   onClose: () => void;
 }
 
-export function BehaviorLogModal({ behavior, visible, logId, initialTimestamp, onClose }: Props) {
+export function BehaviorLogModal({ behavior, visible, logId, initialTimestamp, initialNotes, onClose }: Props) {
   const nowRef = useRef(new Date());
   const todayStr = toDateString(nowRef.current);
 
@@ -29,6 +30,8 @@ export function BehaviorLogModal({ behavior, visible, logId, initialTimestamp, o
   const [hour, setHour] = useState(nowRef.current.getHours());
   const [minute, setMinute] = useState(nowRef.current.getMinutes());
   const [wheelKey, setWheelKey] = useState(0);
+  const [notes, setNotes] = useState(initialNotes ?? '');
+  const [notesFocused, setNotesFocused] = useState(false);
 
   const isToday = selectedDate === todayStr;
   const maxHour = isToday ? nowRef.current.getHours() : 23;
@@ -49,27 +52,29 @@ export function BehaviorLogModal({ behavior, visible, logId, initialTimestamp, o
       setSelectedDate(toDateString(n));
       setHour(n.getHours());
       setMinute(n.getMinutes());
+      setNotes(initialNotes ?? '');
       setWheelKey(k => k + 1);
     }
-  }, [visible, initialTimestamp]);
+  }, [visible, initialTimestamp, initialNotes]);
 
   const { logBehavior, updateLog } = useBehaviorStore();
 
   const handleConfirm = useCallback(() => {
     const [y, m, d] = selectedDate.split('-').map(Number);
     const ts = new Date(y, m - 1, d, hour, minute, 0, 0).getTime();
+    const metadata = notes.trim() ? { notes: notes.trim() } : undefined;
     if (logId) {
-      updateLog(behavior.id, logId, ts);
+      updateLog(behavior.id, logId, ts, metadata);
     } else {
-      logBehavior(behavior.id, ts);
+      logBehavior(behavior.id, ts, metadata);
     }
     onClose();
-  }, [selectedDate, hour, minute, logId, behavior.id, logBehavior, updateLog, onClose]);
+  }, [selectedDate, hour, minute, notes, logId, behavior.id, logBehavior, updateLog, onClose]);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose} />
-      <View style={styles.sheet}>
+      <KeyboardAvoidingView behavior="padding" style={styles.sheet}>
         <ModalTitle isEditing={!!initialTimestamp} behaviorName={behavior.name} />
 
         <DatePicker selectedDate={selectedDate} maxDate={todayStr} onSelect={setSelectedDate} />
@@ -80,12 +85,27 @@ export function BehaviorLogModal({ behavior, visible, logId, initialTimestamp, o
           maxHour={maxHour}
           maxMinute={maxMinute}
           wheelKey={wheelKey}
+          collapsed={notesFocused}
           onHourChange={setHour}
           onMinuteChange={setMinute}
         />
 
+        <Text style={styles.sectionLabel}>Notes</Text>
+        <TextInput
+          style={styles.notesInput}
+          value={notes}
+          onChangeText={setNotes}
+          placeholder="Optional notes..."
+          placeholderTextColor="#555"
+          multiline
+          maxLength={500}
+          textAlignVertical="top"
+          onFocus={() => setNotesFocused(true)}
+          onBlur={() => setNotesFocused(false)}
+        />
+
         <ActionButtons confirmLabel={initialTimestamp ? 'Save' : 'Log'} onCancel={onClose} onConfirm={handleConfirm} />
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -152,13 +172,26 @@ interface TimePickerProps {
   maxHour: number;
   maxMinute: number;
   wheelKey: number;
+  collapsed: boolean;
   onHourChange: (h: number) => void;
   onMinuteChange: (m: number) => void;
 }
 
-function TimePicker({ hour, minute, maxHour, maxMinute, wheelKey, onHourChange, onMinuteChange }: TimePickerProps) {
+function TimePicker({ hour, minute, maxHour, maxMinute, wheelKey, collapsed, onHourChange, onMinuteChange }: TimePickerProps) {
   const hourValues = ALL_HOURS.slice(0, maxHour + 1);
   const minuteValues = ALL_MINUTES.slice(0, maxMinute + 1);
+
+  if (collapsed) {
+    const displayTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    return (
+      <>
+        <Text style={styles.sectionLabel}>Time</Text>
+        <View style={styles.collapsedTime}>
+          <Text style={styles.collapsedTimeText}>{displayTime}</Text>
+        </View>
+      </>
+    );
+  }
 
   return (
     <>
@@ -243,5 +276,26 @@ const styles = StyleSheet.create({
   calendarPopup: { width: '100%', backgroundColor: '#2a2a2a', borderRadius: 16, overflow: 'hidden' },
   wheels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 16, gap: 8 },
   colon: { color: '#fff', fontSize: 28, fontWeight: '700', marginBottom: 4 },
+  notesInput: {
+    backgroundColor: '#2a2a2a',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    color: '#fff',
+    fontSize: 16,
+    minHeight: 80,
+    marginBottom: 16,
+    lineHeight: 22,
+  },
   actions: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  collapsedTime: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  collapsedTimeText: {
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
 });
