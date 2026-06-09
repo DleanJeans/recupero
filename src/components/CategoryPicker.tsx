@@ -111,7 +111,7 @@ function CategoryChips({ categories, selectedId, onChange, onLongPress, showAll 
             onLongPress={item.id && onLongPress ? () => onLongPress(item as Category) : undefined}
             style={[horizontal ? styles.horizontalChip : styles.chip, horizontal && styles.chipHorizontal]}
           >
-            <Text style={styles.chipEmoji}>{item.emoji ?? ''}</Text>
+            <Text style={[styles.chipEmoji, !active && styles.chipEmojiInactive]}>{item.emoji ?? ''}</Text>
             <Text style={[styles.chipText, active && styles.chipTextActive]}>{item.name}</Text>
           </Button>
         );
@@ -141,6 +141,7 @@ const styles = StyleSheet.create({
   },
   chipHorizontal: {},
   chipEmoji: { fontSize: 16 },
+  chipEmojiInactive: { opacity: 0.4 },
   chipText: { color: '#666', fontSize: 13, fontWeight: '500' },
   chipTextActive: { color: '#fff' },
   emptyHint: { color: '#555', fontSize: 12, fontStyle: 'italic', paddingVertical: 6 },
