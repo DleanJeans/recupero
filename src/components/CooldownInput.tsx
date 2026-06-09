@@ -38,11 +38,13 @@ interface Props {
 
 export function CooldownInput({ cooldownMinutes, onChange, preferredUnit, onUnitChange }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [unit, setUnit] = useState<CooldownUnit>('hours');
+  const [unit, setUnit] = useState<CooldownUnit>(preferredUnit ?? 'hours');
 
   // Sync unit when the actual cooldown minutes are known (handles edit-mode data arriving via useEffect in the parent)
   useEffect(() => {
-    if (!preferredUnit) {
+    if (preferredUnit) {
+      setUnit(preferredUnit);
+    } else {
       setUnit(detectBestUnit(cooldownMinutes));
     }
   }, [cooldownMinutes, preferredUnit]);
