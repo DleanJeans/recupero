@@ -5,15 +5,12 @@ import { Calendar } from 'react-native-calendars';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
 import { formatDateDisplay, toDateString } from '../utils/dateUtils';
+import { Button } from './Button';
 import { NumberWheel } from './NumberWheel';
 import { Text } from './Text';
 
 const ALL_HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const ALL_MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
-
-function pressedStyle(opacity: number) {
-  return { opacity, transform: [{ scale: 0.98 }] as const };
-}
 
 interface Props {
   behavior: BehaviorEntry;
@@ -185,21 +182,23 @@ function TimePicker({ hour, minute, maxHour, maxMinute, wheelKey, onHourChange, 
   );
 }
 
-interface ActionButtonsProps {
+function ActionButtons({
+  confirmLabel,
+  onCancel,
+  onConfirm,
+}: {
   confirmLabel: string;
   onCancel: () => void;
   onConfirm: () => void;
-}
-
-function ActionButtons({ confirmLabel, onCancel, onConfirm }: ActionButtonsProps) {
+}) {
   return (
     <View style={styles.actions}>
-      <Pressable style={({ pressed }) => [styles.cancelBtn, pressed && pressedStyle(0.6)]} onPress={onCancel}>
-        <Text style={styles.cancelText}>Cancel</Text>
-      </Pressable>
-      <Pressable style={({ pressed }) => [styles.confirmBtn, pressed && pressedStyle(0.85)]} onPress={onConfirm}>
-        <Text style={styles.confirmText}>{confirmLabel}</Text>
-      </Pressable>
+      <Button variant="secondary" size="lg" onPress={onCancel}>
+        Cancel
+      </Button>
+      <Button variant="primary" size="lg" onPress={onConfirm}>
+        {confirmLabel}
+      </Button>
     </View>
   );
 }
@@ -245,8 +244,4 @@ const styles = StyleSheet.create({
   wheels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 16, gap: 8 },
   colon: { color: '#fff', fontSize: 28, fontWeight: '700', marginBottom: 4 },
   actions: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  cancelBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#2a2a2a', alignItems: 'center' },
-  cancelText: { color: '#aaa', fontSize: 16, fontWeight: '600' },
-  confirmBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center' },
-  confirmText: { color: '#000', fontSize: 16, fontWeight: '700' },
 });

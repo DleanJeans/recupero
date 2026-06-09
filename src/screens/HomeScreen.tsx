@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddBehaviorButton } from '../components/AddBehaviorButton';
 import { BehaviorCard } from '../components/BehaviorCard';
 import { BehaviorForm } from '../components/BehaviorForm';
+import { Button } from '../components/Button';
 import { CategoryBar } from '../components/CategoryBar';
 import { Text } from '../components/Text';
 import { useBackGuard } from '../hooks/useBackGuard';
@@ -66,8 +67,8 @@ function Title() {
     <View style={styles.titleRow}>
       <Text style={styles.title}>Recupero</Text>
       <View style={styles.titleActions}>
-        <Pressable
-          style={({ pressed }) => [styles.titleBtn, pressed && { opacity: 0.5 }]}
+        <Button
+          variant="icon"
           onPress={() => navigation.navigate('Timeline')}
         >
           <Ionicons
@@ -75,9 +76,9 @@ function Title() {
             size={22}
             color="#888"
           />
-        </Pressable>
-        <Pressable
-          style={({ pressed }) => [styles.titleBtn, pressed && { opacity: 0.5 }]}
+        </Button>
+        <Button
+          variant="icon"
           onPress={() => navigation.navigate('Settings')}
         >
           <Ionicons
@@ -85,7 +86,7 @@ function Title() {
             size={22}
             color="#888"
           />
-        </Pressable>
+        </Button>
       </View>
     </View>
   );
@@ -147,9 +148,6 @@ const styles = StyleSheet.create({
   titleActions: {
     flexDirection: 'row',
     gap: 8,
-  },
-  titleBtn: {
-    padding: 4,
   },
   emptyContainer: {
     flex: 1,

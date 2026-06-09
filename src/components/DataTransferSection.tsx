@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import React, { useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import { exportToFile, importFromFile } from '../utils/dataTransfer';
+import { Button } from './Button';
 import { Text } from './Text';
 
 export function DataTransferSection() {
@@ -52,25 +53,27 @@ export function DataTransferSection() {
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>DATA</Text>
       <View style={styles.optionsRow}>
-        <Pressable
-          style={({ pressed }) => [styles.optionCard, pressed && { opacity: 0.7 }, isTransferring && { opacity: 0.5 }]}
+        <Button
+          variant="ghost"
           onPress={handleExport}
           disabled={isTransferring}
+          style={[styles.optionCard, isTransferring && { opacity: 0.5 }]}
         >
           <Ionicons name="document-text-outline" size={22} color="#EFEFEF" style={{ marginBottom: 6 }} />
           <Text style={styles.optionLabel}>Export</Text>
           <Text style={styles.optionDescriptionSmall}>Save JSON file</Text>
-        </Pressable>
+        </Button>
 
-        <Pressable
-          style={({ pressed }) => [styles.optionCard, pressed && { opacity: 0.7 }, isTransferring && { opacity: 0.5 }]}
+        <Button
+          variant="ghost"
           onPress={handleImport}
           disabled={isTransferring}
+          style={[styles.optionCard, isTransferring && { opacity: 0.5 }]}
         >
           <Ionicons name="folder-open-outline" size={22} color="#EFEFEF" style={{ marginBottom: 6 }} />
           <Text style={styles.optionLabel}>Import</Text>
           <Text style={styles.optionDescriptionSmall}>Pick JSON file</Text>
-        </Pressable>
+        </Button>
       </View>
     </View>
   );
@@ -88,15 +91,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   optionsRow: { flexDirection: 'row', gap: 10 },
-  optionCard: {
-    flex: 1,
-    backgroundColor: '#1e1e1e',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#1e1e1e',
-  },
+  optionCard: { flex: 1, padding: 16, borderWidth: 1.5, borderColor: '#1e1e1e' },
   optionLabel: { color: '#888', fontSize: 16, fontWeight: '600', marginBottom: 4 },
   optionDescriptionSmall: { color: '#555', fontSize: 12, fontWeight: '400', marginTop: 2 },
 });

@@ -92,21 +92,13 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
             onPick={() => nameRef.current?.focus()}
             onOpenChange={setEmojiKeyboardOpen}
           />
-          <NameInput
-            ref={nameRef}
-            value={name}
-            onChangeText={setName}
-            onSubmit={handleSave}
-          />
+          <NameInput ref={nameRef} value={name} onChangeText={setName} onSubmit={handleSave} />
         </View>
         <View style={styles.cooldownSection}>
           <View style={styles.cooldownLabelRow}>
             <CooldownIcon size={14} />
             <Text style={styles.cooldownLabel}>Cooldown (optional)</Text>
-            <CooldownTypeToggle
-              value={cooldownType}
-              onChange={setCooldownType}
-            />
+            <CooldownTypeToggle value={cooldownType} onChange={setCooldownType} />
           </View>
           <CooldownInput
             cooldownMinutes={cooldownMinutes}
@@ -115,11 +107,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
             onUnitChange={setCooldownUnit}
           />
         </View>
-        <CategoryPicker
-          categories={categories}
-          selectedId={categoryId}
-          onChange={setCategoryId}
-        />
+        <CategoryPicker categories={categories} selectedId={categoryId} onChange={setCategoryId} />
         <FormActions
           onCancel={onClose}
           onSubmit={handleSave}
@@ -208,10 +196,7 @@ function TypeOption({ label, active, activeBtnStyle, activeTextStyle, onPress }:
 
 function CancelButton({ onPress }: { onPress: () => void }) {
   return (
-    <Pressable
-      style={styles.cancelBtn}
-      onPress={onPress}
-    >
+    <Pressable style={styles.cancelBtn} onPress={onPress}>
       <Text style={styles.cancelText}>Cancel</Text>
     </Pressable>
   );
@@ -219,11 +204,7 @@ function CancelButton({ onPress }: { onPress: () => void }) {
 
 function ConfirmButton({ onPress, label, disabled }: { onPress: () => void; label: string; disabled?: boolean }) {
   return (
-    <Pressable
-      style={[styles.addBtn, disabled && styles.addBtnDisabled]}
-      onPress={onPress}
-      disabled={disabled}
-    >
+    <Pressable style={[styles.addBtn, disabled && styles.addBtnDisabled]} onPress={onPress} disabled={disabled}>
       <Text style={[styles.addText, disabled && styles.addTextDisabled]}>{label}</Text>
     </Pressable>
   );
@@ -239,11 +220,7 @@ function FormActions({ onCancel, onSubmit, submitLabel, disabled }: FormActionsP
   return (
     <View style={styles.actions}>
       <CancelButton onPress={onCancel} />
-      <ConfirmButton
-        onPress={onSubmit}
-        label={submitLabel}
-        disabled={disabled}
-      />
+      <ConfirmButton onPress={onSubmit} label={submitLabel} disabled={disabled} />
     </View>
   );
 }

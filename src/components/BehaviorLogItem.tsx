@@ -6,6 +6,7 @@ import { useBehaviorStore } from '../store/behaviorStore';
 import { useSettingsStore } from '../store/settingsStore';
 import type { LogEntry } from '../types/behavior';
 import { formatElapsedNumeric, formatTime } from '../utils/timeUtils';
+import { Button } from './Button';
 import { Text } from './Text';
 
 interface Props {
@@ -37,41 +38,17 @@ export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
   };
 
   const renderLeftActions = () => (
-    <Pressable
-      style={({ pressed }) => [
-        styles.leftAction,
-        pressed && {
-          opacity: 0.8,
-        },
-      ]}
-      onPress={handleRemove}
-    >
-      <Ionicons
-        name="trash"
-        size={24}
-        color="#fff"
-      />
+    <Button variant="danger" onPress={handleRemove} style={styles.leftAction}>
+      <Ionicons name="trash" size={24} color="#fff" />
       <Text style={styles.actionText}>Delete</Text>
-    </Pressable>
+    </Button>
   );
 
   const renderRightActions = () => (
-    <Pressable
-      style={({ pressed }) => [
-        styles.rightAction,
-        pressed && {
-          opacity: 0.8,
-        },
-      ]}
-      onPress={onEdit}
-    >
-      <Ionicons
-        name="create-outline"
-        size={24}
-        color="#fff"
-      />
+    <Button variant="danger" onPress={onEdit} style={styles.rightAction}>
+      <Ionicons name="create-outline" size={24} color="#fff" />
       <Text style={styles.actionText}>Edit</Text>
-    </Pressable>
+    </Button>
   );
 
   return (
@@ -81,11 +58,7 @@ export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
       overshootLeft={false}
       overshootRight={false}
     >
-      <Pressable
-        style={styles.logItem}
-        onLongPress={onEdit}
-        delayLongPress={300}
-      >
+      <Pressable style={styles.logItem} onLongPress={onEdit} delayLongPress={300}>
         <View style={styles.logContent}>
           <Text style={styles.dateText}>{formatTime(log.timestamp, timeFormat === '12h')}</Text>
           <Text style={styles.elapsedText}>{formatElapsedNumeric(log.timestamp)}</Text>

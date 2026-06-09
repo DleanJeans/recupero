@@ -1,6 +1,7 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import type { Category } from '../types/behavior';
+import { Button } from './Button';
 import { Text } from './Text';
 
 interface CategoryPickerProps {
@@ -24,14 +25,17 @@ export function CategoryPicker({ categories, selectedId, onChange }: CategoryPic
         {items.map(item => {
           const active = selectedId === item.id;
           return (
-            <Pressable
+            <Button
               key={item.id ?? 'none'}
-              style={({ pressed }) => [styles.chip, active && styles.chipActive, pressed && { opacity: 0.7 }]}
+              variant="ghost"
+              size="sm"
+              active={active}
               onPress={() => onChange(item.id)}
+              style={styles.chip}
             >
               <Text style={styles.chipEmoji}>{item.emoji ?? ''}</Text>
               <Text style={[styles.chipText, active && styles.chipTextActive]}>{item.name}</Text>
-            </Pressable>
+            </Button>
           );
         })}
       </View>
@@ -40,48 +44,12 @@ export function CategoryPicker({ categories, selectedId, onChange }: CategoryPic
 }
 
 const styles = StyleSheet.create({
-  section: {
-    gap: 6,
-  },
-  label: {
-    color: '#888',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#2a2a2a',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    gap: 4,
-  },
-  chipActive: {
-    backgroundColor: '#3a3a3a',
-    borderWidth: 1,
-    borderColor: '#666',
-  },
-  chipEmoji: {
-    fontSize: 16,
-  },
-  chipText: {
-    color: '#666',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  chipTextActive: {
-    color: '#fff',
-  },
-  emptyHint: {
-    color: '#555',
-    fontSize: 12,
-    fontStyle: 'italic',
-    paddingVertical: 6,
-  },
+  section: { gap: 6 },
+  label: { color: '#888', fontSize: 13, fontWeight: '600' },
+  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  chip: { paddingHorizontal: 10, paddingVertical: 6, gap: 4 },
+  chipEmoji: { fontSize: 16 },
+  chipText: { color: '#666', fontSize: 13, fontWeight: '500' },
+  chipTextActive: { color: '#fff' },
+  emptyHint: { color: '#555', fontSize: 12, fontStyle: 'italic', paddingVertical: 6 },
 });

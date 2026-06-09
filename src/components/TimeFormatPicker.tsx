@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import type { TimeFormat } from '../store/settingsStore';
 import { useSettingsStore } from '../store/settingsStore';
+import { Button } from './Button';
 import { Text } from './Text';
 
 function formatNow(hour12: boolean): string {
@@ -31,20 +32,18 @@ export function TimeFormatPicker() {
         {options.map(option => {
           const isSelected = timeFormat === option.value;
           return (
-            <Pressable
+            <Button
               key={option.value}
-              style={({ pressed }) => [
-                styles.optionCard,
-                isSelected && styles.optionCardSelected,
-                pressed && !isSelected && { opacity: 0.7 },
-              ]}
+              variant="ghost"
+              active={isSelected}
               onPress={() => setTimeFormat(option.value)}
+              style={[styles.optionCard, isSelected && styles.optionCardSelected]}
             >
               <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>{option.label}</Text>
               <Text style={[styles.optionDescription, isSelected && styles.optionDescriptionSelected]}>
                 {option.description}
               </Text>
-            </Pressable>
+            </Button>
           );
         })}
       </View>
@@ -64,15 +63,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   optionsRow: { flexDirection: 'row', gap: 10 },
-  optionCard: {
-    flex: 1,
-    backgroundColor: '#1e1e1e',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#1e1e1e',
-  },
+  optionCard: { flex: 1, padding: 16, borderWidth: 1.5, borderColor: '#1e1e1e' },
   optionCardSelected: { borderColor: '#EFEFEF', backgroundColor: '#2a2a2a' },
   optionLabel: { color: '#888', fontSize: 16, fontWeight: '600', marginBottom: 4 },
   optionLabelSelected: { color: '#fff' },

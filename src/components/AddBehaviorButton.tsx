@@ -8,13 +8,7 @@ interface Props {
 
 export function AddBehaviorButton({ onPress }: Props) {
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.fab,
-        pressed && styles.fabPressed,
-      ]}
-      onPress={onPress}
-    >
+    <Pressable style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]} onPress={onPress}>
       <Text style={styles.fabText}>+ Add behavior</Text>
     </Pressable>
   );

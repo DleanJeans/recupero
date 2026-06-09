@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { Category } from '../types/behavior';
+import { Button } from './Button';
 import { EmojiPicker } from './EmojiPicker';
 import { Text, TextInput } from './Text';
 
@@ -50,11 +51,7 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBa
     resetForm();
     Alert.alert(`Delete "${cat.name}"?`, `Behaviors in this category will lose their category assignment.`, [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => removeCategory(cat.id),
-      },
+      { text: 'Delete', style: 'destructive', onPress: () => removeCategory(cat.id) },
     ]);
   };
 
@@ -65,53 +62,47 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBa
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <Pressable
-          style={({ pressed }) => [
-            styles.chip,
-            selectedCategoryId === null && styles.chipActive,
-            pressed && { opacity: 0.7 },
-          ]}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <Button
+          variant="ghost"
+          size="sm"
+          active={selectedCategoryId === null}
           onPress={() => onSelectCategory(null)}
+          style={styles.chip}
         >
-          <Text style={[styles.chipText, selectedCategoryId === null && styles.chipTextActive]}>All</Text>
-        </Pressable>
+          All
+        </Button>
 
         {categories.map(cat => (
-          <Pressable
+          <Button
             key={cat.id}
-            style={({ pressed }) => [
-              styles.chip,
-              selectedCategoryId === cat.id && styles.chipActive,
-              pressed && { opacity: 0.7 },
-            ]}
+            variant="ghost"
+            size="sm"
+            active={selectedCategoryId === cat.id}
             onPress={() => onSelectCategory(cat.id)}
             onLongPress={() => setEditingCategory(cat)}
+            style={styles.chip}
           >
             <Text style={styles.chipEmoji}>{cat.emoji}</Text>
             <Text style={[styles.chipText, selectedCategoryId === cat.id && styles.chipTextActive]}>{cat.name}</Text>
-          </Pressable>
+          </Button>
         ))}
 
-        <Pressable
-          style={({ pressed }) => [styles.addChip, pressed && { opacity: 0.7 }]}
+        <Button
+          variant="ghost"
+          size="sm"
           onPress={openAddForm}
+          style={styles.addChip}
+          accessibilityLabel={showForm || editingCategory ? 'Close form' : 'Add category'}
         >
           <Text style={styles.addChipText}>{showForm || editingCategory ? '✕' : '+'}</Text>
-        </Pressable>
+        </Button>
       </ScrollView>
 
       {(showForm || editingCategory) && (
         <View style={styles.form}>
           <View style={styles.formRow}>
-            <EmojiPicker
-              value={emoji}
-              onChangeText={setEmoji}
-            />
+            <EmojiPicker value={emoji} onChangeText={setEmoji} />
             <TextInput
               style={styles.nameInput}
               placeholder="Category name"
@@ -124,32 +115,22 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBa
           </View>
           <View style={styles.formActions}>
             {isEditing && (
-              <Pressable
-                style={({ pressed }) => [styles.formDeleteBtn, pressed && { opacity: 0.7 }]}
-                onPress={handleDelete}
-              >
-                <Text style={styles.formDeleteText}>Delete</Text>
-              </Pressable>
+              <Button variant="danger" size="sm" onPress={handleDelete} style={styles.formDeleteBtn}>
+                Delete
+              </Button>
             )}
-            <Pressable
-              style={({ pressed }) => [styles.formCancelBtn, pressed && { opacity: 0.7 }]}
-              onPress={resetForm}
-            >
-              <Text style={styles.formCancelText}>Cancel</Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.formAddBtn,
-                pressed && { opacity: 0.7 },
-                (!emoji.trim() || !name.trim()) && styles.formAddBtnDisabled,
-              ]}
+            <Button variant="secondary" size="sm" onPress={resetForm} style={styles.formCancelBtn}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
               onPress={handleSave}
               disabled={!emoji.trim() || !name.trim()}
+              style={[styles.formAddBtn, (!emoji.trim() || !name.trim()) && styles.formAddBtnDisabled]}
             >
-              <Text style={[styles.formAddText, (!emoji.trim() || !name.trim()) && styles.formAddTextDisabled]}>
-                {isEditing ? 'Save' : 'Add'}
-              </Text>
-            </Pressable>
+              {isEditing ? 'Save' : 'Add'}
+            </Button>
           </View>
         </View>
       )}

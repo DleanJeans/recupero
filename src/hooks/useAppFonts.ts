@@ -14,10 +14,7 @@ export function useAppFonts() {
     if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();
     }
-  }, [
-    fontsLoaded,
-    fontError,
-  ]);
+  }, [fontsLoaded, fontError]);
 
   return fontsLoaded || !!fontError;
 }

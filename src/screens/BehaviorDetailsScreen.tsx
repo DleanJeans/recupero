@@ -91,10 +91,7 @@ function BehaviorTitle() {
 
   return (
     <View style={styles.titleContainer}>
-      <BehaviorIcon
-        behavior={behavior}
-        size={24}
-      />
+      <BehaviorIcon behavior={behavior} size={24} />
       <View style={styles.titleTextRow}>
         <ScreenTitle>{behavior.name}</ScreenTitle>
         <CooldownLabel behavior={behavior} />
@@ -116,11 +113,7 @@ function EditButton() {
       ]}
       onPress={openEditModal}
     >
-      <Ionicons
-        name="create-outline"
-        size={26}
-        color="#aaa"
-      />
+      <Ionicons name="create-outline" size={26} color="#aaa" />
     </Pressable>
   );
 }
@@ -146,11 +139,7 @@ function BehaviorLogList() {
               style={{ marginVertical: 4 }}
             />
           )}
-          <BehaviorLogItem
-            log={item}
-            behaviorId={behavior.id}
-            onEdit={() => startEditingLog(item)}
-          />
+          <BehaviorLogItem log={item} behaviorId={behavior.id} onEdit={() => startEditingLog(item)} />
         </>
       )}
       renderSectionHeader={({ section }) => {
@@ -197,21 +186,10 @@ function EditBehaviorModal() {
   const { showEditModal, behavior, closeEditModal } = useBehaviorDetails();
 
   return (
-    <Modal
-      visible={showEditModal}
-      transparent
-      animationType="slide"
-      onRequestClose={closeEditModal}
-    >
+    <Modal visible={showEditModal} transparent animationType="slide" onRequestClose={closeEditModal}>
       <View style={styles.editModalOverlay}>
-        <Pressable
-          style={styles.editModalBackdrop}
-          onPress={closeEditModal}
-        />
-        <BehaviorForm
-          behavior={behavior}
-          onClose={closeEditModal}
-        />
+        <Pressable style={styles.editModalBackdrop} onPress={closeEditModal} />
+        <BehaviorForm behavior={behavior} onClose={closeEditModal} />
       </View>
     </Modal>
   );
@@ -290,6 +268,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginTop: 'auto'
+    marginTop: 'auto',
   },
 });

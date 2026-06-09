@@ -12,6 +12,7 @@ import { formatElapsedNumeric } from '../utils/timeUtils';
 import { BehaviorForm } from './BehaviorForm';
 import { BehaviorIcon } from './BehaviorIcon';
 import { BehaviorLogModal } from './BehaviorLogModal';
+import { Button } from './Button';
 import { CooldownLabel } from './CooldownLabel';
 import { Text } from './Text';
 
@@ -62,33 +63,16 @@ export function BehaviorCard({ behavior, showCategory }: Props) {
         overshootLeft={false}
       >
         <View style={styles.card}>
-          <Pressable
-            style={styles.content}
-            onPress={handlePress}
-            onLongPress={handleLongPress}
-          >
-            <BehaviorIcon
-              behavior={behavior}
-              size={32}
-            />
-            <BehaviorInfo
-              behavior={behavior}
-              showCategory={showCategory}
-            />
+          <Pressable style={styles.content} onPress={handlePress} onLongPress={handleLongPress}>
+            <BehaviorIcon behavior={behavior} size={32} />
+            <BehaviorInfo behavior={behavior} showCategory={showCategory} />
           </Pressable>
 
-          <LogButton
-            behavior={behavior}
-            onPress={() => setLogModalVisible(true)}
-          />
+          <LogButton behavior={behavior} onPress={() => setLogModalVisible(true)} />
         </View>
       </Swipeable>
 
-      <BehaviorLogModal
-        behavior={behavior}
-        visible={logModalVisible}
-        onClose={() => setLogModalVisible(false)}
-      />
+      <BehaviorLogModal behavior={behavior} visible={logModalVisible} onClose={() => setLogModalVisible(false)} />
 
       <Modal
         visible={editModalVisible}
@@ -97,14 +81,8 @@ export function BehaviorCard({ behavior, showCategory }: Props) {
         onRequestClose={() => setEditModalVisible(false)}
       >
         <View style={styles.editModalOverlay}>
-          <Pressable
-            style={styles.editModalBackdrop}
-            onPress={() => setEditModalVisible(false)}
-          />
-          <BehaviorForm
-            behavior={behavior}
-            onClose={() => setEditModalVisible(false)}
-          />
+          <Pressable style={styles.editModalBackdrop} onPress={() => setEditModalVisible(false)} />
+          <BehaviorForm behavior={behavior} onClose={() => setEditModalVisible(false)} />
         </View>
       </Modal>
     </>
@@ -172,17 +150,9 @@ interface LogButtonProps {
 }
 function LogButton({ behavior, onPress }: LogButtonProps) {
   return (
-    <Pressable
-      style={({ pressed }) => [styles.logBtn, pressed && styles.logBtnPressed]}
-      onPress={onPress}
-      accessibilityLabel={`Log ${behavior.name}`}
-    >
-      <Ionicons
-        name="add-circle-outline"
-        size={28}
-        color="#ccc"
-      />
-    </Pressable>
+    <Button variant="icon" onPress={onPress} accessibilityLabel={`Log ${behavior.name}`} style={styles.logBtn}>
+      <Ionicons name="add-circle-outline" size={28} color="#ccc" />
+    </Button>
   );
 }
 
@@ -191,22 +161,10 @@ interface SwipeDeleteProps {
 }
 function SwipeDelete({ onRemove }: SwipeDeleteProps) {
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.deleteButton,
-        pressed && {
-          opacity: 0.8,
-        },
-      ]}
-      onPress={onRemove}
-    >
-      <Ionicons
-        name="trash"
-        size={24}
-        color="#fff"
-      />
+    <Button variant="danger" onPress={onRemove} style={styles.deleteButton}>
+      <Ionicons name="trash" size={24} color="#fff" />
       <Text style={styles.deleteButtonText}>Delete</Text>
-    </Pressable>
+    </Button>
   );
 }
 // #endregion
@@ -255,16 +213,6 @@ const styles = StyleSheet.create({
   logBtn: {
     paddingHorizontal: 16,
     paddingVertical: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logBtnPressed: {
-    opacity: 0.5,
-    transform: [
-      {
-        scale: 0.92,
-      },
-    ],
   },
   deleteButton: {
     backgroundColor: '#943030',

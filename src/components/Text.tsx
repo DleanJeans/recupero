@@ -9,12 +9,7 @@ import {
 } from 'react-native';
 
 const DEFAULT_FONT_SIZE = 14;
-const BOLD_WEIGHTS = [
-  '700',
-  '800',
-  '900',
-  'bold',
-];
+const BOLD_WEIGHTS = ['700', '800', '900', 'bold'];
 
 function getFontFamily(flatStyle: TextStyle | undefined): string | undefined {
   if (flatStyle?.fontFamily) return flatStyle.fontFamily;
@@ -40,10 +35,7 @@ function Text(props: TextProps) {
   return (
     <RNText
       {...props}
-      style={[
-        props.style,
-        defaultFont(flatStyle),
-      ]}
+      style={[props.style, defaultFont(flatStyle)]}
     />
   );
 }
@@ -55,10 +47,7 @@ const TextInput = React.forwardRef<RNTextInput, TextInputProps>(function TextInp
     <RNTextInput
       {...props}
       ref={ref}
-      style={[
-        props.style,
-        defaultFont(flatStyle),
-      ]}
+      style={[props.style, defaultFont(flatStyle)]}
     />
   );
 });
