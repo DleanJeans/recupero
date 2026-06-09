@@ -101,7 +101,7 @@ function CategoryChips({ categories, selectedId, onChange, onLongPress, showAll 
     <>
       {items.length === 1 && !showAll && <Text style={styles.emptyHint}>Tap + to create one on the home screen</Text>}
       {items.map(item => {
-        const active = selectedId === item.id;
+        const active = item.id === undefined ? selectedId == null : selectedId === item.id;
         return (
           <Button
             key={item.id ?? 'none'}
