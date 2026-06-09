@@ -1,14 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import React, { createContext, useContext, useMemo, useState } from 'react';
-import { Modal, Pressable, SectionList, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, SectionList, StyleSheet, View, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BehaviorForm } from '../components/BehaviorForm';
 import { BehaviorIcon } from '../components/BehaviorIcon';
 import { BehaviorLogItem } from '../components/BehaviorLogItem';
 import { BehaviorLogModal } from '../components/BehaviorLogModal';
 import { CooldownLabel } from '../components/CooldownLabel';
-import { DistanceIndicator } from '../components/DistanceIndicator';
+import { DistanceConnector } from '../components/DistanceConnector';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry, LogEntry } from '../types/behavior';
@@ -160,7 +160,12 @@ function BehaviorLogList() {
       keyExtractor={item => item.id}
       renderItem={({ item, index, section }) => (
         <>
-          {index > 0 && <DistanceIndicator durationMs={section.data[index - 1].timestamp - item.timestamp} />}
+          {index > 0 && (
+            <DistanceConnector
+              durationMs={section.data[index - 1].timestamp - item.timestamp}
+              style={{ marginVertical: 4 }}
+            />
+          )}
           <BehaviorLogItem
             log={item}
             behaviorId={behavior.id}
@@ -168,11 +173,23 @@ function BehaviorLogList() {
           />
         </>
       )}
-      renderSectionHeader={({ section }) => (
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionHeaderText}>{section.title}</Text>
-        </View>
-      )}
+      renderSectionHeader={({ section }) => {
+        const sectionIdx = sections.indexOf(section);
+        const prevLast = sectionIdx > 0 ? sections[sectionIdx - 1].data.at(-1)?.timestamp : null;
+        const showDistance = prevLast != null && section.data.length > 0;
+
+        return (
+          <View style={[styles.sectionHeader, sectionIdx > 0 && styles.sectionHeaderWithDistance]}>
+            {showDistance && (
+              <DistanceConnector
+                durationMs={prevLast! - section.data[0].timestamp}
+                style={styles.distanceConnectorAbsolute}
+              />
+            )}
+            <Text style={styles.sectionHeaderText}>{section.title}</Text>
+          </View>
+        );
+      }}
       ListEmptyComponent={<Text style={styles.empty}>No logs yet.{'\n'}Press the + button to log this behavior.</Text>}
       contentContainerStyle={logs.length === 0 && styles.emptyContainer}
     />
@@ -278,6 +295,16 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 4,
     marginHorizontal: 16,
+    overflow: 'visible',
+  },
+  sectionHeaderWithDistance: {
+    marginTop: 0,
+    minHeight: 40,
+  },
+  distanceConnectorAbsolute: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: 0,
   },
   sectionHeaderText: {
     color: '#666',
@@ -285,5 +312,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    marginTop: 'auto'
   },
 });
