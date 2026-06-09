@@ -83,7 +83,7 @@ const activeStyles = StyleSheet.create({
 });
 
 const textStyles = StyleSheet.create({
-  primary: { color: '#000', fontSize: 16, fontWeight: '700' },
+  primary: { color: '#000', fontSize: 16, fontWeight: '600' },
   secondary: { color: '#aaa', fontSize: 16, fontWeight: '600' },
   danger: { color: '#fff', fontSize: 13, fontWeight: '600' },
   ghost: { color: '#666', fontSize: 13, fontWeight: '600' },

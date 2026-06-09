@@ -8,7 +8,7 @@ import { CategoryPicker } from './CategoryPicker';
 import { CooldownIcon } from './CooldownIcon';
 import type { CooldownUnit } from './CooldownInput';
 import { CooldownInput } from './CooldownInput';
-import { EmojiPicker as EmojiInput } from './EmojiPicker';
+import { EmojiPicker } from './EmojiPicker';
 import { Text, TextInput } from './Text';
 
 interface Props {
@@ -85,7 +85,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
     <KeyboardAvoidingView behavior="position" /* DO NOT change */>
       <View style={[styles.form, emojiKeyboardOpen && styles.formWithEmojiOpen]}>
         <View style={styles.row}>
-          <EmojiInput
+          <EmojiPicker
             value={icon}
             onChangeText={setIcon}
             nameHint={name}

@@ -3,8 +3,8 @@ import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { Category } from '../types/behavior';
 import { Button } from './Button';
-import { EmojiPicker } from './EmojiPicker';
-import { Text, TextInput } from './Text';
+import { CategoryForm } from './CategoryForm';
+import { Text } from './Text';
 
 interface CategoryBarProps {
   selectedCategoryId: string | null;
@@ -62,7 +62,11 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBa
 
   return (
     <View style={styles.container}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         <Button
           variant="ghost"
           size="sm"
@@ -100,39 +104,16 @@ export function CategoryBar({ selectedCategoryId, onSelectCategory }: CategoryBa
       </ScrollView>
 
       {(showForm || editingCategory) && (
-        <View style={styles.form}>
-          <View style={styles.formRow}>
-            <EmojiPicker value={emoji} onChangeText={setEmoji} />
-            <TextInput
-              style={styles.nameInput}
-              placeholder="Category name"
-              placeholderTextColor="#666"
-              value={name}
-              onChangeText={setName}
-              onSubmitEditing={handleSave}
-              returnKeyType="done"
-            />
-          </View>
-          <View style={styles.formActions}>
-            {isEditing && (
-              <Button variant="danger" size="sm" onPress={handleDelete} style={styles.formDeleteBtn}>
-                Delete
-              </Button>
-            )}
-            <Button variant="secondary" size="sm" onPress={resetForm} style={styles.formCancelBtn}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onPress={handleSave}
-              disabled={!emoji.trim() || !name.trim()}
-              style={[styles.formAddBtn, (!emoji.trim() || !name.trim()) && styles.formAddBtnDisabled]}
-            >
-              {isEditing ? 'Save' : 'Add'}
-            </Button>
-          </View>
-        </View>
+        <CategoryForm
+          emoji={emoji}
+          name={name}
+          isEditing={isEditing}
+          onEmojiChange={setEmoji}
+          onNameChange={setName}
+          onSave={handleSave}
+          onCancel={resetForm}
+          onDelete={handleDelete}
+        />
       )}
     </View>
   );
@@ -183,72 +164,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     lineHeight: 20,
-  },
-  form: {
-    marginHorizontal: 16,
-    marginTop: 8,
-    backgroundColor: '#1e1e1e',
-    borderRadius: 12,
-    padding: 12,
-    gap: 10,
-  },
-  formRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  nameInput: {
-    flex: 1,
-    backgroundColor: '#2a2a2a',
-    color: '#fff',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 14,
-  },
-  formActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  formDeleteBtn: {
-    backgroundColor: '#3a1a1a',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-  },
-  formDeleteText: {
-    color: '#EF9A9A',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  formCancelBtn: {
-    flex: 1,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  formCancelText: {
-    color: '#aaa',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  formAddBtn: {
-    flex: 1,
-    backgroundColor: '#EFEFEF',
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  formAddBtnDisabled: {
-    backgroundColor: '#2a2a2a',
-  },
-  formAddText: {
-    color: '#111',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  formAddTextDisabled: {
-    color: '#555',
   },
 });
