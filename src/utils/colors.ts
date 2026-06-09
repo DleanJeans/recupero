@@ -1,47 +1,67 @@
 export const Colors = {
-  // ── Backgrounds ──
-  bgPrimary: '#121212',
-  bgCard: '#1e1e1e',
-  bgInput: '#2a2a2a',
-  bgElevated: '#333',
+  bg: {
+    primary: '#121212',
+    card: '#1e1e1e',
+    input: '#2a2a2a',
+    elevated: '#333',
+    black: '#000',
+    dark: '#111',
+    darker: '#191919',
+  },
 
-  // ── Text ──
-  textPrimary: '#fff',
-  textSecondary: '#ccc',
-  textMuted: '#888',
-  textFaint: '#666',
-  textDim: '#555',
+  text: {
+    primary: '#fff',
+    secondary: '#ccc',
+    muted: '#888',
+    faint: '#666',
+    dim: '#555',
+    light: '#aaa',
+    lightest: '#D8D8D8',
+    white: '#EFEFEF',
+  },
 
-  // ── Borders ──
-  borderDefault: '#333',
-  borderLight: '#555',
-  borderDim: '#444',
+  border: {
+    default: '#333',
+    light: '#555',
+    dim: '#444',
+    dark: '#4a4a4a',
+  },
 
-  // ── Behavior Types ──
-  typeUndesirable: '#f87171',
-  typeNeutral: '#fbbf24',
-  typeDesirable: '#4ade80',
+  cooldown: {
+    green: '#4CAF50',
+    yellow: '#F9A825',
+    red: '#D32F2F',
+  },
 
-  // ── Cooldown ──
-  cooldownGreen: '#4CAF50',
-  cooldownYellow: '#F9A825',
-  cooldownRed: '#D32F2F',
+  status: {
+    danger: '#943030',
+    dangerLight: '#EF9A9A',
+    success: '#2E7D32',
+    successLight: '#A5D6A7',
+    info: '#3a6ea5',
+    error: '#3a1a1a',
+  },
 
-  // ── Status ──
-  danger: '#943030',
-  dangerLight: '#EF9A9A',
-  success: '#2E7D32',
-  successLight: '#A5D6A7',
-  info: '#3a6ea5',
+    // ── Behavior Types ──
+  type: {
+    undesirable: '#f87171',
+    neutral: '#fbbf24',
+    desirable: '#4ade80',
+    category: '#f472b6',
+  },
 
   // ── Type Button Backgrounds ──
-  typeBtnUndesirable: '#7f1d1d',
-  typeBtnNeutral: '#1e3a5f',
-  typeBtnDesirable: '#14532d',
-  typeBtnRest: '#2E7D32',
-  typeBtnLimit: '#C62828',
+  typeBtn: {
+    undesirable: '#7f1d1d',
+    neutral: '#1e3a5f',
+    desirable: '#14532d',
+    rest: '#2E7D32',
+    limit: '#C62828',
+  },
 
   // ── Type Button Text ──
-  typeTextUndesirable: '#fca5a5',
-  typeTextDesirable: '#86efac',
+  typeText: {
+    undesirable: '#fca5a5',
+    desirable: '#86efac',
+  },
 } as const;

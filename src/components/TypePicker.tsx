@@ -33,31 +33,31 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Colors.borderDefault,
+    borderColor: Colors.border.default,
   },
   btn: {
     flex: 1,
     paddingVertical: 10,
   },
   btnUndesirable: {
-    backgroundColor: Colors.typeBtnUndesirable,
+    backgroundColor: Colors.typeBtn.undesirable,
   },
   btnNeutral: {
-    backgroundColor: Colors.typeBtnNeutral,
+    backgroundColor: Colors.typeBtn.neutral,
   },
   btnDesirable: {
-    backgroundColor: Colors.typeBtnDesirable,
+    backgroundColor: Colors.typeBtn.desirable,
   },
   textUndesirable: {
-    color: Colors.typeTextUndesirable,
+    color: Colors.typeText.undesirable,
     fontWeight: '600',
   },
   textNeutral: {
-    color: Colors.typeNeutral,
+    color: Colors.type.neutral,
     fontWeight: '600',
   },
   textDesirable: {
-    color: Colors.typeTextDesirable,
+    color: Colors.typeText.desirable,
     fontWeight: '600',
   },
 });

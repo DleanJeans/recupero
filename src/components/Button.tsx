@@ -67,10 +67,10 @@ const commonStyles = StyleSheet.create({
 });
 
 const baseStyles = StyleSheet.create({
-  primary: { backgroundColor: Colors.textPrimary },
-  secondary: { backgroundColor: Colors.bgInput },
-  danger: { backgroundColor: Colors.danger },
-  ghost: { backgroundColor: Colors.bgCard },
+  primary: { backgroundColor: Colors.text.primary },
+  secondary: { backgroundColor: Colors.bg.input },
+  danger: { backgroundColor: Colors.status.danger },
+  ghost: { backgroundColor: Colors.bg.card },
   icon: { justifyContent: 'center' },
 });
 
@@ -82,9 +82,9 @@ const sizeStyles = StyleSheet.create({
 
 const activeStyles = StyleSheet.create({
   primary: {},
-  secondary: { backgroundColor: Colors.borderDefault },
+  secondary: { backgroundColor: Colors.border.default },
   danger: {},
-  ghost: { backgroundColor: Colors.borderDefault },
+  ghost: { backgroundColor: Colors.border.default },
   icon: {},
 });
 
@@ -93,17 +93,17 @@ const commonTextStyles = StyleSheet.create({
 });
 
 const textStyles = StyleSheet.create({
-  primary: { color: '#000', fontSize: 16 },
-  secondary: { color: '#aaa', fontSize: 16 },
-  danger: { color: Colors.textPrimary, fontSize: 13 },
-  ghost: { color: Colors.textFaint, fontSize: 13 },
-  icon: { color: Colors.textPrimary, fontSize: 16 },
+  primary: { color: Colors.bg.black, fontSize: 16 },
+  secondary: { color: Colors.text.light, fontSize: 16 },
+  danger: { color: Colors.text.primary, fontSize: 13 },
+  ghost: { color: Colors.text.faint, fontSize: 13 },
+  icon: { color: Colors.text.primary, fontSize: 16 },
 });
 
 const textActiveStyles = StyleSheet.create({
   primary: {},
   secondary: {},
   danger: {},
-  ghost: { color: Colors.textPrimary },
+  ghost: { color: Colors.text.primary },
   icon: {},
 });

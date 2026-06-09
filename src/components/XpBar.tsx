@@ -8,7 +8,7 @@ interface XpBarProps {
   logCount: number;
   color?: string;
 }
-export function XpBar({ logCount, color = Colors.typeNeutral }: XpBarProps) {
+export function XpBar({ logCount, color = Colors.type.neutral }: XpBarProps) {
   const xp = getXp(logCount);
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   label: {
-    color: Colors.textMuted,
+    color: Colors.text.muted,
     fontSize: 11,
     fontWeight: '600',
     minWidth: 30,
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   track: {
     flex: 1,
     height: 4,
-    backgroundColor: Colors.borderDefault,
+    backgroundColor: Colors.border.default,
     borderRadius: 2,
     overflow: 'hidden',
   },
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   value: {
-    color: Colors.textFaint,
+    color: Colors.text.faint,
     fontSize: 10,
     minWidth: 42,
     textAlign: 'right',

@@ -9,24 +9,24 @@ import { Text } from './Text';
 
 const pickerTheme = {
   backdrop: 'transparent',
-  knob: Colors.borderDim,
-  container: Colors.bgCard,
-  header: Colors.textPrimary,
-  skinTonesContainer: Colors.bgInput,
+  knob: Colors.border.dim,
+  container: Colors.bg.card,
+  header: Colors.text.primary,
+  skinTonesContainer: Colors.bg.input,
   category: {
-    icon: Colors.textMuted,
-    iconActive: Colors.textPrimary,
-    container: Colors.bgInput,
-    containerActive: Colors.borderDim,
+    icon: Colors.text.muted,
+    iconActive: Colors.text.primary,
+    container: Colors.bg.input,
+    containerActive: Colors.border.dim,
   },
   search: {
-    text: Colors.textPrimary,
-    placeholder: Colors.textFaint + '88',
-    icon: Colors.textMuted,
-    background: Colors.bgInput,
+    text: Colors.text.primary,
+    placeholder: Colors.text.faint + '88',
+    icon: Colors.text.muted,
+    background: Colors.bg.input,
   },
   emoji: {
-    selected: Colors.borderDefault,
+    selected: Colors.border.default,
   },
 };
 
@@ -83,7 +83,7 @@ export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChang
           <Ionicons
             name="happy-outline"
             size={20}
-            color="#4a4a4a"
+            color={Colors.border.dark}
           />
         )}
       </Pressable>
@@ -103,17 +103,17 @@ const styles = StyleSheet.create({
   input: {
     width: 48,
     height: 40,
-    backgroundColor: Colors.bgInput,
+    backgroundColor: Colors.bg.input,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
   emoji: {
-    color: Colors.textPrimary,
+    color: Colors.text.primary,
     fontSize: 20,
   },
   emojiPlaceholder: {
-    color: Colors.textPrimary,
+    color: Colors.text.primary,
     fontSize: 20,
     opacity: 0.3,
   },

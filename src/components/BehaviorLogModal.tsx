@@ -97,7 +97,7 @@ export function BehaviorLogModal({ behavior, visible, logId, initialTimestamp, i
           value={notes}
           onChangeText={setNotes}
           placeholder="Optional notes..."
-          placeholderTextColor="#555"
+          placeholderTextColor={Colors.text.dim}
           multiline
           maxLength={500}
           textAlignVertical="top"
@@ -134,7 +134,7 @@ function DatePicker({ selectedDate, maxDate, onSelect }: DatePickerProps) {
       <Text style={styles.sectionLabel}>Date</Text>
       <Pressable style={styles.dateField} onPress={() => setOpen(true)}>
         <Text style={styles.dateFieldText}>{formatDateDisplay(selectedDate)}</Text>
-        <Ionicons name="calendar-outline" size={18} color="#aaa" />
+        <Ionicons name="calendar-outline" size={18} color={Colors.text.light} />
       </Pressable>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
@@ -148,16 +148,16 @@ function DatePicker({ selectedDate, maxDate, onSelect }: DatePickerProps) {
                 onSelect(day.dateString);
                 setOpen(false);
               }}
-              markedDates={{ [selectedDate]: { selected: true, selectedColor: '#fff', selectedTextColor: '#000' } }}
+              markedDates={{ [selectedDate]: { selected: true, selectedColor: Colors.text.primary, selectedTextColor: Colors.bg.black } }}
               theme={{
-                calendarBackground: Colors.bgInput,
-                dayTextColor: Colors.textPrimary,
-                textDisabledColor: Colors.textDim,
-                monthTextColor: Colors.textPrimary,
-                arrowColor: Colors.textPrimary,
-                todayTextColor: '#aaa',
-                selectedDayBackgroundColor: '#fff',
-                selectedDayTextColor: '#000',
+                calendarBackground: Colors.bg.input,
+                dayTextColor: Colors.text.primary,
+                textDisabledColor: Colors.text.dim,
+                monthTextColor: Colors.text.primary,
+                arrowColor: Colors.text.primary,
+                todayTextColor: Colors.text.light,
+                selectedDayBackgroundColor: Colors.text.primary,
+                selectedDayTextColor: Colors.bg.black,
               }}
             />
           </View>
@@ -240,16 +240,16 @@ function ActionButtons({
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
   sheet: {
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bg.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 40,
   },
-  title: { color: Colors.textPrimary, fontSize: 20, fontWeight: '600', marginBottom: 20, textAlign: 'center' },
+  title: { color: Colors.text.primary, fontSize: 20, fontWeight: '600', marginBottom: 20, textAlign: 'center' },
   sectionLabel: {
-    color: '#aaa',
+    color: Colors.text.light,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -260,13 +260,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.bgInput,
+    backgroundColor: Colors.bg.input,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     marginBottom: 20,
   },
-  dateFieldText: { color: Colors.textPrimary, fontSize: 16, fontWeight: '500' },
+  dateFieldText: { color: Colors.text.primary, fontSize: 16, fontWeight: '500' },
   calendarOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -274,15 +274,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
   },
-  calendarPopup: { width: '100%', backgroundColor: Colors.bgInput, borderRadius: 16, overflow: 'hidden' },
+  calendarPopup: { width: '100%', backgroundColor: Colors.bg.input, borderRadius: 16, overflow: 'hidden' },
   wheels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 16, gap: 8 },
-  colon: { color: Colors.textPrimary, fontSize: 28, fontWeight: '700', marginBottom: 4 },
+  colon: { color: Colors.text.primary, fontSize: 28, fontWeight: '700', marginBottom: 4 },
   notesInput: {
-    backgroundColor: Colors.bgInput,
+    backgroundColor: Colors.bg.input,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    color: Colors.textPrimary,
+    color: Colors.text.primary,
     fontSize: 16,
     minHeight: 80,
     marginBottom: 16,
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   collapsedTimeText: {
-    color: '#fff',
+    color: Colors.text.primary,
     fontSize: 28,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],

@@ -120,7 +120,7 @@ function EditButton() {
       <Ionicons
         name="create-outline"
         size={26}
-        color="#aaa"
+        color={Colors.text.light}
       />
     </Pressable>
   );
@@ -223,7 +223,7 @@ function EditBehaviorModal() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bgPrimary,
+    backgroundColor: Colors.bg.primary,
   },
   header: {
     flexDirection: 'row',
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerTitle: {
-    color: Colors.textPrimary,
+    color: Colors.text.primary,
     fontSize: 20,
     fontWeight: '700',
   },
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   empty: {
-    color: Colors.textFaint,
+    color: Colors.text.faint,
     textAlign: 'center',
     fontSize: 15,
     padding: 32,
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     top: 0,
   },
   sectionHeaderText: {
-    color: Colors.textFaint,
+    color: Colors.text.faint,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',

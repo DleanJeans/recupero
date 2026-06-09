@@ -60,7 +60,7 @@ export function DataTransferSection() {
           disabled={isTransferring}
           style={[styles.optionCard, isTransferring && { opacity: 0.5 }]}
         >
-          <Ionicons name="document-text-outline" size={22} color="#EFEFEF" style={{ marginBottom: 6 }} />
+          <Ionicons name="document-text-outline" size={22} color={Colors.text.white} style={{ marginBottom: 6 }} />
           <Text style={styles.optionLabel}>Export</Text>
           <Text style={styles.optionDescriptionSmall}>Save JSON file</Text>
         </Button>
@@ -71,7 +71,7 @@ export function DataTransferSection() {
           disabled={isTransferring}
           style={[styles.optionCard, isTransferring && { opacity: 0.5 }]}
         >
-          <Ionicons name="folder-open-outline" size={22} color="#EFEFEF" style={{ marginBottom: 6 }} />
+          <Ionicons name="folder-open-outline" size={22} color={Colors.text.white} style={{ marginBottom: 6 }} />
           <Text style={styles.optionLabel}>Import</Text>
           <Text style={styles.optionDescriptionSmall}>Pick JSON file</Text>
         </Button>
@@ -83,7 +83,7 @@ export function DataTransferSection() {
 const styles = StyleSheet.create({
   section: { marginTop: 24, marginHorizontal: 16 },
   sectionTitle: {
-    color: Colors.textFaint,
+    color: Colors.text.faint,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   optionsRow: { flexDirection: 'row', gap: 10 },
-  optionCard: { flex: 1, padding: 16, borderWidth: 1.5, borderColor: Colors.bgCard },
-  optionLabel: { color: Colors.textMuted, fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  optionDescriptionSmall: { color: Colors.textDim, fontSize: 12, fontWeight: '400', marginTop: 2 },
+  optionCard: { flex: 1, padding: 16, borderWidth: 1.5, borderColor: Colors.bg.card },
+  optionLabel: { color: Colors.text.muted, fontSize: 16, fontWeight: '600', marginBottom: 4 },
+  optionDescriptionSmall: { color: Colors.text.dim, fontSize: 12, fontWeight: '400', marginTop: 2 },
 });

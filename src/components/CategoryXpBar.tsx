@@ -30,7 +30,7 @@ export function CategoryXpBar({ selectedCategoryId }: Props) {
         <View style={styles.barContainer}>
           <XpBar
             logCount={logCount}
-            color="#f472b6"
+            color={Colors.type.category}
           />
         </View>
       </View>
@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     width: 22,
     textAlign: 'center',
-    color: Colors.textPrimary,
+    color: Colors.text.primary,
   },
   barContainer: {
     flex: 1,

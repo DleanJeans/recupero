@@ -29,7 +29,7 @@ export function PrivateBehaviorSection() {
 const styles = StyleSheet.create({
   section: { marginTop: 24, marginHorizontal: 16 },
   sectionTitle: {
-    color: Colors.textFaint,
+    color: Colors.text.faint,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -40,13 +40,13 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bg.card,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
   label: {
-    color: Colors.textSecondary,
+    color: Colors.text.secondary,
     fontSize: 15,
     flex: 1,
   },
@@ -54,21 +54,21 @@ const styles = StyleSheet.create({
     width: 44,
     height: 26,
     borderRadius: 13,
-    backgroundColor: Colors.bgElevated,
+    backgroundColor: Colors.bg.elevated,
     justifyContent: 'center',
     paddingHorizontal: 2,
   },
   toggleOn: {
-    backgroundColor: Colors.success,
+    backgroundColor: Colors.status.success,
   },
   thumb: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: Colors.textMuted,
+    backgroundColor: Colors.text.muted,
   },
   thumbOn: {
-    backgroundColor: Colors.textPrimary,
+    backgroundColor: Colors.text.primary,
     alignSelf: 'flex-end',
   },
 });

@@ -40,23 +40,23 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Colors.borderDefault,
+    borderColor: Colors.border.default,
   },
   btn: {
     paddingHorizontal: 20,
   },
   btnRest: {
-    backgroundColor: Colors.typeBtnRest,
+    backgroundColor: Colors.typeBtn.rest,
   },
   btnLimit: {
-    backgroundColor: Colors.typeBtnLimit,
+    backgroundColor: Colors.typeBtn.limit,
   },
   textRest: {
-    color: Colors.successLight,
+    color: Colors.status.successLight,
     fontWeight: '600',
   },
   textLimit: {
-    color: '#fca5a5',
+    color: Colors.typeText.undesirable,
     fontWeight: '600',
   },
 });

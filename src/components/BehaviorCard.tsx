@@ -155,7 +155,7 @@ interface LogButtonProps {
 function LogButton({ behavior, onPress }: LogButtonProps) {
   return (
     <Button variant="icon" onPress={onPress} accessibilityLabel={`Log ${behavior.name}`} style={styles.logBtn}>
-      <Ionicons name="add-circle-outline" size={28} color="#ccc" />
+      <Ionicons name="add-circle-outline" size={28} color={Colors.text.secondary} />
     </Button>
   );
 }
@@ -166,7 +166,7 @@ interface SwipeDeleteProps {
 function SwipeDelete({ onRemove }: SwipeDeleteProps) {
   return (
     <Button variant="danger" onPress={onRemove} style={styles.deleteButton}>
-      <Ionicons name="trash" size={24} color="#fff" />
+      <Ionicons name="trash" size={24} color={Colors.text.primary} />
       <Text style={styles.deleteButtonText}>Delete</Text>
     </Button>
   );
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bg.card,
     borderRadius: 12,
     marginVertical: 6,
     overflow: 'hidden',
@@ -205,13 +205,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   name: {
-    color: Colors.textPrimary,
+    color: Colors.text.primary,
     fontSize: 16,
     fontWeight: '600',
   },
 
   elapsed: {
-    color: Colors.textMuted,
+    color: Colors.text.muted,
     fontSize: 13,
   },
   logBtn: {
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   deleteButton: {
-    backgroundColor: Colors.danger,
+    backgroundColor: Colors.status.danger,
     justifyContent: 'center',
     alignItems: 'center',
     width: 100,
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     paddingRight: 28,
   },
   deleteButtonText: {
-    color: Colors.textPrimary,
+    color: Colors.text.primary,
     fontSize: 12,
     fontWeight: '600',
     marginTop: 4,

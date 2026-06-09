@@ -4,10 +4,10 @@ import { Colors } from './colors';
 export type CooldownType = 'rest' | 'limit';
 
 export const COLORS = {
-  GREEN: Colors.cooldownGreen,
-  YELLOW: Colors.cooldownYellow,
-  RED: Colors.cooldownRed,
-  MUTED: Colors.textMuted,
+  GREEN: Colors.cooldown.green,
+  YELLOW: Colors.cooldown.yellow,
+  RED: Colors.cooldown.red,
+  MUTED: Colors.text.muted,
 } as const;
 
 export function getCooldownColor(behavior: BehaviorEntry): string {

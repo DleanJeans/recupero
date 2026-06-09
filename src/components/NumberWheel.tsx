@@ -65,5 +65,5 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   item: { height: ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' },
-  text: { color: Colors.textSecondary, fontSize: 22, fontVariant: ['tabular-nums'] },
+  text: { color: Colors.text.secondary, fontSize: 22, fontVariant: ['tabular-nums'] },
 });

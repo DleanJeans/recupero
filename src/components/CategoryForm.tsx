@@ -42,7 +42,7 @@ export function CategoryForm({
         <TextInput
           style={styles.nameInput}
           placeholder="Category name"
-          placeholderTextColor="#666"
+          placeholderTextColor={Colors.text.faint}
           value={name}
           onChangeText={onNameChange}
           onSubmitEditing={onSave}
@@ -84,7 +84,7 @@ export function CategoryForm({
 
 const styles = StyleSheet.create({
   form: {
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bg.card,
     borderRadius: 12,
     padding: 12,
     marginHorizontal: 16,
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   formDark: {
-    backgroundColor: '#191919',
+    backgroundColor: Colors.bg.darker,
   },
   formRow: {
     flexDirection: 'row',
@@ -100,8 +100,8 @@ const styles = StyleSheet.create({
   },
   nameInput: {
     flex: 1,
-    backgroundColor: Colors.bgInput,
-    color: Colors.textPrimary,
+    backgroundColor: Colors.bg.input,
+    color: Colors.text.primary,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   formDeleteBtn: {
-    backgroundColor: '#3a1a1a',
+    backgroundColor: Colors.status.error,
     borderRadius: 6,
   },
   formCancelBtn: {

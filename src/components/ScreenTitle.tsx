@@ -10,16 +10,12 @@ interface ScreenTitleProps {
 }
 
 export function ScreenTitle({ children, style }: ScreenTitleProps) {
-  return (
-    <Text style={[styles.title, style]}>
-      {children}
-    </Text>
-  );
+  return <Text style={[styles.title, style]}>{children}</Text>;
 }
 
 const styles = StyleSheet.create({
   title: {
-    color: Colors.textPrimary,
+    color: Colors.text.primary,
     fontSize: 28,
     fontWeight: 'bold',
     letterSpacing: -0.5,

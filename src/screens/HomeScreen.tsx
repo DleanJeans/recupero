@@ -131,7 +131,7 @@ function HeaderIcon({ icon, name, onPress, accessibilityLabel }: HeaderIconProps
           <Ionicons
             name={name}
             size={22}
-            color="#888"
+            color={Colors.text.muted}
           />
         ) : null)}
     </Button>
@@ -176,7 +176,7 @@ function BehaviorList({ behaviors, selectedCategoryId }: BehaviorListProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bgPrimary,
+    backgroundColor: Colors.bg.primary,
   },
   titleRow: {
     flexDirection: 'row',
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    color: Colors.textPrimary,
+    color: Colors.text.primary,
     fontSize: 34,
     fontWeight: 'bold',
     letterSpacing: -0.5,
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   empty: {
-    color: Colors.textFaint,
+    color: Colors.text.faint,
     textAlign: 'center',
     fontSize: 15,
     padding: 32,
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   sectionHeaderText: {
-    color: Colors.textFaint,
+    color: Colors.text.faint,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',

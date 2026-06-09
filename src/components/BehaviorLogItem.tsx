@@ -40,14 +40,14 @@ export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
 
   const renderLeftActions = () => (
     <Button variant="danger" onPress={handleRemove} style={styles.leftAction}>
-      <Ionicons name="trash" size={24} color="#fff" />
+      <Ionicons name="trash" size={24} color={Colors.text.primary} />
       <Text style={styles.actionText}>Delete</Text>
     </Button>
   );
 
   const renderRightActions = () => (
     <Button variant="danger" onPress={onEdit} style={styles.rightAction}>
-      <Ionicons name="create-outline" size={24} color="#fff" />
+      <Ionicons name="create-outline" size={24} color={Colors.text.primary} />
       <Text style={styles.actionText}>Edit</Text>
     </Button>
   );
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   logItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bg.card,
     borderRadius: 12,
     marginVertical: 6,
     marginHorizontal: 16,
@@ -94,30 +94,30 @@ const styles = StyleSheet.create({
     flex: 3,
     padding: 16,
     borderLeftWidth: StyleSheet.hairlineWidth,
-    borderLeftColor: Colors.textFaint,
+    borderLeftColor: Colors.text.faint,
   },
   notesText: {
-    color: Colors.textMuted,
+    color: Colors.text.muted,
     fontSize: 13,
     lineHeight: 18,
   },
   dateText: {
-    color: Colors.textPrimary,
+    color: Colors.text.primary,
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 2,
   },
   timeText: {
-    color: Colors.textPrimary,
+    color: Colors.text.primary,
     fontSize: 14,
     marginBottom: 4,
   },
   elapsedText: {
-    color: Colors.textMuted,
+    color: Colors.text.muted,
     fontSize: 13,
   },
   leftAction: {
-    backgroundColor: Colors.danger,
+    backgroundColor: Colors.status.danger,
     justifyContent: 'center',
     alignItems: 'center',
     width: 100,
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     paddingRight: 28,
   },
   rightAction: {
-    backgroundColor: Colors.info,
+    backgroundColor: Colors.status.info,
     justifyContent: 'center',
     alignItems: 'center',
     width: 100,
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     paddingLeft: 28,
   },
   actionText: {
-    color: Colors.textPrimary,
+    color: Colors.text.primary,
     fontSize: 12,
     fontWeight: '600',
     marginTop: 4,

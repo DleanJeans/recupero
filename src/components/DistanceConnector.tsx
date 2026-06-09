@@ -28,6 +28,6 @@ const styles = StyleSheet.create({
   line: {
     width: 1,
     height: 8,
-    backgroundColor: Colors.borderDim,
+    backgroundColor: Colors.border.dim,
   },
 });

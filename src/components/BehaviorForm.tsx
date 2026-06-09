@@ -221,7 +221,7 @@ const NameInput = React.forwardRef<import('react-native').TextInput, NameInputPr
       ref={ref}
       style={styles.nameInput}
       placeholder="e.g. Water, Push-ups"
-      placeholderTextColor="#666"
+      placeholderTextColor={Colors.text.faint}
       value={value}
       onChangeText={onChangeText}
       autoFocus
@@ -262,10 +262,10 @@ function FormActions({ onCancel, onSubmit, submitLabel, disabled }: FormActionsP
 
 const styles = StyleSheet.create({
   form: {
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bg.card,
     padding: 16,
     gap: 10,
-    shadowColor: '#000',
+    shadowColor: Colors.bg.black,
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -280,8 +280,8 @@ const styles = StyleSheet.create({
   },
   nameInput: {
     flex: 1,
-    backgroundColor: Colors.bgInput,
-    color: Colors.textPrimary,
+    backgroundColor: Colors.bg.input,
+    color: Colors.text.primary,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   cooldownLabel: {
-    color: Colors.textMuted,
+    color: Colors.text.muted,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Colors.borderDefault,
+    borderColor: Colors.border.default,
   },
   cooldownTypeRow: {
     marginLeft: 'auto',
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: Colors.bgInput,
+    backgroundColor: Colors.bg.input,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -327,26 +327,26 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 4,
     borderWidth: 1.5,
-    borderColor: Colors.borderLight,
+    borderColor: Colors.border.light,
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkboxChecked: {
-    backgroundColor: Colors.textPrimary,
-    borderColor: Colors.textPrimary,
+    backgroundColor: Colors.text.primary,
+    borderColor: Colors.text.primary,
   },
   checkmark: {
-    color: Colors.bgCard,
+    color: Colors.bg.card,
     fontSize: 12,
     fontWeight: '700',
   },
   privateLabel: {
-    color: Colors.textSecondary,
+    color: Colors.text.secondary,
     fontSize: 14,
     fontWeight: '500',
   },
   privateHint: {
-    color: Colors.borderLight,
+    color: Colors.border.light,
     fontSize: 12,
     marginLeft: 'auto',
   },

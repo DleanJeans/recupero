@@ -1,9 +1,10 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { Colors } from '../utils/colors';
 
 // Match stats-chart-outline: viewBox 512x512, ordered left→right by x
 const BAR_FRACTIONS = [160 / 512, 448 / 512, 256 / 512, 368 / 512];
-const BAR_COLORS = ['#4ade80', '#fbbf24', '#f87171', '#f472b6'];
+const BAR_COLORS = [Colors.type.desirable, Colors.type.neutral, Colors.type.undesirable, Colors.type.category];
 
 interface StatsIconProps {
   size?: number;
@@ -28,7 +29,7 @@ export function StatsIcon({ size = 22, active = true }: StatsIconProps) {
             width: barWidth,
             height: Math.round(size * BAR_FRACTIONS[i] * heightScale),
             borderRadius: Math.round(barWidth / 2),
-            backgroundColor: active ? color : '#555',
+            backgroundColor: active ? color : Colors.text.dim,
           }}
         />
       ))}

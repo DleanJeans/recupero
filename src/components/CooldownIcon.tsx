@@ -7,7 +7,7 @@ interface Props {
   color?: string;
 }
 
-export function CooldownIcon({ size = 14, color = Colors.textMuted }: Props) {
+export function CooldownIcon({ size = 14, color = Colors.text.muted }: Props) {
   return (
     <Ionicons
       name="timer-outline"

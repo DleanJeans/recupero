@@ -32,7 +32,7 @@ interface MinuteGroup {
 export function TimelineScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { behaviors, categories } = useBehaviorStore();
-  const hidePrivate = useSettingsStore((s) => s.hidePrivate);
+  const hidePrivate = useSettingsStore(s => s.hidePrivate);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [, setTick] = useState(0);
 
@@ -52,7 +52,8 @@ export function TimelineScreen() {
 
     let filteredBehaviors = behaviors;
     if (hidePrivate) filteredBehaviors = filteredBehaviors.filter(b => !b.private);
-    if (selectedCategoryId !== null) filteredBehaviors = filteredBehaviors.filter(b => b.categoryId === selectedCategoryId);
+    if (selectedCategoryId !== null)
+      filteredBehaviors = filteredBehaviors.filter(b => b.categoryId === selectedCategoryId);
 
     for (const behavior of filteredBehaviors) {
       for (const log of behavior.logs) {
@@ -251,7 +252,7 @@ function formatGap(ms: number): string {
   return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
 }
 
-const LINE_COLOR = Colors.bgInput;
+const LINE_COLOR = Colors.bg.input;
 const CIRCLE_SIZE = 10;
 const LINE_WIDTH = 2;
 const GUTTER_WIDTH = 48;
@@ -259,7 +260,7 @@ const GUTTER_WIDTH = 48;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bgPrimary,
+    backgroundColor: Colors.bg.primary,
   },
   header: {
     flexDirection: 'row',
@@ -275,7 +276,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   empty: {
-    color: Colors.textFaint,
+    color: Colors.text.faint,
     textAlign: 'center',
     fontSize: 15,
     padding: 48,
@@ -293,7 +294,7 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
   },
   sectionHeaderText: {
-    color: Colors.textFaint,
+    color: Colors.text.faint,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -321,7 +322,7 @@ const styles = StyleSheet.create({
     width: CIRCLE_SIZE + 6,
     height: CIRCLE_SIZE + 6,
     borderRadius: (CIRCLE_SIZE + 6) / 2,
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bg.card,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -329,7 +330,7 @@ const styles = StyleSheet.create({
     width: CIRCLE_SIZE,
     height: CIRCLE_SIZE,
     borderRadius: CIRCLE_SIZE / 2,
-    backgroundColor: Colors.borderLight,
+    backgroundColor: Colors.border.light,
   },
 
   // -- Content --
@@ -340,7 +341,7 @@ const styles = StyleSheet.create({
     marginTop: -15,
   },
   timeText: {
-    color: Colors.textMuted,
+    color: Colors.text.muted,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -350,7 +351,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   behaviorName: {
-    color: Colors.textPrimary,
+    color: Colors.text.primary,
     fontSize: 15,
     fontWeight: '600',
     flexShrink: 1,
@@ -374,7 +375,7 @@ const styles = StyleSheet.create({
     backgroundColor: LINE_COLOR,
   },
   gapText: {
-    color: Colors.textFaint,
+    color: Colors.text.faint,
     fontSize: 11,
     fontWeight: '500',
     transform: [{ rotate: '90deg' }],

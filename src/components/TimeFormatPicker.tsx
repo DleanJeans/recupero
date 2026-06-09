@@ -55,7 +55,7 @@ export function TimeFormatPicker() {
 const styles = StyleSheet.create({
   section: { marginTop: 24, marginHorizontal: 16 },
   sectionTitle: {
-    color: Colors.textFaint,
+    color: Colors.text.faint,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -64,10 +64,10 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   optionsRow: { flexDirection: 'row', gap: 10 },
-  optionCard: { flex: 1, padding: 16, borderWidth: 1.5, borderColor: Colors.bgCard },
-  optionCardSelected: { borderColor: Colors.textPrimary, backgroundColor: Colors.bgInput },
-  optionLabel: { color: Colors.textMuted, fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  optionLabelSelected: { color: Colors.textPrimary },
-  optionDescription: { color: Colors.textDim, fontSize: 24, fontWeight: '300' },
-  optionDescriptionSelected: { color: Colors.textSecondary },
+  optionCard: { flex: 1, padding: 16, borderWidth: 1.5, borderColor: Colors.bg.card },
+  optionCardSelected: { borderColor: Colors.text.primary, backgroundColor: Colors.bg.input },
+  optionLabel: { color: Colors.text.muted, fontSize: 16, fontWeight: '600', marginBottom: 4 },
+  optionLabelSelected: { color: Colors.text.primary },
+  optionDescription: { color: Colors.text.dim, fontSize: 24, fontWeight: '300' },
+  optionDescriptionSelected: { color: Colors.text.secondary },
 });

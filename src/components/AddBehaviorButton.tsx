@@ -18,13 +18,13 @@ export function AddBehaviorButton({ onPress }: Props) {
 const styles = StyleSheet.create({
   fab: {
     margin: 16,
-    backgroundColor: Colors.textPrimary,
+    backgroundColor: Colors.text.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
   },
   fabPressed: {
-    backgroundColor: '#D8D8D8',
+    backgroundColor: Colors.text.lightest,
     transform: [
       {
         scale: 0.98,
@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     ],
   },
   fabText: {
-    color: '#111111',
+    color: Colors.bg.dark,
     fontSize: 15,
     fontWeight: '600',
   },

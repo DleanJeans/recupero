@@ -107,7 +107,7 @@ function NumberInput({ value, onChangeText }: NumberInputProps) {
       value={value}
       onChangeText={onChangeText}
       placeholder="0"
-      placeholderTextColor="#666"
+      placeholderTextColor={Colors.text.faint}
       selectTextOnFocus
     />
   );
@@ -188,15 +188,15 @@ const styles = StyleSheet.create({
   },
   numberInput: {
     flex: 1,
-    backgroundColor: Colors.bgInput,
-    color: Colors.textPrimary,
+    backgroundColor: Colors.bg.input,
+    color: Colors.text.primary,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
   },
   unitButton: {
-    backgroundColor: Colors.bgInput,
+    backgroundColor: Colors.bg.input,
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -205,12 +205,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   unitText: {
-    color: Colors.textPrimary,
+    color: Colors.text.primary,
     fontSize: 15,
     fontWeight: '500',
   },
   chevron: {
-    color: Colors.textMuted,
+    color: Colors.text.muted,
     fontSize: 10,
   },
   unitWrapper: {
@@ -231,11 +231,11 @@ const styles = StyleSheet.create({
     bottom: 44,
     right: 0,
     minWidth: 140,
-    backgroundColor: Colors.bgInput,
+    backgroundColor: Colors.bg.input,
     borderRadius: 10,
     padding: 4,
     zIndex: 11,
-    shadowColor: '#000',
+    shadowColor: Colors.bg.black,
     shadowOffset: {
       width: 0,
       height: 4,
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.1)',
   },
   pickerOptionText: {
-    color: Colors.textPrimary,
+    color: Colors.text.primary,
     fontSize: 15,
   },
   pickerOptionTextActive: {

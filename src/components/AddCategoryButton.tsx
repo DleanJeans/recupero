@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { StyleSheet } from 'react-native';
+import { Colors } from '../utils/colors';
 import { Button } from './Button';
 
 interface Props {
@@ -22,7 +23,7 @@ export function AddCategoryButton({ isOpen, onPress, style }: Props) {
       <Ionicons
         name={isOpen ? 'close-outline' : 'add-outline'}
         size={20}
-        color="#666"
+        color={Colors.text.faint}
       />
     </Button>
   );

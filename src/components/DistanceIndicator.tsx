@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   text: {
-    color: Colors.textFaint,
+    color: Colors.text.faint,
     fontSize: 12,
     fontWeight: '500',
   },
