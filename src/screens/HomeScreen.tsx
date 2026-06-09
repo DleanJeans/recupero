@@ -71,7 +71,7 @@ function Title() {
           onPress={() => navigation.navigate('Timeline')}
         >
           <Ionicons
-            name="time-outline"
+            name="analytics-outline"
             size={22}
             color="#888"
           />
