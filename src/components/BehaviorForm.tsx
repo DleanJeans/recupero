@@ -56,7 +56,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
   useEffect(() => {
     if (!behavior) return;
     setName(behavior.name);
-    setType(behavior.type);
+    setType(behavior.type || 'neutral');
     setIcon(iconFromStore(behavior.icon));
     setCategoryId(behavior.categoryId);
     setIsPrivate(behavior.private ?? false);
