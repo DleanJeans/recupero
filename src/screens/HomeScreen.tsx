@@ -101,6 +101,7 @@ function BehaviorList({ behaviors, selectedCategoryId }: BehaviorListProps) {
 
   return (
     <SectionList
+      key={selectedCategoryId ?? 'all'}
       sections={sections}
       keyExtractor={item => item.id}
       renderItem={({ item }) => (
