@@ -1,10 +1,6 @@
-export type CooldownType = 'rest' | 'limit';
+import type { BehaviorEntry } from '../types/behavior';
 
-export interface CooldownInfo {
-  minutes: number;
-  lastTimestamp?: number | null;
-  type?: CooldownType;
-}
+export type CooldownType = 'rest' | 'limit';
 
 export const COLORS = {
   GREEN: '#4CAF50',
@@ -13,11 +9,9 @@ export const COLORS = {
   MUTED: '#888',
 } as const;
 
-export function getCooldownColor(
-  cooldownMinutes: number,
-  lastTimestamp: number | null | undefined,
-  cooldownType: CooldownType = 'rest',
-): string {
+export function getCooldownColor(behavior: BehaviorEntry): string {
+  const { cooldownMinutes, lastTimestamp, cooldownType = 'rest' } = behavior;
+
   if (!lastTimestamp) return COLORS.MUTED;
 
   const elapsed = Date.now() - lastTimestamp;

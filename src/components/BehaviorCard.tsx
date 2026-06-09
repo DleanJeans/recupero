@@ -7,6 +7,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
+import { getCooldownColor } from '../utils/cooldownUtils';
 import { formatElapsedNumeric } from '../utils/timeUtils';
 import { BehaviorForm } from './BehaviorForm';
 import { BehaviorIcon } from './BehaviorIcon';
@@ -112,21 +113,30 @@ export function BehaviorCard({ behavior, showCategory }: Props) {
 
 // #region Sub-components
 
+interface CategoryEmojiProps {
+  behavior: BehaviorEntry;
+}
+function CategoryEmoji({ behavior }: CategoryEmojiProps) {
+  const { categories } = useBehaviorStore();
+  if (!behavior.categoryId) return;
+
+  const category = categories.find(c => c.id === behavior.categoryId);
+
+  if (!category) return null;
+
+  return <Text style={{ fontSize: 15 }}>{category.emoji}</Text>;
+}
+
 interface BehaviorInfoProps {
   behavior: BehaviorEntry;
   showCategory?: boolean;
 }
 function BehaviorInfo({ behavior, showCategory }: BehaviorInfoProps) {
-  const { categories } = useBehaviorStore();
-  const category = showCategory && behavior.categoryId
-    ? categories.find((c) => c.id === behavior.categoryId)
-    : undefined;
-
   return (
     <View style={styles.info}>
       <View style={styles.nameRow}>
         <BehaviorName behavior={behavior} />
-        {category && <Text style={styles.categoryBadge}>{category.emoji}</Text>}
+        {showCategory && <CategoryEmoji behavior={behavior} />}
       </View>
       <View style={styles.elapsedRow}>
         <BehaviorElapsed behavior={behavior} />
@@ -147,7 +157,13 @@ interface BehaviorElapsedProps {
   behavior: BehaviorEntry;
 }
 function BehaviorElapsed({ behavior }: BehaviorElapsedProps) {
-  return <Text style={styles.elapsed}>{formatElapsedNumeric(behavior.lastTimestamp)}</Text>;
+  const color = behavior.cooldownMinutes ? getCooldownColor(behavior) : undefined;
+
+  return (
+    <Text style={color ? [styles.elapsed, { color }] : styles.elapsed}>
+      {formatElapsedNumeric(behavior.lastTimestamp)}
+    </Text>
+  );
 }
 
 interface LogButtonProps {
@@ -231,9 +247,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  categoryBadge: {
-    fontSize: 15,
-  },
+
   elapsed: {
     color: '#888',
     fontSize: 13,

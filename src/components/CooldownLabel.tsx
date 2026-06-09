@@ -12,34 +12,17 @@ interface Props {
 export function CooldownLabel({ behavior }: Props) {
   if (!behavior.cooldownMinutes) return null;
 
-  const minutes = behavior.cooldownMinutes;
-  const color = getCooldownColor(minutes, behavior.lastTimestamp, behavior.cooldownType);
+  const color = getCooldownColor(behavior);
 
   return (
     <View style={styles.row}>
       <CooldownIcon color={color} />
-      <Text
-        style={[
-          styles.text,
-          {
-            color,
-          },
-        ]}
-      >
-        {formatCooldown(minutes)}
-      </Text>
+      <Text style={[styles.text, { color }]}>{formatCooldown(behavior.cooldownMinutes)}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  text: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  text: { fontSize: 13, fontWeight: '500' },
 });
