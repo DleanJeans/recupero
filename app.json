@@ -52,7 +52,8 @@
         {
           "launchMode": "most-recent"
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "owner": "dleanjeans"
   }
