@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   },
   titleActions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 16,
   },
   emptyContainer: {
     flex: 1,

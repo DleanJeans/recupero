@@ -3,7 +3,7 @@ import { StyleSheet, type TextStyle } from 'react-native';
 import { Text } from './Text';
 
 interface ScreenTitleProps {
-  children: string;
+  children: React.ReactNode;
   large?: boolean;
   style?: TextStyle;
 }
@@ -22,5 +22,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     letterSpacing: -0.5,
+    paddingHorizontal: 8,
   },
 });
