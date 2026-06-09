@@ -1,6 +1,7 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { Category } from '../types/behavior';
+import { Colors } from '../utils/colors';
 import { AddCategoryButton } from './AddCategoryButton';
 import { Button } from './Button';
 import { CategoryForm, type CategoryFormProps } from './CategoryForm';
@@ -125,15 +126,15 @@ function CategoryChips({ categories, selectedId, onChange, onLongPress, showAll 
 const styles = StyleSheet.create({
   section: { gap: 6 },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  label: { color: '#888', fontSize: 13, fontWeight: '600' },
+  label: { color: Colors.textMuted, fontSize: 13, fontWeight: '600' },
   addButton: { width: 28, height: 28, borderRadius: 6, justifyContent: 'center', alignItems: 'center', backgroundColor: '#2d2d2d' },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   scrollContent: { paddingHorizontal: 16, gap: 8, paddingVertical: 4 },
-  chip: { backgroundColor: '#1e1e1e', paddingHorizontal: 10, paddingVertical: 6, gap: 4 },
+  chip: { backgroundColor: Colors.bgCard, paddingHorizontal: 10, paddingVertical: 6, gap: 4 },
   horizontalChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1e1e1e',
+    backgroundColor: Colors.bgCard,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 7,
@@ -142,7 +143,7 @@ const styles = StyleSheet.create({
   chipHorizontal: {},
   chipEmoji: { fontSize: 16 },
   chipEmojiInactive: { opacity: 0.4 },
-  chipText: { color: '#666', fontSize: 13, fontWeight: '500' },
-  chipTextActive: { color: '#fff' },
-  emptyHint: { color: '#555', fontSize: 12, fontStyle: 'italic', paddingVertical: 6 },
+  chipText: { color: Colors.textFaint, fontSize: 13, fontWeight: '500' },
+  chipTextActive: { color: Colors.textPrimary },
+  emptyHint: { color: Colors.textDim, fontSize: 12, fontStyle: 'italic', paddingVertical: 6 },
 });

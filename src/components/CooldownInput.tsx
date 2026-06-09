@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { Colors } from '../utils/colors';
 import { Text, TextInput } from './Text';
 
 export type CooldownUnit = 'minutes' | 'hours' | 'days' | 'weeks';
@@ -185,15 +186,15 @@ const styles = StyleSheet.create({
   },
   numberInput: {
     flex: 1,
-    backgroundColor: '#2a2a2a',
-    color: '#fff',
+    backgroundColor: Colors.bgInput,
+    color: Colors.textPrimary,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
   },
   unitButton: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: Colors.bgInput,
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -202,12 +203,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   unitText: {
-    color: '#fff',
+    color: Colors.textPrimary,
     fontSize: 15,
     fontWeight: '500',
   },
   chevron: {
-    color: '#888',
+    color: Colors.textMuted,
     fontSize: 10,
   },
   unitWrapper: {
@@ -228,7 +229,7 @@ const styles = StyleSheet.create({
     bottom: 44,
     right: 0,
     minWidth: 140,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: Colors.bgInput,
     borderRadius: 10,
     padding: 4,
     zIndex: 11,
@@ -250,7 +251,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.1)',
   },
   pickerOptionText: {
-    color: '#fff',
+    color: Colors.textPrimary,
     fontSize: 15,
   },
   pickerOptionTextActive: {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, type StyleProp, StyleSheet, type ViewStyle } from 'react-native';
+import { Colors } from '../utils/colors';
 import { Text } from './Text';
 
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'icon';
@@ -66,10 +67,10 @@ const commonStyles = StyleSheet.create({
 });
 
 const baseStyles = StyleSheet.create({
-  primary: { backgroundColor: '#fff' },
-  secondary: { backgroundColor: '#2a2a2a' },
-  danger: { backgroundColor: '#943030' },
-  ghost: { backgroundColor: '#1e1e1e' },
+  primary: { backgroundColor: Colors.textPrimary },
+  secondary: { backgroundColor: Colors.bgInput },
+  danger: { backgroundColor: Colors.danger },
+  ghost: { backgroundColor: Colors.bgCard },
   icon: { justifyContent: 'center' },
 });
 
@@ -81,9 +82,9 @@ const sizeStyles = StyleSheet.create({
 
 const activeStyles = StyleSheet.create({
   primary: {},
-  secondary: { backgroundColor: '#333' },
+  secondary: { backgroundColor: Colors.borderDefault },
   danger: {},
-  ghost: { backgroundColor: '#333' },
+  ghost: { backgroundColor: Colors.borderDefault },
   icon: {},
 });
 
@@ -94,15 +95,15 @@ const commonTextStyles = StyleSheet.create({
 const textStyles = StyleSheet.create({
   primary: { color: '#000', fontSize: 16 },
   secondary: { color: '#aaa', fontSize: 16 },
-  danger: { color: '#fff', fontSize: 13 },
-  ghost: { color: '#666', fontSize: 13 },
-  icon: { color: '#fff', fontSize: 16 },
+  danger: { color: Colors.textPrimary, fontSize: 13 },
+  ghost: { color: Colors.textFaint, fontSize: 13 },
+  icon: { color: Colors.textPrimary, fontSize: 16 },
 });
 
 const textActiveStyles = StyleSheet.create({
   primary: {},
   secondary: {},
   danger: {},
-  ghost: { color: '#fff' },
+  ghost: { color: Colors.textPrimary },
   icon: {},
 });

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, SectionList, StyleSheet, View } from 'react-native';
+import { SectionList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddBehaviorButton } from '../components/AddBehaviorButton';
 import { BehaviorCard } from '../components/BehaviorCard';
@@ -16,6 +16,7 @@ import { useSettingsStore } from '../store/settingsStore';
 import type { BehaviorEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
 import { groupBehaviorsByRecency } from '../utils/behaviorUtils';
+import { Colors } from '../utils/colors';
 
 export function HomeScreen() {
   useBackGuard();
@@ -134,7 +135,7 @@ function BehaviorList({ behaviors, selectedCategoryId }: BehaviorListProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: Colors.bgPrimary,
   },
   titleRow: {
     flexDirection: 'row',
@@ -145,7 +146,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    color: '#fff',
+    color: Colors.textPrimary,
     fontSize: 34,
     fontWeight: 'bold',
     letterSpacing: -0.5,
@@ -159,7 +160,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   empty: {
-    color: '#666',
+    color: Colors.textFaint,
     textAlign: 'center',
     fontSize: 15,
     padding: 32,
@@ -170,7 +171,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   sectionHeaderText: {
-    color: '#666',
+    color: Colors.textFaint,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',

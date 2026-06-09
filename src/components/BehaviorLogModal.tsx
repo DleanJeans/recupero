@@ -4,6 +4,7 @@ import { KeyboardAvoidingView, Modal, Pressable, StyleSheet, TextInput, View } f
 import { Calendar } from 'react-native-calendars';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
+import { Colors } from '../utils/colors';
 import { formatDateDisplay, toDateString } from '../utils/dateUtils';
 import { Button } from './Button';
 import { NumberWheel } from './NumberWheel';
@@ -149,11 +150,11 @@ function DatePicker({ selectedDate, maxDate, onSelect }: DatePickerProps) {
               }}
               markedDates={{ [selectedDate]: { selected: true, selectedColor: '#fff', selectedTextColor: '#000' } }}
               theme={{
-                calendarBackground: '#2a2a2a',
-                dayTextColor: '#fff',
-                textDisabledColor: '#555',
-                monthTextColor: '#fff',
-                arrowColor: '#fff',
+                calendarBackground: Colors.bgInput,
+                dayTextColor: Colors.textPrimary,
+                textDisabledColor: Colors.textDim,
+                monthTextColor: Colors.textPrimary,
+                arrowColor: Colors.textPrimary,
                 todayTextColor: '#aaa',
                 selectedDayBackgroundColor: '#fff',
                 selectedDayTextColor: '#000',
@@ -239,14 +240,14 @@ function ActionButtons({
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
   sheet: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: Colors.bgCard,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 40,
   },
-  title: { color: '#fff', fontSize: 20, fontWeight: '600', marginBottom: 20, textAlign: 'center' },
+  title: { color: Colors.textPrimary, fontSize: 20, fontWeight: '600', marginBottom: 20, textAlign: 'center' },
   sectionLabel: {
     color: '#aaa',
     fontSize: 12,
@@ -259,13 +260,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#2a2a2a',
+    backgroundColor: Colors.bgInput,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     marginBottom: 20,
   },
-  dateFieldText: { color: '#fff', fontSize: 16, fontWeight: '500' },
+  dateFieldText: { color: Colors.textPrimary, fontSize: 16, fontWeight: '500' },
   calendarOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -273,15 +274,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
   },
-  calendarPopup: { width: '100%', backgroundColor: '#2a2a2a', borderRadius: 16, overflow: 'hidden' },
+  calendarPopup: { width: '100%', backgroundColor: Colors.bgInput, borderRadius: 16, overflow: 'hidden' },
   wheels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 16, gap: 8 },
-  colon: { color: '#fff', fontSize: 28, fontWeight: '700', marginBottom: 4 },
+  colon: { color: Colors.textPrimary, fontSize: 28, fontWeight: '700', marginBottom: 4 },
   notesInput: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: Colors.bgInput,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    color: '#fff',
+    color: Colors.textPrimary,
     fontSize: 16,
     minHeight: 80,
     marginBottom: 16,

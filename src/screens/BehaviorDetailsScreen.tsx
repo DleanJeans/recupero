@@ -16,6 +16,7 @@ import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry, LogEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
 import { groupLogsByRecency } from '../utils/behaviorUtils';
+import { Colors } from '../utils/colors';
 
 interface BehaviorDetailsContextValues {
   behavior: BehaviorEntry;
@@ -222,7 +223,7 @@ function EditBehaviorModal() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: Colors.bgPrimary,
   },
   header: {
     flexDirection: 'row',
@@ -237,7 +238,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerTitle: {
-    color: '#fff',
+    color: Colors.textPrimary,
     fontSize: 20,
     fontWeight: '700',
   },
@@ -258,7 +259,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   empty: {
-    color: '#666',
+    color: Colors.textFaint,
     textAlign: 'center',
     fontSize: 15,
     padding: 32,
@@ -279,7 +280,7 @@ const styles = StyleSheet.create({
     top: 0,
   },
   sectionHeaderText: {
-    color: '#666',
+    color: Colors.textFaint,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',

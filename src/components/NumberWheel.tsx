@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import { Colors } from '../utils/colors';
 import { Text } from './Text';
 
 const ITEM_HEIGHT = 48;
@@ -64,5 +65,5 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   item: { height: ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' },
-  text: { color: '#ccc', fontSize: 22, fontVariant: ['tabular-nums'] },
+  text: { color: Colors.textSecondary, fontSize: 22, fontVariant: ['tabular-nums'] },
 });

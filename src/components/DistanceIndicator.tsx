@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
+import { Colors } from '../utils/colors';
 import { formatDuration } from '../utils/timeUtils';
 import { Text } from './Text';
 
@@ -22,7 +23,7 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   text: {
-    color: '#666',
+    color: Colors.textFaint,
     fontSize: 12,
     fontWeight: '500',
   },

@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
+import { Colors } from '../utils/colors';
 import { DistanceIndicator } from './DistanceIndicator';
 
 interface Props {
@@ -27,6 +28,6 @@ const styles = StyleSheet.create({
   line: {
     width: 1,
     height: 8,
-    backgroundColor: '#444',
+    backgroundColor: Colors.borderDim,
   },
 });

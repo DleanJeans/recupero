@@ -1,9 +1,10 @@
 import type { BehaviorType } from '../types/behavior';
+import { Colors } from './colors';
 
 const BEHAVIOR_TYPE_COLORS: Record<BehaviorType, string> = {
-  undesirable: '#f87171',
-  neutral: '#60a5fa',
-  desirable: '#4ade80',
+  undesirable: Colors.typeUndesirable,
+  neutral: Colors.typeNeutral,
+  desirable: Colors.typeDesirable,
 };
 
 export function getBehaviorTypeColor(type: BehaviorType): string {

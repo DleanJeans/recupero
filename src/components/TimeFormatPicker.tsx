@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { TimeFormat } from '../store/settingsStore';
 import { useSettingsStore } from '../store/settingsStore';
+import { Colors } from '../utils/colors';
 import { Button } from './Button';
 import { Text } from './Text';
 
@@ -54,7 +55,7 @@ export function TimeFormatPicker() {
 const styles = StyleSheet.create({
   section: { marginTop: 24, marginHorizontal: 16 },
   sectionTitle: {
-    color: '#666',
+    color: Colors.textFaint,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -63,10 +64,10 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   optionsRow: { flexDirection: 'row', gap: 10 },
-  optionCard: { flex: 1, padding: 16, borderWidth: 1.5, borderColor: '#1e1e1e' },
-  optionCardSelected: { borderColor: '#EFEFEF', backgroundColor: '#2a2a2a' },
-  optionLabel: { color: '#888', fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  optionLabelSelected: { color: '#fff' },
-  optionDescription: { color: '#555', fontSize: 24, fontWeight: '300' },
-  optionDescriptionSelected: { color: '#ccc' },
+  optionCard: { flex: 1, padding: 16, borderWidth: 1.5, borderColor: Colors.bgCard },
+  optionCardSelected: { borderColor: Colors.textPrimary, backgroundColor: Colors.bgInput },
+  optionLabel: { color: Colors.textMuted, fontSize: 16, fontWeight: '600', marginBottom: 4 },
+  optionLabelSelected: { color: Colors.textPrimary },
+  optionDescription: { color: Colors.textDim, fontSize: 24, fontWeight: '300' },
+  optionDescriptionSelected: { color: Colors.textSecondary },
 });

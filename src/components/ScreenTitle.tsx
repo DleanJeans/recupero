@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, type TextStyle } from 'react-native';
+import { Colors } from '../utils/colors';
 import { Text } from './Text';
 
 interface ScreenTitleProps {
@@ -18,7 +19,7 @@ export function ScreenTitle({ children, style }: ScreenTitleProps) {
 
 const styles = StyleSheet.create({
   title: {
-    color: '#fff',
+    color: Colors.textPrimary,
     fontSize: 28,
     fontWeight: 'bold',
     letterSpacing: -0.5,

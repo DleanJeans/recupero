@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
+import { Colors } from '../utils/colors';
 import { Text } from './Text';
 
 interface Props {
@@ -17,7 +18,7 @@ export function AddBehaviorButton({ onPress }: Props) {
 const styles = StyleSheet.create({
   fab: {
     margin: 16,
-    backgroundColor: '#EFEFEF',
+    backgroundColor: Colors.textPrimary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import React, { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
+import { Colors } from '../utils/colors';
 import { exportToFile, importFromFile } from '../utils/dataTransfer';
 import { Button } from './Button';
 import { Text } from './Text';
@@ -82,7 +83,7 @@ export function DataTransferSection() {
 const styles = StyleSheet.create({
   section: { marginTop: 24, marginHorizontal: 16 },
   sectionTitle: {
-    color: '#666',
+    color: Colors.textFaint,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -91,7 +92,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   optionsRow: { flexDirection: 'row', gap: 10 },
-  optionCard: { flex: 1, padding: 16, borderWidth: 1.5, borderColor: '#1e1e1e' },
-  optionLabel: { color: '#888', fontSize: 16, fontWeight: '600', marginBottom: 4 },
-  optionDescriptionSmall: { color: '#555', fontSize: 12, fontWeight: '400', marginTop: 2 },
+  optionCard: { flex: 1, padding: 16, borderWidth: 1.5, borderColor: Colors.bgCard },
+  optionLabel: { color: Colors.textMuted, fontSize: 16, fontWeight: '600', marginBottom: 4 },
+  optionDescriptionSmall: { color: Colors.textDim, fontSize: 12, fontWeight: '400', marginTop: 2 },
 });

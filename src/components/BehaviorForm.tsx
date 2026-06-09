@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry, BehaviorType } from '../types/behavior';
+import { Colors } from '../utils/colors';
 import type { CooldownType } from '../utils/cooldownUtils';
 import { Button } from './Button';
 import { CategoryPicker } from './CategoryPicker';
@@ -336,7 +337,7 @@ function FormActions({ onCancel, onSubmit, submitLabel, disabled }: FormActionsP
 
 const styles = StyleSheet.create({
   form: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: Colors.bgCard,
     padding: 16,
     gap: 10,
   },
@@ -349,8 +350,8 @@ const styles = StyleSheet.create({
   },
   nameInput: {
     flex: 1,
-    backgroundColor: '#2a2a2a',
-    color: '#fff',
+    backgroundColor: Colors.bgInput,
+    color: Colors.textPrimary,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -365,7 +366,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   cooldownLabel: {
-    color: '#888',
+    color: Colors.textMuted,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -376,7 +377,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: Colors.borderDefault,
   },
   typeBtn: {
     paddingHorizontal: 10,
@@ -398,35 +399,35 @@ const styles = StyleSheet.create({
     backgroundColor: '#C62828',
   },
   typeBtnText: {
-    color: '#666',
+    color: Colors.textFaint,
     fontSize: 12,
     fontWeight: '500',
   },
   typeBtnTextUndesirable: {
-    color: '#f87171',
+    color: Colors.typeUndesirable,
     fontWeight: '600',
   },
   typeBtnTextNeutral: {
-    color: '#60a5fa',
+    color: Colors.typeNeutral,
     fontWeight: '600',
   },
   typeBtnTextDesirable: {
-    color: '#4ade80',
+    color: Colors.typeDesirable,
     fontWeight: '600',
   },
   typeBtnTextRest: {
-    color: '#A5D6A7',
+    color: Colors.successLight,
     fontWeight: '600',
   },
   typeBtnTextLimit: {
-    color: '#EF9A9A',
+    color: Colors.dangerLight,
     fontWeight: '600',
   },
   privateRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: Colors.bgInput,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -436,26 +437,26 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 4,
     borderWidth: 1.5,
-    borderColor: '#555',
+    borderColor: Colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkboxChecked: {
-    backgroundColor: '#EFEFEF',
-    borderColor: '#EFEFEF',
+    backgroundColor: Colors.textPrimary,
+    borderColor: Colors.textPrimary,
   },
   checkmark: {
-    color: '#121212',
+    color: Colors.bgCard,
     fontSize: 12,
     fontWeight: '700',
   },
   privateLabel: {
-    color: '#ccc',
+    color: Colors.textSecondary,
     fontSize: 14,
     fontWeight: '500',
   },
   privateHint: {
-    color: '#555',
+    color: Colors.borderLight,
     fontSize: 12,
     marginLeft: 'auto',
   },

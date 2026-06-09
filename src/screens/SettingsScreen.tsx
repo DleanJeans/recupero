@@ -6,6 +6,7 @@ import { DataTransferSection } from '../components/DataTransferSection';
 import { PrivateBehaviorSection } from '../components/PrivateBehaviorSection';
 import { ScreenTitle } from '../components/ScreenTitle';
 import { TimeFormatPicker } from '../components/TimeFormatPicker';
+import { Colors } from '../utils/colors';
 
 export function SettingsScreen() {
   return (
@@ -23,6 +24,6 @@ export function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1, backgroundColor: Colors.bgPrimary },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingBottom: 8 },
 });

@@ -8,6 +8,7 @@ import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
 import { getBehaviorTypeColor } from '../utils/behaviorTypeUtils';
+import { Colors } from '../utils/colors';
 import { getCooldownColor } from '../utils/cooldownUtils';
 import { formatElapsedNumeric } from '../utils/timeUtils';
 import { BehaviorForm } from './BehaviorForm';
@@ -176,7 +177,7 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1e1e1e',
+    backgroundColor: Colors.bgCard,
     borderRadius: 12,
     marginVertical: 6,
     overflow: 'hidden',
@@ -204,13 +205,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   name: {
-    color: '#fff',
+    color: Colors.textPrimary,
     fontSize: 16,
     fontWeight: '600',
   },
 
   elapsed: {
-    color: '#888',
+    color: Colors.textMuted,
     fontSize: 13,
   },
   logBtn: {
@@ -218,7 +219,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   deleteButton: {
-    backgroundColor: '#943030',
+    backgroundColor: Colors.danger,
     justifyContent: 'center',
     alignItems: 'center',
     width: 100,
@@ -230,7 +231,7 @@ const styles = StyleSheet.create({
     paddingRight: 28,
   },
   deleteButtonText: {
-    color: '#fff',
+    color: Colors.textPrimary,
     fontSize: 12,
     fontWeight: '600',
     marginTop: 4,

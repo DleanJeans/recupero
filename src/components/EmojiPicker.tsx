@@ -3,29 +3,30 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import type { EmojiType } from 'rn-emoji-keyboard';
 import EmojiKeyboard from 'rn-emoji-keyboard';
+import { Colors } from '../utils/colors';
 import { emojiData, findEmojiByKeyword } from '../utils/emojiData';
 import { Text } from './Text';
 
 const pickerTheme = {
   backdrop: 'transparent',
-  knob: '#555',
-  container: '#1e1e1e',
-  header: '#fff',
-  skinTonesContainer: '#2a2a2a',
+  knob: Colors.borderDim,
+  container: Colors.bgCard,
+  header: Colors.textPrimary,
+  skinTonesContainer: Colors.bgInput,
   category: {
-    icon: '#888',
-    iconActive: '#fff',
-    container: '#2a2a2a',
-    containerActive: '#444',
+    icon: Colors.textMuted,
+    iconActive: Colors.textPrimary,
+    container: Colors.bgInput,
+    containerActive: Colors.borderDim,
   },
   search: {
-    text: '#fff',
-    placeholder: '#66666688',
-    icon: '#888',
-    background: '#2a2a2a',
+    text: Colors.textPrimary,
+    placeholder: Colors.textFaint + '88',
+    icon: Colors.textMuted,
+    background: Colors.bgInput,
   },
   emoji: {
-    selected: '#333',
+    selected: Colors.borderDefault,
   },
 };
 
@@ -102,17 +103,17 @@ const styles = StyleSheet.create({
   input: {
     width: 48,
     height: 40,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: Colors.bgInput,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
   emoji: {
-    color: '#fff',
+    color: Colors.textPrimary,
     fontSize: 20,
   },
   emojiPlaceholder: {
-    color: '#fff',
+    color: Colors.textPrimary,
     fontSize: 20,
     opacity: 0.3,
   },

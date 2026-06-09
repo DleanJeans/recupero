@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { Colors } from '../utils/colors';
 import { getLevel, getLevelProgress, getXp, XP_PER_LEVEL } from '../utils/xpUtils';
 import { Text } from './Text';
 
@@ -7,7 +8,7 @@ interface XpBarProps {
   logCount: number;
   color?: string;
 }
-export function XpBar({ logCount, color = '#4ade80' }: XpBarProps) {
+export function XpBar({ logCount, color = Colors.typeNeutral }: XpBarProps) {
   const xp = getXp(logCount);
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
@@ -32,7 +33,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   label: {
-    color: '#888',
+    color: Colors.textMuted,
     fontSize: 11,
     fontWeight: '600',
     minWidth: 30,
@@ -40,7 +41,7 @@ const styles = StyleSheet.create({
   track: {
     flex: 1,
     height: 4,
-    backgroundColor: '#333',
+    backgroundColor: Colors.borderDefault,
     borderRadius: 2,
     overflow: 'hidden',
   },
@@ -49,7 +50,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   value: {
-    color: '#666',
+    color: Colors.textFaint,
     fontSize: 10,
     minWidth: 42,
     textAlign: 'right',

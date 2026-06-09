@@ -14,6 +14,7 @@ import type { BehaviorEntry, LogEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
 import type { RecencyGroup } from '../utils/behaviorUtils';
 import { GROUP_ORDER, getRecencyGroup } from '../utils/behaviorUtils';
+import { Colors } from '../utils/colors';
 import { formatCompactDate, formatTime, isOlderThanYesterday } from '../utils/timeUtils';
 
 interface TimelineEntry {
@@ -250,7 +251,7 @@ function formatGap(ms: number): string {
   return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
 }
 
-const LINE_COLOR = '#2a2a2a';
+const LINE_COLOR = Colors.bgInput;
 const CIRCLE_SIZE = 10;
 const LINE_WIDTH = 2;
 const GUTTER_WIDTH = 48;
@@ -258,7 +259,7 @@ const GUTTER_WIDTH = 48;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: Colors.bgPrimary,
   },
   header: {
     flexDirection: 'row',
@@ -274,7 +275,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   empty: {
-    color: '#666',
+    color: Colors.textFaint,
     textAlign: 'center',
     fontSize: 15,
     padding: 48,
@@ -292,7 +293,7 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
   },
   sectionHeaderText: {
-    color: '#666',
+    color: Colors.textFaint,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -320,7 +321,7 @@ const styles = StyleSheet.create({
     width: CIRCLE_SIZE + 6,
     height: CIRCLE_SIZE + 6,
     borderRadius: (CIRCLE_SIZE + 6) / 2,
-    backgroundColor: '#1e1e1e',
+    backgroundColor: Colors.bgCard,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -328,7 +329,7 @@ const styles = StyleSheet.create({
     width: CIRCLE_SIZE,
     height: CIRCLE_SIZE,
     borderRadius: CIRCLE_SIZE / 2,
-    backgroundColor: '#555',
+    backgroundColor: Colors.borderLight,
   },
 
   // -- Content --
@@ -339,7 +340,7 @@ const styles = StyleSheet.create({
     marginTop: -15,
   },
   timeText: {
-    color: '#888',
+    color: Colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -349,7 +350,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   behaviorName: {
-    color: '#fff',
+    color: Colors.textPrimary,
     fontSize: 15,
     fontWeight: '600',
     flexShrink: 1,
@@ -373,7 +374,7 @@ const styles = StyleSheet.create({
     backgroundColor: LINE_COLOR,
   },
   gapText: {
-    color: '#666',
+    color: Colors.textFaint,
     fontSize: 11,
     fontWeight: '500',
     transform: [{ rotate: '90deg' }],

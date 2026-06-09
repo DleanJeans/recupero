@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { Colors } from '../utils/colors';
 import { Button } from './Button';
 import { EmojiPicker } from './EmojiPicker';
 import { TextInput } from './Text';
@@ -83,7 +84,7 @@ export function CategoryForm({
 
 const styles = StyleSheet.create({
   form: {
-    backgroundColor: '#1e1e1e',
+    backgroundColor: Colors.bgCard,
     borderRadius: 12,
     padding: 12,
     marginHorizontal: 16,
@@ -99,8 +100,8 @@ const styles = StyleSheet.create({
   },
   nameInput: {
     flex: 1,
-    backgroundColor: '#2a2a2a',
-    color: '#fff',
+    backgroundColor: Colors.bgInput,
+    color: Colors.textPrimary,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,

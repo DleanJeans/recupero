@@ -5,6 +5,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { useBehaviorStore } from '../store/behaviorStore';
 import { useSettingsStore } from '../store/settingsStore';
 import type { LogEntry } from '../types/behavior';
+import { Colors } from '../utils/colors';
 import { formatElapsedNumeric, formatTime } from '../utils/timeUtils';
 import { Button } from './Button';
 import { Text } from './Text';
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
   logItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1e1e1e',
+    backgroundColor: Colors.bgCard,
     borderRadius: 12,
     marginVertical: 6,
     marginHorizontal: 16,
@@ -93,30 +94,30 @@ const styles = StyleSheet.create({
     flex: 3,
     padding: 16,
     borderLeftWidth: StyleSheet.hairlineWidth,
-    borderLeftColor: '#666',
+    borderLeftColor: Colors.textFaint,
   },
   notesText: {
-    color: '#999',
+    color: Colors.textMuted,
     fontSize: 13,
     lineHeight: 18,
   },
   dateText: {
-    color: '#fff',
+    color: Colors.textPrimary,
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 2,
   },
   timeText: {
-    color: '#fff',
+    color: Colors.textPrimary,
     fontSize: 14,
     marginBottom: 4,
   },
   elapsedText: {
-    color: '#888',
+    color: Colors.textMuted,
     fontSize: 13,
   },
   leftAction: {
-    backgroundColor: '#943030',
+    backgroundColor: Colors.danger,
     justifyContent: 'center',
     alignItems: 'center',
     width: 100,
@@ -128,7 +129,7 @@ const styles = StyleSheet.create({
     paddingRight: 28,
   },
   rightAction: {
-    backgroundColor: '#3a6ea5',
+    backgroundColor: Colors.info,
     justifyContent: 'center',
     alignItems: 'center',
     width: 100,
@@ -140,7 +141,7 @@ const styles = StyleSheet.create({
     paddingLeft: 28,
   },
   actionText: {
-    color: '#fff',
+    color: Colors.textPrimary,
     fontSize: 12,
     fontWeight: '600',
     marginTop: 4,

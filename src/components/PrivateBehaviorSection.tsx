@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSettingsStore } from '../store/settingsStore';
+import { Colors } from '../utils/colors';
 import { Text } from './Text';
 
 export function PrivateBehaviorSection() {
@@ -28,7 +29,7 @@ export function PrivateBehaviorSection() {
 const styles = StyleSheet.create({
   section: { marginTop: 24, marginHorizontal: 16 },
   sectionTitle: {
-    color: '#666',
+    color: Colors.textFaint,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -39,13 +40,13 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1e1e1e',
+    backgroundColor: Colors.bgCard,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
   label: {
-    color: '#ccc',
+    color: Colors.textSecondary,
     fontSize: 15,
     flex: 1,
   },
@@ -53,21 +54,21 @@ const styles = StyleSheet.create({
     width: 44,
     height: 26,
     borderRadius: 13,
-    backgroundColor: '#333',
+    backgroundColor: Colors.bgElevated,
     justifyContent: 'center',
     paddingHorizontal: 2,
   },
   toggleOn: {
-    backgroundColor: '#2E7D32',
+    backgroundColor: Colors.success,
   },
   thumb: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#888',
+    backgroundColor: Colors.textMuted,
   },
   thumbOn: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.textPrimary,
     alignSelf: 'flex-end',
   },
 });
