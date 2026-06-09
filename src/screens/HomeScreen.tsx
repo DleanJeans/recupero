@@ -45,7 +45,7 @@ export function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <Title />
 
-      <TypeXpBar />
+      <TypeXpBar selectedCategoryId={selectedCategoryId} />
 
       <CategoryFilter
         selectedCategoryId={selectedCategoryId}

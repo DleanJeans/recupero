@@ -14,16 +14,22 @@ const TYPE_LABELS: Record<BehaviorType, string> = {
 
 const TYPE_ORDER: BehaviorType[] = ['desirable', 'neutral', 'undesirable'];
 
-export function TypeXpBar() {
+interface Props {
+  selectedCategoryId: string | null;
+}
+export function TypeXpBar({ selectedCategoryId }: Props) {
   const behaviors = useBehaviorStore(s => s.behaviors);
 
   const typeLogCounts = useMemo(() => {
+    const filtered = selectedCategoryId !== null
+      ? behaviors.filter(b => b.categoryId === selectedCategoryId)
+      : behaviors;
     const counts: Record<BehaviorType, number> = { desirable: 0, neutral: 0, undesirable: 0 };
-    for (const b of behaviors) {
+    for (const b of filtered) {
       counts[b.type ?? 'neutral'] += b.logs.length;
     }
     return counts;
-  }, [behaviors]);
+  }, [behaviors, selectedCategoryId]);
 
   const hasLogs = TYPE_ORDER.some(t => typeLogCounts[t] > 0);
   if (!hasLogs) return null;
