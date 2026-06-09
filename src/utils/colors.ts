@@ -19,7 +19,7 @@ export const Colors = {
 
   // ── Behavior Types ──
   typeUndesirable: '#f87171',
-  typeNeutral: '#60a5fa',
+  typeNeutral: '#fbbf24',
   typeDesirable: '#4ade80',
 
   // ── Cooldown ──
