@@ -63,6 +63,13 @@ export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
           <Text style={styles.dateText}>{formatTime(log.timestamp, timeFormat === '12h')}</Text>
           <Text style={styles.elapsedText}>{formatElapsedNumeric(log.timestamp)}</Text>
         </View>
+        {log.metadata?.notes ? (
+          <View style={styles.notesContent}>
+            <Text style={styles.notesText} numberOfLines={2}>
+              {String(log.metadata.notes)}
+            </Text>
+          </View>
+        ) : null}
       </Pressable>
     </Swipeable>
   );
@@ -81,6 +88,17 @@ const styles = StyleSheet.create({
   logContent: {
     flex: 1,
     padding: 16,
+  },
+  notesContent: {
+    flex: 3,
+    padding: 16,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: '#666',
+  },
+  notesText: {
+    color: '#999',
+    fontSize: 13,
+    lineHeight: 18,
   },
   dateText: {
     color: '#fff',
