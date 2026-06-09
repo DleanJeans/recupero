@@ -7,13 +7,17 @@ export type TimeFormat = '12h' | '24h';
 interface SettingsStore {
   timeFormat: TimeFormat;
   setTimeFormat: (format: TimeFormat) => void;
+  hidePrivate: boolean;
+  setHidePrivate: (v: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsStore>()(
   persist(
     set => ({
       timeFormat: '12h',
+      hidePrivate: false,
       setTimeFormat: format => set({ timeFormat: format }),
+      setHidePrivate: v => set({ hidePrivate: v }),
     }),
     {
       name: 'recupero-settings',

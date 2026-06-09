@@ -12,6 +12,7 @@ import { CategoryFilter } from '../components/CategoryFilter';
 import { Text } from '../components/Text';
 import { useBackGuard } from '../hooks/useBackGuard';
 import { useBehaviorStore } from '../store/behaviorStore';
+import { useSettingsStore } from '../store/settingsStore';
 import type { BehaviorEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
 import { groupBehaviorsByRecency } from '../utils/behaviorUtils';
@@ -19,6 +20,7 @@ import { groupBehaviorsByRecency } from '../utils/behaviorUtils';
 export function HomeScreen() {
   useBackGuard();
   const { behaviors, categories } = useBehaviorStore();
+  const hidePrivate = useSettingsStore((s) => s.hidePrivate);
   const [showAddButton, setShowAddButton] = useState(true);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
@@ -29,10 +31,12 @@ export function HomeScreen() {
     }
   }, [categories, selectedCategoryId]);
 
-  const filteredBehaviors = useMemo(
-    () => (selectedCategoryId === null ? behaviors : behaviors.filter(b => b.categoryId === selectedCategoryId)),
-    [behaviors, selectedCategoryId],
-  );
+  const filteredBehaviors = useMemo(() => {
+    let result = behaviors;
+    if (hidePrivate) result = result.filter((b) => !b.private);
+    if (selectedCategoryId !== null) result = result.filter((b) => b.categoryId === selectedCategoryId);
+    return result;
+  }, [behaviors, selectedCategoryId, hidePrivate]);
 
   return (
     <SafeAreaView style={styles.container}>

@@ -43,6 +43,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
   const [categoryId, setCategoryId] = useState<string | undefined>(behavior ? behavior.categoryId : defaultCategoryId);
   const handleCategoryChange = (id: string | undefined | null) => setCategoryId(id ?? undefined);
   const [emojiKeyboardOpen, setEmojiKeyboardOpen] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
   const [cooldownMinutes, setCooldownMinutes] = useState(0);
   const [cooldownType, setCooldownType] = useState<CooldownType>('rest');
   const [cooldownUnit, setCooldownUnit] = useState<CooldownUnit | undefined>(undefined);
@@ -55,6 +56,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
     setName(behavior.name);
     setIcon(iconFromStore(behavior.icon));
     setCategoryId(behavior.categoryId);
+    setIsPrivate(behavior.private ?? false);
     setCooldownMinutes(behavior.cooldownMinutes || 0);
     setCooldownType(behavior.cooldownType || 'rest');
     setCooldownUnit(behavior.cooldownUnit);
@@ -72,6 +74,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
         cooldownType,
         categoryId: categoryId || undefined,
         cooldownUnit: cooldownUnit || undefined,
+        private: isPrivate,
       });
     } else {
       addBehavior(
@@ -81,6 +84,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
         cooldownType,
         categoryId || undefined,
         cooldownUnit || undefined,
+        isPrivate,
       );
     }
     onClose();
@@ -120,6 +124,19 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
             onUnitChange={setCooldownUnit}
           />
         </View>
+        <Pressable
+          style={({ pressed }) => [
+            styles.privateRow,
+            pressed && { opacity: 0.7 },
+          ]}
+          onPress={() => setIsPrivate((v) => !v)}
+        >
+          <View style={[styles.checkbox, isPrivate && styles.checkboxChecked]}>
+            {isPrivate && <Text style={styles.checkmark}>✓</Text>}
+          </View>
+          <Text style={styles.privateLabel}>Private</Text>
+          <Text style={styles.privateHint}>Hidden when sharing the app</Text>
+        </Pressable>
         <CategoryPicker
           categories={categories}
           selectedId={categoryId}
@@ -335,6 +352,43 @@ const styles = StyleSheet.create({
   typeBtnTextLimit: {
     color: '#EF9A9A',
     fontWeight: '600',
+  },
+  privateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#555',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#EFEFEF',
+    borderColor: '#EFEFEF',
+  },
+  checkmark: {
+    color: '#121212',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  privateLabel: {
+    color: '#ccc',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  privateHint: {
+    color: '#555',
+    fontSize: 12,
+    marginLeft: 'auto',
   },
   actions: {
     flexDirection: 'row',

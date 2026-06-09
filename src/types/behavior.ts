@@ -19,6 +19,7 @@ export interface BehaviorEntry {
         uri: string;
       };
   categoryId?: string;
+  private?: boolean;
   lastTimestamp: number | null;
   metadata: Record<string, string | number>;
   logs: LogEntry[];

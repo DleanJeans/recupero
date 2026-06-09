@@ -9,6 +9,7 @@ import { CategoryFilter } from '../components/CategoryFilter';
 import { ScreenTitle } from '../components/ScreenTitle';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
+import { useSettingsStore } from '../store/settingsStore';
 import type { BehaviorEntry, LogEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
 import type { RecencyGroup } from '../utils/behaviorUtils';
@@ -30,6 +31,7 @@ interface MinuteGroup {
 export function TimelineScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { behaviors, categories } = useBehaviorStore();
+  const hidePrivate = useSettingsStore((s) => s.hidePrivate);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [, setTick] = useState(0);
 
@@ -47,8 +49,9 @@ export function TimelineScreen() {
   const timelineEntries = useMemo(() => {
     const entries: TimelineEntry[] = [];
 
-    const filteredBehaviors =
-      selectedCategoryId === null ? behaviors : behaviors.filter(b => b.categoryId === selectedCategoryId);
+    let filteredBehaviors = behaviors;
+    if (hidePrivate) filteredBehaviors = filteredBehaviors.filter(b => !b.private);
+    if (selectedCategoryId !== null) filteredBehaviors = filteredBehaviors.filter(b => b.categoryId === selectedCategoryId);
 
     for (const behavior of filteredBehaviors) {
       for (const log of behavior.logs) {
@@ -58,7 +61,7 @@ export function TimelineScreen() {
 
     entries.sort((a, b) => b.log.timestamp - a.log.timestamp);
     return entries;
-  }, [behaviors, selectedCategoryId]);
+  }, [behaviors, selectedCategoryId, hidePrivate]);
 
   // Group consecutive same-minute entries into one circle
   const minuteGroups = useMemo(() => {
