@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { BehaviorEntry, Category } from '../types/behavior';
+import { XP_PER_LOG } from '../utils/xpUtils';
 
 interface BehaviorStore {
   behaviors: BehaviorEntry[];

@@ -15,6 +15,7 @@ import { BehaviorLogModal } from './BehaviorLogModal';
 import { Button } from './Button';
 import { CooldownLabel } from './CooldownLabel';
 import { Text } from './Text';
+import { XpBar } from './XpBar';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -120,6 +121,7 @@ function BehaviorInfo({ behavior, showCategory }: BehaviorInfoProps) {
         <BehaviorElapsed behavior={behavior} />
         <CooldownLabel behavior={behavior} />
       </View>
+      <XpBar logCount={behavior.logs.length} />
     </View>
   );
 }
