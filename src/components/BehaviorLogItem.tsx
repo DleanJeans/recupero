@@ -14,11 +14,6 @@ interface Props {
   onEdit: () => void;
 }
 
-function toDateString(timestamp: number): string {
-  const d = new Date(timestamp);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
 export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
   const [, setTick] = useState(0);
 

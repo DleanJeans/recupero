@@ -1,126 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
-import { formatDateDisplay } from '../utils/dateUtils';
+import { formatDateDisplay, toDateString } from '../utils/dateUtils';
+import { NumberWheel } from './NumberWheel';
 import { Text } from './Text';
 
-const ITEM_HEIGHT = 48;
-const VISIBLE_ITEMS = 5;
-const PAD = ITEM_HEIGHT * Math.floor(VISIBLE_ITEMS / 2);
+const ALL_HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const ALL_MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
-function pad2(n: number) {
-  return String(n).padStart(2, '0');
+function pressedStyle(opacity: number) {
+  return { opacity, transform: [{ scale: 0.98 }] as const };
 }
-
-const ALL_HOURS = Array.from(
-  {
-    length: 24,
-  },
-  (_, i) => pad2(i),
-);
-const ALL_MINUTES = Array.from(
-  {
-    length: 60,
-  },
-  (_, i) => pad2(i),
-);
-
-function toDateString(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-interface WheelProps {
-  values: string[];
-  initialIndex: number;
-  onChange: (index: number) => void;
-}
-
-function Wheel({ values, initialIndex, onChange }: WheelProps) {
-  const ref = useRef<ScrollView>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      ref.current?.scrollTo({
-        y: initialIndex * ITEM_HEIGHT,
-        animated: false,
-      });
-    }, 50);
-    return () => clearTimeout(timer);
-  }, [initialIndex]);
-
-  const onScrollEnd = useCallback(
-    (e: {
-      nativeEvent: {
-        contentOffset: {
-          y: number;
-        };
-      };
-    }) => {
-      const index = Math.max(0, Math.min(Math.round(e.nativeEvent.contentOffset.y / ITEM_HEIGHT), values.length - 1));
-      onChange(index);
-    },
-    [onChange, values.length],
-  );
-
-  return (
-    <View style={wStyles.container}>
-      <View
-        style={wStyles.highlight}
-        pointerEvents="none"
-      />
-      <ScrollView
-        ref={ref}
-        snapToInterval={ITEM_HEIGHT}
-        decelerationRate="fast"
-        showsVerticalScrollIndicator={false}
-        onMomentumScrollEnd={onScrollEnd}
-        contentContainerStyle={{
-          paddingVertical: PAD,
-        }}
-      >
-        {values.map(v => (
-          <View
-            key={v}
-            style={wStyles.item}
-          >
-            <Text style={wStyles.text}>{v}</Text>
-          </View>
-        ))}
-      </ScrollView>
-    </View>
-  );
-}
-
-const wStyles = StyleSheet.create({
-  container: {
-    width: 64,
-    height: ITEM_HEIGHT * VISIBLE_ITEMS,
-    overflow: 'hidden',
-  },
-  highlight: {
-    position: 'absolute',
-    top: ITEM_HEIGHT * Math.floor(VISIBLE_ITEMS / 2),
-    left: 4,
-    right: 4,
-    height: ITEM_HEIGHT,
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 8,
-    zIndex: 1,
-  },
-  item: {
-    height: ITEM_HEIGHT,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  text: {
-    color: '#ccc',
-    fontSize: 22,
-    fontVariant: ['tabular-nums'],
-  },
-});
 
 interface Props {
   behavior: BehaviorEntry;
@@ -138,7 +31,6 @@ export function BehaviorLogModal({ behavior, visible, logId, initialTimestamp, o
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [hour, setHour] = useState(nowRef.current.getHours());
   const [minute, setMinute] = useState(nowRef.current.getMinutes());
-  const [calendarVisible, setCalendarVisible] = useState(false);
   const [wheelKey, setWheelKey] = useState(0);
 
   const isToday = selectedDate === todayStr;
@@ -160,7 +52,6 @@ export function BehaviorLogModal({ behavior, visible, logId, initialTimestamp, o
       setSelectedDate(toDateString(n));
       setHour(n.getHours());
       setMinute(n.getMinutes());
-      setCalendarVisible(false);
       setWheelKey(k => k + 1);
     }
   }, [visible, initialTimestamp]);
@@ -178,117 +69,68 @@ export function BehaviorLogModal({ behavior, visible, logId, initialTimestamp, o
     onClose();
   }, [selectedDate, hour, minute, logId, behavior.id, logBehavior, updateLog, onClose]);
 
-  const hourValues = ALL_HOURS.slice(0, maxHour + 1);
-  const minuteValues = ALL_MINUTES.slice(0, maxMinute + 1);
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.backdrop} onPress={onClose} />
+      <View style={styles.sheet}>
+        <ModalTitle isEditing={!!initialTimestamp} behaviorName={behavior.name} />
+
+        <DatePicker selectedDate={selectedDate} maxDate={todayStr} onSelect={setSelectedDate} />
+
+        <TimePicker
+          hour={hour}
+          minute={minute}
+          maxHour={maxHour}
+          maxMinute={maxMinute}
+          wheelKey={wheelKey}
+          onHourChange={setHour}
+          onMinuteChange={setMinute}
+        />
+
+        <ActionButtons confirmLabel={initialTimestamp ? 'Save' : 'Log'} onCancel={onClose} onConfirm={handleConfirm} />
+      </View>
+    </Modal>
+  );
+}
+
+interface ModalTitleProps {
+  isEditing: boolean;
+  behaviorName: string;
+}
+
+function ModalTitle({ isEditing, behaviorName }: ModalTitleProps) {
+  return <Text style={styles.title}>{isEditing ? 'Edit Time' : `Log ${behaviorName}`}</Text>;
+}
+
+interface DatePickerProps {
+  selectedDate: string;
+  maxDate: string;
+  onSelect: (dateStr: string) => void;
+}
+
+function DatePicker({ selectedDate, maxDate, onSelect }: DatePickerProps) {
+  const [open, setOpen] = useState(false);
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <Pressable
-        style={styles.backdrop}
-        onPress={onClose}
-      />
-      <View style={styles.sheet}>
-        <Text style={styles.title}>
-          {initialTimestamp ? 'Edit Time' : `Log ${behavior.name}`}
-        </Text>
+    <>
+      <Text style={styles.sectionLabel}>Date</Text>
+      <Pressable style={styles.dateField} onPress={() => setOpen(true)}>
+        <Text style={styles.dateFieldText}>{formatDateDisplay(selectedDate)}</Text>
+        <Ionicons name="calendar-outline" size={18} color="#aaa" />
+      </Pressable>
 
-        <Text style={styles.sectionLabel}>Date</Text>
-        <Pressable
-          style={styles.dateField}
-          onPress={() => setCalendarVisible(true)}
-        >
-          <Text style={styles.dateFieldText}>{formatDateDisplay(selectedDate)}</Text>
-          <Ionicons
-            name="calendar-outline"
-            size={18}
-            color="#aaa"
-          />
-        </Pressable>
-
-        <Text style={styles.sectionLabel}>Time</Text>
-        <View style={styles.wheels}>
-          <Wheel
-            key={`hour-${wheelKey}-${maxHour}`}
-            values={hourValues}
-            initialIndex={Math.min(hour, maxHour)}
-            onChange={setHour}
-          />
-          <Text style={styles.colon}>:</Text>
-          <Wheel
-            key={`min-${wheelKey}-${maxMinute}`}
-            values={minuteValues}
-            initialIndex={Math.min(minute, maxMinute)}
-            onChange={setMinute}
-          />
-        </View>
-
-        <View style={styles.actions}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.cancelBtn,
-              pressed && {
-                opacity: 0.6,
-                transform: [
-                  {
-                    scale: 0.98,
-                  },
-                ],
-              },
-            ]}
-            onPress={onClose}
-          >
-            <Text style={styles.cancelText}>Cancel</Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.confirmBtn,
-              pressed && {
-                opacity: 0.85,
-                transform: [
-                  {
-                    scale: 0.98,
-                  },
-                ],
-              },
-            ]}
-            onPress={handleConfirm}
-          >
-            <Text style={styles.confirmText}>{initialTimestamp ? 'Save' : 'Log'}</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      <Modal
-        visible={calendarVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setCalendarVisible(false)}
-      >
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <View style={styles.calendarOverlay}>
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={() => setCalendarVisible(false)}
-          />
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setOpen(false)} />
           <View style={styles.calendarPopup}>
             <Calendar
-              maxDate={todayStr}
+              maxDate={maxDate}
               current={selectedDate}
               onDayPress={day => {
-                setSelectedDate(day.dateString);
-                setCalendarVisible(false);
+                onSelect(day.dateString);
+                setOpen(false);
               }}
-              markedDates={{
-                [selectedDate]: {
-                  selected: true,
-                  selectedColor: '#fff',
-                  selectedTextColor: '#000',
-                },
-              }}
+              markedDates={{ [selectedDate]: { selected: true, selectedColor: '#fff', selectedTextColor: '#000' } }}
               theme={{
                 calendarBackground: '#2a2a2a',
                 dayTextColor: '#fff',
@@ -303,15 +145,67 @@ export function BehaviorLogModal({ behavior, visible, logId, initialTimestamp, o
           </View>
         </View>
       </Modal>
-    </Modal>
+    </>
+  );
+}
+
+interface TimePickerProps {
+  hour: number;
+  minute: number;
+  maxHour: number;
+  maxMinute: number;
+  wheelKey: number;
+  onHourChange: (h: number) => void;
+  onMinuteChange: (m: number) => void;
+}
+
+function TimePicker({ hour, minute, maxHour, maxMinute, wheelKey, onHourChange, onMinuteChange }: TimePickerProps) {
+  const hourValues = ALL_HOURS.slice(0, maxHour + 1);
+  const minuteValues = ALL_MINUTES.slice(0, maxMinute + 1);
+
+  return (
+    <>
+      <Text style={styles.sectionLabel}>Time</Text>
+      <View style={styles.wheels}>
+        <NumberWheel
+          key={`hour-${wheelKey}-${maxHour}`}
+          values={hourValues}
+          initialIndex={Math.min(hour, maxHour)}
+          onChange={onHourChange}
+        />
+        <Text style={styles.colon}>:</Text>
+        <NumberWheel
+          key={`min-${wheelKey}-${maxMinute}`}
+          values={minuteValues}
+          initialIndex={Math.min(minute, maxMinute)}
+          onChange={onMinuteChange}
+        />
+      </View>
+    </>
+  );
+}
+
+interface ActionButtonsProps {
+  confirmLabel: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}
+
+function ActionButtons({ confirmLabel, onCancel, onConfirm }: ActionButtonsProps) {
+  return (
+    <View style={styles.actions}>
+      <Pressable style={({ pressed }) => [styles.cancelBtn, pressed && pressedStyle(0.6)]} onPress={onCancel}>
+        <Text style={styles.cancelText}>Cancel</Text>
+      </Pressable>
+      <Pressable style={({ pressed }) => [styles.confirmBtn, pressed && pressedStyle(0.85)]} onPress={onConfirm}>
+        <Text style={styles.confirmText}>{confirmLabel}</Text>
+      </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
   sheet: {
     backgroundColor: '#1e1e1e',
     borderTopLeftRadius: 24,
@@ -320,13 +214,7 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 40,
   },
-  title: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
+  title: { color: '#fff', fontSize: 20, fontWeight: '600', marginBottom: 20, textAlign: 'center' },
   sectionLabel: {
     color: '#aaa',
     fontSize: 12,
@@ -345,11 +233,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginBottom: 20,
   },
-  dateFieldText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-  },
+  dateFieldText: { color: '#fff', fontSize: 16, fontWeight: '500' },
   calendarOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -357,52 +241,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
   },
-  calendarPopup: {
-    width: '100%',
-    backgroundColor: '#2a2a2a',
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  wheels: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    gap: 8,
-  },
-  colon: {
-    color: '#fff',
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  cancelBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#2a2a2a',
-    alignItems: 'center',
-  },
-  cancelText: {
-    color: '#aaa',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  confirmBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-  },
-  confirmText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  calendarPopup: { width: '100%', backgroundColor: '#2a2a2a', borderRadius: 16, overflow: 'hidden' },
+  wheels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 16, gap: 8 },
+  colon: { color: '#fff', fontSize: 28, fontWeight: '700', marginBottom: 4 },
+  actions: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  cancelBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#2a2a2a', alignItems: 'center' },
+  cancelText: { color: '#aaa', fontSize: 16, fontWeight: '600' },
+  confirmBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center' },
+  confirmText: { color: '#000', fontSize: 16, fontWeight: '700' },
 });
