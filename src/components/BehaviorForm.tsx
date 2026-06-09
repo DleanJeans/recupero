@@ -62,6 +62,16 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
     setCooldownUnit(behavior.cooldownUnit);
   }, [behavior]);
 
+  const hasChanges = isEdit && behavior && (
+    name.trim() !== behavior.name ||
+    icon.trim() !== iconFromStore(behavior.icon) ||
+    categoryId !== behavior.categoryId ||
+    isPrivate !== (behavior.private ?? false) ||
+    cooldownMinutes !== (behavior.cooldownMinutes || 0) ||
+    cooldownType !== (behavior.cooldownType || 'rest') ||
+    cooldownUnit !== behavior.cooldownUnit
+  );
+
   const handleSave = () => {
     const { addBehavior, updateBehavior } = useBehaviorStore.getState();
     const trimmed = name.trim();
@@ -175,7 +185,7 @@ export function BehaviorForm({ behavior, onClose, defaultCategoryId }: Props) {
           onCancel={onClose}
           onSubmit={handleSave}
           submitLabel={isEdit ? 'Save' : 'Add'}
-          disabled={!isEdit && (!name.trim() || !icon.trim())}
+          disabled={isEdit ? !hasChanges : !name.trim() || !icon.trim()}
         />
       </View>
     </KeyboardAvoidingView>
