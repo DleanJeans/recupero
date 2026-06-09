@@ -9,7 +9,9 @@ import { BehaviorCard } from '../components/BehaviorCard';
 import { BehaviorForm } from '../components/BehaviorForm';
 import { Button } from '../components/Button';
 import { CategoryFilter } from '../components/CategoryFilter';
+import { CategoryXpBar } from '../components/CategoryXpBar';
 import { Text } from '../components/Text';
+import { TypeXpBar } from '../components/TypeXpBar';
 import { useBackGuard } from '../hooks/useBackGuard';
 import { useBehaviorStore } from '../store/behaviorStore';
 import { useSettingsStore } from '../store/settingsStore';
@@ -21,7 +23,7 @@ import { Colors } from '../utils/colors';
 export function HomeScreen() {
   useBackGuard();
   const { behaviors, categories } = useBehaviorStore();
-  const hidePrivate = useSettingsStore((s) => s.hidePrivate);
+  const hidePrivate = useSettingsStore(s => s.hidePrivate);
   const [showAddButton, setShowAddButton] = useState(true);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
@@ -34,8 +36,8 @@ export function HomeScreen() {
 
   const filteredBehaviors = useMemo(() => {
     let result = behaviors;
-    if (hidePrivate) result = result.filter((b) => !b.private);
-    if (selectedCategoryId !== null) result = result.filter((b) => b.categoryId === selectedCategoryId);
+    if (hidePrivate) result = result.filter(b => !b.private);
+    if (selectedCategoryId !== null) result = result.filter(b => b.categoryId === selectedCategoryId);
     return result;
   }, [behaviors, selectedCategoryId, hidePrivate]);
 
@@ -43,10 +45,14 @@ export function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <Title />
 
+      <TypeXpBar />
+
       <CategoryFilter
         selectedCategoryId={selectedCategoryId}
         onSelectCategory={setSelectedCategoryId}
       />
+
+      <CategoryXpBar selectedCategoryId={selectedCategoryId} />
 
       <BehaviorList
         behaviors={filteredBehaviors}
