@@ -5,6 +5,7 @@ import React from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ConfettiOverlay } from './src/components/ConfettiOverlay';
 import { useAppFonts } from './src/hooks/useAppFonts';
 import { BehaviorDetailsScreen } from './src/screens/BehaviorDetailsScreen';
 import { BehaviorFormScreen } from './src/screens/BehaviorFormScreen';
@@ -73,6 +74,7 @@ export default function App() {
               />
             </Stack.Navigator>
           </NavigationContainer>
+          <ConfettiOverlay />
         </SafeAreaProvider>
       </KeyboardProvider>
     </GestureHandlerRootView>
