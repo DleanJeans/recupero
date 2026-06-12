@@ -6,7 +6,6 @@ import { SectionList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AddBehaviorButton } from '../components/AddBehaviorButton';
 import { BehaviorCard } from '../components/BehaviorCard';
-import { BehaviorForm } from '../components/BehaviorForm';
 import { Button } from '../components/Button';
 import { CategoryFilter } from '../components/CategoryFilter';
 import { CategoryXpBar } from '../components/CategoryXpBar';
@@ -23,9 +22,9 @@ import { Colors } from '../utils/colors';
 
 export function HomeScreen() {
   useBackGuard();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { behaviors, categories } = useBehaviorStore();
   const hidePrivate = useSettingsStore(s => s.hidePrivate);
-  const [showAddButton, setShowAddButton] = useState(true);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
   // Reset selection if the selected category no longer exists
@@ -65,14 +64,9 @@ export function HomeScreen() {
         selectedCategoryId={selectedCategoryId}
       />
 
-      {showAddButton ? (
-        <AddBehaviorButton onPress={() => setShowAddButton(false)} />
-      ) : (
-        <BehaviorForm
-          defaultCategoryId={selectedCategoryId ?? undefined}
-          onClose={() => setShowAddButton(true)}
-        />
-      )}
+      <AddBehaviorButton
+        onPress={() => navigation.navigate('BehaviorForm', { defaultCategoryId: selectedCategoryId ?? undefined })}
+      />
     </SafeAreaView>
   );
 }

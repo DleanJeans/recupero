@@ -1,41 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
-import { type RouteProp, useRoute } from '@react-navigation/native';
-import React, { createContext, useContext, useMemo, useState } from 'react';
-import { Modal, Pressable, SectionList, StyleSheet, View } from 'react-native';
+import type { RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import React, { useMemo } from 'react';
+import { Pressable, SectionList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../components/BackButton';
-import { BehaviorForm } from '../components/BehaviorForm';
-import { BehaviorIcon } from '../components/BehaviorIcon';
 import { BehaviorLogItem } from '../components/BehaviorLogItem';
-import { BehaviorLogModal } from '../components/BehaviorLogModal';
-import { CooldownLabel } from '../components/CooldownLabel';
+import { BehaviorTitle } from '../components/BehaviorTitle';
 import { DistanceConnector } from '../components/DistanceConnector';
-import { ScreenTitle } from '../components/ScreenTitle';
 import { Text } from '../components/Text';
-import { XpBar } from '../components/XpBar';
 import { useBehaviorStore } from '../store/behaviorStore';
-import type { BehaviorEntry, LogEntry } from '../types/behavior';
+import type { BehaviorEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
 import { groupLogsByRecency } from '../utils/behaviorUtils';
 import { Colors } from '../utils/colors';
-
-interface BehaviorDetailsContextValues {
-  behavior: BehaviorEntry;
-  showEditModal: boolean;
-  openEditModal: () => void;
-  closeEditModal: () => void;
-  editingLog: LogEntry | null;
-  startEditingLog: (log: LogEntry) => void;
-  clearEditingLog: () => void;
-}
-
-const BehaviorDetailsContext = createContext<BehaviorDetailsContextValues | null>(null);
-
-function useBehaviorDetails(): BehaviorDetailsContextValues {
-  const ctx = useContext(BehaviorDetailsContext);
-  if (!ctx) throw new Error('useBehaviorDetails must be used within BehaviorDetailsScreen');
-  return ctx;
-}
 
 type BehaviorDetailsRouteProp = RouteProp<RootStackParamList, 'BehaviorDetails'>;
 export function BehaviorDetailsScreen() {
@@ -53,69 +32,23 @@ export function BehaviorDetailsScreen() {
     );
   }
 
-  const [editingLog, setEditingLog] = useState<LogEntry | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-
-  const context = useMemo<BehaviorDetailsContextValues>(
-    () => ({
-      behavior,
-      showEditModal,
-      openEditModal: () => setShowEditModal(true),
-      closeEditModal: () => setShowEditModal(false),
-      editingLog,
-      startEditingLog: setEditingLog,
-      clearEditingLog: () => setEditingLog(null),
-    }),
-    [behavior, showEditModal, editingLog, setEditingLog, behaviorId],
-  );
-
   return (
-    <BehaviorDetailsContext.Provider value={context}>
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <BackButton />
-          <BehaviorTitle />
-          <EditButton />
-        </View>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <BackButton />
+        <BehaviorTitle behavior={behavior} />
+        <EditButton behaviorId={behaviorId} />
+      </View>
 
-        <BehaviorLogList />
-        <EditLogModal />
-        <EditBehaviorModal />
-      </SafeAreaView>
-    </BehaviorDetailsContext.Provider>
+      <BehaviorLogList behavior={behavior} />
+    </SafeAreaView>
   );
 }
 
 // #region Header components
 
-function BehaviorTitle() {
-  const { behavior } = useBehaviorDetails();
-  const color = Colors.type[behavior.type] ?? Colors.type.neutral;
-
-  return (
-    <View style={styles.titleContainer}>
-      <View style={styles.titleRow}>
-        <ScreenTitle>
-          <BehaviorIcon
-            behavior={behavior}
-            size={24}
-          />{' '}
-          {behavior.name}
-        </ScreenTitle>
-        <CooldownLabel behavior={behavior} />
-      </View>
-      <View style={styles.xpBarWrapper}>
-        <XpBar
-          logCount={behavior.logs.length}
-          color={color}
-        />
-      </View>
-    </View>
-  );
-}
-
-function EditButton() {
-  const { openEditModal } = useBehaviorDetails();
+function EditButton({ behaviorId }: { behaviorId: string }) {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
     <Pressable
@@ -125,7 +58,7 @@ function EditButton() {
           opacity: 0.5,
         },
       ]}
-      onPress={openEditModal}
+      onPress={() => navigation.navigate('BehaviorForm', { behaviorId })}
     >
       <Ionicons
         name="create-outline"
@@ -139,8 +72,8 @@ function EditButton() {
 
 // #region List component
 
-function BehaviorLogList() {
-  const { behavior, startEditingLog } = useBehaviorDetails();
+function BehaviorLogList({ behavior }: { behavior: BehaviorEntry }) {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const logs = behavior.logs ?? [];
   const sections = useMemo(() => groupLogsByRecency(logs), [logs]);
@@ -160,7 +93,14 @@ function BehaviorLogList() {
           <BehaviorLogItem
             log={item}
             behaviorId={behavior.id}
-            onEdit={() => startEditingLog(item)}
+            onEdit={() =>
+              navigation.navigate('BehaviorLog', {
+                behaviorId: behavior.id,
+                logId: item.id,
+                initialTimestamp: item.timestamp,
+                initialNotes: (item.metadata?.notes as string | undefined) ?? '',
+              })
+            }
           />
         </>
       )}
@@ -188,48 +128,6 @@ function BehaviorLogList() {
 }
 // #endregion
 
-// #region Modal components
-
-function EditLogModal() {
-  const { behavior, editingLog, clearEditingLog } = useBehaviorDetails();
-
-  return (
-    <BehaviorLogModal
-      behavior={behavior}
-      visible={editingLog != null}
-      logId={editingLog?.id}
-      initialTimestamp={editingLog?.timestamp}
-      initialNotes={(editingLog?.metadata?.notes as string) ?? ''}
-      onClose={clearEditingLog}
-    />
-  );
-}
-
-function EditBehaviorModal() {
-  const { showEditModal, behavior, closeEditModal } = useBehaviorDetails();
-
-  return (
-    <Modal
-      visible={showEditModal}
-      transparent
-      animationType="slide"
-      onRequestClose={closeEditModal}
-    >
-      <View style={styles.editModalOverlay}>
-        <Pressable
-          style={styles.editModalBackdrop}
-          onPress={closeEditModal}
-        />
-        <BehaviorForm
-          behavior={behavior}
-          onClose={closeEditModal}
-        />
-      </View>
-    </Modal>
-  );
-}
-// #endregion
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -241,18 +139,6 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
 
-  titleContainer: {
-    flex: 1,
-    paddingRight: 4,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  xpBarWrapper: {
-    marginHorizontal: 12,
-  },
   headerTitle: {
     color: Colors.text.primary,
     fontSize: 20,
@@ -260,15 +146,6 @@ const styles = StyleSheet.create({
   },
   editBehaviorBtn: {
     padding: 8,
-  },
-  editModalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    marginBottom: 15,
-  },
-  editModalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
   },
   emptyContainer: {
     flex: 1,

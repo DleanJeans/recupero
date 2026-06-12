@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
+    "format:changed": "biome format --write $(git diff --name-only HEAD --diff-filter=ACMR; git ls-files --others --exclude-standard | grep -E '\\.(ts|tsx|json)$')",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",

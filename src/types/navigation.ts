@@ -4,5 +4,15 @@ export type RootStackParamList = {
   BehaviorDetails: {
     behaviorId: string;
   };
+  BehaviorLog: {
+    behaviorId: string;
+    logId?: string;
+    initialTimestamp?: number;
+    initialNotes?: string;
+  };
+  BehaviorForm: {
+    behaviorId?: string;
+    defaultCategoryId?: string;
+  };
   Settings: undefined;
 };

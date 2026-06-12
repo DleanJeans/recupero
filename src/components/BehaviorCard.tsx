@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
@@ -11,9 +11,7 @@ import { getBehaviorTypeColor } from '../utils/behaviorTypeUtils';
 import { Colors } from '../utils/colors';
 import { getCooldownColor } from '../utils/cooldownUtils';
 import { formatElapsedNumeric } from '../utils/timeUtils';
-import { BehaviorForm } from './BehaviorForm';
 import { BehaviorIcon } from './BehaviorIcon';
-import { BehaviorLogModal } from './BehaviorLogModal';
 import { Button } from './Button';
 import { CooldownLabel } from './CooldownLabel';
 import { Text } from './Text';
@@ -30,8 +28,6 @@ export function BehaviorCard({ behavior, showCategory }: Props) {
   const { removeBehavior } = useBehaviorStore();
   const swipeableRef = useRef<Swipeable>(null);
   const [, setTick] = useState(0);
-  const [logModalVisible, setLogModalVisible] = useState(false);
-  const [editModalVisible, setEditModalVisible] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 60000);
@@ -55,7 +51,7 @@ export function BehaviorCard({ behavior, showCategory }: Props) {
   };
 
   const handleLongPress = () => {
-    setEditModalVisible(true);
+    navigation.navigate('BehaviorForm', { behaviorId: behavior.id });
   };
 
   return (
@@ -66,28 +62,27 @@ export function BehaviorCard({ behavior, showCategory }: Props) {
         overshootLeft={false}
       >
         <View style={styles.card}>
-          <Pressable style={styles.content} onPress={handlePress} onLongPress={handleLongPress}>
-            <BehaviorIcon behavior={behavior} size={32} />
-            <BehaviorInfo behavior={behavior} showCategory={showCategory} />
+          <Pressable
+            style={styles.content}
+            onPress={handlePress}
+            onLongPress={handleLongPress}
+          >
+            <BehaviorIcon
+              behavior={behavior}
+              size={32}
+            />
+            <BehaviorInfo
+              behavior={behavior}
+              showCategory={showCategory}
+            />
           </Pressable>
 
-          <LogButton behavior={behavior} onPress={() => setLogModalVisible(true)} />
+          <LogButton
+            behavior={behavior}
+            onPress={() => navigation.navigate('BehaviorLog', { behaviorId: behavior.id })}
+          />
         </View>
       </Swipeable>
-
-      <BehaviorLogModal behavior={behavior} visible={logModalVisible} onClose={() => setLogModalVisible(false)} />
-
-      <Modal
-        visible={editModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setEditModalVisible(false)}
-      >
-        <View style={styles.editModalOverlay}>
-          <Pressable style={styles.editModalBackdrop} onPress={() => setEditModalVisible(false)} />
-          <BehaviorForm behavior={behavior} onClose={() => setEditModalVisible(false)} />
-        </View>
-      </Modal>
     </>
   );
 }
@@ -123,7 +118,10 @@ function BehaviorInfo({ behavior, showCategory }: BehaviorInfoProps) {
         <BehaviorElapsed behavior={behavior} />
         <CooldownLabel behavior={behavior} />
       </View>
-      <XpBar logCount={behavior.logs.length} color={getBehaviorTypeColor(behavior.type)} />
+      <XpBar
+        logCount={behavior.logs.length}
+        color={getBehaviorTypeColor(behavior.type)}
+      />
     </View>
   );
 }
@@ -154,8 +152,17 @@ interface LogButtonProps {
 }
 function LogButton({ behavior, onPress }: LogButtonProps) {
   return (
-    <Button variant="icon" onPress={onPress} accessibilityLabel={`Log ${behavior.name}`} style={styles.logBtn}>
-      <Ionicons name="add-circle-outline" size={28} color={Colors.text.secondary} />
+    <Button
+      variant="icon"
+      onPress={onPress}
+      accessibilityLabel={`Log ${behavior.name}`}
+      style={styles.logBtn}
+    >
+      <Ionicons
+        name="add-circle-outline"
+        size={28}
+        color={Colors.text.secondary}
+      />
     </Button>
   );
 }
@@ -165,8 +172,16 @@ interface SwipeDeleteProps {
 }
 function SwipeDelete({ onRemove }: SwipeDeleteProps) {
   return (
-    <Button variant="danger" onPress={onRemove} style={styles.deleteButton}>
-      <Ionicons name="trash" size={24} color={Colors.text.primary} />
+    <Button
+      variant="danger"
+      onPress={onRemove}
+      style={styles.deleteButton}
+    >
+      <Ionicons
+        name="trash"
+        size={24}
+        color={Colors.text.primary}
+      />
       <Text style={styles.deleteButtonText}>Delete</Text>
     </Button>
   );
@@ -235,14 +250,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     marginTop: 4,
-  },
-  editModalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    marginBottom: 15,
-  },
-  editModalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
   },
 });
