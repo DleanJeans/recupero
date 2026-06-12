@@ -12,6 +12,7 @@ import { CooldownLabel } from '../components/CooldownLabel';
 import { DistanceConnector } from '../components/DistanceConnector';
 import { ScreenTitle } from '../components/ScreenTitle';
 import { Text } from '../components/Text';
+import { XpBar } from '../components/XpBar';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry, LogEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
@@ -89,17 +90,26 @@ export function BehaviorDetailsScreen() {
 
 function BehaviorTitle() {
   const { behavior } = useBehaviorDetails();
+  const color = Colors.type[behavior.type] ?? Colors.type.neutral;
 
   return (
     <View style={styles.titleContainer}>
-      <ScreenTitle>
-        <BehaviorIcon
-          behavior={behavior}
-          size={24}
-        />{' '}
-        {behavior.name}
-      </ScreenTitle>
-      <CooldownLabel behavior={behavior} />
+      <View style={styles.titleRow}>
+        <ScreenTitle>
+          <BehaviorIcon
+            behavior={behavior}
+            size={24}
+          />{' '}
+          {behavior.name}
+        </ScreenTitle>
+        <CooldownLabel behavior={behavior} />
+      </View>
+      <View style={styles.xpBarWrapper}>
+        <XpBar
+          logCount={behavior.logs.length}
+          color={color}
+        />
+      </View>
     </View>
   );
 }
@@ -233,9 +243,15 @@ const styles = StyleSheet.create({
 
   titleContainer: {
     flex: 1,
+    paddingRight: 4,
+  },
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  xpBarWrapper: {
+    marginHorizontal: 12,
   },
   headerTitle: {
     color: Colors.text.primary,
