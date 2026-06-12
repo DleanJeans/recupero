@@ -26,6 +26,8 @@ export function HomeScreen() {
   const { behaviors, categories } = useBehaviorStore();
   const hidePrivate = useSettingsStore(s => s.hidePrivate);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Reset selection if the selected category no longer exists
   useEffect(() => {
@@ -38,8 +40,12 @@ export function HomeScreen() {
     let result = behaviors;
     if (hidePrivate) result = result.filter(b => !b.private);
     if (selectedCategoryId !== null) result = result.filter(b => b.categoryId === selectedCategoryId);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(b => b.name.toLowerCase().includes(q));
+    }
     return result;
-  }, [behaviors, selectedCategoryId, hidePrivate]);
+  }, [behaviors, selectedCategoryId, hidePrivate, searchQuery]);
 
   const [showXp, setShowXp] = useState(true);
 
@@ -48,20 +54,41 @@ export function HomeScreen() {
       <HomeHeader
         showXp={showXp}
         onToggleXp={() => setShowXp(v => !v)}
+        isSearching={isSearching}
+        onSearchPress={() => {
+          if (isSearching) {
+            setSearchQuery('');
+            setIsSearching(false);
+          } else {
+            setIsSearching(true);
+          }
+        }}
       />
 
-      {showXp && <TypeXpBar selectedCategoryId={selectedCategoryId} />}
+      {isSearching ? (
+        <HomeSearchBar
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          onClose={() => {
+            setSearchQuery('');
+            setIsSearching(false);
+          }}
+        />
+      ) : (
+        showXp && <TypeXpBar selectedCategoryId={selectedCategoryId} />
+      )}
 
       <CategoryFilter
         selectedCategoryId={selectedCategoryId}
         onSelectCategory={setSelectedCategoryId}
       />
 
-      {showXp && <CategoryXpBar selectedCategoryId={selectedCategoryId} />}
+      {isSearching ? null : showXp && <CategoryXpBar selectedCategoryId={selectedCategoryId} />}
 
       <BehaviorList
         behaviors={filteredBehaviors}
         selectedCategoryId={selectedCategoryId}
+        searchQuery={isSearching ? searchQuery : undefined}
       />
 
       <AddBehaviorButton
@@ -74,8 +101,10 @@ export function HomeScreen() {
 interface HomeHeaderProps {
   showXp: boolean;
   onToggleXp: () => void;
+  isSearching: boolean;
+  onSearchPress: () => void;
 }
-function HomeHeader({ showXp, onToggleXp }: HomeHeaderProps) {
+function HomeHeader({ showXp, onToggleXp, isSearching, onSearchPress }: HomeHeaderProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
@@ -96,6 +125,11 @@ function HomeHeader({ showXp, onToggleXp }: HomeHeaderProps) {
           name="analytics-outline"
           onPress={() => navigation.navigate('Timeline')}
           accessibilityLabel="Timeline"
+        />
+        <HeaderIcon
+          name={isSearching ? 'search' : 'search-outline'}
+          onPress={onSearchPress}
+          accessibilityLabel={isSearching ? 'Close search' : 'Search'}
         />
         <HeaderIcon
           name="settings-outline"
@@ -132,11 +166,14 @@ function HeaderIcon({ icon, name, onPress, accessibilityLabel }: HeaderIconProps
   );
 }
 
+import { HomeSearchBar } from '../components/HomeSearchBar';
+
 interface BehaviorListProps {
   behaviors: BehaviorEntry[];
   selectedCategoryId: string | null;
+  searchQuery?: string;
 }
-function BehaviorList({ behaviors, selectedCategoryId }: BehaviorListProps) {
+function BehaviorList({ behaviors, selectedCategoryId, searchQuery }: BehaviorListProps) {
   const sections = useMemo(() => groupBehaviorsByRecency(behaviors), [behaviors]);
 
   return (
@@ -157,9 +194,11 @@ function BehaviorList({ behaviors, selectedCategoryId }: BehaviorListProps) {
       )}
       ListEmptyComponent={
         <Text style={styles.empty}>
-          {selectedCategoryId !== null
-            ? 'No behaviors in this category.\nTap + to add one.'
-            : 'No behaviors yet.\nAdd your first one.'}
+          {searchQuery
+            ? `No behaviors matching "${searchQuery}".`
+            : selectedCategoryId !== null
+              ? 'No behaviors in this category.\nTap + to add one.'
+              : 'No behaviors yet.\nAdd your first one.'}
         </Text>
       }
       contentContainerStyle={behaviors.length === 0 && styles.emptyContainer}
