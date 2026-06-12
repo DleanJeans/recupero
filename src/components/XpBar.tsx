@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Colors } from '../utils/colors';
-import { getLevel, getLevelProgress, getXp, XP_PER_LEVEL } from '../utils/xpUtils';
+import { getLevel, getLevelProgress, getLevelXp, getXp, getXpToNextLevel } from '../utils/xpUtils';
 import { Text } from './Text';
 
 interface XpBarProps {
@@ -12,6 +12,8 @@ export function XpBar({ logCount, color = Colors.type.neutral }: XpBarProps) {
   const xp = getXp(logCount);
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
+  const curXp = getLevelXp(xp);
+  const nextXp = getXpToNextLevel(xp);
 
   return (
     <View style={styles.row}>
@@ -20,7 +22,7 @@ export function XpBar({ logCount, color = Colors.type.neutral }: XpBarProps) {
         <View style={[styles.fill, { width: `${progress * 100}%`, backgroundColor: color }]} />
       </View>
       <Text style={styles.value}>
-        {xp % XP_PER_LEVEL}/{XP_PER_LEVEL}
+        {curXp}/{curXp + nextXp}
       </Text>
     </View>
   );
