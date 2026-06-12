@@ -1,4 +1,6 @@
 export const Colors = {
+  transparent: 'trasparent',
+
   bg: {
     primary: '#121212',
     card: '#1e1e1e',
@@ -42,7 +44,7 @@ export const Colors = {
     error: '#3a1a1a',
   },
 
-    // ── Behavior Types ──
+  // ── Behavior Types ──
   type: {
     undesirable: '#f87171',
     neutral: '#fbbf24',

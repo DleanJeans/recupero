@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   addButton: { width: 28, height: 28, borderRadius: 6, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.bg.elevated },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   scrollContent: { paddingHorizontal: 16, gap: 8, paddingVertical: 4 },
-  chip: { backgroundColor: Colors.bg.card, paddingHorizontal: 10, paddingVertical: 6, gap: 4 },
+  chip: { backgroundColor: 'transparent', paddingHorizontal: 10, paddingVertical: 6, gap: 4 },
   horizontalChip: {
     flexDirection: 'row',
     alignItems: 'center',
