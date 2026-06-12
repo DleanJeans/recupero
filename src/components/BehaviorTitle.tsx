@@ -13,9 +13,11 @@ interface Props {
   titleOverride?: string;
   /** Icon size. Defaults to 24. */
   iconSize?: number;
+  /** Animate XP bar when logCount changes. */
+  animate?: boolean;
 }
 
-export function BehaviorTitle({ behavior, titleOverride, iconSize = 24 }: Props) {
+export function BehaviorTitle({ behavior, titleOverride, iconSize = 24, animate }: Props) {
   const color = Colors.type[behavior.type] ?? Colors.type.neutral;
   const title = titleOverride ?? behavior.name;
 
@@ -35,6 +37,7 @@ export function BehaviorTitle({ behavior, titleOverride, iconSize = 24 }: Props)
         <XpBar
           logCount={behavior.logs.length}
           color={color}
+          animate={animate}
         />
       </View>
     </View>

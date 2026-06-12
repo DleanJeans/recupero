@@ -72,10 +72,13 @@ export function BehaviorLogScreen() {
     const ts = new Date(y, m - 1, d, hour, minute, 0, 0).getTime();
     const metadata = notes.trim() ? { notes: notes.trim() } : undefined;
     if (logId) {
+      // Edit: no logCount change, go back immediately
       updateLog(behaviorId, logId, ts, metadata);
-    } else {
-      logBehavior(behaviorId, ts, metadata);
+      navigation.goBack();
+      return;
     }
+
+    logBehavior(behaviorId, ts, metadata);
     navigation.goBack();
   }, [selectedDate, hour, minute, notes, logId, behaviorId, logBehavior, updateLog, navigation]);
 

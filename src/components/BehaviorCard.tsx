@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
@@ -28,6 +28,21 @@ export function BehaviorCard({ behavior, showCategory }: Props) {
   const { removeBehavior } = useBehaviorStore();
   const swipeableRef = useRef<Swipeable>(null);
   const [, setTick] = useState(0);
+
+  const isFocused = useIsFocused();
+  const [animate, setAnimate] = useState(false);
+  const prevLogCount = useRef(behavior.logs.length);
+
+  useEffect(() => {
+    if (isFocused && behavior.logs.length > prevLogCount.current) {
+      prevLogCount.current = behavior.logs.length;
+      const timer = setTimeout(() => setAnimate(true), 800);
+      return () => clearTimeout(timer);
+    }
+    if (isFocused) {
+      prevLogCount.current = behavior.logs.length;
+    }
+  }, [isFocused, behavior.logs.length]);
 
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 60000);
@@ -74,6 +89,7 @@ export function BehaviorCard({ behavior, showCategory }: Props) {
             <BehaviorInfo
               behavior={behavior}
               showCategory={showCategory}
+              animate={animate}
             />
           </Pressable>
 
@@ -106,8 +122,9 @@ function CategoryEmoji({ behavior }: CategoryEmojiProps) {
 interface BehaviorInfoProps {
   behavior: BehaviorEntry;
   showCategory?: boolean;
+  animate?: boolean;
 }
-function BehaviorInfo({ behavior, showCategory }: BehaviorInfoProps) {
+function BehaviorInfo({ behavior, showCategory, animate }: BehaviorInfoProps) {
   return (
     <View style={styles.info}>
       <View style={styles.nameRow}>
@@ -121,6 +138,7 @@ function BehaviorInfo({ behavior, showCategory }: BehaviorInfoProps) {
       <XpBar
         logCount={behavior.logs.length}
         color={getBehaviorTypeColor(behavior.type)}
+        animate={animate}
       />
     </View>
   );
