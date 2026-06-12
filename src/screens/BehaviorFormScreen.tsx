@@ -43,6 +43,7 @@ export function BehaviorFormScreen() {
 
   const isEdit = behavior != null;
   const nameRef = useRef<import('react-native').TextInput>(null);
+  const savedRef = useRef<boolean>(false);
 
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('');
@@ -86,6 +87,8 @@ export function BehaviorFormScreen() {
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', e => {
+      // Skip the guard when navigation is triggered by a successful save.
+      if (savedRef.current) return;
       if (!isDirty) return;
       e.preventDefault();
       Alert.alert('Discard changes?', 'Your changes will not be saved.', [
@@ -127,6 +130,7 @@ export function BehaviorFormScreen() {
         isPrivate,
       );
     }
+    savedRef.current = true;
     navigation.goBack();
   };
 
