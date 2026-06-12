@@ -3,11 +3,12 @@ import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo } from 'react';
-import { Pressable, SectionList, StyleSheet, View } from 'react-native';
+import { SectionList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../components/BackButton';
 import { BehaviorLogItem } from '../components/BehaviorLogItem';
 import { BehaviorTitle } from '../components/BehaviorTitle';
+import { Button } from '../components/Button';
 import { DistanceConnector } from '../components/DistanceConnector';
 import { Text } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
@@ -21,6 +22,7 @@ export function BehaviorDetailsScreen() {
   const route = useRoute<BehaviorDetailsRouteProp>();
   const { behaviorId } = route.params;
 
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { behaviors } = useBehaviorStore();
   const behavior = behaviors.find(b => b.id === behaviorId);
 
@@ -37,10 +39,21 @@ export function BehaviorDetailsScreen() {
       <View style={styles.header}>
         <BackButton />
         <BehaviorTitle behavior={behavior} />
-        <EditButton behaviorId={behaviorId} />
       </View>
 
       <BehaviorLogList behavior={behavior} />
+
+      <View style={styles.actions}>
+        <EditButton behaviorId={behaviorId} />
+        <Button
+          variant="primary"
+          size="lg"
+          style={styles.primaryAction}
+          onPress={() => navigation.navigate('BehaviorLog', { behaviorId: behavior.id })}
+        >
+          Log
+        </Button>
+      </View>
     </SafeAreaView>
   );
 }
@@ -51,21 +64,21 @@ function EditButton({ behaviorId }: { behaviorId: string }) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.editBehaviorBtn,
-        pressed && {
-          opacity: 0.5,
-        },
-      ]}
+    <Button
+      variant="secondary"
+      size="lg"
+      style={styles.secondaryAction}
       onPress={() => navigation.navigate('BehaviorForm', { behaviorId })}
     >
-      <Ionicons
-        name="create-outline"
-        size={26}
-        color={Colors.text.light}
-      />
-    </Pressable>
+      <View style={styles.actionIconRow}>
+        <Ionicons
+          name="create-outline"
+          size={18}
+          color={Colors.text.light}
+        />
+        <Text style={styles.actionLabel}>Edit</Text>
+      </View>
+    </Button>
   );
 }
 // #endregion
@@ -121,7 +134,7 @@ function BehaviorLogList({ behavior }: { behavior: BehaviorEntry }) {
           </View>
         );
       }}
-      ListEmptyComponent={<Text style={styles.empty}>No logs yet.{'\n'}Press the + button to log this behavior.</Text>}
+      ListEmptyComponent={<Text style={styles.empty}>No logs yet.{'\n'}Press Log below to record this behavior.</Text>}
       contentContainerStyle={logs.length === 0 && styles.emptyContainer}
     />
   );
@@ -144,8 +157,29 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
   },
-  editBehaviorBtn: {
-    padding: 8,
+  actions: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+    paddingTop: 8,
+  },
+  primaryAction: {
+    flex: 1,
+  },
+  secondaryAction: {
+    flex: 1,
+  },
+  actionIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  actionLabel: {
+    color: Colors.text.light,
+    fontSize: 16,
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,
