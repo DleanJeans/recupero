@@ -124,8 +124,8 @@ function HomeHeader({ showXp, onToggleXp, isSearching, onSearchPress }: HomeHead
         />
         <HeaderIcon
           name="analytics-outline"
-          onPress={() => navigation.navigate('Timeline')}
-          accessibilityLabel="Timeline"
+          onPress={() => navigation.navigate('Day')}
+          accessibilityLabel="Day view"
         />
         <HeaderIcon
           name={isSearching ? 'search' : 'search-outline'}

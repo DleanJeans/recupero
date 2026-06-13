@@ -1,6 +1,6 @@
 export type RootStackParamList = {
   Home: undefined;
-  Timeline: undefined;
+  Day: undefined;
   BehaviorDetails: {
     behaviorId: string;
   };

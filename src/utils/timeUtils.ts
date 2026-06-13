@@ -1,10 +1,16 @@
+import { useSettingsStore } from '../store/settingsStore';
+import { yesterday } from './dateUtils';
+
+export const MS_PER_MINUTE = 60000;
+
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export function formatTime(timestamp: number, hour12?: boolean): string {
+  const resolved = hour12 ?? useSettingsStore.getState().timeFormat === '12h';
   return new Date(timestamp).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
-    hour12: hour12 ?? true,
+    hour12: resolved,
   });
 }
 
@@ -63,9 +69,7 @@ export function formatElapsedText(timestamp: number | null): string {
 
   if (isSameCalendarDay(date, now)) return 'Today';
 
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  if (isSameCalendarDay(date, yesterday)) return 'Yesterday';
+  if (isSameCalendarDay(date, yesterday())) return 'Yesterday';
 
   if (days < 7) return DAY_NAMES[date.getDay()];
 
@@ -118,9 +122,8 @@ export function isOlderThanYesterday(timestamp: number): boolean {
   const now = new Date();
   const date = new Date(timestamp);
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-  return date < yesterday;
+  const y = yesterday(today);
+  return date < y;
 }
 
 export function formatDuration(ms: number): string {

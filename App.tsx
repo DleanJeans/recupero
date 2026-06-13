@@ -10,9 +10,9 @@ import { useAppFonts } from './src/hooks/useAppFonts';
 import { BehaviorDetailsScreen } from './src/screens/BehaviorDetailsScreen';
 import { BehaviorFormScreen } from './src/screens/BehaviorFormScreen';
 import { BehaviorLogScreen } from './src/screens/BehaviorLogScreen';
+import { DayScreen } from './src/screens/DayScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
-import { TimelineScreen } from './src/screens/TimelineScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -21,7 +21,7 @@ const linking = {
   config: {
     screens: {
       Home: 'home',
-      Timeline: 'timeline',
+      Day: 'day',
       BehaviorDetails: 'behavior/:behaviorId',
       BehaviorLog: 'behavior-log/:behaviorId',
       BehaviorForm: 'behavior-form',
@@ -53,8 +53,8 @@ export default function App() {
                 component={HomeScreen}
               />
               <Stack.Screen
-                name="Timeline"
-                component={TimelineScreen}
+                name="Day"
+                component={DayScreen}
               />
               <Stack.Screen
                 name="BehaviorDetails"

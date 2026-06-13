@@ -1,19 +1,18 @@
-import { Ionicons } from '@expo/vector-icons';
 import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Modal, Pressable, StyleSheet, View } from 'react-native';
-import { Calendar } from 'react-native-calendars';
+import { Keyboard, KeyboardAvoidingView, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../../components/BackButton';
 import { BehaviorTitle } from '../../components/BehaviorTitle';
 import { Button } from '../../components/Button';
+import { DatePicker } from '../../components/DatePicker';
 import { Text, TextInput } from '../../components/Text';
 import { useBehaviorStore } from '../../store/behaviorStore';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
-import { formatDateDisplay, toDateString } from '../../utils/dateUtils';
+import { toDateString } from '../../utils/dateUtils';
 import { NumberWheel } from './components/NumberWheel';
 
 const ALL_HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
@@ -158,11 +157,14 @@ export function BehaviorLogScreen() {
         </View>
 
         <View style={styles.body}>
-          <DatePicker
-            selectedDate={selectedDate}
-            maxDate={todayStr}
-            onSelect={setSelectedDate}
-          />
+          <Text style={styles.sectionLabel}>Date</Text>
+          <View style={styles.datePickerWrapper}>
+            <DatePicker
+              selectedDate={selectedDate}
+              maxDate={todayStr}
+              onSelect={setSelectedDate}
+            />
+          </View>
 
           <TimePicker
             hour={hour}
@@ -232,74 +234,6 @@ export function BehaviorLogScreen() {
 }
 
 // #region Sub-components
-
-interface DatePickerProps {
-  selectedDate: string;
-  maxDate: string;
-  onSelect: (dateStr: string) => void;
-}
-
-function DatePicker({ selectedDate, maxDate, onSelect }: DatePickerProps) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <>
-      <Text style={styles.sectionLabel}>Date</Text>
-      <Pressable
-        style={styles.dateField}
-        onPress={() => setOpen(true)}
-      >
-        <Text style={styles.dateFieldText}>{formatDateDisplay(selectedDate)}</Text>
-        <Ionicons
-          name="calendar-outline"
-          size={18}
-          color={Colors.text.light}
-        />
-      </Pressable>
-
-      <Modal
-        visible={open}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setOpen(false)}
-      >
-        <View style={styles.calendarOverlay}>
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={() => setOpen(false)}
-          />
-          <View style={styles.calendarPopup}>
-            <Calendar
-              maxDate={maxDate}
-              current={selectedDate}
-              onDayPress={day => {
-                onSelect(day.dateString);
-                setOpen(false);
-              }}
-              markedDates={{
-                [selectedDate]: {
-                  selected: true,
-                  selectedColor: Colors.text.primary,
-                  selectedTextColor: Colors.bg.black,
-                },
-              }}
-              theme={{
-                calendarBackground: Colors.bg.input,
-                dayTextColor: Colors.text.primary,
-                textDisabledColor: Colors.text.dim,
-                monthTextColor: Colors.text.primary,
-                arrowColor: Colors.text.primary,
-                todayTextColor: Colors.text.light,
-                selectedDayBackgroundColor: Colors.text.primary,
-                selectedDayTextColor: Colors.bg.black,
-              }}
-            />
-          </View>
-        </View>
-      </Modal>
-    </>
-  );
-}
 
 interface TimePickerProps {
   hour: number;
@@ -391,6 +325,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 8,
   },
+  datePickerWrapper: {
+    marginBottom: 20,
+  },
   sectionLabel: {
     color: Colors.text.light,
     fontSize: 12,
@@ -399,25 +336,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     marginBottom: 10,
   },
-  dateField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.bg.input,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 20,
-  },
-  dateFieldText: { color: Colors.text.primary, fontSize: 16, fontWeight: '500' },
-  calendarOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  calendarPopup: { width: '100%', backgroundColor: Colors.bg.input, borderRadius: 16, overflow: 'hidden' },
+
   wheels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 16, gap: 8 },
   colon: { color: Colors.text.primary, fontSize: 28, fontWeight: '700', marginBottom: 4 },
   collapsedTime: {

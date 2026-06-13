@@ -1,4 +1,5 @@
 import type { BehaviorEntry, Category, LogEntry } from '../types/behavior';
+import { toDateString, yesterday } from './dateUtils';
 
 /**
  * Sort behaviors by most recent activity (lastTimestamp descending),
@@ -31,12 +32,9 @@ export function getRecencyGroup(lastTimestamp: number | null): RecencyGroup {
 
   if (days < 1 && date.getDate() === now.getDate()) return 'Today';
 
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
+  const y = yesterday();
   const isYesterday =
-    date.getFullYear() === yesterday.getFullYear() &&
-    date.getMonth() === yesterday.getMonth() &&
-    date.getDate() === yesterday.getDate();
+    date.getFullYear() === y.getFullYear() && date.getMonth() === y.getMonth() && date.getDate() === y.getDate();
   if (isYesterday) return 'Yesterday';
 
   if (days < 7) return 'This Week';
@@ -98,11 +96,49 @@ export function getDailyMetadataTotals(
   return totals;
 }
 
-function toDateString(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+/** Combined metadata totals for ALL logs on a given date, across all categories.
+ *  When the same field label exists in multiple categories, results are prefixed
+ *  with the category name for disambiguation.
+ *  Returns a list of { label, value } pairs sorted by category then field key. */
+export function getAllDailyMetadataTotals(
+  behaviors: BehaviorEntry[],
+  categories: Category[],
+  dateStr: string,
+): { label: string; value: number }[] {
+  const result: { label: string; value: number }[] = [];
+
+  for (const category of categories) {
+    const fields = category.metadataFields ?? [];
+    if (fields.length === 0) continue;
+
+    const categoryBehaviors = behaviors.filter(b => b.categoryId === category.id);
+    const categoryTotals: Record<string, number> = {};
+
+    for (const behavior of categoryBehaviors) {
+      for (const log of behavior.logs) {
+        if (!log.metadata) continue;
+        const logDate = toDateString(new Date(log.timestamp));
+        if (logDate !== dateStr) continue;
+        for (const field of fields) {
+          const val = log.metadata[field.key];
+          if (typeof val === 'number') {
+            categoryTotals[field.key] = (categoryTotals[field.key] ?? 0) + val;
+          }
+        }
+      }
+    }
+
+    for (const field of fields) {
+      const total = categoryTotals[field.key];
+      if (total !== undefined) {
+        // Prefix with category name to disambiguate same-label fields across categories
+        const label = `${category.name} — ${field.label}${field.unit ? ` (${field.unit})` : ''}`;
+        result.push({ label, value: total });
+      }
+    }
+  }
+
+  return result;
 }
 
 export function groupLogsByRecency(logs: LogEntry[]): RecencySection<LogEntry>[] {
