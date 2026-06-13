@@ -42,17 +42,26 @@ export function BehaviorLogScreen() {
   const category = behavior ? categories.find(c => c.id === behavior.categoryId) : undefined;
   const metadataFields = category?.metadataFields ?? [];
 
-  // Load metadata values from existing log when editing
+  // Load metadata values from existing log when editing, or defaults when new
   useEffect(() => {
-    if (!logId) return;
-    const existingLog = behavior?.logs.find(l => l.id === logId);
-    if (!existingLog?.metadata) return;
-    const vals: Record<string, string> = {};
-    for (const field of metadataFields) {
-      const v = existingLog.metadata[field.key];
-      if (v != null) vals[field.key] = String(v);
+    if (logId) {
+      const existingLog = behavior?.logs.find(l => l.id === logId);
+      if (existingLog?.metadata) {
+        const vals: Record<string, string> = {};
+        for (const field of metadataFields) {
+          const v = existingLog.metadata[field.key];
+          if (v != null) vals[field.key] = String(v);
+        }
+        setMetadataValues(vals);
+      }
+    } else if (behavior?.defaultMetadata) {
+      const vals: Record<string, string> = {};
+      for (const field of metadataFields) {
+        const v = behavior.defaultMetadata[field.key];
+        if (v != null) vals[field.key] = String(v);
+      }
+      setMetadataValues(vals);
     }
-    setMetadataValues(vals);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logId]);
 

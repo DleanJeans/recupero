@@ -60,6 +60,7 @@ export function BehaviorFormScreen() {
   const [categoryEmoji, setCategoryEmoji] = useState('');
   const [categoryName, setCategoryName] = useState('');
   const [categoryMetadataFields, setCategoryMetadataFields] = useState<import('../types/behavior').MetadataField[]>([]);
+  const [behaviorDefaultMetadata, setBehaviorDefaultMetadata] = useState<Record<string, string>>({});
 
   const resetCategoryForm = () => {
     setShowCategoryForm(false);
@@ -79,6 +80,9 @@ export function BehaviorFormScreen() {
     setCooldownMinutes(behavior.cooldownMinutes || 0);
     setCooldownType(behavior.cooldownType || 'rest');
     setCooldownUnit(behavior.cooldownUnit);
+    setBehaviorDefaultMetadata(
+      Object.fromEntries(Object.entries(behavior.defaultMetadata ?? {}).map(([k, v]) => [k, String(v)])),
+    );
   }, [behavior]);
 
   const hasChanges =
@@ -117,6 +121,11 @@ export function BehaviorFormScreen() {
     const { addBehavior, updateBehavior } = useBehaviorStore.getState();
     const trimmed = name.trim();
     if (!trimmed) return;
+    const defaultMetadataObj = Object.fromEntries(
+      Object.entries(behaviorDefaultMetadata)
+        .filter(([, v]) => v !== '' && v !== '0')
+        .map(([k, v]) => [k, Number(v)]),
+    );
     if (isEdit && behavior) {
       updateBehavior(behavior.id, {
         name: trimmed,
@@ -127,6 +136,7 @@ export function BehaviorFormScreen() {
         categoryId: categoryId || undefined,
         cooldownUnit: cooldownUnit || undefined,
         private: isPrivate,
+        defaultMetadata: defaultMetadataObj,
       });
     } else {
       addBehavior(
@@ -138,6 +148,7 @@ export function BehaviorFormScreen() {
         categoryId || undefined,
         cooldownUnit || undefined,
         isPrivate,
+        defaultMetadataObj,
       );
     }
     savedRef.current = true;
@@ -271,6 +282,39 @@ export function BehaviorFormScreen() {
               dark: true,
             }}
           />
+          {(() => {
+            const selectedCat = categories.find(c => c.id === categoryId);
+            const fields = selectedCat?.metadataFields;
+            if (!fields?.length) return null;
+            return (
+              <View style={styles.defaultMetaSection}>
+                <Text style={styles.defaultMetaLabel}>Default values</Text>
+                {fields.map(field => (
+                  <View
+                    key={field.key}
+                    style={styles.defaultMetaRow}
+                  >
+                    <Text style={styles.defaultMetaFieldLabel}>
+                      {field.label}
+                      {field.unit ? ` (${field.unit})` : ''}
+                    </Text>
+                    <TextInput
+                      style={styles.defaultMetaInput}
+                      value={behaviorDefaultMetadata[field.key] ?? ''}
+                      onChangeText={v =>
+                        setBehaviorDefaultMetadata(prev => ({ ...prev, [field.key]: v.replace(/[^0-9.]/g, '') }))
+                      }
+                      placeholder="0"
+                      placeholderTextColor={Colors.text.dim}
+                      keyboardType="decimal-pad"
+                      returnKeyType="done"
+                      maxLength={8}
+                    />
+                  </View>
+                ))}
+              </View>
+            );
+          })()}
         </ScrollView>
 
         <View style={styles.actions}>
@@ -425,6 +469,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     paddingTop: 8,
+  },
+  defaultMetaSection: {
+    gap: 6,
+    marginTop: 12,
+  },
+  defaultMetaLabel: {
+    color: Colors.text.light,
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  defaultMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  defaultMetaFieldLabel: {
+    color: Colors.text.muted,
+    fontSize: 13,
+    fontWeight: '500',
+    flex: 1,
+  },
+  defaultMetaInput: {
+    backgroundColor: Colors.bg.input,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    color: Colors.text.primary,
+    fontSize: 14,
+    width: 80,
+    textAlign: 'right',
   },
   primaryAction: { flex: 0, width: '100%' },
 });
