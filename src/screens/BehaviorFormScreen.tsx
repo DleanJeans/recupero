@@ -326,19 +326,19 @@ export function BehaviorFormScreen() {
             );
           })()}
         </ScrollView>
-
-        <View style={styles.actions}>
-          <Button
-            variant="primary"
-            size="lg"
-            style={styles.primaryAction}
-            onPress={handleSave}
-            disabled={isEdit ? !hasChanges : !name.trim() || !icon.trim()}
-          >
-            {isEdit ? 'Save' : 'Add'}
-          </Button>
-        </View>
       </KeyboardAvoidingView>
+
+      <View style={styles.actions}>
+        <Button
+          variant="primary"
+          size="lg"
+          style={styles.primaryAction}
+          onPress={handleSave}
+          disabled={isEdit ? !hasChanges : !name.trim() || !icon.trim()}
+        >
+          {isEdit ? 'Save' : 'Add'}
+        </Button>
+      </View>
     </SafeAreaView>
   );
 }
@@ -476,6 +476,10 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
   },
   actions: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: 16,
     paddingBottom: 16,
     paddingTop: 8,

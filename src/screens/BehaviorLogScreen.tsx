@@ -37,6 +37,7 @@ export function BehaviorLogScreen() {
   const notesRef = useRef<import('react-native').TextInput>(null);
   const [notes, setNotes] = useState(routeNotes ?? '');
   const [notesFocused, setNotesFocused] = useState(false);
+  const [metadataFocused, setMetadataFocused] = useState(false);
   const [metadataValues, setMetadataValues] = useState<Record<string, string>>({});
 
   const category = behavior ? categories.find(c => c.id === behavior.categoryId) : undefined;
@@ -169,7 +170,7 @@ export function BehaviorLogScreen() {
             maxHour={maxHour}
             maxMinute={maxMinute}
             wheelKey={wheelKey}
-            collapsed={notesFocused}
+            collapsed={notesFocused || metadataFocused}
             onHourChange={setHour}
             onMinuteChange={setMinute}
             onExpand={handleExpandTime}
@@ -188,6 +189,8 @@ export function BehaviorLogScreen() {
                 style={styles.metadataInput}
                 value={metadataValues[field.key] ?? ''}
                 onChangeText={v => setMetadataValues(prev => ({ ...prev, [field.key]: v.replace(/[^0-9.]/g, '') }))}
+                onFocus={() => setMetadataFocused(true)}
+                onBlur={() => setMetadataFocused(false)}
                 placeholder="0"
                 placeholderTextColor={Colors.text.dim}
                 keyboardType="decimal-pad"
@@ -212,18 +215,18 @@ export function BehaviorLogScreen() {
             onBlur={() => setNotesFocused(false)}
           />
         </View>
-
-        <View style={styles.actions}>
-          <Button
-            variant="primary"
-            size="lg"
-            style={styles.primaryAction}
-            onPress={handleConfirm}
-          >
-            {isEditing ? 'Save' : 'Log'}
-          </Button>
-        </View>
       </KeyboardAvoidingView>
+
+      <View style={styles.actions}>
+        <Button
+          variant="primary"
+          size="lg"
+          style={styles.primaryAction}
+          onPress={handleConfirm}
+        >
+          {isEditing ? 'Save' : 'Log'}
+        </Button>
+      </View>
     </SafeAreaView>
   );
 }
@@ -458,6 +461,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     lineHeight: 22,
   },
-  actions: { marginTop: 'auto', paddingHorizontal: 24, paddingBottom: 16 },
+  actions: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+    paddingTop: 8,
+  },
   primaryAction: { flex: 0, width: '100%' },
 });
