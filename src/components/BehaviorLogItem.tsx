@@ -60,7 +60,7 @@ export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
       overshootRight={false}
     >
       <Pressable style={styles.logItem} onLongPress={onEdit} delayLongPress={300}>
-        <View style={styles.logContent}>
+        <View style={styles.timeContent}>
           <Text style={styles.dateText}>{formatTime(log.timestamp, timeFormat === '12h')}</Text>
           <Text style={styles.elapsedText}>{formatElapsedNumeric(log.timestamp)}</Text>
         </View>
@@ -86,12 +86,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     overflow: 'hidden',
   },
-  logContent: {
-    flex: 1,
+  timeContent: {
+    flex: 2,
     padding: 16,
   },
   notesContent: {
-    flex: 3,
+    flex: 4,
     padding: 16,
     borderLeftWidth: StyleSheet.hairlineWidth,
     borderLeftColor: Colors.text.faint,
