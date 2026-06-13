@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { RouteProp } from '@react-navigation/native';
 import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo } from 'react';
 import { SectionList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../components/BackButton';
@@ -11,6 +11,7 @@ import { BehaviorTitle } from '../components/BehaviorTitle';
 import { Button } from '../components/Button';
 import { DistanceConnector } from '../components/DistanceConnector';
 import { Text } from '../components/Text';
+import { useXpBarAnimation } from '../hooks/useXpBarAnimation';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
@@ -27,20 +28,7 @@ export function BehaviorDetailsScreen() {
   const behavior = behaviors.find(b => b.id === behaviorId);
 
   const isFocused = useIsFocused();
-  const [animate, setAnimate] = useState(false);
-  const prevLogCount = useRef(behavior?.logs.length ?? 0);
-
-  useEffect(() => {
-    if (!behavior) return;
-    if (isFocused && behavior.logs.length > prevLogCount.current) {
-      prevLogCount.current = behavior.logs.length;
-      const timer = setTimeout(() => setAnimate(true), 800);
-      return () => clearTimeout(timer);
-    }
-    if (isFocused) {
-      prevLogCount.current = behavior.logs.length;
-    }
-  }, [isFocused, behavior]);
+  const animate = useXpBarAnimation(behavior, isFocused);
 
   if (!behavior) {
     return (

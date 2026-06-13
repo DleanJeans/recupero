@@ -4,6 +4,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
+import { useXpBarAnimation } from '../hooks/useXpBarAnimation';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
@@ -30,19 +31,7 @@ export function BehaviorCard({ behavior, showCategory }: Props) {
   const [, setTick] = useState(0);
 
   const isFocused = useIsFocused();
-  const [animate, setAnimate] = useState(false);
-  const prevLogCount = useRef(behavior.logs.length);
-
-  useEffect(() => {
-    if (isFocused && behavior.logs.length > prevLogCount.current) {
-      prevLogCount.current = behavior.logs.length;
-      const timer = setTimeout(() => setAnimate(true), 800);
-      return () => clearTimeout(timer);
-    }
-    if (isFocused) {
-      prevLogCount.current = behavior.logs.length;
-    }
-  }, [isFocused, behavior.logs.length]);
+  const animate = useXpBarAnimation(behavior, isFocused);
 
   useEffect(() => {
     const interval = setInterval(() => setTick(t => t + 1), 60000);
