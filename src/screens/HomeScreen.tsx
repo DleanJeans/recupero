@@ -8,7 +8,6 @@ import { AddBehaviorButton } from '../components/AddBehaviorButton';
 import { BehaviorCard } from '../components/BehaviorCard';
 import { Button } from '../components/Button';
 import { CategoryFilter } from '../components/CategoryFilter';
-import { CategoryMetadataTotals } from '../components/CategoryMetadataTotals';
 import { CategoryXpBar } from '../components/CategoryXpBar';
 import { StatsIcon } from '../components/StatsIcon';
 import { Text } from '../components/Text';
@@ -18,8 +17,9 @@ import { useBehaviorStore } from '../store/behaviorStore';
 import { useSettingsStore } from '../store/settingsStore';
 import type { BehaviorEntry } from '../types/behavior';
 import type { RootStackParamList } from '../types/navigation';
-import { groupBehaviorsByRecency } from '../utils/behaviorUtils';
+import { getDailyMetadataTotals, groupBehaviorsByRecency } from '../utils/behaviorUtils';
 import { Colors } from '../utils/colors';
+import { toDateString } from '../utils/dateUtils';
 
 export function HomeScreen() {
   useBackGuard();
@@ -85,7 +85,6 @@ export function HomeScreen() {
       />
 
       {isSearching ? null : showXp && <CategoryXpBar selectedCategoryId={selectedCategoryId} />}
-      <CategoryMetadataTotals selectedCategoryId={selectedCategoryId} />
 
       <BehaviorList
         behaviors={filteredBehaviors}
@@ -190,9 +189,11 @@ function BehaviorList({ behaviors, selectedCategoryId, searchQuery }: BehaviorLi
         />
       )}
       renderSectionHeader={({ section }) => (
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionHeaderText}>{section.title}</Text>
-        </View>
+        <SectionHeader
+          title={section.title}
+          behaviors={behaviors}
+          selectedCategoryId={selectedCategoryId}
+        />
       )}
       ListEmptyComponent={
         <Text style={styles.empty}>
@@ -205,6 +206,44 @@ function BehaviorList({ behaviors, selectedCategoryId, searchQuery }: BehaviorLi
       }
       contentContainerStyle={behaviors.length === 0 && styles.emptyContainer}
     />
+  );
+}
+
+interface SectionHeaderProps {
+  title: string;
+  behaviors: BehaviorEntry[];
+  selectedCategoryId: string | null;
+}
+function SectionHeader({ title, behaviors, selectedCategoryId }: SectionHeaderProps) {
+  const { categories } = useBehaviorStore();
+  const today = toDateString(new Date());
+  const metaCategory =
+    title === 'Today' && selectedCategoryId !== null
+      ? categories.find(c => c.id === selectedCategoryId && c.metadataFields?.length)
+      : undefined;
+  const totals = metaCategory ? getDailyMetadataTotals(behaviors, metaCategory, today) : null;
+
+  return (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionHeaderText}>{title}</Text>
+      {totals && metaCategory && (
+        <View style={styles.sectionTotals}>
+          {metaCategory.metadataFields?.map(field => {
+            const val = totals![field.key];
+            if (val == null) return null;
+            return (
+              <Text
+                key={field.key}
+                style={styles.sectionTotalValue}
+              >
+                {field.label} {val}
+                {field.unit ?? ''}
+              </Text>
+            );
+          })}
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -242,11 +281,25 @@ const styles = StyleSheet.create({
     padding: 32,
   },
   sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 12,
     marginBottom: 4,
     marginHorizontal: 16,
   },
   sectionHeaderText: {
+    color: Colors.text.faint,
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  sectionTotals: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  sectionTotalValue: {
     color: Colors.text.faint,
     fontSize: 12,
     fontWeight: '600',

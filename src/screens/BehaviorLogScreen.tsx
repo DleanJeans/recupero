@@ -180,7 +180,7 @@ export function BehaviorLogScreen() {
               key={field.key}
               style={styles.metadataFieldRow}
             >
-              <Text style={styles.sectionLabel}>
+              <Text style={styles.metadataFieldLabel}>
                 {field.label}
                 {field.unit ? ` (${field.unit})` : ''}
               </Text>
@@ -428,13 +428,22 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   metadataFieldRow: {
-    marginBottom: 16,
+    backgroundColor: Colors.bg.card,
+    borderRadius: 12,
+    padding: 12,
+    gap: 6,
+    marginBottom: 12,
+  },
+  metadataFieldLabel: {
+    color: Colors.text.muted,
+    fontSize: 13,
+    fontWeight: '600',
   },
   metadataInput: {
     backgroundColor: Colors.bg.input,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     color: Colors.text.primary,
     fontSize: 16,
   },
