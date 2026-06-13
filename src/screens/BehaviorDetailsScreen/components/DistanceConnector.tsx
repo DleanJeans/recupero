@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
-import { Colors } from '../utils/colors';
+import { Colors } from '../../../utils/colors';
 import { DistanceIndicator } from './DistanceIndicator';
 
 interface Props {

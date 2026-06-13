@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Colors } from '../utils/colors';
-import { Button } from './Button';
-import { TextInput } from './Text';
+import { Button } from '../../../components/Button';
+import { TextInput } from '../../../components/Text';
+import { Colors } from '../../../utils/colors';
 
 interface HomeSearchBarProps {
   value: string;

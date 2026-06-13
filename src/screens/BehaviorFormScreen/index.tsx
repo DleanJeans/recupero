@@ -5,21 +5,21 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BackButton } from '../components/BackButton';
-import { Button } from '../components/Button';
-import { CategoryPicker } from '../components/CategoryPicker';
-import { CooldownIcon } from '../components/CooldownIcon';
-import type { CooldownUnit } from '../components/CooldownInput';
-import { CooldownInput } from '../components/CooldownInput';
-import { CooldownTypeToggle } from '../components/CooldownTypeToggle';
-import { EmojiPicker } from '../components/EmojiPicker';
-import { ScreenTitle } from '../components/ScreenTitle';
-import { Text, TextInput } from '../components/Text';
-import { TypePicker } from '../components/TypePicker';
-import { useBehaviorStore } from '../store/behaviorStore';
-import type { BehaviorEntry, BehaviorType } from '../types/behavior';
-import type { RootStackParamList } from '../types/navigation';
-import { Colors } from '../utils/colors';
+import { BackButton } from '../../components/BackButton';
+import { Button } from '../../components/Button';
+import { CategoryPicker } from '../../components/CategoryPicker';
+import { CooldownIcon } from '../../components/CooldownIcon';
+import { EmojiPicker } from '../../components/EmojiPicker';
+import { ScreenTitle } from '../../components/ScreenTitle';
+import { Text, TextInput } from '../../components/Text';
+import { useBehaviorStore } from '../../store/behaviorStore';
+import type { BehaviorEntry, BehaviorType } from '../../types/behavior';
+import type { RootStackParamList } from '../../types/navigation';
+import { Colors } from '../../utils/colors';
+import type { CooldownUnit } from './components/CooldownInput';
+import { CooldownInput } from './components/CooldownInput';
+import { CooldownTypeToggle } from './components/CooldownTypeToggle';
+import { TypePicker } from './components/TypePicker';
 
 function iconFromStore(icon: BehaviorEntry['icon']): string {
   if (!icon) return '';
@@ -59,7 +59,9 @@ export function BehaviorFormScreen() {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [categoryEmoji, setCategoryEmoji] = useState('');
   const [categoryName, setCategoryName] = useState('');
-  const [categoryMetadataFields, setCategoryMetadataFields] = useState<import('../types/behavior').MetadataField[]>([]);
+  const [categoryMetadataFields, setCategoryMetadataFields] = useState<import('../../types/behavior').MetadataField[]>(
+    [],
+  );
   const [behaviorDefaultMetadata, setBehaviorDefaultMetadata] = useState<Record<string, string>>({});
 
   const resetCategoryForm = () => {

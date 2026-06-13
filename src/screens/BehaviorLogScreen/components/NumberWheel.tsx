@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Colors } from '../utils/colors';
-import { Text } from './Text';
+import { Text } from '../../../components/Text';
+import { Colors } from '../../../utils/colors';
 
 const ITEM_HEIGHT = 48;
 const VISIBLE_ITEMS = 5;
@@ -33,7 +33,10 @@ export function NumberWheel({ values, initialIndex, onChange }: Props) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.highlight} pointerEvents="none" />
+      <View
+        style={styles.highlight}
+        pointerEvents="none"
+      />
       <ScrollView
         ref={ref}
         snapToInterval={ITEM_HEIGHT}
@@ -43,7 +46,10 @@ export function NumberWheel({ values, initialIndex, onChange }: Props) {
         contentContainerStyle={{ paddingVertical: PAD }}
       >
         {values.map(v => (
-          <View key={v} style={styles.item}>
+          <View
+            key={v}
+            style={styles.item}
+          >
             <Text style={styles.text}>{v}</Text>
           </View>
         ))}

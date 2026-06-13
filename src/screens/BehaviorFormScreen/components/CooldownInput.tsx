@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Colors } from '../utils/colors';
-import { Text, TextInput } from './Text';
+import { Text, TextInput } from '../../../components/Text';
+import { Colors } from '../../../utils/colors';
 
 export type CooldownUnit = 'minutes' | 'hours' | 'days' | 'weeks';
 

@@ -2,10 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import React, { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
-import { Colors } from '../utils/colors';
-import { exportToFile, importFromFile } from '../utils/dataTransfer';
-import { Button } from './Button';
-import { Text } from './Text';
+import { Button } from '../../../components/Button';
+import { Text } from '../../../components/Text';
+import { Colors } from '../../../utils/colors';
+import { exportToFile, importFromFile } from '../../../utils/dataTransfer';
 
 export function DataTransferSection() {
   const [isTransferring, setIsTransferring] = useState(false);
@@ -60,7 +60,12 @@ export function DataTransferSection() {
           disabled={isTransferring}
           style={[styles.optionCard, isTransferring && { opacity: 0.5 }]}
         >
-          <Ionicons name="document-text-outline" size={22} color={Colors.text.white} style={{ marginBottom: 6 }} />
+          <Ionicons
+            name="document-text-outline"
+            size={22}
+            color={Colors.text.white}
+            style={{ marginBottom: 6 }}
+          />
           <Text style={styles.optionLabel}>Export</Text>
           <Text style={styles.optionDescriptionSmall}>Save JSON file</Text>
         </Button>
@@ -71,7 +76,12 @@ export function DataTransferSection() {
           disabled={isTransferring}
           style={[styles.optionCard, isTransferring && { opacity: 0.5 }]}
         >
-          <Ionicons name="folder-open-outline" size={22} color={Colors.text.white} style={{ marginBottom: 6 }} />
+          <Ionicons
+            name="folder-open-outline"
+            size={22}
+            color={Colors.text.white}
+            style={{ marginBottom: 6 }}
+          />
           <Text style={styles.optionLabel}>Import</Text>
           <Text style={styles.optionDescriptionSmall}>Pick JSON file</Text>
         </Button>

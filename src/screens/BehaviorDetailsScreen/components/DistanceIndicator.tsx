@@ -1,8 +1,8 @@
 import React from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
-import { Colors } from '../utils/colors';
-import { formatDuration } from '../utils/timeUtils';
-import { Text } from './Text';
+import { Text } from '../../../components/Text';
+import { Colors } from '../../../utils/colors';
+import { formatDuration } from '../../../utils/timeUtils';
 
 interface Props {
   durationMs: number;

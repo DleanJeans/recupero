@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useBehaviorStore } from '../store/behaviorStore';
-import type { BehaviorType } from '../types/behavior';
-import { getBehaviorTypeColor } from '../utils/behaviorTypeUtils';
-import { Text } from './Text';
-import { XpBar } from './XpBar';
+import { Text } from '../../../components/Text';
+import { XpBar } from '../../../components/XpBar';
+import { useBehaviorStore } from '../../../store/behaviorStore';
+import type { BehaviorType } from '../../../types/behavior';
+import { getBehaviorTypeColor } from '../../../utils/behaviorTypeUtils';
 
 const TYPE_LABELS: Record<BehaviorType, string> = {
   desirable: 'Desirable',
@@ -21,9 +21,8 @@ export function TypeXpBar({ selectedCategoryId }: Props) {
   const behaviors = useBehaviorStore(s => s.behaviors);
 
   const typeLogCounts = useMemo(() => {
-    const filtered = selectedCategoryId !== null
-      ? behaviors.filter(b => b.categoryId === selectedCategoryId)
-      : behaviors;
+    const filtered =
+      selectedCategoryId !== null ? behaviors.filter(b => b.categoryId === selectedCategoryId) : behaviors;
     const counts: Record<BehaviorType, number> = { desirable: 0, neutral: 0, undesirable: 0 };
     for (const b of filtered) {
       counts[b.type ?? 'neutral'] += b.logs.length;

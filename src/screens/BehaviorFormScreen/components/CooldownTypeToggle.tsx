@@ -1,8 +1,8 @@
 import React from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
-import { Colors } from '../utils/colors';
-import type { CooldownType } from '../utils/cooldownUtils';
-import { TypeOption } from './TypeOption';
+import { TypeOption } from '../../../components/TypeOption';
+import { Colors } from '../../../utils/colors';
+import type { CooldownType } from '../../../utils/cooldownUtils';
 
 interface CooldownTypeToggleProps {
   value: CooldownType;

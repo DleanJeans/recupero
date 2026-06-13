@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Colors } from '../utils/colors';
+import { Colors } from '../../../utils/colors';
 
 // Match stats-chart-outline: viewBox 512x512, ordered left→right by x
 const BAR_FRACTIONS = [160 / 512, 448 / 512, 256 / 512, 368 / 512];

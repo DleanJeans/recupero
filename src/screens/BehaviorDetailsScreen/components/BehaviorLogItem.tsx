@@ -2,13 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { useBehaviorStore } from '../store/behaviorStore';
-import { useSettingsStore } from '../store/settingsStore';
-import type { LogEntry, MetadataField } from '../types/behavior';
-import { Colors } from '../utils/colors';
-import { formatElapsedNumeric, formatTime } from '../utils/timeUtils';
-import { Button } from './Button';
-import { Text } from './Text';
+import { Button } from '../../../components/Button';
+import { Text } from '../../../components/Text';
+import { useBehaviorStore } from '../../../store/behaviorStore';
+import { useSettingsStore } from '../../../store/settingsStore';
+import type { LogEntry, MetadataField } from '../../../types/behavior';
+import { Colors } from '../../../utils/colors';
+import { formatElapsedNumeric, formatTime } from '../../../utils/timeUtils';
 
 interface Props {
   log: LogEntry;

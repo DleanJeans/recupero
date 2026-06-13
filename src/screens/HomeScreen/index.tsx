@@ -4,22 +4,22 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useMemo, useState } from 'react';
 import { SectionList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AddBehaviorButton } from '../components/AddBehaviorButton';
-import { BehaviorCard } from '../components/BehaviorCard';
-import { Button } from '../components/Button';
-import { CategoryFilter } from '../components/CategoryFilter';
-import { CategoryXpBar } from '../components/CategoryXpBar';
-import { StatsIcon } from '../components/StatsIcon';
-import { Text } from '../components/Text';
-import { TypeXpBar } from '../components/TypeXpBar';
-import { useBackGuard } from '../hooks/useBackGuard';
-import { useBehaviorStore } from '../store/behaviorStore';
-import { useSettingsStore } from '../store/settingsStore';
-import type { BehaviorEntry } from '../types/behavior';
-import type { RootStackParamList } from '../types/navigation';
-import { getDailyMetadataTotals, groupBehaviorsByRecency } from '../utils/behaviorUtils';
-import { Colors } from '../utils/colors';
-import { toDateString } from '../utils/dateUtils';
+import { Button } from '../../components/Button';
+import { CategoryFilter } from '../../components/CategoryFilter';
+import { Text } from '../../components/Text';
+import { useBackGuard } from '../../hooks/useBackGuard';
+import { useBehaviorStore } from '../../store/behaviorStore';
+import { useSettingsStore } from '../../store/settingsStore';
+import type { BehaviorEntry } from '../../types/behavior';
+import type { RootStackParamList } from '../../types/navigation';
+import { getDailyMetadataTotals, groupBehaviorsByRecency } from '../../utils/behaviorUtils';
+import { Colors } from '../../utils/colors';
+import { toDateString } from '../../utils/dateUtils';
+import { AddBehaviorButton } from './components/AddBehaviorButton';
+import { BehaviorCard } from './components/BehaviorCard';
+import { CategoryXpBar } from './components/CategoryXpBar';
+import { StatsIcon } from './components/StatsIcon';
+import { TypeXpBar } from './components/TypeXpBar';
 
 export function HomeScreen() {
   useBackGuard();
@@ -167,7 +167,7 @@ function HeaderIcon({ icon, name, onPress, accessibilityLabel }: HeaderIconProps
   );
 }
 
-import { HomeSearchBar } from '../components/HomeSearchBar';
+import { HomeSearchBar } from './components/HomeSearchBar';
 
 interface BehaviorListProps {
   behaviors: BehaviorEntry[];

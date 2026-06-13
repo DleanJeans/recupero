@@ -1,8 +1,8 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import type { BehaviorType } from '../types/behavior';
-import { Colors } from '../utils/colors';
-import { TypeOption } from './TypeOption';
+import { TypeOption } from '../../../components/TypeOption';
+import type { BehaviorType } from '../../../types/behavior';
+import { Colors } from '../../../utils/colors';
 
 interface TypePickerProps {
   value: BehaviorType;

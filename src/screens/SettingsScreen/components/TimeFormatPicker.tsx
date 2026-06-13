@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import type { TimeFormat } from '../store/settingsStore';
-import { useSettingsStore } from '../store/settingsStore';
-import { Colors } from '../utils/colors';
-import { Button } from './Button';
-import { Text } from './Text';
+import { Button } from '../../../components/Button';
+import { Text } from '../../../components/Text';
+import type { TimeFormat } from '../../../store/settingsStore';
+import { useSettingsStore } from '../../../store/settingsStore';
+import { Colors } from '../../../utils/colors';
 
 function formatNow(hour12: boolean): string {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12 });

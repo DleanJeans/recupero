@@ -1,8 +1,8 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useSettingsStore } from '../store/settingsStore';
-import { Colors } from '../utils/colors';
-import { Text } from './Text';
+import { Text } from '../../../components/Text';
+import { useSettingsStore } from '../../../store/settingsStore';
+import { Colors } from '../../../utils/colors';
 
 export function PrivateBehaviorSection() {
   const { hidePrivate, setHidePrivate } = useSettingsStore();
@@ -11,10 +11,7 @@ export function PrivateBehaviorSection() {
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>PRIVACY</Text>
       <Pressable
-        style={({ pressed }) => [
-          styles.row,
-          pressed && { opacity: 0.7 },
-        ]}
+        style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}
         onPress={() => setHidePrivate(!hidePrivate)}
       >
         <Text style={styles.label}>Hide private behaviors</Text>

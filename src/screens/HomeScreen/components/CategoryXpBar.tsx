@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useBehaviorStore } from '../store/behaviorStore';
-import { Colors } from '../utils/colors';
-import { Text } from './Text';
-import { XpBar } from './XpBar';
+import { Text } from '../../../components/Text';
+import { XpBar } from '../../../components/XpBar';
+import { useBehaviorStore } from '../../../store/behaviorStore';
+import { Colors } from '../../../utils/colors';
 
 interface Props {
   selectedCategoryId: string | null;

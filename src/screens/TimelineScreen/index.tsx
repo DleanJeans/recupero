@@ -1,21 +1,18 @@
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BackButton } from '../components/BackButton';
-import { BehaviorIcon } from '../components/BehaviorIcon';
-import { CategoryFilter } from '../components/CategoryFilter';
-import { ScreenTitle } from '../components/ScreenTitle';
-import { Text } from '../components/Text';
-import { useBehaviorStore } from '../store/behaviorStore';
-import { useSettingsStore } from '../store/settingsStore';
-import type { BehaviorEntry, LogEntry } from '../types/behavior';
-import type { RootStackParamList } from '../types/navigation';
-import type { RecencyGroup } from '../utils/behaviorUtils';
-import { GROUP_ORDER, getRecencyGroup } from '../utils/behaviorUtils';
-import { Colors } from '../utils/colors';
-import { formatCompactDate, formatTime, isOlderThanYesterday } from '../utils/timeUtils';
+import { BackButton } from '../../components/BackButton';
+import { BehaviorIcon } from '../../components/BehaviorIcon';
+import { CategoryFilter } from '../../components/CategoryFilter';
+import { ScreenTitle } from '../../components/ScreenTitle';
+import { Text } from '../../components/Text';
+import { useBehaviorStore } from '../../store/behaviorStore';
+import { useSettingsStore } from '../../store/settingsStore';
+import type { BehaviorEntry, LogEntry } from '../../types/behavior';
+import type { RecencyGroup } from '../../utils/behaviorUtils';
+import { GROUP_ORDER, getRecencyGroup } from '../../utils/behaviorUtils';
+import { Colors } from '../../utils/colors';
+import { formatCompactDate, formatTime, isOlderThanYesterday } from '../../utils/timeUtils';
 
 interface TimelineEntry {
   log: LogEntry;
@@ -30,7 +27,6 @@ interface MinuteGroup {
 }
 
 export function TimelineScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { behaviors, categories } = useBehaviorStore();
   const hidePrivate = useSettingsStore(s => s.hidePrivate);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);

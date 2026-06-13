@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet } from 'react-native';
-import { Colors } from '../utils/colors';
-import { Text } from './Text';
+import { Text } from '../../../components/Text';
+import { Colors } from '../../../utils/colors';
 
 interface Props {
   onPress: () => void;
@@ -9,7 +9,10 @@ interface Props {
 
 export function AddBehaviorButton({ onPress }: Props) {
   return (
-    <Pressable style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]} onPress={onPress}>
+    <Pressable
+      style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+      onPress={onPress}
+    >
       <Text style={styles.fabText}>+ Add behavior</Text>
     </Pressable>
   );
