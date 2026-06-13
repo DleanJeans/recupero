@@ -1,5 +1,7 @@
 import { parseISO } from 'date-fns';
 
+import { Label } from './strings';
+
 const MS_PER_DAY = 86400000;
 
 export function toDateString(date: Date): string {
@@ -39,14 +41,14 @@ export function describeDay(dateStr: string): string {
   const date = parseISO(dateStr);
   const today = new Date();
 
-  if (toDateString(date) === toDateString(today)) return 'Today';
-  if (toDateString(date) === toDateString(yesterday())) return 'Yesterday';
+  if (toDateString(date) === toDateString(today)) return Label.TODAY;
+  if (toDateString(date) === toDateString(yesterday())) return Label.YESTERDAY;
 
   const ago = daysAgo(dateStr);
   const weekday = date.toLocaleDateString('en-US', { weekday: 'long' });
 
   if (ago < 7) return weekday;
-  if (ago < 14) return `Last ${weekday}`;
+  if (ago < 14) return `${Label.LAST_PREFIX}${weekday}`;
 
   return '';
 }

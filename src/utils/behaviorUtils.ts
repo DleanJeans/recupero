@@ -1,5 +1,6 @@
 import type { BehaviorEntry, Category, LogEntry } from '../types/behavior';
 import { toDateString, yesterday } from './dateUtils';
+import { Group } from './strings';
 
 /**
  * Sort behaviors by most recent activity (lastTimestamp descending),
@@ -16,9 +17,22 @@ export function sortBehaviorsByRecent(behaviors: BehaviorEntry[]): BehaviorEntry
   });
 }
 
-export type RecencyGroup = 'Today' | 'Yesterday' | 'This Week' | 'Last Week' | 'Last Month' | 'Older';
+export type RecencyGroup =
+  | typeof Group.TODAY
+  | typeof Group.YESTERDAY
+  | typeof Group.THIS_WEEK
+  | typeof Group.LAST_WEEK
+  | typeof Group.LAST_MONTH
+  | typeof Group.OLDER;
 
-export const GROUP_ORDER: RecencyGroup[] = ['Today', 'Yesterday', 'This Week', 'Last Week', 'Last Month', 'Older'];
+export const GROUP_ORDER: RecencyGroup[] = [
+  Group.TODAY,
+  Group.YESTERDAY,
+  Group.THIS_WEEK,
+  Group.LAST_WEEK,
+  Group.LAST_MONTH,
+  Group.OLDER,
+];
 
 export function getRecencyGroup(lastTimestamp: number | null): RecencyGroup {
   if (lastTimestamp === null) return 'Older';
@@ -30,17 +44,17 @@ export function getRecencyGroup(lastTimestamp: number | null): RecencyGroup {
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
-  if (days < 1 && date.getDate() === now.getDate()) return 'Today';
+  if (days < 1 && date.getDate() === now.getDate()) return Group.TODAY;
 
   const y = yesterday();
   const isYesterday =
     date.getFullYear() === y.getFullYear() && date.getMonth() === y.getMonth() && date.getDate() === y.getDate();
-  if (isYesterday) return 'Yesterday';
+  if (isYesterday) return Group.YESTERDAY;
 
-  if (days < 7) return 'This Week';
-  if (days < 14) return 'Last Week';
-  if (days < 60) return 'Last Month';
-  return 'Older';
+  if (days < 7) return Group.THIS_WEEK;
+  if (days < 14) return Group.LAST_WEEK;
+  if (days < 60) return Group.LAST_MONTH;
+  return Group.OLDER;
 }
 
 export interface RecencySection<T = BehaviorEntry> {

@@ -15,6 +15,7 @@ import type { RootStackParamList } from '../../types/navigation';
 import { getDailyMetadataTotals, groupBehaviorsByRecency } from '../../utils/behaviorUtils';
 import { Colors } from '../../utils/colors';
 import { toDateString } from '../../utils/dateUtils';
+import { Label } from '../../utils/strings';
 import { AddBehaviorButton } from './components/AddBehaviorButton';
 import { BehaviorCard } from './components/BehaviorCard';
 import { CategoryXpBar } from './components/CategoryXpBar';
@@ -218,7 +219,7 @@ function SectionHeader({ title, behaviors, selectedCategoryId }: SectionHeaderPr
   const { categories } = useBehaviorStore();
   const today = toDateString(new Date());
   const metaCategory =
-    title === 'Today' && selectedCategoryId !== null
+    title === Label.TODAY && selectedCategoryId !== null
       ? categories.find(c => c.id === selectedCategoryId && c.metadataFields?.length)
       : undefined;
   const totals = metaCategory ? getDailyMetadataTotals(behaviors, metaCategory, today) : null;

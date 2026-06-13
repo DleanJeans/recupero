@@ -1,6 +1,8 @@
 import { useSettingsStore } from '../store/settingsStore';
 import { yesterday } from './dateUtils';
 
+import { Label, Unit } from './strings';
+
 export const MS_PER_MINUTE = 60000;
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -67,18 +69,18 @@ export function formatElapsedText(timestamp: number | null): string {
 
   if (seconds < 60 || hours < 1) return '';
 
-  if (isSameCalendarDay(date, now)) return 'Today';
+  if (isSameCalendarDay(date, now)) return Label.TODAY;
 
-  if (isSameCalendarDay(date, yesterday())) return 'Yesterday';
+  if (isSameCalendarDay(date, yesterday())) return Label.YESTERDAY;
 
   if (days < 7) return DAY_NAMES[date.getDay()];
 
-  if (isPreviousCalendarMonth(now, date)) return 'Last month';
+  if (isPreviousCalendarMonth(now, date)) return Label.LAST_MONTH;
 
-  if (days < 14) return 'Last week';
+  if (days < 14) return Label.LAST_WEEK;
 
   const { months } = computeElapsed(timestamp);
-  if (date.getFullYear() === now.getFullYear() - 1 && months < 12) return 'Last year';
+  if (date.getFullYear() === now.getFullYear() - 1 && months < 12) return Label.LAST_YEAR;
 
   return '';
 }
@@ -92,23 +94,23 @@ export function formatElapsed(timestamp: number | null): string {
 
 /** Compact relative time label for a timestamp (e.g. "2h ago", "3d ago"). */
 export function formatElapsedNumeric(timestamp: number | null): string {
-  if (timestamp === null) return 'Never';
+  if (timestamp === null) return Label.NEVER;
 
   const { seconds, minutes, hours, days, weeks, months, years } = computeElapsed(timestamp);
 
-  if (seconds < 60) return 'Just now';
-  if (hours < 1) return `${minutes}m ago`;
-  if (days < 1) return sub(`${hours}h`, minutes % 60, 'm');
-  if (days < 7) return sub(`${days}d`, hours % 24, 'h');
-  if (days < 60) return sub(`${weeks}w`, days % 7, 'd');
-  if (months < 12) return sub(`${months}mo`, days % 30, 'd');
-  return sub(`${years}y`, Math.floor((days % 365) / 30), 'mo');
+  if (seconds < 60) return Label.JUST_NOW;
+  if (hours < 1) return `${minutes}${Unit.MIN}${Label.AGO}`;
+  if (days < 1) return sub(`${hours}${Unit.HOUR}`, minutes % 60, Unit.MIN);
+  if (days < 7) return sub(`${days}${Unit.DAY}`, hours % 24, Unit.HOUR);
+  if (days < 60) return sub(`${weeks}${Unit.WEEK}`, days % 7, Unit.DAY);
+  if (months < 12) return sub(`${months}${Unit.MONTH}`, days % 30, Unit.DAY);
+  return sub(`${years}${Unit.YEAR}`, Math.floor((days % 365) / 30), Unit.MONTH);
 }
 
 /** Append a sub-unit when non-zero: e.g. sub("3d", 5, "h") → "3d 5h ago". */
 function sub(primary: string, remaining: number, unit: string): string {
-  if (remaining > 0) return `${primary} ${remaining}${unit} ago`;
-  return `${primary} ago`;
+  if (remaining > 0) return `${primary} ${remaining}${unit}${Label.AGO}`;
+  return `${primary}${Label.AGO}`;
 }
 
 /** Compact date string for timeline: returns "Mar 5" for older-than-yesterday timestamps. */
@@ -128,7 +130,7 @@ export function isOlderThanYesterday(timestamp: number): boolean {
 
 export function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
-  if (totalSeconds < 60) return 'Just now';
+  if (totalSeconds < 60) return Label.JUST_NOW;
 
   const minutes = Math.floor(totalSeconds / 60);
   const hours = Math.floor(minutes / 60);
@@ -138,18 +140,18 @@ export function formatDuration(ms: number): string {
     const remainingHours = hours % 24;
     const remainingMinutes = minutes % 60;
     if (remainingHours > 0) {
-      return `${days}d ${remainingHours}h`;
+      return `${days}${Unit.DAY} ${remainingHours}${Unit.HOUR}`;
     }
     if (remainingMinutes > 0) {
-      return `${days}d ${remainingMinutes}m`;
+      return `${days}${Unit.DAY} ${remainingMinutes}${Unit.MIN}`;
     }
-    return `${days}d`;
+    return `${days}${Unit.DAY}`;
   }
 
   if (hours > 0) {
     const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+    return remainingMinutes > 0 ? `${hours}${Unit.HOUR} ${remainingMinutes}${Unit.MIN}` : `${hours}${Unit.HOUR}`;
   }
 
-  return `${minutes}m`;
+  return `${minutes}${Unit.MIN}`;
 }
