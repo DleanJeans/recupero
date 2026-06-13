@@ -61,6 +61,14 @@ export function BehaviorFormScreen() {
   const [categoryName, setCategoryName] = useState('');
   const [categoryMetadataFields, setCategoryMetadataFields] = useState<import('../types/behavior').MetadataField[]>([]);
 
+  const resetCategoryForm = () => {
+    setShowCategoryForm(false);
+    setEditingCategoryId(null);
+    setCategoryEmoji('');
+    setCategoryName('');
+    setCategoryMetadataFields([]);
+  };
+
   useEffect(() => {
     if (!behavior) return;
     setName(behavior.name);
@@ -213,10 +221,7 @@ export function BehaviorFormScreen() {
             isFormOpen={showCategoryForm}
             onToggleForm={() => {
               if (!showCategoryForm) {
-                setEditingCategoryId(null);
-                setCategoryEmoji('');
-                setCategoryName('');
-                setCategoryMetadataFields([]);
+                resetCategoryForm();
               }
               setShowCategoryForm(v => !v);
             }}
@@ -249,18 +254,10 @@ export function BehaviorFormScreen() {
                   const newCat = newCats[newCats.length - 1];
                   if (newCat) setCategoryId(newCat.id);
                 }
-                setShowCategoryForm(false);
-                setEditingCategoryId(null);
-                setCategoryEmoji('');
-                setCategoryName('');
-                setCategoryMetadataFields([]);
+                resetCategoryForm();
               },
               onCancel: () => {
-                setShowCategoryForm(false);
-                setEditingCategoryId(null);
-                setCategoryEmoji('');
-                setCategoryName('');
-                setCategoryMetadataFields([]);
+                resetCategoryForm();
               },
               onDelete: () => {
                 if (!editingCategoryId) return;
@@ -269,11 +266,7 @@ export function BehaviorFormScreen() {
                 if (categoryId === editingCategoryId) {
                   setCategoryId(undefined);
                 }
-                setShowCategoryForm(false);
-                setEditingCategoryId(null);
-                setCategoryEmoji('');
-                setCategoryName('');
-                setCategoryMetadataFields([]);
+                resetCategoryForm();
               },
               dark: true,
             }}
