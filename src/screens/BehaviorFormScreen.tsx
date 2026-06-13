@@ -85,6 +85,15 @@ export function BehaviorFormScreen() {
     );
   }, [behavior]);
 
+  const defaultMetadataChanged =
+    isEdit && behavior
+      ? (() => {
+          const orig = behavior.defaultMetadata ?? {};
+          const keys = new Set([...Object.keys(orig), ...Object.keys(behaviorDefaultMetadata)]);
+          return [...keys].some(k => String(orig[k] ?? '') !== (behaviorDefaultMetadata[k] ?? ''));
+        })()
+      : false;
+
   const hasChanges =
     isEdit &&
     behavior &&
@@ -95,7 +104,8 @@ export function BehaviorFormScreen() {
       isPrivate !== (behavior.private ?? false) ||
       cooldownMinutes !== (behavior.cooldownMinutes || 0) ||
       cooldownType !== (behavior.cooldownType || 'rest') ||
-      cooldownUnit !== behavior.cooldownUnit);
+      cooldownUnit !== behavior.cooldownUnit ||
+      defaultMetadataChanged);
 
   const isDirty = isEdit ? !!hasChanges : name.trim().length > 0 || icon.trim().length > 0;
 
