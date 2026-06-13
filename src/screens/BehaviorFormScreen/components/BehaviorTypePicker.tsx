@@ -1,18 +1,18 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { TypeOption } from '../../../components/TypeOption';
+import { SelectPill } from '../../../components/SelectPill';
 import type { BehaviorType } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 
-interface TypePickerProps {
+interface BehaviorTypePickerProps {
   value: BehaviorType;
   onChange: (v: BehaviorType) => void;
 }
-export function TypePicker({ value, onChange }: TypePickerProps) {
+export function BehaviorTypePicker({ value, onChange }: BehaviorTypePickerProps) {
   return (
     <View style={styles.row}>
       {TYPE_OPTIONS.map(opt => (
-        <TypeOption
+        <SelectPill
           key={opt.value}
           label={opt.label}
           active={value === opt.value}

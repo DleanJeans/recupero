@@ -2,8 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { StyleSheet } from 'react-native';
-import { Colors } from '../utils/colors';
-import { Button } from './Button';
+import { Colors } from '../../utils/colors';
+import { Button } from '../Button';
 
 interface Props {
   isOpen: boolean;

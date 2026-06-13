@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, type ViewStyle } from 'react-native';
 import { Colors } from '../utils/colors';
 import { Text } from './Text';
 
-interface TypeOptionProps {
+interface SelectPillProps {
   label: string;
   active: boolean;
   activeBtnStyle?: ViewStyle;
@@ -11,7 +11,7 @@ interface TypeOptionProps {
   onPress: () => void;
   style?: ViewStyle;
 }
-export function TypeOption({ label, active, activeBtnStyle, activeTextStyle, onPress, style }: TypeOptionProps) {
+export function SelectPill({ label, active, activeBtnStyle, activeTextStyle, onPress, style }: SelectPillProps) {
   return (
     <Pressable
       style={({ pressed }) => [styles.btn, style, active && activeBtnStyle, pressed && { opacity: 0.7 }]}

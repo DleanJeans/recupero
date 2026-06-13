@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import type { MetadataField } from '../types/behavior';
-import { Colors } from '../utils/colors';
-import { Text, TextInput } from './Text';
+import type { MetadataField } from '../../types/behavior';
+import { Colors } from '../../utils/colors';
+import { Text, TextInput } from '../Text';
 
 interface Props {
   fields: MetadataField[];

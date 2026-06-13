@@ -1,11 +1,11 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import type { Category } from '../types/behavior';
-import { Colors } from '../utils/colors';
+import type { Category } from '../../types/behavior';
+import { Colors } from '../../utils/colors';
+import { Button } from '../Button';
+import { Text } from '../Text';
 import { AddCategoryButton } from './AddCategoryButton';
-import { Button } from './Button';
 import { CategoryForm, type CategoryFormProps } from './CategoryForm';
-import { Text } from './Text';
 
 type CategoryId = string | undefined | null;
 

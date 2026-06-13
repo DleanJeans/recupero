@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
-import { TypeOption } from '../../../components/TypeOption';
+import { SelectPill } from '../../../components/SelectPill';
 import { Colors } from '../../../utils/colors';
 import type { CooldownType } from '../../../utils/cooldownUtils';
 
@@ -12,7 +12,7 @@ interface CooldownTypeToggleProps {
 export function CooldownTypeToggle({ value, onChange, style }: CooldownTypeToggleProps) {
   return (
     <View style={[styles.row, style]}>
-      <TypeOption
+      <SelectPill
         label="Rest"
         active={value === 'rest'}
         activeBtnStyle={styles.btnRest}
@@ -20,7 +20,7 @@ export function CooldownTypeToggle({ value, onChange, style }: CooldownTypeToggl
         onPress={() => onChange('rest')}
         style={styles.btn}
       />
-      <TypeOption
+      <SelectPill
         label="Limit"
         active={value === 'limit'}
         activeBtnStyle={styles.btnLimit}

@@ -1,11 +1,11 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import type { MetadataField } from '../types/behavior';
-import { Colors } from '../utils/colors';
-import { Button } from './Button';
-import { EmojiPicker } from './EmojiPicker';
+import type { MetadataField } from '../../types/behavior';
+import { Colors } from '../../utils/colors';
+import { Button } from '../Button';
+import { EmojiPicker } from '../EmojiPicker';
+import { TextInput } from '../Text';
 import MetadataFieldsSection from './MetadataFieldsSection';
-import { TextInput } from './Text';
 
 export interface CategoryFormProps {
   emoji: string;

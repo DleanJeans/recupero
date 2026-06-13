@@ -16,10 +16,10 @@ import { useBehaviorStore } from '../../store/behaviorStore';
 import type { BehaviorEntry, BehaviorType } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
+import { BehaviorTypePicker } from './components/BehaviorTypePicker';
 import type { CooldownUnit } from './components/CooldownInput';
 import { CooldownInput } from './components/CooldownInput';
 import { CooldownTypeToggle } from './components/CooldownTypeToggle';
-import { TypePicker } from './components/TypePicker';
 
 function iconFromStore(icon: BehaviorEntry['icon']): string {
   if (!icon) return '';
@@ -198,7 +198,7 @@ export function BehaviorFormScreen() {
             />
           </View>
 
-          <TypePicker
+          <BehaviorTypePicker
             value={type}
             onChange={setType}
           />
