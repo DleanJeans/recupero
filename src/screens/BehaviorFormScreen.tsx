@@ -56,8 +56,10 @@ export function BehaviorFormScreen() {
   const [cooldownType, setCooldownType] = useState<'rest' | 'limit'>('rest');
   const [cooldownUnit, setCooldownUnit] = useState<CooldownUnit | undefined>(undefined);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [categoryEmoji, setCategoryEmoji] = useState('');
   const [categoryName, setCategoryName] = useState('');
+  const [categoryMetadataFields, setCategoryMetadataFields] = useState<import('../types/behavior').MetadataField[]>([]);
 
   useEffect(() => {
     if (!behavior) return;
@@ -201,33 +203,78 @@ export function BehaviorFormScreen() {
             categories={categories}
             selectedId={categoryId}
             onChange={handleCategoryChange}
+            onLongPress={cat => {
+              setEditingCategoryId(cat.id);
+              setCategoryEmoji(cat.emoji);
+              setCategoryName(cat.name);
+              setCategoryMetadataFields(cat.metadataFields ?? []);
+              setShowCategoryForm(true);
+            }}
             isFormOpen={showCategoryForm}
-            onToggleForm={() => setShowCategoryForm(v => !v)}
+            onToggleForm={() => {
+              if (!showCategoryForm) {
+                setEditingCategoryId(null);
+                setCategoryEmoji('');
+                setCategoryName('');
+                setCategoryMetadataFields([]);
+              }
+              setShowCategoryForm(v => !v);
+            }}
             form={{
               emoji: categoryEmoji,
               name: categoryName,
-              isEditing: false,
+              isEditing: editingCategoryId != null,
               onEmojiChange: setCategoryEmoji,
               onNameChange: setCategoryName,
+              metadataFields: categoryMetadataFields,
+              onMetadataFieldsChange: setCategoryMetadataFields,
               onSave: () => {
                 const trimmedName = categoryName.trim();
                 const trimmedEmoji = categoryEmoji.trim();
                 if (!trimmedEmoji || !trimmedName) return;
-                const { addCategory, categories: cats } = useBehaviorStore.getState();
-                addCategory(trimmedName, trimmedEmoji);
-                const newCats = useBehaviorStore.getState().categories;
-                const newCat = newCats[newCats.length - 1];
-                if (newCat) setCategoryId(newCat.id);
+                const store = useBehaviorStore.getState();
+                if (editingCategoryId) {
+                  store.updateCategory(editingCategoryId, {
+                    name: trimmedName,
+                    emoji: trimmedEmoji,
+                    metadataFields: categoryMetadataFields.length > 0 ? categoryMetadataFields : undefined,
+                  });
+                } else {
+                  store.addCategory(
+                    trimmedName,
+                    trimmedEmoji,
+                    categoryMetadataFields.length > 0 ? categoryMetadataFields : undefined,
+                  );
+                  const newCats = useBehaviorStore.getState().categories;
+                  const newCat = newCats[newCats.length - 1];
+                  if (newCat) setCategoryId(newCat.id);
+                }
                 setShowCategoryForm(false);
+                setEditingCategoryId(null);
                 setCategoryEmoji('');
                 setCategoryName('');
+                setCategoryMetadataFields([]);
               },
               onCancel: () => {
                 setShowCategoryForm(false);
+                setEditingCategoryId(null);
                 setCategoryEmoji('');
                 setCategoryName('');
+                setCategoryMetadataFields([]);
               },
-              onDelete: () => {},
+              onDelete: () => {
+                if (!editingCategoryId) return;
+                const store = useBehaviorStore.getState();
+                store.removeCategory(editingCategoryId);
+                if (categoryId === editingCategoryId) {
+                  setCategoryId(undefined);
+                }
+                setShowCategoryForm(false);
+                setEditingCategoryId(null);
+                setCategoryEmoji('');
+                setCategoryName('');
+                setCategoryMetadataFields([]);
+              },
               dark: true,
             }}
           />

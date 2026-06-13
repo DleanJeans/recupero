@@ -94,9 +94,12 @@ function EditButton({ behaviorId }: { behaviorId: string }) {
 
 function BehaviorLogList({ behavior }: { behavior: BehaviorEntry }) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { categories } = useBehaviorStore();
 
   const logs = behavior.logs ?? [];
   const sections = useMemo(() => groupLogsByRecency(logs), [logs]);
+  const category = behavior.categoryId ? categories.find(c => c.id === behavior.categoryId) : undefined;
+  const metadataFields = category?.metadataFields;
 
   return (
     <SectionList
@@ -113,6 +116,7 @@ function BehaviorLogList({ behavior }: { behavior: BehaviorEntry }) {
           <BehaviorLogItem
             log={item}
             behaviorId={behavior.id}
+            metadataFields={metadataFields}
             onEdit={() =>
               navigation.navigate('BehaviorLog', {
                 behaviorId: behavior.id,

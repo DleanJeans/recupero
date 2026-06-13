@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { useBehaviorStore } from '../store/behaviorStore';
-import type { Category } from '../types/behavior';
+import type { Category, MetadataField } from '../types/behavior';
 import { CategoryPicker } from './CategoryPicker';
 
 interface CategoryFilterProps {
@@ -19,6 +19,7 @@ export function CategoryFilter({ selectedCategoryId, onSelectCategory }: Categor
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [emoji, setEmoji] = useState('');
   const [name, setName] = useState('');
+  const [metadataFields, setMetadataFields] = useState<MetadataField[]>([]);
 
   const isEditing = editingCategory != null;
 
@@ -26,11 +27,13 @@ export function CategoryFilter({ selectedCategoryId, onSelectCategory }: Categor
     if (!editingCategory) return;
     setEmoji(editingCategory.emoji);
     setName(editingCategory.name);
+    setMetadataFields(editingCategory.metadataFields ?? []);
   }, [editingCategory]);
 
   const resetForm = () => {
     setEmoji('');
     setName('');
+    setMetadataFields([]);
     setShowForm(false);
     setEditingCategory(null);
   };
@@ -39,10 +42,11 @@ export function CategoryFilter({ selectedCategoryId, onSelectCategory }: Categor
     const trimmedName = name.trim();
     const trimmedEmoji = emoji.trim();
     if (!trimmedEmoji || !trimmedName) return;
+    const mf = metadataFields.length > 0 ? metadataFields : undefined;
     if (isEditing && editingCategory) {
-      updateCategory(editingCategory.id, { name: trimmedName, emoji: trimmedEmoji });
+      updateCategory(editingCategory.id, { name: trimmedName, emoji: trimmedEmoji, metadataFields: mf });
     } else {
-      addCategory(trimmedName, trimmedEmoji);
+      addCategory(trimmedName, trimmedEmoji, mf);
     }
     resetForm();
   };
@@ -83,6 +87,8 @@ export function CategoryFilter({ selectedCategoryId, onSelectCategory }: Categor
           isEditing,
           onEmojiChange: setEmoji,
           onNameChange: setName,
+          metadataFields,
+          onMetadataFieldsChange: setMetadataFields,
           onSave: handleSave,
           onCancel: resetForm,
           onDelete: handleDelete,

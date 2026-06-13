@@ -4,7 +4,7 @@ import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useBehaviorStore } from '../store/behaviorStore';
 import { useSettingsStore } from '../store/settingsStore';
-import type { LogEntry } from '../types/behavior';
+import type { LogEntry, MetadataField } from '../types/behavior';
 import { Colors } from '../utils/colors';
 import { formatElapsedNumeric, formatTime } from '../utils/timeUtils';
 import { Button } from './Button';
@@ -14,9 +14,10 @@ interface Props {
   log: LogEntry;
   behaviorId: string;
   onEdit: () => void;
+  metadataFields?: MetadataField[];
 }
 
-export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
+export function BehaviorLogItem({ log, behaviorId, onEdit, metadataFields }: Props) {
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -39,15 +40,31 @@ export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
   };
 
   const renderLeftActions = () => (
-    <Button variant="danger" onPress={handleRemove} style={styles.leftAction}>
-      <Ionicons name="trash" size={24} color={Colors.text.primary} />
+    <Button
+      variant="danger"
+      onPress={handleRemove}
+      style={styles.leftAction}
+    >
+      <Ionicons
+        name="trash"
+        size={24}
+        color={Colors.text.primary}
+      />
       <Text style={styles.actionText}>Delete</Text>
     </Button>
   );
 
   const renderRightActions = () => (
-    <Button variant="danger" onPress={onEdit} style={styles.rightAction}>
-      <Ionicons name="create-outline" size={24} color={Colors.text.primary} />
+    <Button
+      variant="danger"
+      onPress={onEdit}
+      style={styles.rightAction}
+    >
+      <Ionicons
+        name="create-outline"
+        size={24}
+        color={Colors.text.primary}
+      />
       <Text style={styles.actionText}>Edit</Text>
     </Button>
   );
@@ -59,18 +76,42 @@ export function BehaviorLogItem({ log, behaviorId, onEdit }: Props) {
       overshootLeft={false}
       overshootRight={false}
     >
-      <Pressable style={styles.logItem} onLongPress={onEdit} delayLongPress={300}>
+      <Pressable
+        style={styles.logItem}
+        onLongPress={onEdit}
+        delayLongPress={300}
+      >
         <View style={styles.timeContent}>
           <Text style={styles.dateText}>{formatTime(log.timestamp, timeFormat === '12h')}</Text>
           <Text style={styles.elapsedText}>{formatElapsedNumeric(log.timestamp)}</Text>
         </View>
-        {log.metadata?.notes ? (
-          <View style={styles.notesContent}>
-            <Text style={styles.notesText} numberOfLines={2}>
-              {String(log.metadata.notes)}
-            </Text>
-          </View>
-        ) : null}
+        <View style={log.metadata ? styles.contentArea : undefined}>
+          {metadataFields?.map(field => {
+            const val = log.metadata?.[field.key];
+            if (val == null) return null;
+            return (
+              <View
+                key={field.key}
+                style={styles.metaChip}
+              >
+                <Text style={styles.metaChipText}>
+                  {field.label} {val}
+                  {field.unit ?? ''}
+                </Text>
+              </View>
+            );
+          })}
+          {log.metadata?.notes ? (
+            <View style={styles.notesContent}>
+              <Text
+                style={styles.notesText}
+                numberOfLines={2}
+              >
+                {String(log.metadata.notes)}
+              </Text>
+            </View>
+          ) : null}
+        </View>
       </Pressable>
     </Swipeable>
   );
@@ -90,11 +131,28 @@ const styles = StyleSheet.create({
     flex: 2,
     padding: 16,
   },
-  notesContent: {
+  contentArea: {
     flex: 4,
-    padding: 16,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 12,
+    gap: 6,
     borderLeftWidth: StyleSheet.hairlineWidth,
     borderLeftColor: Colors.text.faint,
+  },
+  metaChip: {
+    backgroundColor: Colors.bg.darker,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  metaChipText: {
+    color: Colors.text.secondary,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  notesContent: {
+    width: '100%',
   },
   notesText: {
     color: Colors.text.muted,

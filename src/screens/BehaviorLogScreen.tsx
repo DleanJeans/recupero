@@ -3,14 +3,14 @@ import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../components/BackButton';
 import { BehaviorTitle } from '../components/BehaviorTitle';
 import { Button } from '../components/Button';
 import { NumberWheel } from '../components/NumberWheel';
-import { Text } from '../components/Text';
+import { Text, TextInput } from '../components/Text';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { RootStackParamList } from '../types/navigation';
 import { Colors } from '../utils/colors';
@@ -24,7 +24,7 @@ export function BehaviorLogScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { behaviorId, logId, initialTimestamp, initialNotes: routeNotes } = route.params;
 
-  const { behaviors, logBehavior, updateLog } = useBehaviorStore();
+  const { behaviors, categories, logBehavior, updateLog } = useBehaviorStore();
   const behavior = behaviors.find(b => b.id === behaviorId);
 
   const nowRef = useRef(new Date());
@@ -34,9 +34,27 @@ export function BehaviorLogScreen() {
   const [hour, setHour] = useState(nowRef.current.getHours());
   const [minute, setMinute] = useState(nowRef.current.getMinutes());
   const [wheelKey, setWheelKey] = useState(0);
-  const notesRef = useRef<TextInput>(null);
+  const notesRef = useRef<import('react-native').TextInput>(null);
   const [notes, setNotes] = useState(routeNotes ?? '');
   const [notesFocused, setNotesFocused] = useState(false);
+  const [metadataValues, setMetadataValues] = useState<Record<string, string>>({});
+
+  const category = behavior ? categories.find(c => c.id === behavior.categoryId) : undefined;
+  const metadataFields = category?.metadataFields ?? [];
+
+  // Load metadata values from existing log when editing
+  useEffect(() => {
+    if (!logId) return;
+    const existingLog = behavior?.logs.find(l => l.id === logId);
+    if (!existingLog?.metadata) return;
+    const vals: Record<string, string> = {};
+    for (const field of metadataFields) {
+      const v = existingLog.metadata[field.key];
+      if (v != null) vals[field.key] = String(v);
+    }
+    setMetadataValues(vals);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [logId]);
 
   const isToday = selectedDate === todayStr;
   const maxHour = isToday ? nowRef.current.getHours() : 23;
@@ -70,17 +88,37 @@ export function BehaviorLogScreen() {
   const handleConfirm = useCallback(() => {
     const [y, m, d] = selectedDate.split('-').map(Number);
     const ts = new Date(y, m - 1, d, hour, minute, 0, 0).getTime();
-    const metadata = notes.trim() ? { notes: notes.trim() } : undefined;
+    const metadata: Record<string, string | number> = {};
+    if (notes.trim()) metadata.notes = notes.trim();
+    for (const field of metadataFields) {
+      const val = metadataValues[field.key];
+      if (val !== undefined && val !== '') {
+        metadata[field.key] = Number(val);
+      }
+    }
+    const metadataOrUndefined = Object.keys(metadata).length > 0 ? metadata : undefined;
     if (logId) {
       // Edit: no logCount change, go back immediately
-      updateLog(behaviorId, logId, ts, metadata);
+      updateLog(behaviorId, logId, ts, metadataOrUndefined);
       navigation.goBack();
       return;
     }
 
-    logBehavior(behaviorId, ts, metadata);
+    logBehavior(behaviorId, ts, metadataOrUndefined);
     navigation.goBack();
-  }, [selectedDate, hour, minute, notes, logId, behaviorId, logBehavior, updateLog, navigation]);
+  }, [
+    selectedDate,
+    hour,
+    minute,
+    notes,
+    metadataValues,
+    metadataFields,
+    logId,
+    behaviorId,
+    logBehavior,
+    updateLog,
+    navigation,
+  ]);
 
   if (!behavior) {
     return (
@@ -127,6 +165,28 @@ export function BehaviorLogScreen() {
             onMinuteChange={setMinute}
             onExpand={handleExpandTime}
           />
+
+          {metadataFields.map(field => (
+            <View
+              key={field.key}
+              style={styles.metadataFieldRow}
+            >
+              <Text style={styles.sectionLabel}>
+                {field.label}
+                {field.unit ? ` (${field.unit})` : ''}
+              </Text>
+              <TextInput
+                style={styles.metadataInput}
+                value={metadataValues[field.key] ?? ''}
+                onChangeText={v => setMetadataValues(prev => ({ ...prev, [field.key]: v.replace(/[^0-9.]/g, '') }))}
+                placeholder="0"
+                placeholderTextColor={Colors.text.dim}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+                maxLength={8}
+              />
+            </View>
+          ))}
 
           <Text style={styles.sectionLabel}>Notes</Text>
           <TextInput
@@ -357,6 +417,17 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
+  },
+  metadataFieldRow: {
+    marginBottom: 16,
+  },
+  metadataInput: {
+    backgroundColor: Colors.bg.input,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    color: Colors.text.primary,
+    fontSize: 16,
   },
   notesInput: {
     backgroundColor: Colors.bg.input,

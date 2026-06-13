@@ -1,4 +1,4 @@
-import type { BehaviorEntry, LogEntry } from '../types/behavior';
+import type { BehaviorEntry, Category, LogEntry } from '../types/behavior';
 
 /**
  * Sort behaviors by most recent activity (lastTimestamp descending),
@@ -67,6 +67,42 @@ export function groupBehaviorsByRecency(behaviors: BehaviorEntry[]): RecencySect
     title,
     data: groups.get(title)!,
   }));
+}
+
+/** Sum of numeric metadata fields for a given category and day */
+export function getDailyMetadataTotals(
+  behaviors: BehaviorEntry[],
+  category: Category,
+  dateStr: string,
+): Record<string, number> {
+  const fields = category.metadataFields ?? [];
+  if (fields.length === 0) return {};
+
+  const totals: Record<string, number> = {};
+  const categoryBehaviors = behaviors.filter(b => b.categoryId === category.id);
+
+  for (const behavior of categoryBehaviors) {
+    for (const log of behavior.logs) {
+      if (!log.metadata) continue;
+      const logDate = toDateString(new Date(log.timestamp));
+      if (logDate !== dateStr) continue;
+      for (const field of fields) {
+        const val = log.metadata[field.key];
+        if (typeof val === 'number') {
+          totals[field.key] = (totals[field.key] ?? 0) + val;
+        }
+      }
+    }
+  }
+
+  return totals;
+}
+
+function toDateString(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 export function groupLogsByRecency(logs: LogEntry[]): RecencySection<LogEntry>[] {

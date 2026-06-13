@@ -8,6 +8,7 @@ import { AddBehaviorButton } from '../components/AddBehaviorButton';
 import { BehaviorCard } from '../components/BehaviorCard';
 import { Button } from '../components/Button';
 import { CategoryFilter } from '../components/CategoryFilter';
+import { CategoryMetadataTotals } from '../components/CategoryMetadataTotals';
 import { CategoryXpBar } from '../components/CategoryXpBar';
 import { StatsIcon } from '../components/StatsIcon';
 import { Text } from '../components/Text';
@@ -84,6 +85,7 @@ export function HomeScreen() {
       />
 
       {isSearching ? null : showXp && <CategoryXpBar selectedCategoryId={selectedCategoryId} />}
+      <CategoryMetadataTotals selectedCategoryId={selectedCategoryId} />
 
       <BehaviorList
         behaviors={filteredBehaviors}

@@ -2,8 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { BehaviorEntry, BehaviorType, Category } from '../types/behavior';
-import { XP_PER_LOG } from '../utils/xpUtils';
+import type { BehaviorEntry, BehaviorType, Category, MetadataField } from '../types/behavior';
 
 interface BehaviorStore {
   behaviors: BehaviorEntry[];
@@ -44,16 +43,12 @@ interface BehaviorStore {
   logBehavior: (id: string, timestamp?: number, metadata?: Record<string, string | number>) => void;
   removeBehavior: (id: string) => void;
   removeLog: (behaviorId: string, logId: string) => void;
-  updateLog: (
-    behaviorId: string,
-    logId: string,
-    timestamp: number,
-    metadata?: Record<string, string | number>,
-  ) => void;
+  updateLog: (behaviorId: string, logId: string, timestamp: number, metadata?: Record<string, string | number>) => void;
   getBehaviorLogs: (behaviorId: string) => BehaviorEntry['logs'];
-  addCategory: (name: string, emoji: string) => void;
+  addCategory: (name: string, emoji: string, metadataFields?: MetadataField[]) => void;
   removeCategory: (id: string) => void;
-  updateCategory: (id: string, updates: { name?: string; emoji?: string }) => void;
+  updateCategory: (id: string, updates: { name?: string; emoji?: string; metadataFields?: MetadataField[] }) => void;
+  updateCategoryMetadataFields: (id: string, metadataFields: MetadataField[]) => void;
 }
 
 export const useBehaviorStore = create<BehaviorStore>()(
@@ -61,8 +56,17 @@ export const useBehaviorStore = create<BehaviorStore>()(
     (set, get) => ({
       behaviors: [],
       categories: [],
-      addBehavior: (name, type, icon, cooldownMinutes = 0, cooldownType = 'rest', categoryId, cooldownUnit, isPrivate = false) =>
-        set((state) => ({
+      addBehavior: (
+        name,
+        type,
+        icon,
+        cooldownMinutes = 0,
+        cooldownType = 'rest',
+        categoryId,
+        cooldownUnit,
+        isPrivate = false,
+      ) =>
+        set(state => ({
           behaviors: [
             ...state.behaviors,
             {
@@ -82,8 +86,8 @@ export const useBehaviorStore = create<BehaviorStore>()(
           ],
         })),
       logBehavior: (id, timestamp, metadata = {}) =>
-        set((state) => ({
-          behaviors: state.behaviors.map((t) =>
+        set(state => ({
+          behaviors: state.behaviors.map(t =>
             t.id === id
               ? {
                   ...t,
@@ -104,28 +108,28 @@ export const useBehaviorStore = create<BehaviorStore>()(
               : t,
           ),
         })),
-      removeBehavior: (id) =>
-        set((state) => ({
-          behaviors: state.behaviors.filter((t) => t.id !== id),
+      removeBehavior: id =>
+        set(state => ({
+          behaviors: state.behaviors.filter(t => t.id !== id),
         })),
       removeLog: (behaviorId, logId) =>
-        set((state) => ({
-          behaviors: state.behaviors.map((b) =>
+        set(state => ({
+          behaviors: state.behaviors.map(b =>
             b.id === behaviorId
               ? {
                   ...b,
-                  logs: b.logs.filter((log) => log.id !== logId),
+                  logs: b.logs.filter(log => log.id !== logId),
                   lastTimestamp:
-                    b.logs.filter((log) => log.id !== logId).length > 0
-                      ? Math.max(...b.logs.filter((log) => log.id !== logId).map((log) => log.timestamp))
+                    b.logs.filter(log => log.id !== logId).length > 0
+                      ? Math.max(...b.logs.filter(log => log.id !== logId).map(log => log.timestamp))
                       : null,
                 }
               : b,
           ),
         })),
       updateBehaviorCooldown: (behaviorId, cooldownMinutes) =>
-        set((state) => ({
-          behaviors: state.behaviors.map((b) =>
+        set(state => ({
+          behaviors: state.behaviors.map(b =>
             b.id === behaviorId
               ? {
                   ...b,
@@ -135,8 +139,8 @@ export const useBehaviorStore = create<BehaviorStore>()(
           ),
         })),
       updateBehavior: (behaviorId, updates) =>
-        set((state) => ({
-          behaviors: state.behaviors.map((b) =>
+        set(state => ({
+          behaviors: state.behaviors.map(b =>
             b.id === behaviorId
               ? {
                   ...b,
@@ -145,37 +149,38 @@ export const useBehaviorStore = create<BehaviorStore>()(
               : b,
           ),
         })),
-      addCategory: (name, emoji) =>
-        set((state) => ({
+      addCategory: (name, emoji, metadataFields) =>
+        set(state => ({
           categories: [
             ...state.categories,
             {
               id: uuidv4(),
               name,
               emoji,
+              metadataFields,
             },
           ],
         })),
-      removeCategory: (id) =>
-        set((state) => ({
-          categories: state.categories.filter((c) => c.id !== id),
-          behaviors: state.behaviors.map((b) =>
-            b.categoryId === id ? { ...b, categoryId: undefined } : b,
-          ),
+      removeCategory: id =>
+        set(state => ({
+          categories: state.categories.filter(c => c.id !== id),
+          behaviors: state.behaviors.map(b => (b.categoryId === id ? { ...b, categoryId: undefined } : b)),
         })),
       updateCategory: (id, updates) =>
-        set((state) => ({
-          categories: state.categories.map((c) =>
-            c.id === id ? { ...c, ...updates } : c,
-          ),
+        set(state => ({
+          categories: state.categories.map(c => (c.id === id ? { ...c, ...updates } : c)),
+        })),
+      updateCategoryMetadataFields: (id, metadataFields) =>
+        set(state => ({
+          categories: state.categories.map(c => (c.id === id ? { ...c, metadataFields } : c)),
         })),
       updateLog: (behaviorId, logId, timestamp, metadata) =>
-        set((state) => ({
-          behaviors: state.behaviors.map((b) =>
+        set(state => ({
+          behaviors: state.behaviors.map(b =>
             b.id === behaviorId
               ? {
                   ...b,
-                  logs: b.logs.map((log) =>
+                  logs: b.logs.map(log =>
                     log.id === logId
                       ? {
                           ...log,
@@ -184,13 +189,13 @@ export const useBehaviorStore = create<BehaviorStore>()(
                         }
                       : log,
                   ),
-                  lastTimestamp: Math.max(...b.logs.map((log) => (log.id === logId ? timestamp : log.timestamp))),
+                  lastTimestamp: Math.max(...b.logs.map(log => (log.id === logId ? timestamp : log.timestamp))),
                 }
               : b,
           ),
         })),
-      getBehaviorLogs: (behaviorId) => {
-        const behavior = get().behaviors.find((b) => b.id === behaviorId);
+      getBehaviorLogs: behaviorId => {
+        const behavior = get().behaviors.find(b => b.id === behaviorId);
         return behavior?.logs ?? [];
       },
     }),

@@ -43,7 +43,11 @@ export function CategoryPicker({
   if (horizontal) {
     return (
       <>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
           <CategoryChips
             categories={categories}
             selectedId={selectedId}
@@ -53,7 +57,11 @@ export function CategoryPicker({
             horizontal
           />
           {onToggleForm && (
-            <AddCategoryButton isOpen={isFormOpen} onPress={onToggleForm} style={[styles.horizontalChip, { paddingHorizontal: 8 }]} />
+            <AddCategoryButton
+              isOpen={isFormOpen}
+              onPress={onToggleForm}
+              style={[styles.horizontalChip, { paddingHorizontal: 8 }]}
+            />
           )}
         </ScrollView>
         {formContent}
@@ -65,7 +73,13 @@ export function CategoryPicker({
     <View style={styles.section}>
       <View style={styles.labelRow}>
         <Text style={styles.label}>Category</Text>
-        {onToggleForm && <AddCategoryButton isOpen={isFormOpen} onPress={onToggleForm} style={styles.addButton} />}
+        {onToggleForm && (
+          <AddCategoryButton
+            isOpen={isFormOpen}
+            onPress={onToggleForm}
+            style={styles.addButton}
+          />
+        )}
       </View>
       {formContent}
       <View style={styles.row}>
@@ -92,7 +106,14 @@ interface CategoryChipsProps {
   horizontal?: boolean;
 }
 
-function CategoryChips({ categories, selectedId, onChange, onLongPress, showAll = false, horizontal = false }: CategoryChipsProps) {
+function CategoryChips({
+  categories,
+  selectedId,
+  onChange,
+  onLongPress,
+  showAll = false,
+  horizontal = false,
+}: CategoryChipsProps) {
   const items: (Category | { id: undefined; emoji: string; name: string })[] = showAll
     ? [{ id: undefined, emoji: '', name: 'All' }, ...categories]
     : [{ id: undefined, emoji: '', name: 'None' }, ...categories];
@@ -127,7 +148,14 @@ const styles = StyleSheet.create({
   section: { gap: 6 },
   labelRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   label: { color: Colors.text.muted, fontSize: 13, fontWeight: '600' },
-  addButton: { width: 28, height: 28, borderRadius: 6, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.bg.elevated },
+  addButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.bg.elevated,
+  },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   scrollContent: { paddingHorizontal: 16, gap: 8, paddingVertical: 4 },
   chip: { backgroundColor: 'transparent', paddingHorizontal: 10, paddingVertical: 6, gap: 4 },

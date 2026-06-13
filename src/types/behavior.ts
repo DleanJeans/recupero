@@ -1,7 +1,14 @@
+export interface MetadataField {
+  key: string;
+  label: string;
+  unit?: string;
+}
+
 export interface Category {
   id: string;
   name: string;
   emoji: string;
+  metadataFields?: MetadataField[];
 }
 
 export interface LogEntry {
