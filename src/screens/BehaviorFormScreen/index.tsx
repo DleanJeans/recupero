@@ -234,6 +234,7 @@ export function BehaviorFormScreen() {
             categories={categories}
             selectedId={categoryId}
             onChange={handleCategoryChange}
+            behaviors={behaviors}
             onLongPress={cat => {
               setEditingCategoryId(cat.id);
               setCategoryEmoji(cat.emoji);

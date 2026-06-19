@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import type { Category } from '../../types/behavior';
+import type { BehaviorEntry, Category } from '../../types/behavior';
+import { computeBehaviorCounts } from '../../utils/behaviorCounts';
 import { Colors } from '../../utils/colors';
-import { Button } from '../Button';
 import { Text } from '../Text';
 import { AddCategoryButton } from './AddCategoryButton';
+import { CategoryChips } from './CategoryChips';
 import { CategoryForm, type CategoryFormProps } from './CategoryForm';
 
 type CategoryId = string | undefined | null;
@@ -25,6 +26,8 @@ interface CategoryPickerProps {
   onToggleForm?: () => void;
   /** Form props when form is open */
   form?: CategoryFormProps;
+  /** Behaviors used to compute per-category and total counts. */
+  behaviors: BehaviorEntry[];
 }
 
 export function CategoryPicker({
@@ -37,7 +40,9 @@ export function CategoryPicker({
   isFormOpen = false,
   onToggleForm,
   form,
+  behaviors,
 }: CategoryPickerProps) {
+  const { behaviorCounts, allCount } = useMemo(() => computeBehaviorCounts(behaviors), [behaviors]);
   const formContent = isFormOpen && form && <CategoryForm {...form} />;
 
   if (horizontal) {
@@ -55,6 +60,8 @@ export function CategoryPicker({
             onLongPress={onLongPress}
             showAll={showAll}
             horizontal
+            behaviorCounts={behaviorCounts}
+            allCount={allCount}
           />
           {onToggleForm && (
             <AddCategoryButton
@@ -89,60 +96,13 @@ export function CategoryPicker({
           onChange={onChange}
           onLongPress={onLongPress}
           showAll={showAll}
+          behaviorCounts={behaviorCounts}
+          allCount={allCount}
         />
       </View>
     </View>
   );
 }
-
-// #region Subcomponents
-
-interface CategoryChipsProps {
-  categories: Category[];
-  selectedId: CategoryId;
-  onChange: (id: CategoryId) => void;
-  onLongPress?: (category: Category) => void;
-  showAll?: boolean;
-  horizontal?: boolean;
-}
-
-function CategoryChips({
-  categories,
-  selectedId,
-  onChange,
-  onLongPress,
-  showAll = false,
-  horizontal = false,
-}: CategoryChipsProps) {
-  const items: (Category | { id: undefined; emoji: string; name: string })[] = showAll
-    ? [{ id: undefined, emoji: '', name: 'All' }, ...categories]
-    : [{ id: undefined, emoji: '', name: 'None' }, ...categories];
-
-  return (
-    <>
-      {items.length === 1 && !showAll && <Text style={styles.emptyHint}>Tap + to create one on the home screen</Text>}
-      {items.map(item => {
-        const active = item.id === undefined ? selectedId == null : selectedId === item.id;
-        return (
-          <Button
-            key={item.id ?? 'none'}
-            variant="ghost"
-            size="sm"
-            active={active}
-            onPress={() => onChange(item.id)}
-            onLongPress={item.id && onLongPress ? () => onLongPress(item as Category) : undefined}
-            style={[horizontal ? styles.horizontalChip : styles.chip, horizontal && styles.chipHorizontal]}
-          >
-            <Text style={[styles.chipEmoji, !active && styles.chipEmojiInactive]}>{item.emoji ?? ''}</Text>
-            <Text style={[styles.chipText, active && styles.chipTextActive]}>{item.name}</Text>
-          </Button>
-        );
-      })}
-    </>
-  );
-}
-
-// #endregion
 
 const styles = StyleSheet.create({
   section: { gap: 6 },
@@ -158,7 +118,6 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   scrollContent: { paddingHorizontal: 16, gap: 8, paddingVertical: 4 },
-  chip: { backgroundColor: 'transparent', paddingHorizontal: 10, paddingVertical: 6, gap: 4 },
   horizontalChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -168,10 +127,4 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     gap: 4,
   },
-  chipHorizontal: {},
-  chipEmoji: { fontSize: 16 },
-  chipEmojiInactive: { opacity: 0.4 },
-  chipText: { color: Colors.text.faint, fontSize: 13, fontWeight: '500' },
-  chipTextActive: { color: Colors.text.primary },
-  emptyHint: { color: Colors.text.dim, fontSize: 12, fontStyle: 'italic', paddingVertical: 6 },
 });

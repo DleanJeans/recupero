@@ -14,7 +14,7 @@ function toCategoryId(id: string | undefined | null): string | null {
 }
 
 export function CategoryFilter({ selectedCategoryId, onSelectCategory }: CategoryFilterProps) {
-  const { categories, addCategory, removeCategory, updateCategory } = useBehaviorStore();
+  const { categories, behaviors, addCategory, removeCategory, updateCategory } = useBehaviorStore();
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [emoji, setEmoji] = useState('');
@@ -78,6 +78,7 @@ export function CategoryFilter({ selectedCategoryId, onSelectCategory }: Categor
         onChange={id => onSelectCategory(toCategoryId(id))}
         horizontal
         showAll
+        behaviors={behaviors}
         onLongPress={handleLongPress}
         isFormOpen={showForm || editingCategory != null}
         onToggleForm={toggleForm}
