@@ -54,7 +54,7 @@ export function CategoryChips({
           >
             <Text style={[styles.chipEmoji, !active && styles.chipEmojiInactive]}>{item.emoji ?? ''}</Text>
             <Text style={[styles.chipText, active && styles.chipTextActive]}>{item.name}</Text>
-            {count != null && <Text style={[styles.chipCount, active && styles.chipCountActive]}>{count}</Text>}
+            {(count != null && horizontal) && <Text style={[styles.chipCount, active && styles.chipCountActive]}>{count}</Text>}
           </Button>
         );
       })}
