@@ -1,4 +1,10 @@
-import { formatCooldown, formatDuration, formatElapsed, formatElapsedText, formatElapsedNumeric } from '../src/utils/timeUtils';
+import {
+  formatCooldown,
+  formatDuration,
+  formatElapsed,
+  formatElapsedNumeric,
+  formatElapsedText,
+} from '../src/utils/timeUtils';
 
 describe('formatCooldown', () => {
   it('returns empty string for 0 or negative or NaN', () => {

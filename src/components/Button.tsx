@@ -57,7 +57,10 @@ export function Button({
       disabled={disabled}
       accessibilityLabel={accessibilityLabel}
     >
-      {isText ? <Text style={[commonTextStyles.base, textStyles[variant], active && textActiveStyles[variant]]}>{children}</Text> : children}
+      {isText ? 
+        <Text style={[commonTextStyles.base, textStyles[variant], active && textActiveStyles[variant]]}>{children}</Text> 
+        : children
+      }
     </Pressable>
   );
 }

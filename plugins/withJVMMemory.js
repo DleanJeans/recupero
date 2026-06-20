@@ -6,11 +6,11 @@ const { withGradleProperties } = require('expo/config-plugins');
  * It also disables the Gradle daemon to prevent zombie processes from hanging the build.
  */
 module.exports = function withJVMMemory(config) {
-  return withGradleProperties(config, (config) => {
+  return withGradleProperties(config, config => {
     const props = config.modResults;
 
     const setGradleProperty = (key, value) => {
-      const index = props.findIndex((p) => p.type === 'property' && p.key === key);
+      const index = props.findIndex(p => p.type === 'property' && p.key === key);
       if (index >= 0) {
         props[index].value = value;
       } else {
