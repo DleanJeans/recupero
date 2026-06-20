@@ -22,6 +22,7 @@ interface BehaviorStore {
     isPrivate?: boolean,
     defaultMetadata?: Record<string, number>,
     starThresholds?: [number, number, number],
+    xpDecay?: { every: number; unit: 'days' | 'weeks' | 'months' },
   ) => void;
   updateBehaviorCooldown: (behaviorId: string, cooldownMinutes: number) => void;
   updateBehavior: (
@@ -42,6 +43,7 @@ interface BehaviorStore {
       private?: boolean;
       defaultMetadata?: Record<string, number>;
       starThresholds?: [number, number, number] | undefined;
+      xpDecay?: { every: number; unit: 'days' | 'weeks' | 'months' } | undefined;
     },
   ) => void;
   logBehavior: (id: string, timestamp?: number, metadata?: Record<string, string | number>) => void;
@@ -71,6 +73,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
         isPrivate = false,
         defaultMetadata,
         starThresholds,
+        xpDecay,
       ) =>
         set(state => ({
           behaviors: [
@@ -90,6 +93,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               cooldownType,
               cooldownUnit,
               starThresholds,
+              xpDecay,
             },
           ],
         })),

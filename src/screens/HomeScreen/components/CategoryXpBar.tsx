@@ -4,6 +4,7 @@ import { Text } from '../../../components/Text';
 import { XpBar } from '../../../components/XpBar';
 import { useBehaviorStore } from '../../../store/behaviorStore';
 import { Colors } from '../../../utils/colors';
+import { getEffectiveLogCount } from '../../../utils/xpUtils';
 
 interface Props {
   selectedCategoryId: string | null;
@@ -13,7 +14,9 @@ export function CategoryXpBar({ selectedCategoryId }: Props) {
 
   const logCount = useMemo(() => {
     if (selectedCategoryId === null) return 0;
-    return behaviors.filter(b => b.categoryId === selectedCategoryId).reduce((sum, b) => sum + b.logs.length, 0);
+    return behaviors
+      .filter(b => b.categoryId === selectedCategoryId)
+      .reduce((sum, b) => sum + getEffectiveLogCount(b), 0);
   }, [behaviors, selectedCategoryId]);
 
   if (selectedCategoryId === null) return null;

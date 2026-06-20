@@ -14,6 +14,7 @@ import { EmojiPicker } from '../../components/EmojiPicker';
 import { ScreenTitle } from '../../components/ScreenTitle';
 import { Text, TextInput } from '../../components/Text';
 import { useStarThresholdsForm } from '../../hooks/useStarThresholdsForm';
+import { useXpDecayForm } from '../../hooks/useXpDecayForm';
 import { useBehaviorStore } from '../../store/behaviorStore';
 import type { BehaviorEntry, BehaviorType, MetadataField } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
@@ -23,6 +24,7 @@ import type { CooldownUnit } from './components/CooldownInput';
 import { CooldownInput } from './components/CooldownInput';
 import { CooldownTypeToggle } from './components/CooldownTypeToggle';
 import { StarThresholdsFormField } from './components/StarThresholdsFormField';
+import { XpDecayInput } from './components/XpDecayInput';
 
 function iconFromStore(icon: BehaviorEntry['icon']): string {
   if (!icon) return '';
@@ -77,6 +79,17 @@ export function BehaviorFormScreen() {
     setValidationError: setStarValidationError,
   } = useStarThresholdsForm(behavior, isEdit);
 
+  const {
+    enabled: xpDecayEnabled,
+    everyMinutes: xpDecayEveryMinutes,
+    unit: xpDecayUnit,
+    xpDecayChanged,
+    handleToggle: handleXpDecayToggle,
+    handleChangeMinutes: handleXpDecayChangeMinutes,
+    handleUnitChange: handleXpDecayUnitChange,
+    serialized: xpDecaySerialized,
+  } = useXpDecayForm(behavior, isEdit);
+
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', () => setIsKeyboardOpen(true));
     const hideSub = Keyboard.addListener('keyboardDidHide', () => setIsKeyboardOpen(false));
@@ -128,7 +141,8 @@ export function BehaviorFormScreen() {
       cooldownType !== (behavior.cooldownType || 'rest') ||
       cooldownUnit !== behavior.cooldownUnit ||
       defaultMetadataChanged ||
-      starThresholdsChanged);
+      starThresholdsChanged ||
+      xpDecayChanged);
 
   const isDirty = isEdit ? !!hasChanges : name.trim().length > 0 || icon.trim().length > 0;
 
@@ -176,6 +190,7 @@ export function BehaviorFormScreen() {
         private: isPrivate,
         defaultMetadata: defaultMetadataObj,
         starThresholds: starsEnabled ? (parsedStars.values ?? undefined) : undefined,
+        xpDecay: xpDecayEnabled ? xpDecaySerialized : undefined,
       });
     } else {
       addBehavior(
@@ -189,6 +204,7 @@ export function BehaviorFormScreen() {
         isPrivate,
         defaultMetadataObj,
         starsEnabled ? (parsedStars.values ?? undefined) : undefined,
+        xpDecayEnabled ? xpDecaySerialized : undefined,
       );
     }
     savedRef.current = true;
@@ -362,6 +378,14 @@ export function BehaviorFormScreen() {
             validationError={starValidationError}
             onToggle={handleStarsToggle}
             onInputChange={handleStarInputChange}
+          />
+          <XpDecayInput
+            enabled={xpDecayEnabled}
+            everyMinutes={xpDecayEveryMinutes}
+            unit={xpDecayUnit}
+            onToggle={handleXpDecayToggle}
+            onChangeMinutes={handleXpDecayChangeMinutes}
+            onUnitChange={handleXpDecayUnitChange}
           />
         </ScrollView>
       </KeyboardAvoidingView>

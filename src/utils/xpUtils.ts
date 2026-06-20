@@ -1,4 +1,39 @@
+import type { BehaviorEntry, XpDecayUnit } from '../types/behavior';
+import { calendarDayDiff } from './dateUtils';
+
 export const XP_PER_LOG = 5;
+
+/** Convert a `xpDecay.unit` + `every` to a day count. */
+export function decayEveryInDays(every: number, unit: XpDecayUnit): number {
+  if (unit === 'days') return every;
+  if (unit === 'weeks') return every * 7;
+  return every * 30; // months → 30-day approximation
+}
+
+/** Number of "log equivalents" lost to XP decay since the last log, computed on read.
+ *  Returns 0 when the feature is off, no logs exist, or no decay has accrued.
+ *
+ *  Counts days *strictly between* the last log and now (excludes both endpoints),
+ *  so a same-day or 1-day-apart log never decays. Example: logged Wed, today Fri
+ *  crosses one day (Thu) → 1 log lost per `every` day. */
+export function getDecayLogCount(behavior: BehaviorEntry, now: number = Date.now()): number {
+  const { xpDecay, lastTimestamp } = behavior;
+  if (!xpDecay || lastTimestamp === null) return 0;
+
+  const calendarDiff = calendarDayDiff(now, lastTimestamp);
+  const daysBetween = Math.max(0, calendarDiff - 1);
+  if (daysBetween === 0) return 0;
+
+  const everyDays = decayEveryInDays(xpDecay.every, xpDecay.unit);
+  if (!Number.isFinite(everyDays) || everyDays <= 0) return 0;
+
+  return Math.floor(daysBetween / everyDays);
+}
+
+/** Effective log count for a behavior after applying XP decay. Floors at 0. */
+export function getEffectiveLogCount(behavior: BehaviorEntry, now: number = Date.now()): number {
+  return Math.max(0, behavior.logs.length - getDecayLogCount(behavior, now));
+}
 
 /** XP required to advance from level n to level n+1: 25 + 10n + 5n² */
 export function xpRequiredForLevel(n: number): number {

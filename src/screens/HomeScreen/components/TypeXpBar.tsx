@@ -5,6 +5,7 @@ import { XpBar } from '../../../components/XpBar';
 import { useBehaviorStore } from '../../../store/behaviorStore';
 import type { BehaviorType } from '../../../types/behavior';
 import { getBehaviorTypeColor } from '../../../utils/behaviorTypeUtils';
+import { getEffectiveLogCount } from '../../../utils/xpUtils';
 
 const TYPE_LABELS: Record<BehaviorType, string> = {
   desirable: 'Desirable',
@@ -25,7 +26,7 @@ export function TypeXpBar({ selectedCategoryId }: Props) {
       selectedCategoryId !== null ? behaviors.filter(b => b.categoryId === selectedCategoryId) : behaviors;
     const counts: Record<BehaviorType, number> = { desirable: 0, neutral: 0, undesirable: 0 };
     for (const b of filtered) {
-      counts[b.type ?? 'neutral'] += b.logs.length;
+      counts[b.type ?? 'neutral'] += getEffectiveLogCount(b);
     }
     return counts;
   }, [behaviors, selectedCategoryId]);

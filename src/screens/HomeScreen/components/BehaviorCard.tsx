@@ -18,6 +18,7 @@ import { getBehaviorTypeColor } from '../../../utils/behaviorTypeUtils';
 import { Colors } from '../../../utils/colors';
 import { getCooldownColor } from '../../../utils/cooldownUtils';
 import { formatElapsedNumeric } from '../../../utils/timeUtils';
+import { getEffectiveLogCount } from '../../../utils/xpUtils';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -132,7 +133,7 @@ function BehaviorInfo({ behavior, showCategory, animate, dateStr }: BehaviorInfo
         <CooldownLabel behavior={behavior} />
       </View>
       <XpBar
-        logCount={behavior.logs.length}
+        logCount={getEffectiveLogCount(behavior)}
         color={getBehaviorTypeColor(behavior.type)}
         animate={animate}
       />

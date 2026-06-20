@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { BehaviorEntry } from '../types/behavior';
 import { Colors } from '../utils/colors';
+import { getEffectiveLogCount } from '../utils/xpUtils';
 import { BehaviorIcon } from './BehaviorIcon';
 import { CooldownLabel } from './CooldownLabel';
 import { ScreenTitle } from './ScreenTitle';
@@ -35,7 +36,7 @@ export function BehaviorTitle({ behavior, titleOverride, iconSize = 24, animate 
       </View>
       <View style={styles.xpBarWrapper}>
         <XpBar
-          logCount={behavior.logs.length}
+          logCount={getEffectiveLogCount(behavior)}
           color={color}
           animate={animate}
         />

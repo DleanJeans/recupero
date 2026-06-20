@@ -19,6 +19,17 @@ export function formatDateDisplay(dateStr: string): string {
   return local;
 }
 
+/** Calendar-day difference between `later` and `earlier`, both as ms timestamps.
+ *  Counts whole day-boundaries crossed (e.g. Wed 11pm → Fri 1am = 1 day, NOT 0.083).
+ *  Negative when `later` precedes `earlier`. */
+export function calendarDayDiff(later: number | Date, earlier: number | Date): number {
+  const a = new Date(later);
+  const b = new Date(earlier);
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const MS_PER_DAY = 86400000;
+  return Math.round((startOfDay(a).getTime() - startOfDay(b).getTime()) / MS_PER_DAY);
+}
+
 function daysAgo(dateStr: string): number {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
