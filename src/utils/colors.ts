@@ -66,4 +66,10 @@ export const Colors = {
     undesirable: '#fca5a5',
     desirable: '#86efac',
   },
+
+  // ── Daily Star Rating ──
+  star: {
+    filled: '#fbbf24',
+    empty: '#3a3a3a',
+  },
 } as const;

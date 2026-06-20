@@ -37,4 +37,6 @@ export interface BehaviorEntry {
   cooldownMinutes: number;
   cooldownType?: 'rest' | 'limit';
   cooldownUnit?: 'minutes' | 'hours' | 'days' | 'weeks';
+  /** Opt-in daily 3-star rating. Undefined = feature off. */
+  starThresholds?: [number, number, number];
 }

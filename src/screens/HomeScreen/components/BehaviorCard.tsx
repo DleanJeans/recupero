@@ -7,6 +7,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { BehaviorIcon } from '../../../components/BehaviorIcon';
 import { Button } from '../../../components/Button';
 import { CooldownLabel } from '../../../components/CooldownLabel';
+import { StarRow } from '../../../components/StarRow';
 import { Text } from '../../../components/Text';
 import { XpBar } from '../../../components/XpBar';
 import { useXpBarAnimation } from '../../../hooks/useXpBarAnimation';
@@ -23,8 +24,12 @@ type NavProp = NativeStackNavigationProp<RootStackParamList>;
 interface Props {
   behavior: BehaviorEntry;
   showCategory?: boolean;
+  /** Date string (YYYY-MM-DD) for the section this card belongs to.
+   *  When provided, the StarRow reflects earned stars for that date
+   *  instead of today. Defaults to today. */
+  dateStr?: string;
 }
-export function BehaviorCard({ behavior, showCategory }: Props) {
+export function BehaviorCard({ behavior, showCategory, dateStr }: Props) {
   const navigation = useNavigation<NavProp>();
   const { removeBehavior } = useBehaviorStore();
   const swipeableRef = useRef<Swipeable>(null);
@@ -59,36 +64,35 @@ export function BehaviorCard({ behavior, showCategory }: Props) {
   };
 
   return (
-    <>
-      <Swipeable
-        ref={swipeableRef}
-        renderLeftActions={() => <SwipeDelete onRemove={handleRemove} />}
-        overshootLeft={false}
-      >
-        <View style={styles.card}>
-          <Pressable
-            style={styles.content}
-            onPress={handlePress}
-            onLongPress={handleLongPress}
-          >
-            <BehaviorIcon
-              behavior={behavior}
-              size={32}
-            />
-            <BehaviorInfo
-              behavior={behavior}
-              showCategory={showCategory}
-              animate={animate}
-            />
-          </Pressable>
-
-          <LogButton
+    <Swipeable
+      ref={swipeableRef}
+      renderLeftActions={() => <SwipeDelete onRemove={handleRemove} />}
+      overshootLeft={false}
+    >
+      <View style={styles.card}>
+        <Pressable
+          style={styles.content}
+          onPress={handlePress}
+          onLongPress={handleLongPress}
+        >
+          <BehaviorIcon
             behavior={behavior}
-            onPress={() => navigation.navigate('BehaviorLog', { behaviorId: behavior.id })}
+            size={32}
           />
-        </View>
-      </Swipeable>
-    </>
+          <BehaviorInfo
+            behavior={behavior}
+            showCategory={showCategory}
+            animate={animate}
+            dateStr={dateStr}
+          />
+        </Pressable>
+
+        <LogButton
+          behavior={behavior}
+          onPress={() => navigation.navigate('BehaviorLog', { behaviorId: behavior.id })}
+        />
+      </View>
+    </Swipeable>
   );
 }
 
@@ -99,12 +103,8 @@ interface CategoryEmojiProps {
 }
 function CategoryEmoji({ behavior }: CategoryEmojiProps) {
   const { categories } = useBehaviorStore();
-  if (!behavior.categoryId) return;
-
-  const category = categories.find(c => c.id === behavior.categoryId);
-
+  const category = behavior.categoryId ? categories.find(c => c.id === behavior.categoryId) : null;
   if (!category) return null;
-
   return <Text style={{ fontSize: 15 }}>{category.emoji}</Text>;
 }
 
@@ -112,13 +112,20 @@ interface BehaviorInfoProps {
   behavior: BehaviorEntry;
   showCategory?: boolean;
   animate?: boolean;
+  dateStr?: string;
 }
-function BehaviorInfo({ behavior, showCategory, animate }: BehaviorInfoProps) {
+function BehaviorInfo({ behavior, showCategory, animate, dateStr }: BehaviorInfoProps) {
   return (
     <View style={styles.info}>
       <View style={styles.nameRow}>
         <BehaviorName behavior={behavior} />
         {showCategory && <CategoryEmoji behavior={behavior} />}
+        <StarRow
+          behavior={behavior}
+          dateStr={dateStr}
+          size={14}
+          style={styles.starSlot}
+        />
       </View>
       <View style={styles.elapsedRow}>
         <BehaviorElapsed behavior={behavior} />
@@ -146,11 +153,7 @@ interface BehaviorElapsedProps {
 function BehaviorElapsed({ behavior }: BehaviorElapsedProps) {
   const color = behavior.cooldownMinutes ? getCooldownColor(behavior) : undefined;
 
-  return (
-    <Text style={color ? [styles.elapsed, { color }] : styles.elapsed}>
-      {formatElapsedNumeric(behavior.lastTimestamp)}
-    </Text>
-  );
+  return <Text style={[styles.elapsed, color ? { color } : null]}>{formatElapsedNumeric(behavior.lastTimestamp)}</Text>;
 }
 
 interface LogButtonProps {
@@ -230,6 +233,9 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     fontSize: 16,
     fontWeight: '600',
+  },
+  starSlot: {
+    marginLeft: 2,
   },
 
   elapsed: {

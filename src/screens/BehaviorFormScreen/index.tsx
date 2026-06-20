@@ -2,7 +2,8 @@ import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import type { TextInput as RNTextInput } from 'react-native';
+import { Alert, Keyboard, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../../components/BackButton';
@@ -12,14 +13,16 @@ import { CooldownIcon } from '../../components/CooldownIcon';
 import { EmojiPicker } from '../../components/EmojiPicker';
 import { ScreenTitle } from '../../components/ScreenTitle';
 import { Text, TextInput } from '../../components/Text';
+import { useStarThresholdsForm } from '../../hooks/useStarThresholdsForm';
 import { useBehaviorStore } from '../../store/behaviorStore';
-import type { BehaviorEntry, BehaviorType } from '../../types/behavior';
+import type { BehaviorEntry, BehaviorType, MetadataField } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import { BehaviorTypePicker } from './components/BehaviorTypePicker';
 import type { CooldownUnit } from './components/CooldownInput';
 import { CooldownInput } from './components/CooldownInput';
 import { CooldownTypeToggle } from './components/CooldownTypeToggle';
+import { StarThresholdsFormField } from './components/StarThresholdsFormField';
 
 function iconFromStore(icon: BehaviorEntry['icon']): string {
   if (!icon) return '';
@@ -42,7 +45,7 @@ export function BehaviorFormScreen() {
   const behavior = behaviorId ? behaviors.find(b => b.id === behaviorId) : undefined;
 
   const isEdit = behavior != null;
-  const nameRef = useRef<import('react-native').TextInput>(null);
+  const nameRef = useRef<RNTextInput>(null);
   const savedRef = useRef<boolean>(false);
 
   const [name, setName] = useState('');
@@ -59,10 +62,29 @@ export function BehaviorFormScreen() {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [categoryEmoji, setCategoryEmoji] = useState('');
   const [categoryName, setCategoryName] = useState('');
-  const [categoryMetadataFields, setCategoryMetadataFields] = useState<import('../../types/behavior').MetadataField[]>(
-    [],
-  );
+  const [categoryMetadataFields, setCategoryMetadataFields] = useState<MetadataField[]>([]);
   const [behaviorDefaultMetadata, setBehaviorDefaultMetadata] = useState<Record<string, string>>({});
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  const {
+    enabled: starsEnabled,
+    inputs: starInputs,
+    validationError: starValidationError,
+    parsedStars,
+    starThresholdsChanged,
+    handleToggle: handleStarsToggle,
+    handleInputChange: handleStarInputChange,
+    setValidationError: setStarValidationError,
+  } = useStarThresholdsForm(behavior, isEdit);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener('keyboardDidShow', () => setIsKeyboardOpen(true));
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => setIsKeyboardOpen(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const resetCategoryForm = () => {
     setShowCategoryForm(false);
@@ -87,14 +109,12 @@ export function BehaviorFormScreen() {
     );
   }, [behavior]);
 
-  const defaultMetadataChanged =
-    isEdit && behavior
-      ? (() => {
-          const orig = behavior.defaultMetadata ?? {};
-          const keys = new Set([...Object.keys(orig), ...Object.keys(behaviorDefaultMetadata)]);
-          return [...keys].some(k => String(orig[k] ?? '') !== (behaviorDefaultMetadata[k] ?? ''));
-        })()
-      : false;
+  let defaultMetadataChanged = false;
+  if (isEdit && behavior) {
+    const orig = behavior.defaultMetadata ?? {};
+    const keys = new Set([...Object.keys(orig), ...Object.keys(behaviorDefaultMetadata)]);
+    defaultMetadataChanged = [...keys].some(k => String(orig[k] ?? '') !== (behaviorDefaultMetadata[k] ?? ''));
+  }
 
   const hasChanges =
     isEdit &&
@@ -107,7 +127,8 @@ export function BehaviorFormScreen() {
       cooldownMinutes !== (behavior.cooldownMinutes || 0) ||
       cooldownType !== (behavior.cooldownType || 'rest') ||
       cooldownUnit !== behavior.cooldownUnit ||
-      defaultMetadataChanged);
+      defaultMetadataChanged ||
+      starThresholdsChanged);
 
   const isDirty = isEdit ? !!hasChanges : name.trim().length > 0 || icon.trim().length > 0;
 
@@ -133,6 +154,11 @@ export function BehaviorFormScreen() {
     const { addBehavior, updateBehavior } = useBehaviorStore.getState();
     const trimmed = name.trim();
     if (!trimmed) return;
+    if (parsedStars.error) {
+      setStarValidationError(parsedStars.error);
+      return;
+    }
+    setStarValidationError(null);
     const defaultMetadataObj = Object.fromEntries(
       Object.entries(behaviorDefaultMetadata)
         .filter(([, v]) => v !== '' && v !== '0')
@@ -149,6 +175,7 @@ export function BehaviorFormScreen() {
         cooldownUnit: cooldownUnit || undefined,
         private: isPrivate,
         defaultMetadata: defaultMetadataObj,
+        starThresholds: starsEnabled ? (parsedStars.values ?? undefined) : undefined,
       });
     } else {
       addBehavior(
@@ -161,6 +188,7 @@ export function BehaviorFormScreen() {
         cooldownUnit || undefined,
         isPrivate,
         defaultMetadataObj,
+        starsEnabled ? (parsedStars.values ?? undefined) : undefined,
       );
     }
     savedRef.current = true;
@@ -328,20 +356,29 @@ export function BehaviorFormScreen() {
               </View>
             );
           })()}
+          <StarThresholdsFormField
+            enabled={starsEnabled}
+            inputs={starInputs}
+            validationError={starValidationError}
+            onToggle={handleStarsToggle}
+            onInputChange={handleStarInputChange}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <View style={styles.actions}>
-        <Button
-          variant="primary"
-          size="lg"
-          style={styles.primaryAction}
-          onPress={handleSave}
-          disabled={isEdit ? !hasChanges : !name.trim() || !icon.trim()}
-        >
-          {isEdit ? 'Save' : 'Add'}
-        </Button>
-      </View>
+      {!isKeyboardOpen && (
+        <View style={styles.actions}>
+          <Button
+            variant="primary"
+            size="lg"
+            style={styles.primaryAction}
+            onPress={handleSave}
+            disabled={isEdit ? !hasChanges : !name.trim() || !icon.trim()}
+          >
+            {isEdit ? 'Save' : 'Add'}
+          </Button>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -353,7 +390,7 @@ interface NameInputProps {
   onChangeText: (v: string) => void;
   onSubmit: () => void;
 }
-const NameInput = React.forwardRef<import('react-native').TextInput, NameInputProps>(function NameInput(
+const NameInput = React.forwardRef<RNTextInput, NameInputProps>(function NameInput(
   { value, onChangeText, onSubmit },
   ref,
 ) {
@@ -365,7 +402,6 @@ const NameInput = React.forwardRef<import('react-native').TextInput, NameInputPr
       placeholderTextColor={Colors.text.faint}
       value={value}
       onChangeText={onChangeText}
-      autoFocus
       onSubmitEditing={onSubmit}
       returnKeyType="done"
     />
@@ -397,6 +433,7 @@ const styles = StyleSheet.create({
   form: {
     paddingHorizontal: 16,
     paddingTop: 8,
+    paddingBottom: 96,
     gap: 20,
   },
   formWithEmojiOpen: {

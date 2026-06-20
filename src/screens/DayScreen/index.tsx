@@ -6,12 +6,14 @@ import { BackButton } from '../../components/BackButton';
 import { BehaviorIcon } from '../../components/BehaviorIcon';
 import { DatePicker } from '../../components/DatePicker';
 import { ScreenTitle } from '../../components/ScreenTitle';
+import { StarRow } from '../../components/StarRow';
 import { Text } from '../../components/Text';
 import { useBehaviorStore } from '../../store/behaviorStore';
 import type { Category, LogEntry } from '../../types/behavior';
 import { getAllDailyMetadataTotals } from '../../utils/behaviorUtils';
 import { Colors } from '../../utils/colors';
 import { describeDay, toDateString } from '../../utils/dateUtils';
+import { getThresholds, getTotalStarsForDate } from '../../utils/starUtils';
 import { formatDuration, formatTime, MS_PER_MINUTE } from '../../utils/timeUtils';
 
 function formatEntryMetadata(
@@ -91,6 +93,14 @@ export function DayScreen() {
     const maxTs = Math.max(...timestamps);
     return { first: minTs, last: maxTs, spanMs: maxTs - minTs };
   }, [dayLogs]);
+
+  // Star rating: total across opted-in behaviors for the selected date.
+  // Summary item renders only when at least one opted-in behavior has a log.
+  const hasOptedInLog = useMemo(() => dayLogs.some(entry => getThresholds(entry.behavior) !== undefined), [dayLogs]);
+  const totalStars = useMemo(() => {
+    if (!hasOptedInLog) return 0;
+    return getTotalStarsForDate(behaviors, selectedDate);
+  }, [behaviors, selectedDate, hasOptedInLog]);
 
   // Group logs that fall in the same calendar minute so time is shown once
   const minuteGroups = useMemo(() => {
@@ -174,6 +184,23 @@ export function DayScreen() {
           <Text style={styles.summaryValue}>{totalEntries}</Text>
           <Text style={styles.summaryLabel}>entries</Text>
         </View>
+        {hasOptedInLog && (
+          <View
+            style={styles.summaryItem}
+            accessible
+            accessibilityLabel={`${totalStars} stars on this date`}
+          >
+            <View style={styles.starSummaryValue}>
+              <Ionicons
+                name="star"
+                size={18}
+                color={Colors.star.filled}
+              />
+              <Text style={styles.summaryValue}>{totalStars}</Text>
+            </View>
+            <Text style={styles.summaryLabel}>stars</Text>
+          </View>
+        )}
         {dayLogs.length > 1 && daySpan && (
           <View style={styles.summaryItem}>
             <Text style={styles.summaryValue}>{formatDuration(daySpan.spanMs)}</Text>
@@ -247,6 +274,11 @@ export function DayScreen() {
                           >
                             {entry.behavior.name}
                           </Text>
+                          <StarRow
+                            behavior={entry.behavior}
+                            dateStr={selectedDate}
+                            size={12}
+                          />
                           {formatEntryMetadata(entry.log.metadata, entry.behavior.categoryId, categories)}
                         </View>
                       </React.Fragment>
@@ -358,6 +390,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '400',
     marginTop: 1,
+  },
+  starSummaryValue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
 
   // Log list

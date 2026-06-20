@@ -14,11 +14,13 @@ import type { BehaviorEntry } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { getDailyMetadataTotals, groupBehaviorsByRecency } from '../../utils/behaviorUtils';
 import { Colors } from '../../utils/colors';
-import { toDateString } from '../../utils/dateUtils';
+import { toDateString, yesterday } from '../../utils/dateUtils';
+import { getTotalStarsForDate } from '../../utils/starUtils';
 import { Label } from '../../utils/strings';
 import { AddBehaviorButton } from './components/AddBehaviorButton';
 import { BehaviorCard } from './components/BehaviorCard';
 import { CategoryXpBar } from './components/CategoryXpBar';
+import { HomeSearchBar } from './components/HomeSearchBar';
 import { StatsIcon } from './components/StatsIcon';
 import { TypeXpBar } from './components/TypeXpBar';
 
@@ -168,8 +170,6 @@ function HeaderIcon({ icon, name, onPress, accessibilityLabel }: HeaderIconProps
   );
 }
 
-import { HomeSearchBar } from './components/HomeSearchBar';
-
 interface BehaviorListProps {
   behaviors: BehaviorEntry[];
   selectedCategoryId: string | null;
@@ -177,16 +177,29 @@ interface BehaviorListProps {
 }
 function BehaviorList({ behaviors, selectedCategoryId, searchQuery }: BehaviorListProps) {
   const sections = useMemo(() => groupBehaviorsByRecency(behaviors), [behaviors]);
+  const todayStr = toDateString(new Date());
+  const yesterdayStr = toDateString(yesterday());
+  const dateForSection = (title: string): string | undefined => {
+    if (title === Label.TODAY) return todayStr;
+    if (title === Label.YESTERDAY) return yesterdayStr;
+    return undefined;
+  };
+  const emptyMessage = (() => {
+    if (searchQuery) return `No behaviors matching "${searchQuery}".`;
+    if (selectedCategoryId !== null) return 'No behaviors in this category.\nTap + to add one.';
+    return 'No behaviors yet.\nAdd your first one.';
+  })();
 
   return (
     <SectionList
       key={selectedCategoryId ?? 'all'}
       sections={sections}
       keyExtractor={item => item.id}
-      renderItem={({ item }) => (
+      renderItem={({ item, section }) => (
         <BehaviorCard
           behavior={item}
           showCategory={selectedCategoryId === null}
+          dateStr={dateForSection(section.title)}
         />
       )}
       renderSectionHeader={({ section }) => (
@@ -196,15 +209,7 @@ function BehaviorList({ behaviors, selectedCategoryId, searchQuery }: BehaviorLi
           selectedCategoryId={selectedCategoryId}
         />
       )}
-      ListEmptyComponent={
-        <Text style={styles.empty}>
-          {searchQuery
-            ? `No behaviors matching "${searchQuery}".`
-            : selectedCategoryId !== null
-              ? 'No behaviors in this category.\nTap + to add one.'
-              : 'No behaviors yet.\nAdd your first one.'}
-        </Text>
-      }
+      ListEmptyComponent={<Text style={styles.empty}>{emptyMessage}</Text>}
       contentContainerStyle={behaviors.length === 0 && styles.emptyContainer}
     />
   );
@@ -218,19 +223,47 @@ interface SectionHeaderProps {
 function SectionHeader({ title, behaviors, selectedCategoryId }: SectionHeaderProps) {
   const { categories } = useBehaviorStore();
   const today = toDateString(new Date());
+  const yesterdayStr = toDateString(yesterday());
+  const sectionDate = (() => {
+    if (title === Label.TODAY) return today;
+    if (title === Label.YESTERDAY) return yesterdayStr;
+    return null;
+  })();
   const metaCategory =
     title === Label.TODAY && selectedCategoryId !== null
       ? categories.find(c => c.id === selectedCategoryId && c.metadataFields?.length)
       : undefined;
   const totals = metaCategory ? getDailyMetadataTotals(behaviors, metaCategory, today) : null;
 
+  const sectionStars = useMemo(() => {
+    if (!sectionDate) return null;
+    const hasOptedIn = behaviors.some(b => b.starThresholds);
+    if (!hasOptedIn) return null;
+    return getTotalStarsForDate(behaviors, sectionDate);
+  }, [behaviors, sectionDate]);
+
   return (
     <View style={styles.sectionHeader}>
-      <Text style={styles.sectionHeaderText}>{title}</Text>
+      <View style={styles.sectionHeaderLeft}>
+        <Text style={styles.sectionHeaderText}>{title}</Text>
+        {sectionStars !== null && (
+          <View
+            style={styles.sectionStarBadge}
+            accessibilityLabel={`${sectionStars} stars on ${title.toLowerCase()}`}
+          >
+            <Ionicons
+              name="star"
+              size={12}
+              color={Colors.star.filled}
+            />
+            <Text style={styles.sectionStarBadgeText}>{sectionStars}</Text>
+          </View>
+        )}
+      </View>
       {totals && metaCategory && (
         <View style={styles.sectionTotals}>
           {metaCategory.metadataFields?.map(field => {
-            const val = totals![field.key];
+            const val = totals?.[field.key];
             if (val == null) return null;
             return (
               <Text
@@ -270,6 +303,7 @@ const styles = StyleSheet.create({
   titleActions: {
     flexDirection: 'row',
     gap: 16,
+    alignItems: 'center',
   },
   emptyContainer: {
     flex: 1,
@@ -289,12 +323,32 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     marginHorizontal: 16,
   },
+  sectionHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   sectionHeaderText: {
     color: Colors.text.faint,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  sectionStarBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: Colors.bg.input,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  sectionStarBadgeText: {
+    color: Colors.text.primary,
+    fontSize: 11,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   sectionTotals: {
     flexDirection: 'row',
