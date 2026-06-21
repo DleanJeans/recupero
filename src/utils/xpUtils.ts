@@ -11,13 +11,16 @@ export function decayEveryInDays(every: number, unit: XpDecayUnit): number {
 }
 
 /** Number of "log equivalents" lost to XP decay across the behavior's lifetime,
- *  computed on read. Sums decay accrued in every inter-log gap PLUS the gap from
- *  the most recent log to now, so a sparse history decays more than a dense one.
- *  Returns 0 when the feature is off, no logs exist, or no decay has accrued.
+ *  computed on read.
+ *
+ *  **Era-reset behavior:** when a single inter-log gap's decay would cancel all
+ *  logs accumulated since the last reset, that log starts a new era — only logs
+ *  from the latest era count toward XP. This keeps abandoned behaviors from
+ *  getting stuck at 0 XP: a long pause triggers a reset rather than permanent 0.
  *
  *  Each gap counts days *strictly between* its endpoints (excludes both), so a
- *  same-day or 1-day-apart pair never decays. Example: logs on Wed and Fri with
- *  decay every 1 day → 1 log lost; logs on Wed and Sat → 2 logs lost. */
+ *  same-day or 1-day-apart pair never decays. Returns 0 when the feature is off,
+ *  no logs exist, or no decay has accrued. */
 export function getDecayLogCount(behavior: BehaviorEntry, now: number = Date.now()): number {
   const { xpDecay, logs } = behavior;
   if (!xpDecay) return 0;
@@ -28,15 +31,21 @@ export function getDecayLogCount(behavior: BehaviorEntry, now: number = Date.now
 
   // Defensive: assume logs may arrive out of order. Cheaper than trusting call sites.
   const sorted = [...logs].sort((a, b) => a.timestamp - b.timestamp);
+  const N = sorted.length;
 
-  let total = 0;
-  for (let i = 0; i < sorted.length - 1; i++) {
-    total += decayForGap(sorted[i].timestamp, sorted[i + 1].timestamp, everyDays);
+  // Walk inter-log gaps. Reset the era at any log whose incoming gap's decay
+  // is >= the number of logs in the current era — that gap wipes them out.
+  let eraStart = 0;
+  for (let i = 1; i < N; i++) {
+    const gapDecay = decayForGap(sorted[i - 1].timestamp, sorted[i].timestamp, everyDays);
+    if (gapDecay >= i - eraStart) {
+      eraStart = i;
+    }
   }
-  // Final gap: most recent log → now.
-  total += decayForGap(sorted[sorted.length - 1].timestamp, now, everyDays);
 
-  return total;
+  // Final gap: most recent log → now. Caps at N since we can't cancel more logs than exist.
+  const finalDecay = decayForGap(sorted[N - 1].timestamp, now, everyDays);
+  return Math.min(N, eraStart + finalDecay);
 }
 
 function decayForGap(earlierMs: number, laterMs: number, everyDays: number): number {

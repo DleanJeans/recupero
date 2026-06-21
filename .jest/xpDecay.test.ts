@@ -118,12 +118,13 @@ describe('getDecayLogCount', () => {
       expect(getDecayLogCount(behaviorWithLogs(4, 1, decay), NOW_TS)).toBe(1);
     });
 
-    it('7 days apart → 2 lost (daysBetween=6, ⌊6/3⌋=2)', () => {
-      expect(getDecayLogCount(behaviorWithLogs(7, 1, decay), NOW_TS)).toBe(2);
+    it('7 days apart → 1 lost (final gap of 6 between wipes the sole era log)', () => {
+      // 1 log, final gap has 6 between, decay=2 >= era count 1 → log cancelled by final gap
+      expect(getDecayLogCount(behaviorWithLogs(7, 1, decay), NOW_TS)).toBe(1);
     });
 
-    it('10 days apart → 3 lost (daysBetween=9, ⌊9/3⌋=3)', () => {
-      expect(getDecayLogCount(behaviorWithLogs(10, 1, decay), NOW_TS)).toBe(3);
+    it('10 days apart → 1 lost (final gap of 9 between wipes the sole era log)', () => {
+      expect(getDecayLogCount(behaviorWithLogs(10, 1, decay), NOW_TS)).toBe(1);
     });
   });
 
@@ -138,8 +139,8 @@ describe('getDecayLogCount', () => {
       expect(getDecayLogCount(behaviorWithLogs(8, 1, decay), NOW_TS)).toBe(1);
     });
 
-    it('15 days apart → 2 lost (daysBetween=14, ⌊14/7⌋=2)', () => {
-      expect(getDecayLogCount(behaviorWithLogs(15, 1, decay), NOW_TS)).toBe(2);
+    it('15 days apart → 1 lost (final gap of 14 between wipes the sole era log)', () => {
+      expect(getDecayLogCount(behaviorWithLogs(15, 1, decay), NOW_TS)).toBe(1);
     });
   });
 
@@ -154,8 +155,8 @@ describe('getDecayLogCount', () => {
       expect(getDecayLogCount(behaviorWithLogs(31, 1, decay), NOW_TS)).toBe(1);
     });
 
-    it('61 days apart → 2 lost (daysBetween=60, ⌊60/30⌋=2)', () => {
-      expect(getDecayLogCount(behaviorWithLogs(61, 1, decay), NOW_TS)).toBe(2);
+    it('61 days apart → 1 lost (final gap of 60 between wipes the sole era log)', () => {
+      expect(getDecayLogCount(behaviorWithLogs(61, 1, decay), NOW_TS)).toBe(1);
     });
   });
 
@@ -185,18 +186,31 @@ describe('getDecayLogCount', () => {
       const realNow = jest.spyOn(Date, 'now').mockReturnValue(futureNow);
       try {
         const b = behaviorWithLogs(0, 1, { every: 1, unit: 'days' });
-        // futureNow vs lastTimestamp = NOW_TS → calendarDiff=4, daysBetween=3 → 3 lost
-        expect(getDecayLogCount(b)).toBe(3);
+        // 1 log at NOW_TS, now=NOW_TS+4d → gap has 3 between, decay=3.
+        // 3 >= era count 1 → log wiped by final gap → 1 cancelled.
+        expect(getDecayLogCount(b)).toBe(1);
       } finally {
         realNow.mockRestore();
       }
     });
   });
 
-  describe('sum across all gaps (lifetime decay)', () => {
+  describe('era-reset behavior', () => {
     const decay = { every: 1, unit: 'days' as const };
 
-    it('sparse log at 5d ago + 10d ago: 4+4 = 8 days between gaps', () => {
+    it('consecutive logs survive forever: 100 logs, one per day → 0 cancelled', () => {
+      const ts0 = lastLog(0);
+      const logList: LogEntry[] = Array.from({ length: 100 }, (_, i) => makeLog(lastLog(i)));
+      const b = makeBehavior({
+        xpDecay: decay,
+        lastTimestamp: ts0,
+        logs: logList,
+      });
+      // All inter-log gaps = 0 between. Final gap 0 between. No reset.
+      expect(getDecayLogCount(b, NOW_TS)).toBe(0);
+    });
+
+    it('long gap resets: 2 logs at 5d + 10d ago → era starts at 5d, final gap wipes it', () => {
       const ts5 = lastLog(5);
       const ts10 = lastLog(10);
       const b = makeBehavior({
@@ -204,13 +218,13 @@ describe('getDecayLogCount', () => {
         lastTimestamp: ts5,
         logs: [makeLog(ts10), makeLog(ts5)],
       });
-      // gap ts10→ts5: 5 cal days, 4 between → 4 decay
-      // final gap ts5→now: 5 cal days, 4 between → 4 decay
-      // total = 4 + 4 = 8 (NOT 4, which is what the old single-gap logic would give)
-      expect(getDecayLogCount(b, NOW_TS)).toBe(8);
+      // gap ts10→ts5: 4 decay, 4 >= era count 1 → reset at ts5 (eraStart=1)
+      // final gap ts5→now: 4 decay wipes the sole era log
+      // cancelled = min(2, 1+4) = 2
+      expect(getDecayLogCount(b, NOW_TS)).toBe(2);
     });
 
-    it('three logs spread 5d apart each: 4+4+0 = 8 days between', () => {
+    it('cascading resets: 3 logs at 0/5/10d ago → era keeps shifting forward', () => {
       const ts0 = lastLog(0);
       const ts5 = lastLog(5);
       const ts10 = lastLog(10);
@@ -219,29 +233,14 @@ describe('getDecayLogCount', () => {
         lastTimestamp: ts0,
         logs: [makeLog(ts10), makeLog(ts5), makeLog(ts0)],
       });
-      // gap ts10→ts5: 4 between → 4
-      // gap ts5→ts0: 4 between → 4
-      // final gap ts0→now: 0 between → 0
-      // total = 8
-      expect(getDecayLogCount(b, NOW_TS)).toBe(8);
+      // gap ts10→ts5: 4 >= 1 → reset, eraStart=1
+      // gap ts5→ts0: 4 >= 1 → reset, eraStart=2
+      // final gap ts0→now: 0
+      // cancelled = min(3, 2+0) = 2
+      expect(getDecayLogCount(b, NOW_TS)).toBe(2);
     });
 
-    it('long history: 100 logs over 100 days → no decay (consecutive days)', () => {
-      const ts0 = lastLog(0);
-      // 100 logs, one per day, oldest 99d ago
-      const logList: LogEntry[] = Array.from({ length: 100 }, (_, i) => makeLog(lastLog(i)));
-      const b = makeBehavior({
-        xpDecay: decay,
-        lastTimestamp: ts0,
-        logs: logList,
-      });
-      // All inter-log gaps = 0 between (consecutive days).
-      // Final gap ts0→now: 0 between (same day).
-      // total = 0
-      expect(getDecayLogCount(b, NOW_TS)).toBe(0);
-    });
-
-    it('long history with one big gap in the middle: decay includes that gap', () => {
+    it('big mid-history gap wipes only the logs before it', () => {
       const ts0 = lastLog(0);
       const ts1 = lastLog(1);
       const ts50 = lastLog(50);
@@ -250,11 +249,32 @@ describe('getDecayLogCount', () => {
         lastTimestamp: ts0,
         logs: [makeLog(ts50), makeLog(ts1), makeLog(ts0)],
       });
-      // gap ts50→ts1: 49 cal, 48 between → 48
-      // gap ts1→ts0: 0 between → 0
-      // final gap ts0→now: 0 between → 0
-      // total = 48
-      expect(getDecayLogCount(b, NOW_TS)).toBe(48);
+      // gap ts50→ts1: 48 >= 1 → reset, eraStart=1
+      // gap ts1→ts0: 0, no reset
+      // final gap ts0→now: 0
+      // cancelled = min(3, 1+0) = 1 (the ts50 log is wiped by the reset, ts1+ts0 survive)
+      expect(getDecayLogCount(b, NOW_TS)).toBe(1);
+    });
+
+    it('era survives a small gap, resets on a big one', () => {
+      // 5 logs: day 0, 1, 2, 50, 51. Every-1-day decay.
+      // gap 51→50: 0 between, no reset
+      // gap 50→2:  47 between, 47 >= era count 2 → reset at day 2 (eraStart=2)
+      // gap 2→1:   0, no reset
+      // gap 1→0:   0, no reset
+      // final gap 0→now: 0
+      // cancelled = min(5, 2+0) = 2 (the two day-50/51 logs are wiped by the reset)
+      const ts0 = lastLog(0);
+      const ts1 = lastLog(1);
+      const ts2 = lastLog(2);
+      const ts50 = lastLog(50);
+      const ts51 = lastLog(51);
+      const b = makeBehavior({
+        xpDecay: decay,
+        lastTimestamp: ts0,
+        logs: [makeLog(ts51), makeLog(ts50), makeLog(ts2), makeLog(ts1), makeLog(ts0)],
+      });
+      expect(getDecayLogCount(b, NOW_TS)).toBe(2);
     });
   });
 });
