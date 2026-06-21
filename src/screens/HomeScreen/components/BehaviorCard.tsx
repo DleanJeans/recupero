@@ -141,7 +141,7 @@ function BehaviorInfo({ behavior, showCategory, animate, dateStr }: BehaviorInfo
           animate={animate}
         />
       )}
-      {behavior.xpEnabled && behavior.xpDecay && <DecayBar behavior={behavior} />}
+      {behavior.xpEnabled && behavior.xpDecay && getEffectiveLogCount(behavior) > 0 && <DecayBar behavior={behavior} />}
     </View>
   );
 }
