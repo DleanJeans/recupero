@@ -1,5 +1,11 @@
 import type { BehaviorEntry, LogEntry } from '../src/types/behavior';
-import { decayEveryInDays, getDecayForGap, getDecayLogCount, getEffectiveLogCount } from '../src/utils/xpUtils';
+import {
+  decayEveryInDays,
+  getDecayForGap,
+  getDecayLogCount,
+  getEffectiveLogCount,
+  getTimeUntilNextDecay,
+} from '../src/utils/xpUtils';
 
 const NOW_TS = new Date('2026-06-20T12:00:00').getTime();
 
@@ -363,5 +369,62 @@ describe('getDecayForGap', () => {
 
   it('treats later < earlier as no decay (defensive against clock skew)', () => {
     expect(getDecayForGap(NOW_TS, lastLog(5), decay)).toBe(0);
+  });
+});
+
+describe('getTimeUntilNextDecay', () => {
+  const decay = { every: 1, unit: 'days' as const };
+
+  it('returns null when XP is disabled', () => {
+    const b = makeBehavior({ xpDecay: decay, lastTimestamp: lastLog(0) });
+    expect(getTimeUntilNextDecay(b, NOW_TS)).toBeNull();
+  });
+
+  it('returns null when no xpDecay config', () => {
+    const b = makeBehavior({ xpEnabled: true, lastTimestamp: lastLog(0) });
+    expect(getTimeUntilNextDecay(b, NOW_TS)).toBeNull();
+  });
+
+  it('returns a full cycle when lastTimestamp is null (no logs yet)', () => {
+    const b = makeBehavior({ xpEnabled: true, xpDecay: decay, lastTimestamp: null });
+    expect(getTimeUntilNextDecay(b, NOW_TS)).toEqual({ daysLeft: 1, everyDays: 1, every: 1, unit: 'days' });
+  });
+
+  it('returns full cycle when last log was today', () => {
+    const b = makeBehavior({ xpEnabled: true, xpDecay: decay, lastTimestamp: lastLog(0) });
+    expect(getTimeUntilNextDecay(b, NOW_TS)).toEqual({ daysLeft: 1, everyDays: 1, every: 1, unit: 'days' });
+  });
+
+  it('returns full cycle 1 day after last log (cycle just completed, next cycle full)', () => {
+    // Fractional: 1 day elapsed, 1%1=0, daysLeft=1
+    const b = makeBehavior({ xpEnabled: true, xpDecay: decay, lastTimestamp: lastLog(1) });
+    expect(getTimeUntilNextDecay(b, NOW_TS)).toEqual({ daysLeft: 1, everyDays: 1, every: 1, unit: 'days' });
+  });
+
+  it('returns 33% time left after 16h with every=1 day (fractional time)', () => {
+    const sixteenHoursAgo = NOW_TS - 16 * 3600 * 1000;
+    const b = makeBehavior({ xpEnabled: true, xpDecay: decay, lastTimestamp: sixteenHoursAgo });
+    // 16/24 ≈ 0.667 elapsed, 0.667%1=0.667, daysLeft=1-0.667=0.333
+    const result = getTimeUntilNextDecay(b, NOW_TS);
+    expect(result?.daysLeft).toBeCloseTo(0.333, 2);
+    expect(result?.everyDays).toBe(1);
+  });
+
+  it('returns partial cycle for weekly decay: 3 days in = 4 left', () => {
+    const weekly = { every: 1, unit: 'weeks' as const };
+    const b = makeBehavior({ xpEnabled: true, xpDecay: weekly, lastTimestamp: lastLog(3) });
+    // 3 days elapsed (fractional), 3%7=3, daysLeft=4
+    expect(getTimeUntilNextDecay(b, NOW_TS)).toEqual({ daysLeft: 4, everyDays: 7, every: 1, unit: 'weeks' });
+  });
+
+  it('returns full cycle when last log is on the same day boundary', () => {
+    // 7 days elapsed, 7%7=0, daysLeft=7 (next cycle just started)
+    const b = makeBehavior({ xpEnabled: true, xpDecay: { every: 7, unit: 'days' }, lastTimestamp: lastLog(7) });
+    expect(getTimeUntilNextDecay(b, NOW_TS)).toEqual({ daysLeft: 7, everyDays: 7, every: 7, unit: 'days' });
+  });
+
+  it('returns null for invalid everyDays (every=0)', () => {
+    const b = makeBehavior({ xpEnabled: true, xpDecay: { every: 0, unit: 'days' }, lastTimestamp: lastLog(0) });
+    expect(getTimeUntilNextDecay(b, NOW_TS)).toBeNull();
   });
 });

@@ -71,6 +71,39 @@ export function getEffectiveLogCount(behavior: BehaviorEntry, now: number = Date
   return Math.max(0, behavior.logs.length - getDecayLogCount(behavior, now));
 }
 
+/** Time remaining in the current decay cycle (until the next decay event).
+ *  Returns null when XP is off, no decay config, or invalid config.
+ *  When the behavior has no logs yet, returns a full cycle (no decay has accrued).
+ *
+ *  Uses fractional ms diff so the bar shows continuous progress (e.g. 16h after
+ *  a 1-day cycle is 33% remaining, not 100%). Note: the actual decay tick uses
+ *  calendar-day diff (see `getDecayLogCount`); this is a smoother visual approximation. */
+export function getTimeUntilNextDecay(
+  behavior: BehaviorEntry,
+  now: number = Date.now(),
+): {
+  daysLeft: number;
+  everyDays: number;
+  every: number;
+  unit: 'days' | 'weeks' | 'months';
+} | null {
+  if (behavior.xpEnabled !== true) return null;
+  const decay = behavior.xpDecay;
+  if (!decay) return null;
+  const everyDays = decayEveryInDays(decay.every, decay.unit);
+  if (!Number.isFinite(everyDays) || everyDays <= 0) return null;
+
+  const lastTimestamp = behavior.lastTimestamp;
+  if (lastTimestamp === null) {
+    return { daysLeft: everyDays, everyDays, every: decay.every, unit: decay.unit };
+  }
+
+  const MS_PER_DAY = 86400000;
+  const daysSinceLastLog = Math.max(0, (now - lastTimestamp) / MS_PER_DAY);
+  const daysLeft = everyDays - (daysSinceLastLog % everyDays);
+  return { daysLeft, everyDays, every: decay.every, unit: decay.unit };
+}
+
 /** XP required to advance from level n to level n+1: 25 + 10n + 5n² */
 export function xpRequiredForLevel(n: number): number {
   return 25 + 10 * n + 5 * n * n;

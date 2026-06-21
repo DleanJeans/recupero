@@ -7,6 +7,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { BehaviorIcon } from '../../../components/BehaviorIcon';
 import { Button } from '../../../components/Button';
 import { CooldownLabel } from '../../../components/CooldownLabel';
+import { DecayBar } from '../../../components/DecayBar';
 import { StarRow } from '../../../components/StarRow';
 import { Text } from '../../../components/Text';
 import { XpBar } from '../../../components/XpBar';
@@ -140,6 +141,7 @@ function BehaviorInfo({ behavior, showCategory, animate, dateStr }: BehaviorInfo
           animate={animate}
         />
       )}
+      {behavior.xpEnabled && behavior.xpDecay && <DecayBar behavior={behavior} />}
     </View>
   );
 }
