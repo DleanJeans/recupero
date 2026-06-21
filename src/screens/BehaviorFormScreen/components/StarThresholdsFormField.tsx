@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { CheckboxRow } from '../../../components/CheckboxRow';
 import { Text, TextInput } from '../../../components/Text';
 import type { StarInputs, StarSlot } from '../../../hooks/useStarThresholdsForm';
 import { Colors } from '../../../utils/colors';
@@ -15,16 +16,12 @@ interface Props {
 export function StarThresholdsFormField({ enabled, inputs, validationError, onToggle, onInputChange }: Props) {
   return (
     <View style={styles.section}>
-      <Pressable
-        style={({ pressed }) => [styles.toggleRow, pressed && { opacity: 0.7 }]}
-        onPress={onToggle}
-      >
-        <View style={[styles.checkbox, enabled && styles.checkboxChecked]}>
-          {enabled && <Text style={styles.checkmark}>✓</Text>}
-        </View>
-        <Text style={styles.toggleLabel}>Track daily stars</Text>
-        <Text style={styles.toggleHint}>Show a 3-star rating on Home and Day</Text>
-      </Pressable>
+      <CheckboxRow
+        label="Track daily stars"
+        hint="Show a 3-star rating on Home and Day view"
+        checked={enabled}
+        onToggle={onToggle}
+      />
       {enabled && (
         <View style={styles.inputsSection}>
           <Text style={styles.inputsLabel}>Earn 1★, 2★, 3★ at this many daily logs:</Text>
@@ -59,43 +56,6 @@ const styles = StyleSheet.create({
   section: {
     gap: 10,
     marginTop: 4,
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: Colors.bg.input,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: Colors.border.light,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: Colors.text.primary,
-    borderColor: Colors.text.primary,
-  },
-  checkmark: {
-    color: Colors.bg.card,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  toggleLabel: {
-    color: Colors.text.secondary,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  toggleHint: {
-    color: Colors.border.light,
-    fontSize: 12,
-    marginLeft: 'auto',
   },
   inputsSection: {
     gap: 8,

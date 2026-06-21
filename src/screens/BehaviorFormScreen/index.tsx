@@ -3,12 +3,13 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useRef, useState } from 'react';
 import type { TextInput as RNTextInput } from 'react-native';
-import { Alert, Keyboard, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Keyboard, ScrollView, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../../components/BackButton';
 import { Button } from '../../components/Button';
 import { CategoryPicker } from '../../components/CategoryPicker';
+import { CheckboxRow } from '../../components/CheckboxRow';
 import { CooldownIcon } from '../../components/CooldownIcon';
 import { EmojiPicker } from '../../components/EmojiPicker';
 import { ScreenTitle } from '../../components/ScreenTitle';
@@ -264,16 +265,7 @@ export function BehaviorFormScreen() {
               onUnitChange={setCooldownUnit}
             />
           </View>
-          <Pressable
-            style={({ pressed }) => [styles.privateRow, pressed && { opacity: 0.7 }]}
-            onPress={() => setIsPrivate(v => !v)}
-          >
-            <View style={[styles.checkbox, isPrivate && styles.checkboxChecked]}>
-              {isPrivate && <Text style={styles.checkmark}>✓</Text>}
-            </View>
-            <Text style={styles.privateLabel}>Private</Text>
-            <Text style={styles.privateHint}>Hidden when sharing the app</Text>
-          </Pressable>
+          
           <CategoryPicker
             categories={categories}
             selectedId={categoryId}
@@ -372,6 +364,13 @@ export function BehaviorFormScreen() {
               </View>
             );
           })()}
+          
+          <CheckboxRow
+            label="Private"
+            checked={isPrivate}
+            onToggle={() => setIsPrivate(v => !v)}
+          />
+
           <StarThresholdsFormField
             enabled={starsEnabled}
             inputs={starInputs}
@@ -379,6 +378,7 @@ export function BehaviorFormScreen() {
             onToggle={handleStarsToggle}
             onInputChange={handleStarInputChange}
           />
+
           <XpDecayInput
             enabled={xpDecayEnabled}
             everyMinutes={xpDecayEveryMinutes}
@@ -501,43 +501,6 @@ const styles = StyleSheet.create({
   cooldownTypeRow: {
     marginLeft: 'auto',
     alignSelf: 'auto',
-  },
-  privateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: Colors.bg.input,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  checkbox: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: Colors.border.light,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: Colors.text.primary,
-    borderColor: Colors.text.primary,
-  },
-  checkmark: {
-    color: Colors.bg.card,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  privateLabel: {
-    color: Colors.text.secondary,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  privateHint: {
-    color: Colors.border.light,
-    fontSize: 12,
-    marginLeft: 'auto',
   },
   actions: {
     position: 'absolute',
