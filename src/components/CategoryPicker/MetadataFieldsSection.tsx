@@ -56,7 +56,7 @@ function MetadataFieldsSection({ fields, onChange }: Props) {
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <Text style={styles.headerLabel}>Track numeric values (optional)</Text>
+        <Text style={styles.headerLabel}>Track numeric values</Text>
         <Pressable
           onPress={handleAddField}
           style={styles.addBtn}
