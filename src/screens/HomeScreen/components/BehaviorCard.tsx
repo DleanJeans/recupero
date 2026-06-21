@@ -220,6 +220,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     gap: 12,
+    paddingRight: 0,
   },
   info: {
     flex: 1,
