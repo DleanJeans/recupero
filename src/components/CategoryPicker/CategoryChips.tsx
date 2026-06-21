@@ -18,6 +18,8 @@ export interface CategoryChipsProps {
   behaviorCounts?: Record<string, number>;
   /** Total behavior count, shown on the "All" chip when `showAll` is true. */
   allCount?: number;
+  /** Hide category names, show only emoji and counts. */
+  hideNames?: boolean;
 }
 
 type ChipItem = Category | { id: undefined; emoji: string; name: string };
@@ -31,6 +33,7 @@ export function CategoryChips({
   horizontal = false,
   behaviorCounts,
   allCount,
+  hideNames = false,
 }: CategoryChipsProps) {
   const items: ChipItem[] = showAll
     ? [{ id: undefined, emoji: '', name: 'All' }, ...categories]
@@ -53,8 +56,12 @@ export function CategoryChips({
             style={[horizontal ? styles.horizontalChip : styles.chip, horizontal && styles.chipHorizontal]}
           >
             <Text style={[styles.chipEmoji, !active && styles.chipEmojiInactive]}>{item.emoji ?? ''}</Text>
-            <Text style={[styles.chipText, active && styles.chipTextActive]}>{item.name}</Text>
-            {(count != null && horizontal) && <Text style={[styles.chipCount, active && styles.chipCountActive]}>{count}</Text>}
+            {(!hideNames || (showAll && item.id == null)) && (
+              <Text style={[styles.chipText, active && styles.chipTextActive]}>{item.name}</Text>
+            )}
+            {count != null && horizontal && (
+              <Text style={[styles.chipCount, active && styles.chipCountActive]}>{count}</Text>
+            )}
           </Button>
         );
       })}
