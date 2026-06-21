@@ -10,24 +10,49 @@ export function decayEveryInDays(every: number, unit: XpDecayUnit): number {
   return every * 30; // months → 30-day approximation
 }
 
-/** Number of "log equivalents" lost to XP decay since the last log, computed on read.
+/** Number of "log equivalents" lost to XP decay across the behavior's lifetime,
+ *  computed on read. Sums decay accrued in every inter-log gap PLUS the gap from
+ *  the most recent log to now, so a sparse history decays more than a dense one.
  *  Returns 0 when the feature is off, no logs exist, or no decay has accrued.
  *
- *  Counts days *strictly between* the last log and now (excludes both endpoints),
- *  so a same-day or 1-day-apart log never decays. Example: logged Wed, today Fri
- *  crosses one day (Thu) → 1 log lost per `every` day. */
+ *  Each gap counts days *strictly between* its endpoints (excludes both), so a
+ *  same-day or 1-day-apart pair never decays. Example: logs on Wed and Fri with
+ *  decay every 1 day → 1 log lost; logs on Wed and Sat → 2 logs lost. */
 export function getDecayLogCount(behavior: BehaviorEntry, now: number = Date.now()): number {
-  const { xpDecay, lastTimestamp } = behavior;
-  if (!xpDecay || lastTimestamp === null) return 0;
-
-  const calendarDiff = calendarDayDiff(now, lastTimestamp);
-  const daysBetween = Math.max(0, calendarDiff - 1);
-  if (daysBetween === 0) return 0;
+  const { xpDecay, logs } = behavior;
+  if (!xpDecay) return 0;
+  if (logs.length === 0) return 0;
 
   const everyDays = decayEveryInDays(xpDecay.every, xpDecay.unit);
   if (!Number.isFinite(everyDays) || everyDays <= 0) return 0;
 
-  return Math.floor(daysBetween / everyDays);
+  // Defensive: assume logs may arrive out of order. Cheaper than trusting call sites.
+  const sorted = [...logs].sort((a, b) => a.timestamp - b.timestamp);
+
+  let total = 0;
+  for (let i = 0; i < sorted.length - 1; i++) {
+    total += decayForGap(sorted[i].timestamp, sorted[i + 1].timestamp, everyDays);
+  }
+  // Final gap: most recent log → now.
+  total += decayForGap(sorted[sorted.length - 1].timestamp, now, everyDays);
+
+  return total;
+}
+
+function decayForGap(earlierMs: number, laterMs: number, everyDays: number): number {
+  const diff = calendarDayDiff(laterMs, earlierMs);
+  const between = Math.max(0, diff - 1);
+  if (between === 0) return 0;
+  return Math.floor(between / everyDays);
+}
+
+/** XP decay accrued within a single gap (earlier → later), given a behavior's decay config.
+ *  Returns 0 when the feature is off, config is invalid, or the gap is too short to accrue decay. */
+export function getDecayForGap(earlierMs: number, laterMs: number, decay: BehaviorEntry['xpDecay']): number {
+  if (!decay) return 0;
+  const everyDays = decayEveryInDays(decay.every, decay.unit);
+  if (!Number.isFinite(everyDays) || everyDays <= 0) return 0;
+  return decayForGap(earlierMs, laterMs, everyDays);
 }
 
 /** Effective log count for a behavior after applying XP decay. Floors at 0. */

@@ -15,8 +15,9 @@ import type { BehaviorEntry } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { groupLogsByRecency } from '../../utils/behaviorUtils';
 import { Colors } from '../../utils/colors';
+
 import { BehaviorLogItem } from './components/BehaviorLogItem';
-import { DistanceConnector } from './components/DistanceConnector';
+import { LogGap } from './components/LogGap';
 
 type BehaviorDetailsRouteProp = RouteProp<RootStackParamList, 'BehaviorDetails'>;
 export function BehaviorDetailsScreen() {
@@ -108,9 +109,10 @@ function BehaviorLogList({ behavior }: { behavior: BehaviorEntry }) {
       renderItem={({ item, index, section }) => (
         <>
           {index > 0 && (
-            <DistanceConnector
-              durationMs={section.data[index - 1].timestamp - item.timestamp}
-              style={{ marginVertical: 4 }}
+            <LogGap
+              earlierMs={item.timestamp}
+              laterMs={section.data[index - 1].timestamp}
+              xpDecay={behavior.xpDecay}
             />
           )}
           <BehaviorLogItem
@@ -136,9 +138,11 @@ function BehaviorLogList({ behavior }: { behavior: BehaviorEntry }) {
         return (
           <View style={[styles.sectionHeader, sectionIdx > 0 && styles.sectionHeaderWithDistance]}>
             {showDistance && (
-              <DistanceConnector
-                durationMs={prevLast! - section.data[0].timestamp}
-                style={styles.distanceConnectorAbsolute}
+              <LogGap
+                earlierMs={section.data[0].timestamp}
+                laterMs={prevLast!}
+                xpDecay={behavior.xpDecay}
+                style={styles.logGapAbsolute}
               />
             )}
             <Text style={styles.sectionHeaderText}>{section.title}</Text>
@@ -212,7 +216,7 @@ const styles = StyleSheet.create({
     marginTop: 0,
     minHeight: 40,
   },
-  distanceConnectorAbsolute: {
+  logGapAbsolute: {
     position: 'absolute',
     alignSelf: 'center',
     top: 0,

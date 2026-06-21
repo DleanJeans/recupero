@@ -20,7 +20,6 @@ export function DistanceIndicator({ durationMs, style }: Props) {
 const styles = StyleSheet.create({
   row: {
     alignItems: 'center',
-    marginVertical: 2,
   },
   text: {
     color: Colors.text.faint,
