@@ -126,7 +126,7 @@ function HomeHeader({ showXp, onToggleXp, isSearching, onSearchPress }: HomeHead
           accessibilityLabel={showXp ? 'Hide XP' : 'Show XP'}
         />
         <HeaderIcon
-          name="analytics-outline"
+          name="calendar-outline"
           onPress={() => navigation.navigate('Day')}
           accessibilityLabel="Day view"
         />
