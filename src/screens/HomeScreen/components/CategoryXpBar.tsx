@@ -14,9 +14,16 @@ export function CategoryXpBar({ selectedCategoryId }: Props) {
 
   const logCount = useMemo(() => {
     if (selectedCategoryId === null) return 0;
-    return behaviors
-      .filter(b => b.categoryId === selectedCategoryId)
-      .reduce((sum, b) => sum + getEffectiveLogCount(b), 0);
+    return (
+      behaviors
+        .filter(b => b.categoryId === selectedCategoryId)
+        // Skip behaviors with XP disabled, or where decay has wiped the effective count to 0.
+        .filter(b => b.xpEnabled)
+        .reduce((sum, b) => {
+          const effective = getEffectiveLogCount(b);
+          return sum + (effective > 0 ? effective : 0);
+        }, 0)
+    );
   }, [behaviors, selectedCategoryId]);
 
   if (selectedCategoryId === null) return null;

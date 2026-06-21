@@ -39,8 +39,11 @@ export interface BehaviorEntry {
   cooldownUnit?: 'minutes' | 'hours' | 'days' | 'weeks';
   /** Opt-in daily 3-star rating. Undefined = feature off. */
   starThresholds?: [number, number, number];
+  /** Opt-in XP calculation (level, XP bar). Sub-feature `xpDecay` is gated on this.
+   *  Undefined = feature off. */
+  xpEnabled?: true;
   /** Opt-in XP decay: lose 1 log's worth (5 XP) every `every` days/weeks/months
-   *  since the last log. Undefined = feature off. */
+   *  since the last log. Undefined = feature off. Ignored at runtime when `xpEnabled` is off. */
   xpDecay?: { every: number; unit: 'days' | 'weeks' | 'months' };
 }
 

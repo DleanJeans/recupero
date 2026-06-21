@@ -27,10 +27,11 @@ function lastLog(daysAgo: number): number {
 }
 
 /** Build a behavior with `n` logs ending `daysAgo` days before now, with optional XP decay enabled.
- *  The most recent log sits at `lastLog(daysAgo)`; older logs step back one day each. */
+ *  Passing a `decay` config opts the behavior in to XP calculation too (decay is a sub-feature). */
 function behaviorWithLogs(daysAgo: number, n: number, decay?: BehaviorEntry['xpDecay']): BehaviorEntry {
   const ts = lastLog(daysAgo);
   return makeBehavior({
+    xpEnabled: decay ? true : undefined,
     xpDecay: decay,
     lastTimestamp: ts,
     logs: Array.from({ length: n }, (_, i) => makeLog(ts - i)),
@@ -202,6 +203,7 @@ describe('getDecayLogCount', () => {
       const ts0 = lastLog(0);
       const logList: LogEntry[] = Array.from({ length: 100 }, (_, i) => makeLog(lastLog(i)));
       const b = makeBehavior({
+        xpEnabled: true,
         xpDecay: decay,
         lastTimestamp: ts0,
         logs: logList,
@@ -214,6 +216,7 @@ describe('getDecayLogCount', () => {
       const ts5 = lastLog(5);
       const ts10 = lastLog(10);
       const b = makeBehavior({
+        xpEnabled: true,
         xpDecay: decay,
         lastTimestamp: ts5,
         logs: [makeLog(ts10), makeLog(ts5)],
@@ -229,6 +232,7 @@ describe('getDecayLogCount', () => {
       const ts5 = lastLog(5);
       const ts10 = lastLog(10);
       const b = makeBehavior({
+        xpEnabled: true,
         xpDecay: decay,
         lastTimestamp: ts0,
         logs: [makeLog(ts10), makeLog(ts5), makeLog(ts0)],
@@ -245,6 +249,7 @@ describe('getDecayLogCount', () => {
       const ts1 = lastLog(1);
       const ts50 = lastLog(50);
       const b = makeBehavior({
+        xpEnabled: true,
         xpDecay: decay,
         lastTimestamp: ts0,
         logs: [makeLog(ts50), makeLog(ts1), makeLog(ts0)],
@@ -270,12 +275,31 @@ describe('getDecayLogCount', () => {
       const ts50 = lastLog(50);
       const ts51 = lastLog(51);
       const b = makeBehavior({
+        xpEnabled: true,
         xpDecay: decay,
         lastTimestamp: ts0,
         logs: [makeLog(ts51), makeLog(ts50), makeLog(ts2), makeLog(ts1), makeLog(ts0)],
       });
       expect(getDecayLogCount(b, NOW_TS)).toBe(2);
     });
+  });
+});
+
+describe('getDecayLogCount with XP off (xpEnabled=undefined)', () => {
+  it('returns 0 even when xpDecay is set (decay is gated on XP)', () => {
+    const b = makeBehavior({
+      xpDecay: { every: 1, unit: 'days' },
+      lastTimestamp: lastLog(10),
+    });
+    expect(getDecayLogCount(b, NOW_TS)).toBe(0);
+  });
+
+  it('getEffectiveLogCount returns raw log count when XP is off', () => {
+    const b = makeBehavior({
+      xpDecay: { every: 1, unit: 'days' },
+      lastTimestamp: lastLog(0),
+    });
+    expect(getEffectiveLogCount(b, NOW_TS)).toBe(0);
   });
 });
 

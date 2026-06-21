@@ -6,6 +6,7 @@ import { getEffectiveLogCount } from '../utils/xpUtils';
 import { BehaviorIcon } from './BehaviorIcon';
 import { CooldownLabel } from './CooldownLabel';
 import { ScreenTitle } from './ScreenTitle';
+import { Text } from './Text';
 import { XpBar } from './XpBar';
 
 interface Props {
@@ -31,16 +32,19 @@ export function BehaviorTitle({ behavior, titleOverride, iconSize = 24, animate 
             size={iconSize}
           />{' '}
           {title}
+          {!behavior.xpEnabled && <Text style={styles.logCount}> ×{behavior.logs.length}</Text>}
         </ScreenTitle>
         <CooldownLabel behavior={behavior} />
       </View>
-      <View style={styles.xpBarWrapper}>
-        <XpBar
-          logCount={getEffectiveLogCount(behavior)}
-          color={color}
-          animate={animate}
-        />
-      </View>
+      {behavior.xpEnabled && (
+        <View style={styles.xpBarWrapper}>
+          <XpBar
+            logCount={getEffectiveLogCount(behavior)}
+            color={color}
+            animate={animate}
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -57,5 +61,10 @@ const styles = StyleSheet.create({
   },
   xpBarWrapper: {
     marginHorizontal: 12,
+  },
+  logCount: {
+    color: Colors.text.faint,
+    fontSize: 16,
+    fontWeight: '400',
   },
 });

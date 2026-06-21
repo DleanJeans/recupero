@@ -23,6 +23,7 @@ export function decayEveryInDays(every: number, unit: XpDecayUnit): number {
  *  no logs exist, or no decay has accrued. */
 export function getDecayLogCount(behavior: BehaviorEntry, now: number = Date.now()): number {
   const { xpDecay, logs } = behavior;
+  if (!behavior.xpEnabled) return 0;
   if (!xpDecay) return 0;
   if (logs.length === 0) return 0;
 
@@ -64,7 +65,8 @@ export function getDecayForGap(earlierMs: number, laterMs: number, decay: Behavi
   return decayForGap(earlierMs, laterMs, everyDays);
 }
 
-/** Effective log count for a behavior after applying XP decay. Floors at 0. */
+/** Effective log count for a behavior after applying XP decay. Floors at 0.
+ *  Returns the raw log count when XP is off (decay is implicitly 0). */
 export function getEffectiveLogCount(behavior: BehaviorEntry, now: number = Date.now()): number {
   return Math.max(0, behavior.logs.length - getDecayLogCount(behavior, now));
 }

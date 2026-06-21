@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { useBehaviorStore } from '../store/behaviorStore';
-import { getLevel, getEffectiveLogCount } from '../utils/xpUtils';
+import { getEffectiveLogCount, getLevel } from '../utils/xpUtils';
 
 export function ConfettiOverlay() {
   const behaviors = useBehaviorStore(s => s.behaviors);
@@ -14,8 +14,9 @@ export function ConfettiOverlay() {
   // Seed with behavior levels on first real render
   useEffect(() => {
     if (!seeded.current) {
-      for (const b of behaviors) {
-        lastLevels.current.set(b.id, getLevel(getEffectiveLogCount(b) * 5));
+      for (const behavior of behaviors) {
+        if (!behavior.xpEnabled) continue;
+        lastLevels.current.set(behavior.id, getLevel(getEffectiveLogCount(behavior) * 5));
       }
       seeded.current = true;
     }
@@ -31,14 +32,15 @@ export function ConfettiOverlay() {
   useEffect(() => {
     if (!seeded.current) return;
 
-    for (const b of behaviors) {
-      if (b.type !== 'desirable') continue;
+    for (const behavior of behaviors) {
+      if (behavior.type !== 'desirable') continue;
+      if (!behavior.xpEnabled) continue;
 
-      const level = getLevel(getEffectiveLogCount(b) * 5);
-      const prevLevel = lastLevels.current.get(b.id) ?? 0;
+      const level = getLevel(getEffectiveLogCount(behavior) * 5);
+      const prevLevel = lastLevels.current.get(behavior.id) ?? 0;
 
       if (level > prevLevel) {
-        lastLevels.current.set(b.id, level);
+        lastLevels.current.set(behavior.id, level);
         trigger();
       }
     }

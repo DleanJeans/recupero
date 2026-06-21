@@ -127,16 +127,19 @@ function BehaviorInfo({ behavior, showCategory, animate, dateStr }: BehaviorInfo
           size={14}
           style={styles.starSlot}
         />
+        {!behavior.xpEnabled && <Text style={styles.logCount}>×{behavior.logs.length}</Text>}
       </View>
       <View style={styles.elapsedRow}>
         <BehaviorElapsed behavior={behavior} />
         <CooldownLabel behavior={behavior} />
       </View>
-      <XpBar
-        logCount={getEffectiveLogCount(behavior)}
-        color={getBehaviorTypeColor(behavior.type)}
-        animate={animate}
-      />
+      {behavior.xpEnabled && (
+        <XpBar
+          logCount={getEffectiveLogCount(behavior)}
+          color={getBehaviorTypeColor(behavior.type)}
+          animate={animate}
+        />
+      )}
     </View>
   );
 }
@@ -237,6 +240,11 @@ const styles = StyleSheet.create({
   },
   starSlot: {
     marginLeft: 2,
+  },
+  logCount: {
+    color: Colors.text.muted,
+    fontSize: 13,
+    fontWeight: '600',
   },
 
   elapsed: {

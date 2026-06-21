@@ -22,6 +22,7 @@ interface BehaviorStore {
     isPrivate?: boolean,
     defaultMetadata?: Record<string, number>,
     starThresholds?: [number, number, number],
+    xpEnabled?: true,
     xpDecay?: { every: number; unit: 'days' | 'weeks' | 'months' },
   ) => void;
   updateBehaviorCooldown: (behaviorId: string, cooldownMinutes: number) => void;
@@ -43,6 +44,7 @@ interface BehaviorStore {
       private?: boolean;
       defaultMetadata?: Record<string, number>;
       starThresholds?: [number, number, number] | undefined;
+      xpEnabled?: true;
       xpDecay?: { every: number; unit: 'days' | 'weeks' | 'months' } | undefined;
     },
   ) => void;
@@ -73,6 +75,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
         isPrivate = false,
         defaultMetadata,
         starThresholds,
+        xpEnabled,
         xpDecay,
       ) =>
         set(state => ({
@@ -93,6 +96,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               cooldownType,
               cooldownUnit,
               starThresholds,
+              xpEnabled,
               xpDecay,
             },
           ],
@@ -214,6 +218,24 @@ export const useBehaviorStore = create<BehaviorStore>()(
     {
       name: 'recupero-behaviors',
       storage: createJSONStorage(() => AsyncStorage),
+      version: 1,
+      // v0 → v1: rename `xp` field to `xpEnabled` and drop the old key.
+      migrate: (persistedState, version) => {
+        if (version < 1) {
+          const state = persistedState as BehaviorStore;
+          return {
+            ...state,
+            behaviors: state.behaviors.map(b => {
+              const { xp: legacyXp, ...rest } = b as BehaviorEntry & { xp?: true };
+              return {
+                ...rest,
+                ...(legacyXp === true ? { xpEnabled: true as const } : {}),
+              };
+            }),
+          };
+        }
+        return persistedState;
+      },
     },
   ),
 );

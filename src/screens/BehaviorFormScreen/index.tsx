@@ -57,6 +57,8 @@ export function BehaviorFormScreen() {
   const handleCategoryChange = (id: string | undefined | null) => setCategoryId(id ?? undefined);
   const [emojiKeyboardOpen, setEmojiKeyboardOpen] = useState(false);
   const [isPrivate, setIsPrivate] = useState(false);
+  // New behaviors default to XP-on; existing behaviors inherit their saved state.
+  const [xpEnabled, setXpEnabled] = useState(behavior?.xpEnabled === true);
   const [type, setType] = useState<BehaviorType>(behavior?.type ?? 'neutral');
   const [cooldownMinutes, setCooldownMinutes] = useState(0);
   const [cooldownType, setCooldownType] = useState<'rest' | 'limit'>('rest');
@@ -115,6 +117,7 @@ export function BehaviorFormScreen() {
     setIcon(iconFromStore(behavior.icon));
     setCategoryId(behavior.categoryId);
     setIsPrivate(behavior.private ?? false);
+    setXpEnabled(behavior.xpEnabled === true);
     setCooldownMinutes(behavior.cooldownMinutes || 0);
     setCooldownType(behavior.cooldownType || 'rest');
     setCooldownUnit(behavior.cooldownUnit);
@@ -138,6 +141,7 @@ export function BehaviorFormScreen() {
       icon.trim() !== iconFromStore(behavior.icon) ||
       categoryId !== behavior.categoryId ||
       isPrivate !== (behavior.private ?? false) ||
+      xpEnabled !== (behavior.xpEnabled === true) ||
       cooldownMinutes !== (behavior.cooldownMinutes || 0) ||
       cooldownType !== (behavior.cooldownType || 'rest') ||
       cooldownUnit !== behavior.cooldownUnit ||
@@ -191,7 +195,9 @@ export function BehaviorFormScreen() {
         private: isPrivate,
         defaultMetadata: defaultMetadataObj,
         starThresholds: starsEnabled ? (parsedStars.values ?? undefined) : undefined,
-        xpDecay: xpDecayEnabled ? xpDecaySerialized : undefined,
+        // XP is opt-in. When off, preserve the existing xpDecay config (it's ignored at runtime).
+        xpEnabled: xpEnabled ? true : undefined,
+        xpDecay: xpEnabled ? (xpDecayEnabled ? xpDecaySerialized : undefined) : behavior?.xpDecay,
       });
     } else {
       addBehavior(
@@ -205,6 +211,7 @@ export function BehaviorFormScreen() {
         isPrivate,
         defaultMetadataObj,
         starsEnabled ? (parsedStars.values ?? undefined) : undefined,
+        xpEnabled ? true : undefined,
         xpDecayEnabled ? xpDecaySerialized : undefined,
       );
     }
@@ -265,7 +272,7 @@ export function BehaviorFormScreen() {
               onUnitChange={setCooldownUnit}
             />
           </View>
-          
+
           <CategoryPicker
             categories={categories}
             selectedId={categoryId}
@@ -331,6 +338,7 @@ export function BehaviorFormScreen() {
               dark: true,
             }}
           />
+
           {(() => {
             const selectedCat = categories.find(c => c.id === categoryId);
             const fields = selectedCat?.metadataFields;
@@ -364,7 +372,7 @@ export function BehaviorFormScreen() {
               </View>
             );
           })()}
-          
+
           <CheckboxRow
             label="Private"
             checked={isPrivate}
@@ -379,14 +387,23 @@ export function BehaviorFormScreen() {
             onInputChange={handleStarInputChange}
           />
 
-          <XpDecayInput
-            enabled={xpDecayEnabled}
-            everyMinutes={xpDecayEveryMinutes}
-            unit={xpDecayUnit}
-            onToggle={handleXpDecayToggle}
-            onChangeMinutes={handleXpDecayChangeMinutes}
-            onUnitChange={handleXpDecayUnitChange}
+          <CheckboxRow
+            label="Track XP"
+            hint="Show level, XP bar, and decay"
+            checked={xpEnabled}
+            onToggle={() => setXpEnabled(v => !v)}
           />
+
+          {xpEnabled && (
+            <XpDecayInput
+              enabled={xpDecayEnabled}
+              everyMinutes={xpDecayEveryMinutes}
+              unit={xpDecayUnit}
+              onToggle={handleXpDecayToggle}
+              onChangeMinutes={handleXpDecayChangeMinutes}
+              onUnitChange={handleXpDecayUnitChange}
+            />
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
 
