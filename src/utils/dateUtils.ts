@@ -2,7 +2,7 @@ import { parseISO } from 'date-fns';
 
 import { Label } from './strings';
 
-const MS_PER_DAY = 86400000;
+export const MS_PER_DAY = 86400000;
 
 export function toDateString(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -26,7 +26,6 @@ export function calendarDayDiff(later: number | Date, earlier: number | Date): n
   const a = new Date(later);
   const b = new Date(earlier);
   const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const MS_PER_DAY = 86400000;
   return Math.round((startOfDay(a).getTime() - startOfDay(b).getTime()) / MS_PER_DAY);
 }
 

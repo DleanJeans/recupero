@@ -4,6 +4,7 @@ import { yesterday } from './dateUtils';
 import { Label, Unit } from './strings';
 
 export const MS_PER_MINUTE = 60000;
+export { MS_PER_DAY } from './dateUtils';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 

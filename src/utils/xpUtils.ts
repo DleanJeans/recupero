@@ -1,5 +1,5 @@
 import type { BehaviorEntry, XpDecayUnit } from '../types/behavior';
-import { calendarDayDiff } from './dateUtils';
+import { calendarDayDiff, MS_PER_DAY } from './dateUtils';
 
 export const XP_PER_LOG = 5;
 
@@ -98,7 +98,6 @@ export function getTimeUntilNextDecay(
     return { daysLeft: everyDays, everyDays, every: decay.every, unit: decay.unit };
   }
 
-  const MS_PER_DAY = 86400000;
   const daysSinceLastLog = Math.max(0, (now - lastTimestamp) / MS_PER_DAY);
   const daysLeft = everyDays - (daysSinceLastLog % everyDays);
   return { daysLeft, everyDays, every: decay.every, unit: decay.unit };
