@@ -5,6 +5,7 @@ import { Animated, Dimensions, Easing, StyleSheet, View } from 'react-native';
 import type { BehaviorEntry, BehaviorType } from '../types/behavior';
 import { getBehaviorTypeColor } from '../utils/behaviorTypeUtils';
 import { Colors } from '../utils/colors';
+import { formatDuration, MS_PER_DAY } from '../utils/timeUtils';
 import { getTimeUntilNextDecay } from '../utils/xpUtils';
 import { Text } from './Text';
 
@@ -64,16 +65,10 @@ function buildStripePattern(periods: number): {
   return { colors, locations };
 }
 
-function unitLabel(every: number, unit: 'days' | 'weeks' | 'months'): string {
-  if (unit === 'days') return `${every}d`;
-  if (unit === 'weeks') return `${every}w`;
-  return `${every}mo`;
-}
-
 export function DecayBar({ behavior }: Props) {
   const decay = getTimeUntilNextDecay(behavior);
   if (!decay) return null;
-  const { daysLeft, everyDays, every, unit } = decay;
+  const { daysLeft, everyDays } = decay;
   const isUndesirable = behavior.type === 'undesirable';
   // For desirable/neutral: bar empties as we approach decay (time remaining).
   // For undesirable: decay is a reward, so invert — bar fills as we approach it.
@@ -129,7 +124,7 @@ export function DecayBar({ behavior }: Props) {
           </Animated.View>
         </View>
       </View>
-      <Text style={styles.label}>{unitLabel(every, unit)}</Text>
+      <Text style={styles.label}>{formatDuration(daysLeft * MS_PER_DAY)}</Text>
     </View>
   );
 }
