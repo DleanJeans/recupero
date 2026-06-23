@@ -2,7 +2,7 @@ import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Pressable, StyleSheet, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../../components/BackButton';
 import { BehaviorTitle } from '../../components/BehaviorTitle';
@@ -156,7 +156,13 @@ export function BehaviorLogScreen() {
           />
         </View>
 
-        <View style={styles.body}>
+        <ScrollView
+          style={styles.body}
+          contentContainerStyle={styles.bodyContent}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          showsVerticalScrollIndicator={false}
+        >
           <Text style={styles.sectionLabel}>Date</Text>
           <View style={styles.datePickerWrapper}>
             <DatePicker
@@ -216,7 +222,7 @@ export function BehaviorLogScreen() {
             onFocus={() => setNotesFocused(true)}
             onBlur={() => setNotesFocused(false)}
           />
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
 
       <View style={styles.actions}>
@@ -322,8 +328,11 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
+  },
+  bodyContent: {
     paddingHorizontal: 24,
     paddingTop: 8,
+    paddingBottom: 120,
   },
   datePickerWrapper: {
     marginBottom: 20,
