@@ -1,15 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { RouteProp } from '@react-navigation/native';
-import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo } from 'react';
 import { SectionList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../../components/BackButton';
-import { BehaviorTitle } from '../../components/BehaviorTitle';
+import { BehaviorSummary } from '../../components/BehaviorSummary';
 import { Button } from '../../components/Button';
 import { Text } from '../../components/Text';
-import { useXpBarAnimation } from '../../hooks/useXpBarAnimation';
 import { useBehaviorStore } from '../../store/behaviorStore';
 import type { BehaviorEntry } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
@@ -28,9 +27,6 @@ export function BehaviorDetailsScreen() {
   const { behaviors } = useBehaviorStore();
   const behavior = behaviors.find(b => b.id === behaviorId);
 
-  const isFocused = useIsFocused();
-  const animate = useXpBarAnimation(behavior, isFocused);
-
   if (!behavior) {
     return (
       <SafeAreaView style={styles.container}>
@@ -43,9 +39,9 @@ export function BehaviorDetailsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <BackButton />
-        <BehaviorTitle
+        <BehaviorSummary
           behavior={behavior}
-          animate={animate}
+          titleSize="header"
         />
       </View>
 

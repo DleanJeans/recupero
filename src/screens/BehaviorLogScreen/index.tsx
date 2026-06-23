@@ -5,7 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Keyboard, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../../components/BackButton';
-import { BehaviorTitle } from '../../components/BehaviorTitle';
+import { BehaviorSummary } from '../../components/BehaviorSummary';
 import { Button } from '../../components/Button';
 import { DatePicker } from '../../components/DatePicker';
 import { Text, TextInput } from '../../components/Text';
@@ -150,9 +150,10 @@ export function BehaviorLogScreen() {
       >
         <View style={styles.header}>
           <BackButton />
-          <BehaviorTitle
+          <BehaviorSummary
             behavior={behavior}
             titleOverride={isEditing ? 'Edit Time' : undefined}
+            titleSize="header"
           />
         </View>
 
