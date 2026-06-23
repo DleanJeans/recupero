@@ -1,14 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { BehaviorEntry, Category } from '../../types/behavior';
 import { computeBehaviorCounts } from '../../utils/behaviorCounts';
 import { Colors } from '../../utils/colors';
-import { Button } from '../Button';
 import { Text } from '../Text';
 import { AddCategoryButton } from './AddCategoryButton';
 import { CategoryChips } from './CategoryChips';
 import { CategoryForm, type CategoryFormProps } from './CategoryForm';
+import { ToggleNamesButton } from './ToggleNamesButton';
 
 type CategoryId = string | undefined | null;
 
@@ -44,7 +43,6 @@ export function CategoryPicker({
   form,
   behaviors,
 }: CategoryPickerProps) {
-  const [hideNames, setHideNames] = useState(false);
   const { behaviorCounts, allCount } = useMemo(() => computeBehaviorCounts(behaviors), [behaviors]);
   const formContent = isFormOpen && form && <CategoryForm {...form} />;
 
@@ -56,26 +54,7 @@ export function CategoryPicker({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          <Button
-            variant="ghost"
-            size="sm"
-            onPress={() => setHideNames(v => !v)}
-            style={[styles.horizontalChip, { paddingHorizontal: 8 }]}
-            accessibilityLabel={hideNames ? 'Show category names' : 'Hide category names'}
-          >
-            <View style={styles.iconWrap}>
-              <Ionicons
-                name={'text-outline'}
-                size={18}
-                color={Colors.text.muted}
-              />
-              {hideNames && (
-                <View style={styles.strikethrough}>
-                  <View style={styles.strikethroughInner} />
-                </View>
-              )}
-            </View>
-          </Button>
+          <ToggleNamesButton style={styles.horizontalChip} />
           <CategoryChips
             categories={categories}
             selectedId={selectedId}
@@ -85,13 +64,12 @@ export function CategoryPicker({
             horizontal
             behaviorCounts={behaviorCounts}
             allCount={allCount}
-            hideNames={hideNames}
           />
           {onToggleForm && (
             <AddCategoryButton
               isOpen={isFormOpen}
               onPress={onToggleForm}
-              style={[styles.horizontalChip, { paddingHorizontal: 8 }]}
+              style={styles.horizontalChip}
             />
           )}
         </ScrollView>
@@ -122,7 +100,6 @@ export function CategoryPicker({
           showAll={showAll}
           behaviorCounts={behaviorCounts}
           allCount={allCount}
-          hideNames={hideNames}
         />
       </View>
     </View>
@@ -143,35 +120,5 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   scrollContent: { paddingHorizontal: 16, gap: 8, paddingVertical: 4 },
-  horizontalChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bg.card,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    gap: 4,
-  },
-  iconWrap: {
-    width: 18,
-    height: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  strikethrough: {
-    position: 'absolute',
-    width: 24,
-    height: 4.5,
-    backgroundColor: Colors.bg.card,
-    transform: [{ rotate: '-45deg' }],
-  },
-  strikethroughInner: {
-    height: 1.5,
-    backgroundColor: Colors.text.muted,
-    position: 'absolute',
-    top: 1.5,
-    left: 0,
-    right: 0,
-    borderRadius: 2,
-  },
+  horizontalChip: { paddingHorizontal: 8 },
 });
