@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo } from 'react';
-import { StyleSheet, type StyleProp, View, type ViewStyle } from 'react-native';
+import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import type { BehaviorEntry } from '../types/behavior';
 import { Colors } from '../utils/colors';
 import { toDateString } from '../utils/dateUtils';
 import { getEarnedStars, getLogsForDate, getThresholds } from '../utils/starUtils';
+import { Text } from './Text';
 
 interface Props {
   /** Behavior whose daily earned stars to render. Behaviors without
@@ -37,28 +38,43 @@ export function StarRow({
   const todayStr = useMemo(() => toDateString(new Date()), []);
   const targetDate = dateStr ?? todayStr;
   const earned = useMemo(() => {
-    if (!thresholds) return null;
+    if (!thresholds) return 0;
     const logCount = getLogsForDate(behavior, targetDate).length;
     return getEarnedStars(logCount, thresholds);
   }, [behavior, thresholds, targetDate]);
 
-  if (earned == null) return null;
+  if (!thresholds) return null;
   const clamped = Math.max(0, Math.min(earned, count));
-  const slots = Array.from({ length: count }, (_, i) => i < clamped);
+  const slots = Array.from({ length: count }, (_, i) => ({
+    filled: i < clamped,
+    threshold: thresholds[i],
+  }));
   return (
     <View
       style={[styles.row, style]}
       accessible
       accessibilityLabel={`${clamped} of ${count} stars earned`}
     >
-      {slots.map((filled, i) => (
-        <Ionicons
+      {slots.map(({ filled, threshold }, i) => (
+        <View
           key={i}
-          name={filled ? 'star' : 'star-outline'}
-          size={size}
-          color={filled ? color : emptyColor}
-          accessibilityLabel={filled ? 'star earned' : 'star not earned'}
-        />
+          style={styles.slot}
+        >
+          {threshold != null && (
+            <Text
+              style={[styles.threshold, { color: filled ? color : Colors.text.muted }]}
+              accessibilityLabel={`${threshold} logs to earn`}
+            >
+              {threshold}
+            </Text>
+          )}
+          <Ionicons
+            name={filled ? 'star' : 'star-outline'}
+            size={size}
+            color={filled ? color : emptyColor}
+            accessibilityLabel={filled ? 'star earned' : 'star not earned'}
+          />
+        </View>
       ))}
     </View>
   );
@@ -69,5 +85,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
+  },
+  threshold: {
+    fontSize: 10,
+    fontWeight: '600',
+    position: 'absolute',
+    top: -12,
+  },
+  slot: {
+    alignItems: 'center',
   },
 });
