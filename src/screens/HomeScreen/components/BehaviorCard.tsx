@@ -83,10 +83,17 @@ export function BehaviorCard({ behavior, showCategory, dateStr }: Props) {
           onPress={handlePress}
           onLongPress={handleLongPress}
         >
-          <BehaviorIcon
-            behavior={behavior}
-            size={32}
-          />
+          <View style={styles.iconColumn}>
+            <BehaviorIcon
+              behavior={behavior}
+              size={32}
+            />
+            <StarRow
+              behavior={behavior}
+              dateStr={dateStr}
+              size={11}
+            />
+          </View>
           <BehaviorInfo
             behavior={behavior}
             showCategory={showCategory}
@@ -123,12 +130,6 @@ function BehaviorInfo({ behavior, showCategory, animate, dateStr }: BehaviorInfo
       <View style={styles.nameRow}>
         <BehaviorName behavior={behavior} />
         {showCategory && <CategoryEmoji behavior={behavior} />}
-        <StarRow
-          behavior={behavior}
-          dateStr={dateStr}
-          size={14}
-          style={styles.starSlot}
-        />
         {!behavior.xpEnabled && <Text style={styles.logCount}>×{behavior.logs.length}</Text>}
       </View>
       <View style={styles.elapsedRow}>
@@ -201,8 +202,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  starSlot: {
-    marginLeft: 2,
+  iconColumn: {
+    alignItems: 'center',
+    gap: 5,
   },
   logCount: {
     color: Colors.text.muted,

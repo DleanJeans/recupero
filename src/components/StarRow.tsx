@@ -89,8 +89,6 @@ const styles = StyleSheet.create({
   threshold: {
     fontSize: 10,
     fontWeight: '600',
-    position: 'absolute',
-    top: -12,
   },
   slot: {
     alignItems: 'center',
