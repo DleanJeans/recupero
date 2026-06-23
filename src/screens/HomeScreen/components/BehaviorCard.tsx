@@ -39,11 +39,11 @@ export function BehaviorCard({ behavior, showCategory, dateStr }: Props) {
   };
 
   const handlePress = () => {
-    navigation.navigate('BehaviorLog', { behaviorId: behavior.id });
+    navigation.navigate('BehaviorLog', { behaviorId: behavior.id, initialMode: 'log' });
   };
 
   const handleLongPress = () => {
-    navigation.navigate('BehaviorDetails', { behaviorId: behavior.id });
+    navigation.navigate('BehaviorLog', { behaviorId: behavior.id, initialMode: 'details' });
   };
 
   const handleEdit = () => {

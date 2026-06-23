@@ -1,51 +1,221 @@
 import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  LayoutAnimation,
+  Pressable,
+  ScrollView,
+  SectionList,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { BackButton } from '../../components/BackButton';
-import { BehaviorSummary } from '../../components/BehaviorSummary';
 import { Button } from '../../components/Button';
 import { DatePicker } from '../../components/DatePicker';
 import { Text, TextInput } from '../../components/Text';
 import { useBehaviorStore } from '../../store/behaviorStore';
+import type { BehaviorEntry } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
+import { BehaviorScreenLayout } from '../components/BehaviorScreenLayout';
 import { Colors } from '../../utils/colors';
 import { toDateString } from '../../utils/dateUtils';
+import { groupLogsByRecency } from '../../utils/behaviorUtils';
 import { NumberWheel } from './components/NumberWheel';
+import { BehaviorLogItem } from './components/BehaviorLogItem';
+import { LogGap } from './components/LogGap';
 
 const ALL_HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const ALL_MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
+type ScreenMode = 'details' | 'log';
+
 export function BehaviorLogScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'BehaviorLog'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { behaviorId, logId, initialTimestamp, initialNotes: routeNotes } = route.params;
+  const { behaviorId, initialMode } = route.params;
 
-  const { behaviors, categories, logBehavior, updateLog } = useBehaviorStore();
+  const { behaviors } = useBehaviorStore();
   const behavior = behaviors.find(b => b.id === behaviorId);
+
+  const [mode, setMode] = useState<ScreenMode>(initialMode ?? 'details');
+  const [editLogId, setEditLogId] = useState<string | undefined>(undefined);
+  const [editTimestamp, setEditTimestamp] = useState<number | undefined>(undefined);
+  const [editNotes, setEditNotes] = useState('');
+  const [formKey, setFormKey] = useState(0);
+
+  const isEditing = editLogId != null;
+  const titleOverride = isEditing ? 'Edit Time' : undefined;
+
+  const animate = (next: ScreenMode) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setMode(next);
+  };
+
+  /** Open the log form for a new entry. */
+  const handleOpenLog = useCallback(() => {
+    setEditLogId(undefined);
+    setEditTimestamp(undefined);
+    setEditNotes('');
+    setFormKey(k => k + 1);
+    animate('log');
+  }, []);
+
+  /** Open the log form pre-filled for editing an existing entry. */
+  const handleEditLog = useCallback((logId: string, timestamp: number, notes: string) => {
+    setEditLogId(logId);
+    setEditTimestamp(timestamp);
+    setEditNotes(notes);
+    setFormKey(k => k + 1);
+    animate('log');
+  }, []);
+
+  const handleBack = useCallback(() => {
+    if (mode === 'log') {
+      if (initialMode === 'details') {
+        animate('details');
+      } else {
+        navigation.goBack();
+      }
+    } else {
+      navigation.goBack();
+    }
+  }, [mode, initialMode, navigation]);
+
+  const handleSaved = useCallback(() => {
+    if (initialMode === 'details') {
+      animate('details');
+    } else {
+      navigation.goBack();
+    }
+  }, [initialMode, navigation]);
+
+  if (!behavior) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: Colors.bg.primary }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingBottom: 8 }}>
+          <BackButton />
+          <Text style={styles.title}>Behavior Not Found</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <BehaviorScreenLayout
+      behavior={behavior}
+      titleOverride={titleOverride}
+      onBack={handleBack}
+      actions={
+        mode === 'details' ? (
+          <DetailsActions
+            onEdit={() => navigation.navigate('BehaviorForm', { behaviorId: behavior.id })}
+            onLog={handleOpenLog}
+          />
+        ) : undefined
+      }
+    >
+      {mode === 'details' ? (
+        <BehaviorLogList
+          behavior={behavior}
+          onEditLog={handleEditLog}
+        />
+      ) : (
+        <LogForm
+          key={formKey}
+          behaviorId={behaviorId}
+          behavior={behavior}
+          editLogId={editLogId}
+          editTimestamp={editTimestamp}
+          editNotes={editNotes}
+          onSaved={handleSaved}
+        />
+      )}
+    </BehaviorScreenLayout>
+  );
+}
+
+// #region Actions bar
+
+interface DetailsActionsProps {
+  onEdit: () => void;
+  onLog: () => void;
+}
+
+function DetailsActions({ onEdit, onLog }: DetailsActionsProps) {
+  return (
+    <>
+      <Button
+        variant="secondary"
+        size="lg"
+        style={styles.detailAction}
+        onPress={onEdit}
+      >
+        <View style={styles.actionIconRow}>
+          <Ionicons
+            name="create-outline"
+            size={18}
+            color={Colors.text.light}
+          />
+          <Text style={styles.actionLabel}>Edit</Text>
+        </View>
+      </Button>
+      <Button
+        variant="primary"
+        size="lg"
+        style={styles.detailAction}
+        onPress={onLog}
+      >
+        Log
+      </Button>
+    </>
+  );
+}
+
+// #endregion
+
+// #region Log form
+
+interface LogFormProps {
+  behaviorId: string;
+  behavior: BehaviorEntry;
+  editLogId?: string;
+  editTimestamp?: number;
+  editNotes: string;
+  onSaved: () => void;
+}
+
+function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, onSaved }: LogFormProps) {
+  const { categories, logBehavior, updateLog } = useBehaviorStore();
 
   const nowRef = useRef(new Date());
   const todayStr = toDateString(nowRef.current);
 
-  const [selectedDate, setSelectedDate] = useState(todayStr);
-  const [hour, setHour] = useState(nowRef.current.getHours());
-  const [minute, setMinute] = useState(nowRef.current.getMinutes());
+  const initialDate = editTimestamp ? toDateString(new Date(editTimestamp)) : todayStr;
+  const initialHour = editTimestamp ? new Date(editTimestamp).getHours() : nowRef.current.getHours();
+  const initialMinute = editTimestamp ? new Date(editTimestamp).getMinutes() : nowRef.current.getMinutes();
+
+  const [selectedDate, setSelectedDate] = useState(initialDate);
+  const [hour, setHour] = useState(initialHour);
+  const [minute, setMinute] = useState(initialMinute);
   const [wheelKey, setWheelKey] = useState(0);
   const notesRef = useRef<import('react-native').TextInput>(null);
-  const [notes, setNotes] = useState(routeNotes ?? '');
+  const [notes, setNotes] = useState(editNotes);
   const [notesFocused, setNotesFocused] = useState(false);
   const [metadataFocused, setMetadataFocused] = useState(false);
   const [metadataValues, setMetadataValues] = useState<Record<string, string>>({});
 
-  const category = behavior ? categories.find(c => c.id === behavior.categoryId) : undefined;
+  const category = categories.find(c => c.id === behavior.categoryId);
   const metadataFields = category?.metadataFields ?? [];
 
-  // Load metadata values from existing log when editing, or defaults when new
+  // Load metadata values from existing log or defaults
   useEffect(() => {
-    if (logId) {
-      const existingLog = behavior?.logs.find(l => l.id === logId);
+    if (editLogId) {
+      const existingLog = behavior.logs.find(l => l.id === editLogId);
       if (existingLog?.metadata) {
         const vals: Record<string, string> = {};
         for (const field of metadataFields) {
@@ -54,7 +224,7 @@ export function BehaviorLogScreen() {
         }
         setMetadataValues(vals);
       }
-    } else if (behavior?.defaultMetadata) {
+    } else if (behavior.defaultMetadata) {
       const vals: Record<string, string> = {};
       for (const field of metadataFields) {
         const v = behavior.defaultMetadata[field.key];
@@ -63,7 +233,7 @@ export function BehaviorLogScreen() {
       setMetadataValues(vals);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [logId]);
+  }, [editLogId]);
 
   const isToday = selectedDate === todayStr;
   const maxHour = isToday ? nowRef.current.getHours() : 23;
@@ -78,15 +248,13 @@ export function BehaviorLogScreen() {
   }, [maxMinute, minute]);
 
   useEffect(() => {
-    const n = initialTimestamp ? new Date(initialTimestamp) : new Date();
+    const n = editTimestamp ? new Date(editTimestamp) : new Date();
     nowRef.current = new Date();
     setSelectedDate(toDateString(n));
     setHour(n.getHours());
     setMinute(n.getMinutes());
-    setNotes(routeNotes ?? '');
     setWheelKey(k => k + 1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialTimestamp]);
+  }, [editTimestamp]);
 
   const handleExpandTime = useCallback(() => {
     notesRef.current?.blur();
@@ -106,15 +274,13 @@ export function BehaviorLogScreen() {
       }
     }
     const metadataOrUndefined = Object.keys(metadata).length > 0 ? metadata : undefined;
-    if (logId) {
-      // Edit: no logCount change, go back immediately
-      updateLog(behaviorId, logId, ts, metadataOrUndefined);
-      navigation.goBack();
-      return;
-    }
 
-    logBehavior(behaviorId, ts, metadataOrUndefined);
-    navigation.goBack();
+    if (editLogId) {
+      updateLog(behaviorId, editLogId, ts, metadataOrUndefined);
+    } else {
+      logBehavior(behaviorId, ts, metadataOrUndefined);
+    }
+    onSaved();
   }, [
     selectedDate,
     hour,
@@ -122,126 +288,164 @@ export function BehaviorLogScreen() {
     notes,
     metadataValues,
     metadataFields,
-    logId,
+    editLogId,
     behaviorId,
     logBehavior,
     updateLog,
-    navigation,
+    onSaved,
   ]);
 
-  if (!behavior) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <BackButton />
-          <Text style={styles.title}>Behavior Not Found</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const isEditing = !!initialTimestamp;
-
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior="padding"
-        style={styles.flex}
+    <KeyboardAvoidingView
+      behavior="padding"
+      style={styles.flex}
+    >
+      <ScrollView
+        style={styles.body}
+        contentContainerStyle={styles.bodyContent}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <BackButton />
-          <BehaviorSummary
-            behavior={behavior}
-            titleOverride={isEditing ? 'Edit Time' : undefined}
-            showCategory
-            titleSize="header"
+        <Text style={styles.sectionLabel}>Date</Text>
+        <View style={styles.datePickerWrapper}>
+          <DatePicker
+            selectedDate={selectedDate}
+            maxDate={todayStr}
+            onSelect={setSelectedDate}
           />
         </View>
 
-        <ScrollView
-          style={styles.body}
-          contentContainerStyle={styles.bodyContent}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={styles.sectionLabel}>Date</Text>
-          <View style={styles.datePickerWrapper}>
-            <DatePicker
-              selectedDate={selectedDate}
-              maxDate={todayStr}
-              onSelect={setSelectedDate}
+        <TimePicker
+          hour={hour}
+          minute={minute}
+          maxHour={maxHour}
+          maxMinute={maxMinute}
+          wheelKey={wheelKey}
+          collapsed={notesFocused || metadataFocused}
+          onHourChange={setHour}
+          onMinuteChange={setMinute}
+          onExpand={handleExpandTime}
+        />
+
+        {metadataFields.map(field => (
+          <View
+            key={field.key}
+            style={styles.metadataFieldRow}
+          >
+            <Text style={styles.metadataFieldLabel}>
+              {field.label}
+              {field.unit ? ` (${field.unit})` : ''}
+            </Text>
+            <TextInput
+              style={styles.metadataInput}
+              value={metadataValues[field.key] ?? ''}
+              onChangeText={v => setMetadataValues(prev => ({ ...prev, [field.key]: v.replace(/[^0-9.]/g, '') }))}
+              onFocus={() => setMetadataFocused(true)}
+              onBlur={() => setMetadataFocused(false)}
+              placeholder="0"
+              placeholderTextColor={Colors.text.dim}
+              keyboardType="decimal-pad"
+              returnKeyType="done"
+              maxLength={8}
             />
           </View>
+        ))}
 
-          <TimePicker
-            hour={hour}
-            minute={minute}
-            maxHour={maxHour}
-            maxMinute={maxMinute}
-            wheelKey={wheelKey}
-            collapsed={notesFocused || metadataFocused}
-            onHourChange={setHour}
-            onMinuteChange={setMinute}
-            onExpand={handleExpandTime}
-          />
+        <Text style={styles.sectionLabel}>Notes</Text>
+        <TextInput
+          ref={notesRef}
+          style={styles.notesInput}
+          value={notes}
+          onChangeText={setNotes}
+          placeholder="Optional notes..."
+          placeholderTextColor={Colors.text.dim}
+          multiline
+          maxLength={500}
+          textAlignVertical="top"
+          onFocus={() => setNotesFocused(true)}
+          onBlur={() => setNotesFocused(false)}
+        />
 
-          {metadataFields.map(field => (
-            <View
-              key={field.key}
-              style={styles.metadataFieldRow}
-            >
-              <Text style={styles.metadataFieldLabel}>
-                {field.label}
-                {field.unit ? ` (${field.unit})` : ''}
-              </Text>
-              <TextInput
-                style={styles.metadataInput}
-                value={metadataValues[field.key] ?? ''}
-                onChangeText={v => setMetadataValues(prev => ({ ...prev, [field.key]: v.replace(/[^0-9.]/g, '') }))}
-                onFocus={() => setMetadataFocused(true)}
-                onBlur={() => setMetadataFocused(false)}
-                placeholder="0"
-                placeholderTextColor={Colors.text.dim}
-                keyboardType="decimal-pad"
-                returnKeyType="done"
-                maxLength={8}
-              />
-            </View>
-          ))}
-
-          <Text style={styles.sectionLabel}>Notes</Text>
-          <TextInput
-            ref={notesRef}
-            style={styles.notesInput}
-            value={notes}
-            onChangeText={setNotes}
-            placeholder="Optional notes..."
-            placeholderTextColor={Colors.text.dim}
-            multiline
-            maxLength={500}
-            textAlignVertical="top"
-            onFocus={() => setNotesFocused(true)}
-            onBlur={() => setNotesFocused(false)}
-          />
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      <View style={styles.actions}>
         <Button
           variant="primary"
           size="lg"
-          style={styles.primaryAction}
+          style={styles.formSubmitButton}
           onPress={handleConfirm}
         >
-          {isEditing ? 'Save' : 'Log'}
+          {editLogId ? 'Save' : 'Log'}
         </Button>
-      </View>
-    </SafeAreaView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-// #region Sub-components
+// #endregion
+
+// #region Log list view
+
+interface BehaviorLogListProps {
+  behavior: BehaviorEntry;
+  onEditLog: (logId: string, timestamp: number, notes: string) => void;
+}
+
+function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
+  const { categories } = useBehaviorStore();
+
+  const logs = behavior.logs ?? [];
+  const sections = useMemo(() => groupLogsByRecency(logs), [logs]);
+  const category = behavior.categoryId ? categories.find(c => c.id === behavior.categoryId) : undefined;
+  const metadataFields = category?.metadataFields;
+
+  return (
+    <SectionList
+      sections={sections}
+      keyExtractor={item => item.id}
+      renderItem={({ item, index, section }) => (
+        <>
+          {index > 0 && (
+            <LogGap
+              earlierMs={item.timestamp}
+              laterMs={section.data[index - 1].timestamp}
+              xpDecay={behavior.xpDecay}
+            />
+          )}
+          <BehaviorLogItem
+            log={item}
+            behaviorId={behavior.id}
+            metadataFields={metadataFields}
+            onEdit={() => onEditLog(item.id, item.timestamp, (item.metadata?.notes as string | undefined) ?? '')}
+          />
+        </>
+      )}
+      renderSectionHeader={({ section }) => {
+        const sectionIdx = sections.indexOf(section);
+        const prevLast = sectionIdx > 0 ? sections[sectionIdx - 1].data.at(-1)?.timestamp : null;
+        const showDistance = prevLast != null && section.data.length > 0;
+
+        return (
+          <View style={[styles.sectionHeader, sectionIdx > 0 && styles.sectionHeaderWithDistance]}>
+            {showDistance && (
+              <LogGap
+                earlierMs={section.data[0].timestamp}
+                laterMs={prevLast!}
+                xpDecay={behavior.xpDecay}
+                style={styles.logGapAbsolute}
+              />
+            )}
+            <Text style={styles.sectionHeaderText}>{section.title}</Text>
+          </View>
+        );
+      }}
+      ListEmptyComponent={<Text style={styles.empty}>No logs yet.{'\n'}Press Log below to record this behavior.</Text>}
+      contentContainerStyle={logs.length === 0 && styles.emptyContainer}
+    />
+  );
+}
+
+// #endregion
+
+// #region Time picker sub-component
 
 interface TimePickerProps {
   hour: number;
@@ -309,36 +513,20 @@ function TimePicker({
 // #endregion
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.bg.primary,
-  },
-  flex: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingBottom: 8,
-  },
+  flex: { flex: 1 },
   title: {
     color: Colors.text.primary,
     fontSize: 20,
     fontWeight: '700',
     marginLeft: 4,
   },
-  body: {
-    flex: 1,
-  },
+  body: { flex: 1 },
   bodyContent: {
     paddingHorizontal: 24,
     paddingTop: 8,
     paddingBottom: 120,
   },
-  datePickerWrapper: {
-    marginBottom: 20,
-  },
+  datePickerWrapper: { marginBottom: 20 },
   sectionLabel: {
     color: Colors.text.light,
     fontSize: 12,
@@ -347,13 +535,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     marginBottom: 10,
   },
-
   wheels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 16, gap: 8 },
   colon: { color: Colors.text.primary, fontSize: 28, fontWeight: '700', marginBottom: 4 },
-  collapsedTime: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
+  collapsedTime: { alignItems: 'center', marginBottom: 16 },
   collapsedTimeText: {
     color: Colors.text.primary,
     fontSize: 28,
@@ -391,13 +575,51 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     lineHeight: 22,
   },
-  actions: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    marginHorizontal: 24,
-    marginBottom: 30,
-  },
   primaryAction: { flex: 0, width: '100%' },
+  formSubmitButton: { width: '100%' },
+  detailAction: { flex: 1 },
+  actionIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  actionLabel: {
+    color: Colors.text.light,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  empty: {
+    color: Colors.text.faint,
+    textAlign: 'center',
+    fontSize: 15,
+    padding: 32,
+  },
+  sectionHeader: {
+    marginTop: 12,
+    marginBottom: 4,
+    marginHorizontal: 16,
+    overflow: 'visible',
+  },
+  sectionHeaderWithDistance: {
+    marginTop: 0,
+    minHeight: 40,
+  },
+  logGapAbsolute: {
+    position: 'absolute',
+    alignSelf: 'center',
+    top: 0,
+  },
+  sectionHeaderText: {
+    color: Colors.text.faint,
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: 'auto',
+  },
 });

@@ -25,7 +25,7 @@ export function LogGap({ earlierMs, laterMs, xpDecay, style }: Props) {
   return (
     <View style={[styles.connector, style]}>
       <View style={styles.line} />
-      <View style={{marginVertical: 3}}>
+      <View style={{ marginVertical: 3 }}>
         <DistanceIndicator durationMs={durationMs} />
         {decayLabel && <Text style={styles.decayLabel}>{decayLabel}</Text>}
       </View>

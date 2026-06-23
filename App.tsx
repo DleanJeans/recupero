@@ -7,7 +7,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConfettiOverlay } from './src/components/ConfettiOverlay';
 import { useAppFonts } from './src/hooks/useAppFonts';
-import { BehaviorDetailsScreen } from './src/screens/BehaviorDetailsScreen';
+
 import { BehaviorFormScreen } from './src/screens/BehaviorFormScreen';
 import { BehaviorLogScreen } from './src/screens/BehaviorLogScreen';
 import { DayScreen } from './src/screens/DayScreen';
@@ -56,10 +56,7 @@ export default function App() {
                 name="Day"
                 component={DayScreen}
               />
-              <Stack.Screen
-                name="BehaviorDetails"
-                component={BehaviorDetailsScreen}
-              />
+
               <Stack.Screen
                 name="BehaviorLog"
                 component={BehaviorLogScreen}
