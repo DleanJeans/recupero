@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react';
-import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import type { BehaviorEntry, Category } from '../../types/behavior';
+import React, { useMemo, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { useBehaviorStore } from '../../store/behaviorStore';
+import type { BehaviorEntry, Category, MetadataField } from '../../types/behavior';
 import { computeBehaviorCounts } from '../../utils/behaviorCounts';
 import { Colors } from '../../utils/colors';
 import { Text } from '../Text';
 import { AddCategoryButton } from './AddCategoryButton';
 import { CategoryChips } from './CategoryChips';
-import { CategoryForm, type CategoryFormProps } from './CategoryForm';
+import { CategoryForm } from './CategoryForm';
 
 type CategoryId = string | undefined | null;
 
@@ -19,20 +20,20 @@ interface CategoryPickerProps {
   horizontal?: boolean;
   /** Show "All" option instead of "None" */
   showAll?: boolean;
-  /** Long press handler for editing categories */
+  /** External long-press hook (e.g. analytics). Internal edit flow is also triggered. */
   onLongPress?: (category: Category) => void;
-  /** Whether the add form is currently open */
-  isFormOpen?: boolean;
-  /** Toggle add form */
-  onToggleForm?: () => void;
-  /** Form props when form is open */
-  form?: CategoryFormProps;
   /** Behaviors used to compute per-category and total counts. */
   behaviors: BehaviorEntry[];
   /** Hide category names, show only emoji and counts. */
   hideNames?: boolean;
   /** Optional leading element rendered at the start of the horizontal filter bar. */
   leadingAccessory?: ReactNode;
+  /** Use darker background for nested contexts (e.g. inside a form) */
+  dark?: boolean;
+  /** Called after a new category is created. Receives the new category id. */
+  onCategoryCreated?: (id: string) => void;
+  /** Called after a category is deleted. Receives the deleted category id. */
+  onCategoryDeleted?: (id: string) => void;
 }
 
 export function CategoryPicker({
@@ -42,15 +43,101 @@ export function CategoryPicker({
   horizontal = false,
   showAll = false,
   onLongPress,
-  isFormOpen = false,
-  onToggleForm,
-  form,
   behaviors,
   hideNames = false,
   leadingAccessory,
+  dark = false,
+  onCategoryCreated,
+  onCategoryDeleted,
 }: CategoryPickerProps) {
+  const { addCategory, removeCategory, updateCategory } = useBehaviorStore();
+
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [emoji, setEmoji] = useState('');
+  const [name, setName] = useState('');
+  const [metadataFields, setMetadataFields] = useState<MetadataField[]>([]);
+
+  const isEditing = editingId != null;
+  const isFormOpen = showForm || isEditing;
+  const editingCategory = editingId ? categories.find(c => c.id === editingId) : undefined;
+
+  const resetForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setEmoji('');
+    setName('');
+    setMetadataFields([]);
+  };
+
+  const handleLongPress = (category: Category) => {
+    setEditingId(category.id);
+    setEmoji(category.emoji);
+    setName(category.name);
+    setMetadataFields(category.metadataFields ?? []);
+    onLongPress?.(category);
+  };
+
+  const toggleForm = () => {
+    if (isFormOpen) {
+      resetForm();
+    } else {
+      setShowForm(true);
+    }
+  };
+
+  const handleSave = () => {
+    const trimmedName = name.trim();
+    const trimmedEmoji = emoji.trim();
+    if (!trimmedEmoji || !trimmedName) return;
+    const mf = metadataFields.length > 0 ? metadataFields : undefined;
+    if (editingId) {
+      updateCategory(editingId, { name: trimmedName, emoji: trimmedEmoji, metadataFields: mf });
+      resetForm();
+    } else {
+      const beforeCount = useBehaviorStore.getState().categories.length;
+      addCategory(trimmedName, trimmedEmoji, mf);
+      const newCat = useBehaviorStore.getState().categories[beforeCount];
+      resetForm();
+      if (newCat) onCategoryCreated?.(newCat.id);
+    }
+  };
+
+  const handleDelete = () => {
+    if (!editingId || !editingCategory) return;
+    const id = editingId;
+    const cat = editingCategory;
+    resetForm();
+    Alert.alert(`Delete "${cat.name}"?`, 'Behaviors in this category will lose their category assignment.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          removeCategory(id);
+          onCategoryDeleted?.(id);
+        },
+      },
+    ]);
+  };
+
   const { behaviorCounts, allCount } = useMemo(() => computeBehaviorCounts(behaviors), [behaviors]);
-  const formContent = isFormOpen && form && <CategoryForm {...form} />;
+
+  const formContent = isFormOpen && (
+    <CategoryForm
+      emoji={emoji}
+      name={name}
+      isEditing={isEditing}
+      onEmojiChange={setEmoji}
+      onNameChange={setName}
+      metadataFields={metadataFields}
+      onMetadataFieldsChange={setMetadataFields}
+      onSave={handleSave}
+      onCancel={resetForm}
+      onDelete={handleDelete}
+      dark={dark}
+    />
+  );
 
   if (horizontal) {
     return (
@@ -65,20 +152,18 @@ export function CategoryPicker({
             categories={categories}
             selectedId={selectedId}
             onChange={onChange}
-            onLongPress={onLongPress}
+            onLongPress={handleLongPress}
             showAll={showAll}
             horizontal
             behaviorCounts={behaviorCounts}
             allCount={allCount}
             hideNames={hideNames}
           />
-          {onToggleForm && (
-            <AddCategoryButton
-              isOpen={isFormOpen}
-              onPress={onToggleForm}
-              style={styles.horizontalChip}
-            />
-          )}
+          <AddCategoryButton
+            isOpen={isFormOpen}
+            onPress={toggleForm}
+            style={styles.horizontalChip}
+          />
         </ScrollView>
         {formContent}
       </>
@@ -89,13 +174,11 @@ export function CategoryPicker({
     <View style={styles.section}>
       <View style={styles.labelRow}>
         <Text style={styles.label}>Category</Text>
-        {onToggleForm && (
-          <AddCategoryButton
-            isOpen={isFormOpen}
-            onPress={onToggleForm}
-            style={styles.addButton}
-          />
-        )}
+        <AddCategoryButton
+          isOpen={isFormOpen}
+          onPress={toggleForm}
+          style={styles.addButton}
+        />
       </View>
       {formContent}
       <View style={styles.row}>
@@ -103,7 +186,7 @@ export function CategoryPicker({
           categories={categories}
           selectedId={selectedId}
           onChange={onChange}
-          onLongPress={onLongPress}
+          onLongPress={handleLongPress}
           showAll={showAll}
           behaviorCounts={behaviorCounts}
           allCount={allCount}

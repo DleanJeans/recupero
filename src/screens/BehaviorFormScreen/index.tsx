@@ -17,7 +17,7 @@ import { Text, TextInput } from '../../components/Text';
 import { useStarThresholdsForm } from '../../hooks/useStarThresholdsForm';
 import { useXpDecayForm } from '../../hooks/useXpDecayForm';
 import { useBehaviorStore } from '../../store/behaviorStore';
-import type { BehaviorEntry, BehaviorType, MetadataField } from '../../types/behavior';
+import type { BehaviorEntry, BehaviorType } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import { BehaviorTypePicker } from './components/BehaviorTypePicker';
@@ -63,11 +63,6 @@ export function BehaviorFormScreen() {
   const [cooldownMinutes, setCooldownMinutes] = useState(0);
   const [cooldownType, setCooldownType] = useState<'rest' | 'limit'>('rest');
   const [cooldownUnit, setCooldownUnit] = useState<CooldownUnit | undefined>(undefined);
-  const [showCategoryForm, setShowCategoryForm] = useState(false);
-  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
-  const [categoryEmoji, setCategoryEmoji] = useState('');
-  const [categoryName, setCategoryName] = useState('');
-  const [categoryMetadataFields, setCategoryMetadataFields] = useState<MetadataField[]>([]);
   const [behaviorDefaultMetadata, setBehaviorDefaultMetadata] = useState<Record<string, string>>({});
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
@@ -101,14 +96,6 @@ export function BehaviorFormScreen() {
       hideSub.remove();
     };
   }, []);
-
-  const resetCategoryForm = () => {
-    setShowCategoryForm(false);
-    setEditingCategoryId(null);
-    setCategoryEmoji('');
-    setCategoryName('');
-    setCategoryMetadataFields([]);
-  };
 
   useEffect(() => {
     if (!behavior) return;
@@ -278,64 +265,10 @@ export function BehaviorFormScreen() {
             selectedId={categoryId}
             onChange={handleCategoryChange}
             behaviors={behaviors}
-            onLongPress={cat => {
-              setEditingCategoryId(cat.id);
-              setCategoryEmoji(cat.emoji);
-              setCategoryName(cat.name);
-              setCategoryMetadataFields(cat.metadataFields ?? []);
-              setShowCategoryForm(true);
-            }}
-            isFormOpen={showCategoryForm}
-            onToggleForm={() => {
-              if (!showCategoryForm) {
-                resetCategoryForm();
-              }
-              setShowCategoryForm(v => !v);
-            }}
-            form={{
-              emoji: categoryEmoji,
-              name: categoryName,
-              isEditing: editingCategoryId != null,
-              onEmojiChange: setCategoryEmoji,
-              onNameChange: setCategoryName,
-              metadataFields: categoryMetadataFields,
-              onMetadataFieldsChange: setCategoryMetadataFields,
-              onSave: () => {
-                const trimmedName = categoryName.trim();
-                const trimmedEmoji = categoryEmoji.trim();
-                if (!trimmedEmoji || !trimmedName) return;
-                const store = useBehaviorStore.getState();
-                if (editingCategoryId) {
-                  store.updateCategory(editingCategoryId, {
-                    name: trimmedName,
-                    emoji: trimmedEmoji,
-                    metadataFields: categoryMetadataFields.length > 0 ? categoryMetadataFields : undefined,
-                  });
-                } else {
-                  store.addCategory(
-                    trimmedName,
-                    trimmedEmoji,
-                    categoryMetadataFields.length > 0 ? categoryMetadataFields : undefined,
-                  );
-                  const newCats = useBehaviorStore.getState().categories;
-                  const newCat = newCats[newCats.length - 1];
-                  if (newCat) setCategoryId(newCat.id);
-                }
-                resetCategoryForm();
-              },
-              onCancel: () => {
-                resetCategoryForm();
-              },
-              onDelete: () => {
-                if (!editingCategoryId) return;
-                const store = useBehaviorStore.getState();
-                store.removeCategory(editingCategoryId);
-                if (categoryId === editingCategoryId) {
-                  setCategoryId(undefined);
-                }
-                resetCategoryForm();
-              },
-              dark: true,
+            dark
+            onCategoryCreated={setCategoryId}
+            onCategoryDeleted={id => {
+              if (categoryId === id) setCategoryId(undefined);
             }}
           />
 
