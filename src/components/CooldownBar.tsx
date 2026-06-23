@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import type { BehaviorEntry } from '../types/behavior';
+import { Colors } from '../utils/colors';
 import { getCooldownColor } from '../utils/cooldownUtils';
-import { MS_PER_MINUTE } from '../utils/timeUtils';
+import { formatCooldown, MS_PER_MINUTE } from '../utils/timeUtils';
 import { BehaviorElapsed } from './BehaviorElapsed';
 import { StripedProgressBar } from './StripedProgressBar';
 
@@ -34,6 +35,7 @@ export function CooldownBar({ behavior }: Props) {
         direction={1}
       />
       <BehaviorElapsed behavior={behavior} />
+      <Text style={styles.cooldownHint}>{` / ${formatCooldown(behavior.cooldownMinutes)}`}</Text>
     </View>
   );
 }
@@ -44,5 +46,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  cooldownHint: {
+    color: Colors.text.faint,
+    fontSize: 10,
+    fontWeight: '500',
   },
 });

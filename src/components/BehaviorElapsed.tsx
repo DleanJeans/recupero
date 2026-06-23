@@ -18,6 +18,6 @@ export function BehaviorElapsed({ behavior }: Props) {
 const styles = StyleSheet.create({
   elapsed: {
     color: Colors.text.muted,
-    fontSize: 11,
+    fontSize: 10,
   },
 });
