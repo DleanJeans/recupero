@@ -44,7 +44,6 @@ export function CategoryPicker({
   showAll = false,
   onLongPress,
   behaviors,
-  hideNames = false,
   leadingAccessory,
   dark = false,
   onCategoryCreated,
@@ -157,7 +156,6 @@ export function CategoryPicker({
             horizontal
             behaviorCounts={behaviorCounts}
             allCount={allCount}
-            hideNames={hideNames}
           />
           <AddCategoryButton
             isOpen={isFormOpen}
@@ -190,7 +188,6 @@ export function CategoryPicker({
           showAll={showAll}
           behaviorCounts={behaviorCounts}
           allCount={allCount}
-          hideNames={hideNames}
         />
       </View>
     </View>

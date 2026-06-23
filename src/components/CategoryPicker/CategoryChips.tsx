@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
+import { useSettingsStore } from '../../store/settingsStore';
 import type { Category } from '../../types/behavior';
 import { Colors } from '../../utils/colors';
 import { Button } from '../Button';
@@ -18,8 +19,6 @@ export interface CategoryChipsProps {
   behaviorCounts?: Record<string, number>;
   /** Total behavior count, shown on the "All" chip when `showAll` is true. */
   allCount?: number;
-  /** Hide category names, show only emoji and counts. */
-  hideNames?: boolean;
 }
 
 type ChipItem = Category | { id: undefined; emoji: string; name: string };
@@ -33,8 +32,8 @@ export function CategoryChips({
   horizontal = false,
   behaviorCounts,
   allCount,
-  hideNames = false,
 }: CategoryChipsProps) {
+  const hideNames = useSettingsStore(s => s.hideCategoryNames);
   const items: ChipItem[] = showAll
     ? [{ id: undefined, emoji: '', name: 'All' }, ...categories]
     : [{ id: undefined, emoji: '', name: 'None' }, ...categories];

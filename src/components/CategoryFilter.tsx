@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useBehaviorStore } from '../store/behaviorStore';
 import { CategoryPicker } from './CategoryPicker';
@@ -11,7 +11,6 @@ interface CategoryFilterProps {
 
 export function CategoryFilter({ selectedCategoryId, onSelectCategory }: CategoryFilterProps) {
   const { categories, behaviors } = useBehaviorStore();
-  const [hideNames, setHideNames] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -22,13 +21,7 @@ export function CategoryFilter({ selectedCategoryId, onSelectCategory }: Categor
         horizontal
         showAll
         behaviors={behaviors}
-        hideNames={hideNames}
-        leadingAccessory={
-          <ToggleNamesButton
-            hideNames={hideNames}
-            onToggle={() => setHideNames(v => !v)}
-          />
-        }
+        leadingAccessory={<ToggleNamesButton />}
       />
     </View>
   );

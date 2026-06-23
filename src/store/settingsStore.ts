@@ -9,6 +9,8 @@ interface SettingsStore {
   setTimeFormat: (format: TimeFormat) => void;
   hidePrivate: boolean;
   setHidePrivate: (v: boolean) => void;
+  hideCategoryNames: boolean;
+  setHideCategoryNames: (v: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -16,8 +18,10 @@ export const useSettingsStore = create<SettingsStore>()(
     set => ({
       timeFormat: '12h',
       hidePrivate: false,
+      hideCategoryNames: false,
       setTimeFormat: format => set({ timeFormat: format }),
       setHidePrivate: v => set({ hidePrivate: v }),
+      setHideCategoryNames: v => set({ hideCategoryNames: v }),
     }),
     {
       name: 'recupero-settings',

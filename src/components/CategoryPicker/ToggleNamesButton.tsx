@@ -1,23 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import type { StyleProp, ViewStyle } from 'react-native';
 import { StyleSheet, View } from 'react-native';
+import { useSettingsStore } from '../../store/settingsStore';
 import { Colors } from '../../utils/colors';
 import { Button } from '../Button';
 
-interface Props {
-  hideNames: boolean;
-  onToggle: () => void;
-  style?: StyleProp<ViewStyle>;
-}
-
-export function ToggleNamesButton({ hideNames, onToggle, style }: Props) {
+export function ToggleNamesButton() {
+  const hideNames = useSettingsStore(s => s.hideCategoryNames);
+  const setHideNames = useSettingsStore(s => s.setHideCategoryNames);
   return (
     <Button
       variant="ghost"
       size="sm"
-      onPress={onToggle}
-      style={[styles.button, style]}
+      onPress={() => setHideNames(!hideNames)}
+      style={styles.button}
       accessibilityLabel={hideNames ? 'Show category names' : 'Hide category names'}
     >
       <View style={styles.iconWrap}>
