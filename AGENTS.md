@@ -1,6 +1,13 @@
-- Never add package-lock.json to commit
-- Update pnpm-lock.yaml when there is change to package.json
-- Put util functions in src/utils instead of in component files
-- Make sure behaviorStore is compatible with logs from previous versions
-- Format/Organize imports with biome before committing changes
-- New branch naming: {feat|bug}/issue{number}-{issue title or feature/fix content}
+1. Never add package-lock.json to commit
+
+2. Update pnpm-lock.yaml when there is change to package.json
+
+3. Put util functions in src/utils instead of in component files
+
+4. Make sure behaviorStore is compatible with logs from previous versions
+
+5. Run format:changed format:imports after completing coding
+
+6. New branch naming: {feat|bug}/issue{number}-{issue title or feature/fix content}
+
+7. Minimize prop drilling. Save and read directly from stores if possible.
