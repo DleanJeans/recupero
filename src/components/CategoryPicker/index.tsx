@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { BehaviorEntry, Category } from '../../types/behavior';
@@ -7,7 +8,6 @@ import { Text } from '../Text';
 import { AddCategoryButton } from './AddCategoryButton';
 import { CategoryChips } from './CategoryChips';
 import { CategoryForm, type CategoryFormProps } from './CategoryForm';
-import { ToggleNamesButton } from './ToggleNamesButton';
 
 type CategoryId = string | undefined | null;
 
@@ -29,6 +29,10 @@ interface CategoryPickerProps {
   form?: CategoryFormProps;
   /** Behaviors used to compute per-category and total counts. */
   behaviors: BehaviorEntry[];
+  /** Hide category names, show only emoji and counts. */
+  hideNames?: boolean;
+  /** Optional leading element rendered at the start of the horizontal filter bar. */
+  leadingAccessory?: ReactNode;
 }
 
 export function CategoryPicker({
@@ -42,6 +46,8 @@ export function CategoryPicker({
   onToggleForm,
   form,
   behaviors,
+  hideNames = false,
+  leadingAccessory,
 }: CategoryPickerProps) {
   const { behaviorCounts, allCount } = useMemo(() => computeBehaviorCounts(behaviors), [behaviors]);
   const formContent = isFormOpen && form && <CategoryForm {...form} />;
@@ -54,7 +60,7 @@ export function CategoryPicker({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          <ToggleNamesButton style={styles.horizontalChip} />
+          {leadingAccessory}
           <CategoryChips
             categories={categories}
             selectedId={selectedId}
@@ -64,6 +70,7 @@ export function CategoryPicker({
             horizontal
             behaviorCounts={behaviorCounts}
             allCount={allCount}
+            hideNames={hideNames}
           />
           {onToggleForm && (
             <AddCategoryButton
@@ -100,6 +107,7 @@ export function CategoryPicker({
           showAll={showAll}
           behaviorCounts={behaviorCounts}
           allCount={allCount}
+          hideNames={hideNames}
         />
       </View>
     </View>

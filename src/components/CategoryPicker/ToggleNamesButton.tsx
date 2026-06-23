@@ -2,22 +2,21 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { StyleSheet, View } from 'react-native';
-import { useSettingsStore } from '../../store/settingsStore';
 import { Colors } from '../../utils/colors';
 import { Button } from '../Button';
 
 interface Props {
+  hideNames: boolean;
+  onToggle: () => void;
   style?: StyleProp<ViewStyle>;
 }
 
-export function ToggleNamesButton({ style }: Props) {
-  const hideNames = useSettingsStore(s => s.hideCategoryNames);
-  const setHideNames = useSettingsStore(s => s.setHideCategoryNames);
+export function ToggleNamesButton({ hideNames, onToggle, style }: Props) {
   return (
     <Button
       variant="ghost"
       size="sm"
-      onPress={() => setHideNames(!hideNames)}
+      onPress={onToggle}
       style={[styles.button, style]}
       accessibilityLabel={hideNames ? 'Show category names' : 'Hide category names'}
     >
@@ -43,7 +42,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.bg.card,
     borderRadius: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 7,
     gap: 4,
   },

@@ -3,6 +3,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { Category, MetadataField } from '../types/behavior';
 import { CategoryPicker } from './CategoryPicker';
+import { ToggleNamesButton } from './CategoryPicker/ToggleNamesButton';
 
 interface CategoryFilterProps {
   selectedCategoryId: string | null;
@@ -20,6 +21,7 @@ export function CategoryFilter({ selectedCategoryId, onSelectCategory }: Categor
   const [emoji, setEmoji] = useState('');
   const [name, setName] = useState('');
   const [metadataFields, setMetadataFields] = useState<MetadataField[]>([]);
+  const [hideNames, setHideNames] = useState(false);
 
   const isEditing = editingCategory != null;
 
@@ -94,6 +96,13 @@ export function CategoryFilter({ selectedCategoryId, onSelectCategory }: Categor
           onCancel: resetForm,
           onDelete: handleDelete,
         }}
+        hideNames={hideNames}
+        leadingAccessory={
+          <ToggleNamesButton
+            hideNames={hideNames}
+            onToggle={() => setHideNames(v => !v)}
+          />
+        }
       />
     </View>
   );
