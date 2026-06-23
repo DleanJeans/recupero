@@ -4,7 +4,7 @@ import type { BehaviorEntry } from '../types/behavior';
 import { Colors } from '../utils/colors';
 import { getEffectiveLogCount } from '../utils/xpUtils';
 import { BehaviorIcon } from './BehaviorIcon';
-import { CooldownLabel } from './CooldownLabel';
+import { CooldownBar } from './CooldownBar';
 import { ScreenTitle } from './ScreenTitle';
 import { Text } from './Text';
 import { XpBar } from './XpBar';
@@ -34,7 +34,7 @@ export function BehaviorTitle({ behavior, titleOverride, iconSize = 24, animate 
           {title}
           {!behavior.xpEnabled && <Text style={styles.logCount}> ×{behavior.logs.length}</Text>}
         </ScreenTitle>
-        <CooldownLabel behavior={behavior} />
+        <CooldownBar behavior={behavior} />
       </View>
       {behavior.xpEnabled && (
         <View style={styles.xpBarWrapper}>

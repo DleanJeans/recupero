@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { BehaviorIcon } from '../../../components/BehaviorIcon';
-import { CooldownLabel } from '../../../components/CooldownLabel';
+import { CooldownBar } from '../../../components/CooldownBar';
 import { DecayBar } from '../../../components/DecayBar';
 import { StarRow } from '../../../components/StarRow';
 import { SwipeDeleteButton, SwipeEditButton } from '../../../components/SwipeActionButton';
@@ -16,8 +16,6 @@ import type { BehaviorEntry } from '../../../types/behavior';
 import type { RootStackParamList } from '../../../types/navigation';
 import { getBehaviorTypeColor } from '../../../utils/behaviorTypeUtils';
 import { Colors } from '../../../utils/colors';
-import { getCooldownColor } from '../../../utils/cooldownUtils';
-import { formatElapsedNumeric } from '../../../utils/timeUtils';
 import { getEffectiveLogCount } from '../../../utils/xpUtils';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -132,10 +130,6 @@ function BehaviorInfo({ behavior, showCategory, animate, dateStr }: BehaviorInfo
         {showCategory && <CategoryEmoji behavior={behavior} />}
         {!behavior.xpEnabled && <Text style={styles.logCount}>×{behavior.logs.length}</Text>}
       </View>
-      <View style={styles.elapsedRow}>
-        <BehaviorElapsed behavior={behavior} />
-        <CooldownLabel behavior={behavior} />
-      </View>
       {behavior.xpEnabled && (
         <XpBar
           logCount={getEffectiveLogCount(behavior)}
@@ -143,6 +137,9 @@ function BehaviorInfo({ behavior, showCategory, animate, dateStr }: BehaviorInfo
           animate={animate}
         />
       )}
+      <View style={styles.elapsedRow}>
+        <CooldownBar behavior={behavior} />
+      </View>
       {behavior.xpEnabled && behavior.xpDecay && getEffectiveLogCount(behavior) > 0 && <DecayBar behavior={behavior} />}
     </View>
   );
@@ -153,15 +150,6 @@ interface BehaviorNameProps {
 }
 function BehaviorName({ behavior }: BehaviorNameProps) {
   return <Text style={styles.name}>{behavior.name}</Text>;
-}
-
-interface BehaviorElapsedProps {
-  behavior: BehaviorEntry;
-}
-function BehaviorElapsed({ behavior }: BehaviorElapsedProps) {
-  const color = behavior.cooldownMinutes ? getCooldownColor(behavior) : undefined;
-
-  return <Text style={[styles.elapsed, color ? { color } : null]}>{formatElapsedNumeric(behavior.lastTimestamp)}</Text>;
 }
 
 // #endregion
@@ -210,10 +198,5 @@ const styles = StyleSheet.create({
     color: Colors.text.muted,
     fontSize: 13,
     fontWeight: '600',
-  },
-
-  elapsed: {
-    color: Colors.text.muted,
-    fontSize: 13,
   },
 });
