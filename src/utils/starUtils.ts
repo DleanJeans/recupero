@@ -5,20 +5,23 @@ export const DEFAULT_STAR_THRESHOLDS: [number, number, number] = [1, 3, 5];
 
 /** Returns the behavior's star thresholds, or `undefined` when the
  *  feature is off (i.e. `starThresholds` is not set on the behavior). */
-export function getThresholds(behavior: BehaviorEntry): [number, number, number] | undefined {
+export function getThresholds(behavior: BehaviorEntry): [number, number | null, number | null] | undefined {
   return behavior.starThresholds;
 }
 
 /** Number of stars earned (0..3) given a daily log count and the
- *  behavior's thresholds. Pure math; callers should only invoke this
- *  when thresholds are defined. */
-export function getEarnedStars(logCount: number, thresholds: [number, number, number]): 0 | 1 | 2 | 3 {
+ *  behavior's thresholds. A null at index 0 or 1 is a placeholder:
+ *  it fills when the first non-null threshold to its right is met.
+ *  Nulls with no real threshold to their right are dropped. Pure math;
+ *  callers should only invoke this when thresholds are defined. */
+export function getEarnedStars(logCount: number, thresholds: readonly (number | null)[]): number {
   if (Number.isNaN(logCount) || logCount < 0) return 0;
   let stars = 0;
-  for (const t of thresholds) {
-    if (logCount >= t) stars += 1;
+  for (let i = thresholds.length - 1; i >= 0; i--) {
+    const t = thresholds[i];
+    if (t != null && logCount >= t) return i + 1;
   }
-  return Math.min(stars, thresholds.length) as 0 | 1 | 2 | 3;
+  return stars;
 }
 
 /** Logs for a given behavior that fall on a given local calendar date. */

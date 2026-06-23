@@ -19,8 +19,6 @@ interface Props {
   color?: string;
   /** Color for the empty glyphs. Default muted. */
   emptyColor?: string;
-  /** Slot count. Default 3. */
-  count?: number;
   /** Style for the outer container. */
   style?: StyleProp<ViewStyle>;
 }
@@ -31,7 +29,6 @@ export function StarRow({
   size = 13,
   color = Colors.star.filled,
   emptyColor = Colors.star.empty,
-  count = 3,
   style,
 }: Props) {
   const thresholds = getThresholds(behavior);
@@ -44,35 +41,37 @@ export function StarRow({
   }, [behavior, thresholds, targetDate]);
 
   if (!thresholds) return null;
-  const clamped = Math.max(0, Math.min(earned, count));
-  const slots = Array.from({ length: count }, (_, i) => ({
-    filled: i < clamped,
-    threshold: thresholds[i],
-  }));
+  
+  const slots: Array<{ key: number; filled: boolean; threshold: number | null }> = [];
+  for (let i = 0; i < thresholds.length; i++) {
+    const t = thresholds[i];
+    if (t == null && !thresholds.slice(i + 1).some(x => x != null)) continue;
+    slots.push({ key: i, filled: slots.length < earned, threshold: t });
+  }
+  const earnedCount = slots.filter(s => s.filled).length;
+
   return (
     <View
       style={[styles.row, style]}
       accessible
-      accessibilityLabel={`${clamped} of ${count} stars earned`}
+      accessibilityLabel={`${earnedCount} of ${slots.length} stars earned`}
     >
-      {slots.map(({ filled, threshold }, i) => (
+      {slots.map(({ key, filled, threshold }) => (
         <View
-          key={i}
+          key={key}
           style={styles.slot}
         >
-          {threshold != null && (
-            <Text
-              style={[styles.threshold, { color: filled ? color : Colors.text.muted }]}
-              accessibilityLabel={`${threshold} logs to earn`}
-            >
-              {threshold}
-            </Text>
-          )}
+          <Text
+            style={[styles.threshold, { color: filled ? color : Colors.text.muted }]}
+            accessibilityLabel={`${threshold} logs to earn`}
+          >
+            {threshold}
+          </Text>
           <Ionicons
             name={filled ? 'star' : 'star-outline'}
             size={size}
             color={filled ? color : emptyColor}
-            accessibilityLabel={filled ? 'star earned' : 'star not earned'}
+            accessibilityLabel={threshold == null ? 'star tier skipped' : filled ? 'star earned' : 'star not earned'}
           />
         </View>
       ))}

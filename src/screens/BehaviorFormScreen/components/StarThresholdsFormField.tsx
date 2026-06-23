@@ -2,8 +2,14 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { CheckboxRow } from '../../../components/CheckboxRow';
 import { Text, TextInput } from '../../../components/Text';
-import type { StarInputs, StarSlot } from '../../../hooks/useStarThresholdsForm';
+import { STAR_SLOTS, type StarInputs, type StarSlot } from '../../../hooks/useStarThresholdsForm';
 import { Colors } from '../../../utils/colors';
+
+const SLOT_PLACEHOLDERS: Record<StarSlot, string> = {
+  '1': '1',
+  '2': '3',
+  '3': '5',
+};
 
 interface Props {
   enabled: boolean;
@@ -18,15 +24,15 @@ export function StarThresholdsFormField({ enabled, inputs, validationError, onTo
     <View style={styles.section}>
       <CheckboxRow
         label="Track daily stars"
-        hint="Show a 3-star rating on Home and Day view"
+        hint="Show a 1-3 star rating on Home and Day view"
         checked={enabled}
         onToggle={onToggle}
       />
       {enabled && (
         <View style={styles.inputsSection}>
-          <Text style={styles.inputsLabel}>Earn 1★, 2★, 3★ at this many daily logs:</Text>
+          <Text style={styles.inputsLabel}>Logs per star (leave a tier blank to skip it):</Text>
           <View style={styles.inputsRow}>
-            {(['1', '2', '3'] as const).map(slot => (
+            {STAR_SLOTS.map(slot => (
               <View
                 key={slot}
                 style={styles.inputCell}
@@ -36,7 +42,7 @@ export function StarThresholdsFormField({ enabled, inputs, validationError, onTo
                   style={styles.input}
                   value={inputs[slot]}
                   onChangeText={v => onInputChange(slot, v)}
-                  placeholder={slot === '1' ? '1' : slot === '2' ? '3' : '5'}
+                  placeholder={SLOT_PLACEHOLDERS[slot]}
                   placeholderTextColor={Colors.text.dim}
                   keyboardType="number-pad"
                   returnKeyType="done"

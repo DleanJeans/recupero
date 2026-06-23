@@ -71,6 +71,56 @@ describe('getEarnedStars', () => {
   });
 });
 
+describe('getEarnedStars with null slots', () => {
+  it('skips a null middle slot — [1, null, 5] at 3 logs earns 1', () => {
+    expect(getEarnedStars(3, [1, null, 5])).toBe(1);
+  });
+
+  it('skips a null middle slot — [1, null, 5] at 5 logs earns 2', () => {
+    expect(getEarnedStars(5, [1, null, 5])).toBe(3);
+  });
+
+  it('skips a null first slot — [null, 3, 5] at 5 logs earns 2', () => {
+    expect(getEarnedStars(5, [null, 3, 5])).toBe(3);
+  });
+
+  it('skips a null first slot — [null, 3, 5] at 2 logs earns 0', () => {
+    expect(getEarnedStars(2, [null, 3, 5])).toBe(0);
+  });
+
+  it('skips a null last slot — [1, 3, null] at 5 logs earns 2', () => {
+    expect(getEarnedStars(5, [1, 3, null])).toBe(2);
+  });
+
+  it('caps at the number of non-null slots', () => {
+    // Two real thresholds → cap is 2, not 3.
+    expect(getEarnedStars(9999, [1, 3, null])).toBe(2);
+    expect(getEarnedStars(9999, [null, 3, 5])).toBe(3);
+    expect(getEarnedStars(9999, [1, null, 5])).toBe(3);
+  });
+
+  it('returns 0 when all slots are null', () => {
+    expect(getEarnedStars(10, [null, null, null])).toBe(0);
+  });
+
+  it('handles multiple null slots', () => {
+    expect(getEarnedStars(5, [1, null, null])).toBe(1);
+    expect(getEarnedStars(5, [null, null, 5])).toBe(3);
+    expect(getEarnedStars(5, [null, 3, null])).toBe(2);
+  });
+
+  it('handles an empty thresholds array', () => {
+    expect(getEarnedStars(10, [])).toBe(0);
+  });
+
+  it('treats null as a non-threshold when at the boundary', () => {
+    // logCount exactly equal to a real threshold counts; null slots
+    // never match because there is no number to compare against.
+    expect(getEarnedStars(3, [1, null, 5])).toBe(1);
+    expect(getEarnedStars(1, [1, null, 5])).toBe(1);
+  });
+});
+
 describe('getLogsForDate', () => {
   // Use a fixed reference "today" in local time to avoid TZ flakiness.
   const today = new Date(2026, 5, 20, 14, 30, 0);

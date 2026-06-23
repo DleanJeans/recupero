@@ -2,11 +2,16 @@ import { useEffect, useMemo, useState } from 'react';
 import type { BehaviorEntry } from '../types/behavior';
 import { DEFAULT_STAR_THRESHOLDS } from '../utils/starUtils';
 
-export type StarSlot = '1' | '2' | '3';
+export const STAR_SLOTS = ['1', '2', '3'] as const;
+export type StarSlot = (typeof STAR_SLOTS)[number];
 export type StarInputs = Record<StarSlot, string>;
 
+/** Map a stored threshold to its TextInput string. `null` becomes `''`
+ *  (not the literal string "null" — a footgun from `String(null)`). */
+const thresholdToInput = (t: number | null): string => (t == null ? '' : String(t));
+
 export interface ParsedStarThresholds {
-  values: [number, number, number] | null;
+  values: [number, number | null, number | null] | null;
   error: string | null;
 }
 
@@ -44,9 +49,9 @@ export function useStarThresholdsForm(
     setInputs(
       hasStars && behavior.starThresholds
         ? {
-            '1': String(behavior.starThresholds[0]),
-            '2': String(behavior.starThresholds[1]),
-            '3': String(behavior.starThresholds[2]),
+            '1': thresholdToInput(behavior.starThresholds[0]),
+            '2': thresholdToInput(behavior.starThresholds[1]),
+            '3': thresholdToInput(behavior.starThresholds[2]),
           }
         : { '1': '', '2': '', '3': '' },
     );
@@ -77,19 +82,24 @@ export function useStarThresholdsForm(
 
   const parsedStars = useMemo<ParsedStarThresholds>(() => {
     if (!enabled) return { values: null, error: null };
-    const nums = (['1', '2', '3'] as const).map(k => {
+    // Parse each slot. `null` = blank input (skip this tier). `NaN` = invalid.
+    const parsed: (number | null)[] = STAR_SLOTS.map(k => {
       const raw = inputs[k].trim();
-      if (raw === '') return NaN;
-      return Number(raw);
+      if (raw === '') return null;
+      const n = Number(raw);
+      return Number.isFinite(n) && Number.isInteger(n) && n > 0 ? n : NaN;
     });
-    if (nums.some(n => !Number.isFinite(n) || !Number.isInteger(n) || n <= 0)) {
+    if (parsed.some(n => Number.isNaN(n))) {
       return { values: null, error: 'Star thresholds must be positive integers' };
     }
-    const [a, b, c] = nums as [number, number, number];
-    if (a > b || b > c) {
-      return { values: null, error: 'Star thresholds must be in non-decreasing order' };
+
+    const defined = parsed.filter((n): n is number => n != null);
+    for (let i = 1; i < defined.length; i++) {
+      if (defined[i] <= defined[i - 1]) {
+        return { values: null, error: 'Star thresholds must be in increasing order' };
+      }
     }
-    return { values: [a, b, c], error: null };
+    return { values: parsed as [number, number | null, number | null], error: null };
   }, [enabled, inputs]);
 
   const starThresholdsChanged =

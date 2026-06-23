@@ -21,7 +21,7 @@ interface BehaviorStore {
     cooldownUnit?: 'minutes' | 'hours' | 'days' | 'weeks',
     isPrivate?: boolean,
     defaultMetadata?: Record<string, number>,
-    starThresholds?: [number, number, number],
+    starThresholds?: [number, number | null, number | null],
     xpEnabled?: true,
     xpDecay?: { every: number; unit: 'days' | 'weeks' | 'months' },
   ) => void;
@@ -43,7 +43,7 @@ interface BehaviorStore {
       cooldownUnit?: 'minutes' | 'hours' | 'days' | 'weeks' | undefined;
       private?: boolean;
       defaultMetadata?: Record<string, number>;
-      starThresholds?: [number, number, number] | undefined;
+      starThresholds?: [number, number | null, number | null] | undefined;
       xpEnabled?: true;
       xpDecay?: { every: number; unit: 'days' | 'weeks' | 'months' } | undefined;
     },
