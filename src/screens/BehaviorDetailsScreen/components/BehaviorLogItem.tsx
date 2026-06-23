@@ -1,8 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { Button } from '../../../components/Button';
+import { SwipeDeleteButton, SwipeEditButton } from '../../../components/SwipeActionButton';
 import { Text } from '../../../components/Text';
 import { useBehaviorStore } from '../../../store/behaviorStore';
 import { useSettingsStore } from '../../../store/settingsStore';
@@ -39,40 +38,10 @@ export function BehaviorLogItem({ log, behaviorId, onEdit, metadataFields }: Pro
     ]);
   };
 
-  const renderLeftActions = () => (
-    <Button
-      variant="danger"
-      onPress={handleRemove}
-      style={styles.leftAction}
-    >
-      <Ionicons
-        name="trash"
-        size={24}
-        color={Colors.text.primary}
-      />
-      <Text style={styles.actionText}>Delete</Text>
-    </Button>
-  );
-
-  const renderRightActions = () => (
-    <Button
-      variant="danger"
-      onPress={onEdit}
-      style={styles.rightAction}
-    >
-      <Ionicons
-        name="create-outline"
-        size={24}
-        color={Colors.text.primary}
-      />
-      <Text style={styles.actionText}>Edit</Text>
-    </Button>
-  );
-
   return (
     <Swipeable
-      renderLeftActions={renderLeftActions}
-      renderRightActions={renderRightActions}
+      renderLeftActions={() => <SwipeDeleteButton onPress={handleRemove} />}
+      renderRightActions={() => <SwipeEditButton onPress={onEdit} />}
       overshootLeft={false}
       overshootRight={false}
     >
@@ -173,35 +142,5 @@ const styles = StyleSheet.create({
   elapsedText: {
     color: Colors.text.muted,
     fontSize: 13,
-  },
-  leftAction: {
-    backgroundColor: Colors.status.danger,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 100,
-    marginVertical: 6,
-    marginLeft: 16,
-    marginRight: -48,
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
-    paddingRight: 28,
-  },
-  rightAction: {
-    backgroundColor: Colors.status.info,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 100,
-    marginVertical: 6,
-    marginRight: 16,
-    marginLeft: -48,
-    borderTopRightRadius: 12,
-    borderBottomRightRadius: 12,
-    paddingLeft: 28,
-  },
-  actionText: {
-    color: Colors.text.primary,
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 4,
   },
 });

@@ -1,14 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { BehaviorIcon } from '../../../components/BehaviorIcon';
-import { Button } from '../../../components/Button';
 import { CooldownLabel } from '../../../components/CooldownLabel';
 import { DecayBar } from '../../../components/DecayBar';
 import { StarRow } from '../../../components/StarRow';
+import { SwipeDeleteButton, SwipeEditButton } from '../../../components/SwipeActionButton';
 import { Text } from '../../../components/Text';
 import { XpBar } from '../../../components/XpBar';
 import { useXpBarAnimation } from '../../../hooks/useXpBarAnimation';
@@ -58,18 +57,25 @@ export function BehaviorCard({ behavior, showCategory, dateStr }: Props) {
   };
 
   const handlePress = () => {
-    navigation.navigate('BehaviorDetails', { behaviorId: behavior.id });
+    navigation.navigate('BehaviorLog', { behaviorId: behavior.id });
   };
 
   const handleLongPress = () => {
+    navigation.navigate('BehaviorDetails', { behaviorId: behavior.id });
+  };
+
+  const handleEdit = () => {
+    swipeableRef.current?.close();
     navigation.navigate('BehaviorForm', { behaviorId: behavior.id });
   };
 
   return (
     <Swipeable
       ref={swipeableRef}
-      renderLeftActions={() => <SwipeDelete onRemove={handleRemove} />}
+      renderLeftActions={() => <SwipeDeleteButton onPress={handleRemove} />}
+      renderRightActions={() => <SwipeEditButton onPress={handleEdit} />}
       overshootLeft={false}
+      overshootRight={false}
     >
       <View style={styles.card}>
         <Pressable
@@ -88,11 +94,6 @@ export function BehaviorCard({ behavior, showCategory, dateStr }: Props) {
             dateStr={dateStr}
           />
         </Pressable>
-
-        <LogButton
-          behavior={behavior}
-          onPress={() => navigation.navigate('BehaviorLog', { behaviorId: behavior.id })}
-        />
       </View>
     </Swipeable>
   );
@@ -162,46 +163,6 @@ function BehaviorElapsed({ behavior }: BehaviorElapsedProps) {
   return <Text style={[styles.elapsed, color ? { color } : null]}>{formatElapsedNumeric(behavior.lastTimestamp)}</Text>;
 }
 
-interface LogButtonProps {
-  behavior: BehaviorEntry;
-  onPress: () => void;
-}
-function LogButton({ behavior, onPress }: LogButtonProps) {
-  return (
-    <Button
-      variant="icon"
-      onPress={onPress}
-      accessibilityLabel={`Log ${behavior.name}`}
-      style={styles.logBtn}
-    >
-      <Ionicons
-        name="add-circle-outline"
-        size={28}
-        color={Colors.text.secondary}
-      />
-    </Button>
-  );
-}
-
-interface SwipeDeleteProps {
-  onRemove: () => void;
-}
-function SwipeDelete({ onRemove }: SwipeDeleteProps) {
-  return (
-    <Button
-      variant="danger"
-      onPress={onRemove}
-      style={styles.deleteButton}
-    >
-      <Ionicons
-        name="trash"
-        size={24}
-        color={Colors.text.primary}
-      />
-      <Text style={styles.deleteButtonText}>Delete</Text>
-    </Button>
-  );
-}
 // #endregion
 
 const styles = StyleSheet.create({
@@ -220,7 +181,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     gap: 12,
-    paddingRight: 0,
   },
   info: {
     flex: 1,
@@ -253,27 +213,5 @@ const styles = StyleSheet.create({
   elapsed: {
     color: Colors.text.muted,
     fontSize: 13,
-  },
-  logBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  deleteButton: {
-    backgroundColor: Colors.status.danger,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 100,
-    marginVertical: 6,
-    marginLeft: 16,
-    marginRight: -48,
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
-    paddingRight: 28,
-  },
-  deleteButtonText: {
-    color: Colors.text.primary,
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 4,
   },
 });
