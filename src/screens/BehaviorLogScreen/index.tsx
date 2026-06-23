@@ -385,9 +385,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 24,
-    paddingBottom: 16,
-    paddingTop: 8,
+    marginHorizontal: 24,
+    marginBottom: 30,
   },
   primaryAction: { flex: 0, width: '100%' },
 });
