@@ -41,6 +41,7 @@ export function BehaviorDetailsScreen() {
         <BackButton />
         <BehaviorSummary
           behavior={behavior}
+          showCategory
           titleSize="header"
         />
       </View>

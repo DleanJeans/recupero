@@ -28,8 +28,8 @@ interface Props {
   titleSize?: 'card' | 'header';
 }
 
-/** Shared content for the home card and the BehaviorDetails/BehaviorLog
- *  headers: icon column + info section (name, XpBar, CooldownBar, DecayBar).
+/** Body for the home card and the BehaviorDetails/BehaviorLog headers:
+ *  icon column + info section (name, XpBar, CooldownBar, DecayBar).
  *  Card and headers use the same body — the only difference is the title
  *  font size, controlled by `titleSize`. */
 export function BehaviorSummary({ behavior, showCategory, dateStr, titleOverride, titleSize = 'card' }: Props) {
@@ -61,18 +61,12 @@ export function BehaviorSummary({ behavior, showCategory, dateStr, titleOverride
         )}
       </View>
       <View style={styles.info}>
-        {isHeader ? (
-          <HeaderName
-            behavior={behavior}
-            titleOverride={titleOverride}
-          />
-        ) : (
-          <View style={styles.nameRow}>
-            <Text style={styles.name}>{titleOverride ?? behavior.name}</Text>
-            {showCategory && <CategoryEmoji behavior={behavior} />}
-            {!behavior.xpEnabled && <Text style={styles.logCount}>×{behavior.logs.length}</Text>}
-          </View>
-        )}
+        <BehaviorTitle
+          behavior={behavior}
+          showCategory={showCategory}
+          titleOverride={titleOverride}
+          titleSize={isHeader ? 'header' : 'card'}
+        />
         {behavior.xpEnabled && (
           <XpBar
             logCount={getEffectiveLogCount(behavior)}
@@ -91,28 +85,42 @@ export function BehaviorSummary({ behavior, showCategory, dateStr, titleOverride
   );
 }
 
-interface HeaderNameProps {
+interface BehaviorTitleProps {
   behavior: BehaviorEntry;
+  showCategory?: boolean;
   titleOverride?: string;
+  titleSize?: 'card' | 'header';
 }
-function HeaderName({ behavior, titleOverride }: HeaderNameProps) {
+function BehaviorTitle({ behavior, showCategory, titleOverride, titleSize = 'card' }: BehaviorTitleProps) {
   const name = titleOverride ?? behavior.name;
-  if (behavior.xpEnabled) {
-    return <ScreenTitle style={styles.headerTitle}>{name}</ScreenTitle>;
+  if (titleSize === 'header') {
+    return (
+      <ScreenTitle style={styles.headerTitle}>
+        {name}{' '}
+        {showCategory && (
+          <CategoryEmoji
+            behavior={behavior}
+            size={22}
+          />
+        )}
+        {!behavior.xpEnabled && <Text style={styles.headerLogCount}> ×{behavior.logs.length}</Text>}
+      </ScreenTitle>
+    );
   }
   return (
-    <ScreenTitle style={styles.headerTitle}>
-      {name}
-      <Text style={styles.headerLogCount}> ×{behavior.logs.length}</Text>
-    </ScreenTitle>
+    <View style={styles.nameRow}>
+      <Text style={styles.name}>{name}</Text>
+      {showCategory && <CategoryEmoji behavior={behavior} />}
+      {!behavior.xpEnabled && <Text style={styles.logCount}>×{behavior.logs.length}</Text>}
+    </View>
   );
 }
 
-function CategoryEmoji({ behavior }: { behavior: BehaviorEntry }) {
+function CategoryEmoji({ behavior, size = 15 }: { behavior: BehaviorEntry; size?: number }) {
   const { categories } = useBehaviorStore();
   const category = behavior.categoryId ? categories.find(c => c.id === behavior.categoryId) : null;
   if (!category) return null;
-  return <Text style={{ fontSize: 15 }}>{category.emoji}</Text>;
+  return <Text style={{ fontSize: size }}>{category.emoji}</Text>;
 }
 
 const styles = StyleSheet.create({

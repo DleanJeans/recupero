@@ -153,6 +153,7 @@ export function BehaviorLogScreen() {
           <BehaviorSummary
             behavior={behavior}
             titleOverride={isEditing ? 'Edit Time' : undefined}
+            showCategory
             titleSize="header"
           />
         </View>
