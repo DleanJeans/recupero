@@ -44,7 +44,7 @@ export function DecayBar({ behavior }: Props) {
         color={color}
         direction={isUndesirable ? 1 : -1}
       />
-      <Text style={styles.label}>{formatDuration(daysLeft * MS_PER_DAY)}</Text>
+      <Text style={[styles.label, { color }]}>{formatDuration(daysLeft * MS_PER_DAY)}</Text>
     </View>
   );
 }
@@ -57,7 +57,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   label: {
-    color: Colors.text.faint,
     fontSize: 10,
     fontWeight: '600',
     minWidth: 16,
