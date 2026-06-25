@@ -30,15 +30,17 @@ export function XpBar({ logCount, color = Colors.type.neutral, animate = false }
   const glowOpacity = useSharedValue(0);
 
   useEffect(() => {
-    if (!animate) return;
+    if (animate) {
+      animatedProgress.value = withSpring(progress, {
+        damping: 18,
+        stiffness: 120,
+        mass: 0.8,
+      });
+    } else {
+      animatedProgress.value = progress;
+    }
 
-    animatedProgress.value = withSpring(progress, {
-      damping: 18,
-      stiffness: 120,
-      mass: 0.8,
-    });
-
-    if (level > prevLevel.current) {
+    if (animate && level > prevLevel.current) {
       glowOpacity.value = withSequence(withTiming(0.6, { duration: 180 }), withTiming(0, { duration: 500 }));
     }
     prevLevel.current = level;
