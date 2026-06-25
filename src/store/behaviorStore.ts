@@ -107,26 +107,26 @@ export const useBehaviorStore = create<BehaviorStore>()(
         })),
       logBehavior: (id, timestamp, metadata = {}) =>
         set(state => ({
-          behaviors: state.behaviors.map(t =>
-            t.id === id
-              ? {
-                  ...t,
-                  lastTimestamp: timestamp ?? Date.now(),
-                  metadata: {
-                    ...t.metadata,
-                    ...metadata,
-                  },
-                  logs: [
-                    ...t.logs,
-                    {
-                      id: uuidv4(),
-                      timestamp: timestamp ?? Date.now(),
-                      metadata,
-                    },
-                  ],
-                }
-              : t,
-          ),
+          behaviors: state.behaviors.map(t => {
+            if (t.id !== id) return t;
+            const newTimestamp = timestamp ?? Date.now();
+            return {
+              ...t,
+              lastTimestamp: t.lastTimestamp === null ? newTimestamp : Math.max(t.lastTimestamp, newTimestamp),
+              metadata: {
+                ...t.metadata,
+                ...metadata,
+              },
+              logs: [
+                ...t.logs,
+                {
+                  id: uuidv4(),
+                  timestamp: newTimestamp,
+                  metadata,
+                },
+              ],
+            };
+          }),
         })),
       removeBehavior: id =>
         set(state => ({
