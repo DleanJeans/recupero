@@ -37,6 +37,9 @@ export interface BehaviorEntry {
   cooldownMinutes: number;
   cooldownType?: 'rest' | 'limit';
   cooldownUnit?: 'minutes' | 'hours' | 'days' | 'weeks';
+  /** Whether the user has opted into a cooldown. `undefined` for v1 logs;
+   *  treat as `!!cooldownMinutes` for backward compat. */
+  cooldownEnabled?: boolean;
   /** Opt-in star rating (1-3 stars). Undefined = feature off.
    *  A `null` slot means that tier is skipped (e.g. `[1, null, 5]` = jump
    *  from 1★ to 3★; `[1, 3, null]` = only 1★ and 2★).

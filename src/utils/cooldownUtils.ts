@@ -10,10 +10,17 @@ export const COLORS = {
   MUTED: Colors.text.muted,
 } as const;
 
+/** Whether the behavior currently has an active cooldown.
+ *  Falls back to `!!cooldownMinutes` for v1 logs that predate the opt-in flag. */
+export function isCooldownActive(behavior: BehaviorEntry): boolean {
+  const enabled = behavior.cooldownEnabled ?? !!behavior.cooldownMinutes;
+  return enabled && behavior.cooldownMinutes > 0;
+}
+
 export function getCooldownColor(behavior: BehaviorEntry): string {
   const { cooldownMinutes, lastTimestamp, cooldownType = 'rest' } = behavior;
 
-  if (!lastTimestamp) return COLORS.MUTED;
+  if (!isCooldownActive(behavior) || !lastTimestamp) return COLORS.MUTED;
 
   const elapsed = Date.now() - lastTimestamp;
   const elapsedMinutes = elapsed / 60_000;

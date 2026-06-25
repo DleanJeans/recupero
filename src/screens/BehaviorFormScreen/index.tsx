@@ -63,6 +63,8 @@ export function BehaviorFormScreen() {
   const [cooldownMinutes, setCooldownMinutes] = useState(0);
   const [cooldownType, setCooldownType] = useState<'rest' | 'limit'>('rest');
   const [cooldownUnit, setCooldownUnit] = useState<CooldownUnit | undefined>(undefined);
+  const [cooldownEnabled, setCooldownEnabled] = useState(false);
+  const handleCooldownToggle = () => setCooldownEnabled(v => !v);
   const [behaviorDefaultMetadata, setBehaviorDefaultMetadata] = useState<Record<string, string>>({});
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
@@ -111,6 +113,7 @@ export function BehaviorFormScreen() {
     setCooldownMinutes(behavior.cooldownMinutes || 0);
     setCooldownType(behavior.cooldownType || 'rest');
     setCooldownUnit(behavior.cooldownUnit);
+    setCooldownEnabled(behavior.cooldownEnabled ?? !!behavior.cooldownMinutes);
     setBehaviorDefaultMetadata(
       Object.fromEntries(Object.entries(behavior.defaultMetadata ?? {}).map(([k, v]) => [k, String(v)])),
     );
@@ -132,6 +135,7 @@ export function BehaviorFormScreen() {
       categoryId !== behavior.categoryId ||
       isPrivate !== (behavior.private ?? false) ||
       xpEnabled !== (behavior.xpEnabled === true) ||
+      cooldownEnabled !== (behavior.cooldownEnabled ?? !!behavior.cooldownMinutes) ||
       cooldownMinutes !== (behavior.cooldownMinutes || 0) ||
       cooldownType !== (behavior.cooldownType || 'rest') ||
       cooldownUnit !== behavior.cooldownUnit ||
@@ -183,6 +187,7 @@ export function BehaviorFormScreen() {
         cooldownType,
         categoryId: categoryId || undefined,
         cooldownUnit: cooldownUnit || undefined,
+        cooldownEnabled,
         private: isPrivate,
         defaultMetadata: defaultMetadataObj,
         starThresholds: starsEnabled ? (parsedStars.values ?? undefined) : undefined,
@@ -206,6 +211,7 @@ export function BehaviorFormScreen() {
         starsEnabled ? starPeriod : undefined,
         xpEnabled ? true : undefined,
         xpDecayEnabled ? xpDecaySerialized : undefined,
+        cooldownEnabled,
       );
     }
     savedRef.current = true;
@@ -247,24 +253,6 @@ export function BehaviorFormScreen() {
             value={type}
             onChange={setType}
           />
-
-          <View style={styles.cooldownSection}>
-            <View style={styles.cooldownLabelRow}>
-              <CooldownIcon size={14} />
-              <Text style={styles.cooldownLabel}>Cooldown (optional)</Text>
-              <CooldownTypeToggle
-                value={cooldownType}
-                onChange={setCooldownType}
-                style={styles.cooldownTypeRow}
-              />
-            </View>
-            <CooldownInput
-              cooldownMinutes={cooldownMinutes}
-              onChange={setCooldownMinutes}
-              preferredUnit={cooldownUnit}
-              onUnitChange={setCooldownUnit}
-            />
-          </View>
 
           <CategoryPicker
             categories={categories}
@@ -314,10 +302,31 @@ export function BehaviorFormScreen() {
           })()}
 
           <CheckboxRow
-            label="Private"
-            checked={isPrivate}
-            onToggle={() => setIsPrivate(v => !v)}
+            label="Cooldown"
+            hint="Limit how often this can be logged"
+            checked={cooldownEnabled}
+            onToggle={handleCooldownToggle}
           />
+
+          {cooldownEnabled && (
+            <View style={styles.cooldownSection}>
+              <View style={styles.cooldownLabelRow}>
+                <CooldownIcon size={14} />
+                <Text style={styles.cooldownLabel}>Type</Text>
+                <CooldownTypeToggle
+                  value={cooldownType}
+                  onChange={setCooldownType}
+                  style={styles.cooldownTypeRow}
+                />
+              </View>
+              <CooldownInput
+                cooldownMinutes={cooldownMinutes}
+                onChange={setCooldownMinutes}
+                preferredUnit={cooldownUnit}
+                onUnitChange={setCooldownUnit}
+              />
+            </View>
+          )}
 
           <StarThresholdsFormField
             enabled={starsEnabled}
@@ -346,6 +355,12 @@ export function BehaviorFormScreen() {
               onUnitChange={handleXpDecayUnitChange}
             />
           )}
+
+          <CheckboxRow
+            label="Private"
+            checked={isPrivate}
+            onToggle={() => setIsPrivate(v => !v)}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
 

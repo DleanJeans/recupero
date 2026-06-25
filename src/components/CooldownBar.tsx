@@ -3,7 +3,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { BehaviorEntry } from '../types/behavior';
 import { Colors } from '../utils/colors';
-import { getCooldownColor } from '../utils/cooldownUtils';
+import { getCooldownColor, isCooldownActive } from '../utils/cooldownUtils';
 import { formatCooldown, MS_PER_MINUTE } from '../utils/timeUtils';
 import { BehaviorElapsed } from './BehaviorElapsed';
 import { StripedProgressBar } from './StripedProgressBar';
@@ -13,7 +13,7 @@ interface Props {
 }
 
 export function CooldownBar({ behavior }: Props) {
-  if (!behavior.cooldownMinutes || !behavior.lastTimestamp) {
+  if (!isCooldownActive(behavior) || !behavior.lastTimestamp) {
     return <BehaviorElapsed behavior={behavior} />;
   }
 

@@ -25,6 +25,7 @@ interface BehaviorStore {
     starPeriod?: StarPeriod,
     xpEnabled?: true,
     xpDecay?: { every: number; unit: 'days' | 'weeks' | 'months' },
+    cooldownEnabled?: boolean,
   ) => void;
   updateBehaviorCooldown: (behaviorId: string, cooldownMinutes: number) => void;
   updateBehavior: (
@@ -42,6 +43,7 @@ interface BehaviorStore {
       cooldownType?: 'rest' | 'limit';
       categoryId?: string | undefined;
       cooldownUnit?: 'minutes' | 'hours' | 'days' | 'weeks' | undefined;
+      cooldownEnabled?: boolean;
       private?: boolean;
       defaultMetadata?: Record<string, number>;
       starThresholds?: [number, number | null, number | null] | undefined;
@@ -80,6 +82,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
         starPeriod,
         xpEnabled,
         xpDecay,
+        cooldownEnabled,
       ) =>
         set(state => ({
           behaviors: [
@@ -98,6 +101,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               cooldownMinutes,
               cooldownType,
               cooldownUnit,
+              cooldownEnabled,
               starThresholds,
               starPeriod,
               xpEnabled,
@@ -222,8 +226,9 @@ export const useBehaviorStore = create<BehaviorStore>()(
     {
       name: 'recupero-behaviors',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 1,
+      version: 2,
       // v0 → v1: rename `xp` field to `xpEnabled` and drop the old key.
+      // v1 → v2: backfill `cooldownEnabled` from `cooldownMinutes` (old logs had no opt-in flag).
       migrate: (persistedState, version) => {
         if (version < 1) {
           const state = persistedState as BehaviorStore;
@@ -236,6 +241,16 @@ export const useBehaviorStore = create<BehaviorStore>()(
                 ...(legacyXp === true ? { xpEnabled: true as const } : {}),
               };
             }),
+          };
+        }
+        if (version < 2) {
+          const state = persistedState as BehaviorStore;
+          return {
+            ...state,
+            behaviors: state.behaviors.map(b => ({
+              ...b,
+              cooldownEnabled: b.cooldownEnabled ?? !!b.cooldownMinutes,
+            })),
           };
         }
         return persistedState;
