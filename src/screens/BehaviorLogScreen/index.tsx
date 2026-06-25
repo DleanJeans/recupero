@@ -329,7 +329,7 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
         keyboardDismissMode="interactive"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.sectionLabel}>Metadata</Text>
+        {metadataFields.length > 0 && <Text style={styles.sectionLabel}>Metadata</Text>}
         {metadataFields.map(field => (
           <View
             key={field.key}
@@ -368,16 +368,15 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
           onFocus={() => setNotesFocused(true)}
           onBlur={() => setNotesFocused(false)}
         />
-
-        <Button
-          variant="primary"
-          size="lg"
-          style={styles.formSubmitButton}
-          onPress={handleConfirm}
-        >
-          {editLogId ? 'Save' : 'Log'}
-        </Button>
       </ScrollView>
+      <Button
+        variant="primary"
+        size="lg"
+        style={styles.fab}
+        onPress={handleConfirm}
+      >
+        {editLogId ? 'Save' : 'Log'}
+      </Button>
     </KeyboardAvoidingView>
   );
 }
@@ -525,8 +524,6 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   bodyContent: {
     paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 120,
   },
   fixedTop: {
     paddingHorizontal: 24,
@@ -582,7 +579,11 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   primaryAction: { flex: 0, width: '100%' },
-  formSubmitButton: { width: '100%' },
+  fab: {
+    margin: 16,
+    borderRadius: 12,
+    flex: 0,
+  },
   detailAction: { flex: 1 },
   actionIconRow: {
     flexDirection: 'row',
