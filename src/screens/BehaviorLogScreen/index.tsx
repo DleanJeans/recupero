@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,7 +14,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { BackButton } from '../../components/BackButton';
 import { Button } from '../../components/Button';
 import { DatePicker } from '../../components/DatePicker';
@@ -21,13 +21,13 @@ import { Text, TextInput } from '../../components/Text';
 import { useBehaviorStore } from '../../store/behaviorStore';
 import type { BehaviorEntry } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
-import { BehaviorScreenLayout } from '../components/BehaviorScreenLayout';
+import { groupLogsByRecency } from '../../utils/behaviorUtils';
 import { Colors } from '../../utils/colors';
 import { toDateString } from '../../utils/dateUtils';
-import { groupLogsByRecency } from '../../utils/behaviorUtils';
-import { NumberWheel } from './components/NumberWheel';
+import { BehaviorScreenLayout } from '../components/BehaviorScreenLayout';
 import { BehaviorLogItem } from './components/BehaviorLogItem';
 import { LogGap } from './components/LogGap';
+import { NumberWheel } from './components/NumberWheel';
 
 const ALL_HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const ALL_MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
@@ -300,13 +300,7 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
       behavior="padding"
       style={styles.flex}
     >
-      <ScrollView
-        style={styles.body}
-        contentContainerStyle={styles.bodyContent}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.fixedTop}>
         <Text style={styles.sectionLabel}>Date</Text>
         <View style={styles.datePickerWrapper}>
           <DatePicker
@@ -327,7 +321,14 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
           onMinuteChange={setMinute}
           onExpand={handleExpandTime}
         />
-
+      </View>
+      <ScrollView
+        style={styles.body}
+        contentContainerStyle={styles.bodyContent}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        showsVerticalScrollIndicator={false}
+      >
         {metadataFields.map(field => (
           <View
             key={field.key}
@@ -525,6 +526,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 8,
     paddingBottom: 120,
+  },
+  fixedTop: {
+    paddingHorizontal: 24,
+    paddingTop: 8,
   },
   datePickerWrapper: { marginBottom: 20 },
   sectionLabel: {
