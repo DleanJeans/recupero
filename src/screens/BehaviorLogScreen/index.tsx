@@ -256,6 +256,14 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
     setWheelKey(k => k + 1);
   }, [editTimestamp]);
 
+  // Track the deferred close after logging so we can cancel on unmount.
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current != null) clearTimeout(closeTimeoutRef.current);
+    };
+  }, []);
+
   const handleExpandTime = useCallback(() => {
     notesRef.current?.blur();
     Keyboard.dismiss();
@@ -277,10 +285,14 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
 
     if (editLogId) {
       updateLog(behaviorId, editLogId, ts, metadataOrUndefined);
-    } else {
-      logBehavior(behaviorId, ts, metadataOrUndefined);
+      onSaved();
+      return;
     }
-    onSaved();
+
+    logBehavior(behaviorId, ts, metadataOrUndefined);
+
+    const delay = behavior.xpEnabled ? 1500 : 0;
+    closeTimeoutRef.current = setTimeout(onSaved, delay);
   }, [
     selectedDate,
     hour,
@@ -290,6 +302,7 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
     metadataFields,
     editLogId,
     behaviorId,
+    behavior.xpEnabled,
     logBehavior,
     updateLog,
     onSaved,
@@ -524,6 +537,7 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   bodyContent: {
     paddingHorizontal: 24,
+    paddingBottom: 80,
   },
   fixedTop: {
     paddingHorizontal: 24,
@@ -580,7 +594,10 @@ const styles = StyleSheet.create({
   },
   primaryAction: { flex: 0, width: '100%' },
   fab: {
-    margin: 16,
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    right: 16,
     borderRadius: 12,
     flex: 0,
   },

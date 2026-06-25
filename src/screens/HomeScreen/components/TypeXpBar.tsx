@@ -53,7 +53,6 @@ export function TypeXpBar({ selectedCategoryId }: Props) {
               <XpBar
                 logCount={logCount}
                 color={getBehaviorTypeColor(type)}
-                animate
               />
             </View>
           </View>

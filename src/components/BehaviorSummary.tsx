@@ -1,7 +1,5 @@
-import { useIsFocused } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { useXpBarAnimation } from '../hooks/useXpBarAnimation';
 import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
 import { getBehaviorTypeColor } from '../utils/behaviorTypeUtils';
@@ -33,8 +31,6 @@ interface Props {
  *  Card and headers use the same body — the only difference is the title
  *  font size, controlled by `titleSize`. */
 export function BehaviorSummary({ behavior, showCategory, dateStr, titleOverride, titleSize = 'card' }: Props) {
-  const isFocused = useIsFocused();
-  const animate = useXpBarAnimation(behavior, isFocused);
   const [, setTick] = useState(0);
 
   // Re-render every minute so "2h ago" / CooldownBar stay current.
@@ -71,7 +67,6 @@ export function BehaviorSummary({ behavior, showCategory, dateStr, titleOverride
           <XpBar
             logCount={getEffectiveLogCount(behavior)}
             color={getBehaviorTypeColor(behavior.type)}
-            animate={animate}
           />
         )}
         <View style={styles.elapsedRow}>

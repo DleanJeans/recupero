@@ -14,11 +14,9 @@ import { Text } from './Text';
 interface XpBarProps {
   logCount: number;
   color?: string;
-  /** When true, animate fill on logCount change. Deferred to when screen is focused. */
-  animate?: boolean;
 }
 
-export function XpBar({ logCount, color = Colors.type.neutral, animate = false }: XpBarProps) {
+export function XpBar({ logCount, color = Colors.type.neutral }: XpBarProps) {
   const xp = getXp(logCount);
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
@@ -30,22 +28,17 @@ export function XpBar({ logCount, color = Colors.type.neutral, animate = false }
   const glowOpacity = useSharedValue(0);
 
   useEffect(() => {
-    if (animate) {
-      animatedProgress.value = withSpring(progress, {
-        damping: 18,
-        stiffness: 120,
-        mass: 0.8,
-      });
-    } else {
-      animatedProgress.value = progress;
-    }
+    animatedProgress.value = withSpring(progress, {
+      damping: 18,
+      stiffness: 120,
+      mass: 0.8,
+    });
 
-    if (animate && level > prevLevel.current) {
+    if (level > prevLevel.current) {
       glowOpacity.value = withSequence(withTiming(0.6, { duration: 180 }), withTiming(0, { duration: 500 }));
     }
     prevLevel.current = level;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [animate, logCount]);
+  }, [logCount]);
 
   const fillStyle = useAnimatedStyle(() => ({
     width: `${animatedProgress.value * 100}%`,
