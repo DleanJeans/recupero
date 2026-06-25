@@ -4,14 +4,15 @@ import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import type { BehaviorEntry } from '../types/behavior';
 import { Colors } from '../utils/colors';
 import { toDateString } from '../utils/dateUtils';
-import { getEarnedStars, getLogsForDate, getThresholds } from '../utils/starUtils';
+import { getEarnedStars, getLogsForPeriod, getStarPeriod, getThresholds } from '../utils/starUtils';
 import { Text } from './Text';
 
 interface Props {
-  /** Behavior whose daily earned stars to render. Behaviors without
+  /** Behavior whose earned stars to render. Behaviors without
    *  `starThresholds` render nothing. */
   behavior: BehaviorEntry;
-  /** Date string (YYYY-MM-DD) for the day to evaluate. Defaults to today. */
+  /** Anchor date (YYYY-MM-DD) — the period containing this date is
+   *  evaluated. Defaults to today. */
   dateStr?: string;
   /** Icon size in pt. Default 13. */
   size?: number;
@@ -36,7 +37,7 @@ export function StarRow({
   const targetDate = dateStr ?? todayStr;
   const earned = useMemo(() => {
     if (!thresholds) return 0;
-    const logCount = getLogsForDate(behavior, targetDate).length;
+    const logCount = getLogsForPeriod(behavior, getStarPeriod(behavior), targetDate).length;
     return getEarnedStars(logCount, thresholds);
   }, [behavior, thresholds, targetDate]);
 

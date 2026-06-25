@@ -44,6 +44,20 @@ export function yesterday(date: Date = new Date()): Date {
   return d;
 }
 
+/** Sunday-anchored start of the calendar week containing `dateStr`.
+ *  Week spans Sun–Sat (en-US convention). */
+export function getWeekStart(dateStr: string): string {
+  const d = parseISO(dateStr);
+  d.setDate(d.getDate() - d.getDay());
+  return toDateString(d);
+}
+
+/** First day of the calendar month containing `dateStr`. */
+export function getMonthStart(dateStr: string): string {
+  const d = parseISO(dateStr);
+  return toDateString(new Date(d.getFullYear(), d.getMonth(), 1));
+}
+
 /** Relative day label. Returns "Today", "Yesterday", weekday (this week),
  *  "Last {weekday}" (last week), or empty string for older dates.
  *  When empty, the date picker already shows the date — hide the label. */

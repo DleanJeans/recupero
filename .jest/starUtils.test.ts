@@ -1,5 +1,13 @@
 import type { BehaviorEntry, LogEntry } from '../src/types/behavior';
-import { getEarnedStars, getLogsForDate, getThresholds, getTotalStarsForDate } from '../src/utils/starUtils';
+import {
+  getEarnedStars,
+  getLogsForDate,
+  getLogsForPeriod,
+  getPeriodRange,
+  getStarPeriod,
+  getThresholds,
+  getTotalStarsForDate,
+} from '../src/utils/starUtils';
 
 function makeBehavior(overrides: Partial<BehaviorEntry> = {}): BehaviorEntry {
   return {
@@ -207,5 +215,147 @@ describe('getTotalStarsForDate', () => {
       makeBehavior({ id: 'b', starThresholds: [1, 3, 5], logs: [makeLog(today.getTime() - 86_400_000)] }),
     ];
     expect(getTotalStarsForDate(behaviors, todayStr)).toBe(0);
+  });
+
+  it('mixes per-behavior periods: daily + weekly + monthly totals all add up', () => {
+    // today = Sat June 20 2026. Sun-Sat week = June 14–20. June 1–30.
+    const ts = today.getTime();
+    const weekStartTs = new Date(2026, 5, 14, 12).getTime();
+    const monthStartTs = new Date(2026, 5, 1, 12).getTime();
+    const behaviors = [
+      // 1 log today, daily period → 1 star ([1, 3, 5])
+      makeBehavior({ id: 'a', starThresholds: [1, 3, 5], starPeriod: 'day', logs: [makeLog(ts)] }),
+      // 5 logs in the current week (incl. 2 today), weekly period → 1 star ([1, 10, 20])
+      makeBehavior({
+        id: 'b',
+        starThresholds: [1, 10, 20],
+        starPeriod: 'week',
+        logs: [
+          makeLog(weekStartTs),
+          makeLog(weekStartTs + 86_400_000),
+          makeLog(weekStartTs + 2 * 86_400_000),
+          makeLog(ts),
+          makeLog(ts - 3_600_000),
+        ],
+      }),
+      // 2 logs in the current month, monthly period → 1 star ([1, 3, 5])
+      makeBehavior({
+        id: 'c',
+        starThresholds: [1, 3, 5],
+        starPeriod: 'month',
+        logs: [makeLog(monthStartTs), makeLog(monthStartTs + 86_400_000)],
+      }),
+    ];
+    // 1 (daily) + 1 (weekly) + 1 (monthly) = 3
+    expect(getTotalStarsForDate(behaviors, todayStr)).toBe(3);
+  });
+
+  it('uses day as the default period when starPeriod is missing', () => {
+    const ts = today.getTime();
+    const yesterdayTs = ts - 86_400_000;
+    const behaviors = [
+      // No starPeriod → defaults to 'day' → only today counts, not yesterday.
+      makeBehavior({
+        id: 'a',
+        starThresholds: [1, 3, 5],
+        logs: [makeLog(yesterdayTs), makeLog(ts), makeLog(ts)],
+      }),
+    ];
+    expect(getTotalStarsForDate(behaviors, todayStr)).toBe(1);
+  });
+});
+
+describe('getStarPeriod', () => {
+  it('returns starPeriod when set', () => {
+    expect(getStarPeriod(makeBehavior({ starThresholds: [1, 3, 5], starPeriod: 'week' }))).toBe('week');
+    expect(getStarPeriod(makeBehavior({ starThresholds: [1, 3, 5], starPeriod: 'month' }))).toBe('month');
+  });
+
+  it('defaults to day when missing (backward compat with v1 stored data)', () => {
+    expect(getStarPeriod(makeBehavior({ starThresholds: [1, 3, 5] }))).toBe('day');
+  });
+});
+
+describe('getPeriodRange', () => {
+  // today = Sat June 20 2026
+  const todayStr = '2026-06-20';
+
+  it('day range is a single date', () => {
+    expect(getPeriodRange('day', todayStr)).toEqual({ start: '2026-06-20', end: '2026-06-20' });
+  });
+
+  it('week range is Sunday–Saturday', () => {
+    expect(getPeriodRange('week', todayStr)).toEqual({ start: '2026-06-14', end: '2026-06-20' });
+  });
+
+  it('week range snaps to containing week for non-Sat dates', () => {
+    // June 17 (Wed) → Sun June 14 – Sat June 20
+    expect(getPeriodRange('week', '2026-06-17')).toEqual({ start: '2026-06-14', end: '2026-06-20' });
+  });
+
+  it('week range snaps to containing week on Sunday itself', () => {
+    // June 14 (Sun) → Sun June 14 – Sat June 20
+    expect(getPeriodRange('week', '2026-06-14')).toEqual({ start: '2026-06-14', end: '2026-06-20' });
+  });
+
+  it('month range is the full calendar month', () => {
+    expect(getPeriodRange('month', todayStr)).toEqual({ start: '2026-06-01', end: '2026-06-30' });
+  });
+
+  it('month range handles February (28 days) and 31-day months', () => {
+    expect(getPeriodRange('month', '2026-02-15')).toEqual({ start: '2026-02-01', end: '2026-02-28' });
+    expect(getPeriodRange('month', '2026-12-01')).toEqual({ start: '2026-12-01', end: '2026-12-31' });
+  });
+});
+
+describe('getLogsForPeriod', () => {
+  // today = Sat June 20 2026 14:30
+  const today = new Date(2026, 5, 20, 14, 30, 0);
+  const todayStr = '2026-06-20';
+  const ts = (y: number, m: number, d: number, h = 12) => new Date(y, m - 1, d, h).getTime();
+
+  beforeAll(() => {
+    jest.useFakeTimers({ now: today });
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
+  it('day period matches exactly that day', () => {
+    const behavior = makeBehavior({
+      logs: [makeLog(ts(2026, 6, 20, 8)), makeLog(ts(2026, 6, 21, 8))],
+    });
+    expect(getLogsForPeriod(behavior, 'day', todayStr).map(l => l.timestamp)).toEqual([ts(2026, 6, 20, 8)]);
+  });
+
+  it('week period spans Sun–Sat containing the anchor', () => {
+    const behavior = makeBehavior({
+      logs: [
+        makeLog(ts(2026, 6, 13, 12)), // Sat, last week
+        makeLog(ts(2026, 6, 14, 12)), // Sun, this week
+        makeLog(ts(2026, 6, 20, 12)), // Sat, this week
+        makeLog(ts(2026, 6, 21, 12)), // Sun, next week
+      ],
+    });
+    expect(getLogsForPeriod(behavior, 'week', todayStr).map(l => l.timestamp)).toEqual([
+      ts(2026, 6, 14, 12),
+      ts(2026, 6, 20, 12),
+    ]);
+  });
+
+  it('month period covers the entire calendar month', () => {
+    const behavior = makeBehavior({
+      logs: [
+        makeLog(ts(2026, 5, 31, 12)), // May
+        makeLog(ts(2026, 6, 1, 12)), // June
+        makeLog(ts(2026, 6, 30, 12)), // June
+        makeLog(ts(2026, 7, 1, 12)), // July
+      ],
+    });
+    expect(getLogsForPeriod(behavior, 'month', todayStr).map(l => l.timestamp)).toEqual([
+      ts(2026, 6, 1, 12),
+      ts(2026, 6, 30, 12),
+    ]);
   });
 });

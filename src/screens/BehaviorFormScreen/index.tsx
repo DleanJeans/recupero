@@ -68,12 +68,15 @@ export function BehaviorFormScreen() {
 
   const {
     enabled: starsEnabled,
+    period: starPeriod,
     inputs: starInputs,
     validationError: starValidationError,
     parsedStars,
     starThresholdsChanged,
+    starPeriodChanged,
     handleToggle: handleStarsToggle,
     handleInputChange: handleStarInputChange,
+    handlePeriodChange: handleStarPeriodChange,
     setValidationError: setStarValidationError,
   } = useStarThresholdsForm(behavior, isEdit);
 
@@ -134,6 +137,7 @@ export function BehaviorFormScreen() {
       cooldownUnit !== behavior.cooldownUnit ||
       defaultMetadataChanged ||
       starThresholdsChanged ||
+      starPeriodChanged ||
       xpDecayChanged);
 
   const isDirty = isEdit ? !!hasChanges : name.trim().length > 0 || icon.trim().length > 0;
@@ -182,6 +186,7 @@ export function BehaviorFormScreen() {
         private: isPrivate,
         defaultMetadata: defaultMetadataObj,
         starThresholds: starsEnabled ? (parsedStars.values ?? undefined) : undefined,
+        starPeriod: starsEnabled ? starPeriod : undefined,
         // XP is opt-in. When off, preserve the existing xpDecay config (it's ignored at runtime).
         xpEnabled: xpEnabled ? true : undefined,
         xpDecay: xpEnabled ? (xpDecayEnabled ? xpDecaySerialized : undefined) : behavior?.xpDecay,
@@ -198,6 +203,7 @@ export function BehaviorFormScreen() {
         isPrivate,
         defaultMetadataObj,
         starsEnabled ? (parsedStars.values ?? undefined) : undefined,
+        starsEnabled ? starPeriod : undefined,
         xpEnabled ? true : undefined,
         xpDecayEnabled ? xpDecaySerialized : undefined,
       );
@@ -314,10 +320,12 @@ export function BehaviorFormScreen() {
 
           <StarThresholdsFormField
             enabled={starsEnabled}
+            period={starPeriod}
             inputs={starInputs}
             validationError={starValidationError}
             onToggle={handleStarsToggle}
             onInputChange={handleStarInputChange}
+            onPeriodChange={handleStarPeriodChange}
           />
 
           <CheckboxRow

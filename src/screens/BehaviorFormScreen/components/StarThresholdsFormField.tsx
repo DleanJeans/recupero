@@ -3,7 +3,9 @@ import { StyleSheet, View } from 'react-native';
 import { CheckboxRow } from '../../../components/CheckboxRow';
 import { Text, TextInput } from '../../../components/Text';
 import { STAR_SLOTS, type StarInputs, type StarSlot } from '../../../hooks/useStarThresholdsForm';
+import type { StarPeriod } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
+import { StarPeriodPicker } from './StarPeriodPicker';
 
 const SLOT_PLACEHOLDERS: Record<StarSlot, string> = {
   '1': '1',
@@ -13,23 +15,37 @@ const SLOT_PLACEHOLDERS: Record<StarSlot, string> = {
 
 interface Props {
   enabled: boolean;
+  period: StarPeriod;
   inputs: StarInputs;
   validationError: string | null;
   onToggle: () => void;
   onInputChange: (slot: StarSlot, value: string) => void;
+  onPeriodChange: (period: StarPeriod) => void;
 }
 
-export function StarThresholdsFormField({ enabled, inputs, validationError, onToggle, onInputChange }: Props) {
+export function StarThresholdsFormField({
+  enabled,
+  period,
+  inputs,
+  validationError,
+  onToggle,
+  onInputChange,
+  onPeriodChange,
+}: Props) {
   return (
     <View style={styles.section}>
       <CheckboxRow
-        label="Track daily stars"
+        label="Track stars"
         hint="Show a 1-3 star rating on Home and Day view"
         checked={enabled}
         onToggle={onToggle}
       />
       {enabled && (
         <View style={styles.inputsSection}>
+          <StarPeriodPicker
+            value={period}
+            onChange={onPeriodChange}
+          />
           <Text style={styles.inputsLabel}>Logs per star (leave a tier blank to skip it):</Text>
           <View style={styles.inputsRow}>
             {STAR_SLOTS.map(slot => (
@@ -64,7 +80,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   inputsSection: {
-    gap: 8,
+    gap: 12,
   },
   inputsLabel: {
     color: Colors.text.muted,

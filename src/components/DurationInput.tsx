@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Colors } from '../utils/colors';
 import { Text, TextInput } from './Text';
+import { UnitDropdown } from './UnitDropdown';
 
 export type DurationUnit = 'minutes' | 'hours' | 'days' | 'weeks' | 'months';
 
@@ -40,7 +41,6 @@ interface DurationInputProps {
 }
 
 export function DurationInput({ totalMinutes, onChange, units, preferredUnit, onUnitChange }: DurationInputProps) {
-  const [pickerOpen, setPickerOpen] = useState(false);
   const [unit, setUnit] = useState<DurationUnit>(preferredUnit ?? units[units.length - 1]);
 
   // Sync unit when external value or preferred unit changes (handles edit-mode data arriving via useEffect in the parent).
@@ -67,11 +67,10 @@ export function DurationInput({ totalMinutes, onChange, units, preferredUnit, on
     [onChange, unit],
   );
 
-  const handleUnitSelect = useCallback(
+  const handleUnitChange = useCallback(
     (newUnit: DurationUnit) => {
       setUnit(newUnit);
       onUnitChange?.(newUnit);
-      setPickerOpen(false);
     },
     [onUnitChange],
   );
@@ -82,19 +81,11 @@ export function DurationInput({ totalMinutes, onChange, units, preferredUnit, on
         value={displayValue}
         onChangeText={handleValueChange}
       />
-      <View style={styles.unitWrapper}>
-        <UnitButton
-          unit={unit}
-          onPress={() => setPickerOpen(!pickerOpen)}
-        />
-        <UnitPicker
-          open={pickerOpen}
-          units={units}
-          currentUnit={unit}
-          onSelect={handleUnitSelect}
-          onClose={() => setPickerOpen(false)}
-        />
-      </View>
+      <UnitDropdown
+        value={unit}
+        options={units}
+        onChange={handleUnitChange}
+      />
     </View>
   );
 }
@@ -117,74 +108,6 @@ function NumberInput({ value, onChangeText }: NumberInputProps) {
   );
 }
 
-interface UnitButtonProps {
-  unit: DurationUnit;
-  onPress: () => void;
-}
-function UnitButton({ unit, onPress }: UnitButtonProps) {
-  return (
-    <Pressable
-      style={styles.unitButton}
-      onPress={onPress}
-    >
-      <Text style={styles.unitText}>{unit}</Text>
-      <Text style={styles.chevron}>▼</Text>
-    </Pressable>
-  );
-}
-
-interface UnitPickerProps {
-  open: boolean;
-  units: DurationUnit[];
-  currentUnit: DurationUnit;
-  onSelect: (unit: DurationUnit) => void;
-  onClose: () => void;
-}
-function UnitPicker({ open, units, currentUnit, onSelect, onClose }: UnitPickerProps) {
-  if (!open) return null;
-
-  return (
-    <>
-      <Pressable
-        style={styles.backdrop}
-        onPress={onClose}
-      />
-      <View style={styles.dropdown}>
-        {units.map(u => (
-          <UnitOption
-            key={u}
-            unit={u}
-            active={u === currentUnit}
-            onPress={() => onSelect(u)}
-          />
-        ))}
-      </View>
-    </>
-  );
-}
-
-interface UnitOptionProps {
-  unit: DurationUnit;
-  active: boolean;
-  onPress: () => void;
-}
-function UnitOption({ unit, active, onPress }: UnitOptionProps) {
-  return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.pickerOption,
-        active && styles.pickerOptionActive,
-        pressed && {
-          opacity: 0.6,
-        },
-      ]}
-      onPress={onPress}
-    >
-      <Text style={[styles.pickerOptionText, active && styles.pickerOptionTextActive]}>{unit}</Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
@@ -199,69 +122,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
-  },
-  unitButton: {
-    backgroundColor: Colors.bg.input,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  unitText: {
-    color: Colors.text.primary,
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  chevron: {
-    color: Colors.text.muted,
-    fontSize: 10,
-  },
-  unitWrapper: {
-    position: 'relative',
-    zIndex: 1,
-  },
-  backdrop: {
-    position: 'absolute',
-    top: -1000,
-    left: -1000,
-    right: -1000,
-    bottom: -1000,
-    backgroundColor: 'transparent',
-    zIndex: 10,
-  },
-  dropdown: {
-    position: 'absolute',
-    bottom: 44,
-    right: 0,
-    minWidth: 140,
-    backgroundColor: Colors.bg.input,
-    borderRadius: 10,
-    padding: 4,
-    zIndex: 11,
-    shadowColor: Colors.bg.black,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  pickerOption: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-  },
-  pickerOptionActive: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  pickerOptionText: {
-    color: Colors.text.primary,
-    fontSize: 15,
-  },
-  pickerOptionTextActive: {
-    fontWeight: '700',
   },
 });

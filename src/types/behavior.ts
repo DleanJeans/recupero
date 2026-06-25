@@ -37,12 +37,16 @@ export interface BehaviorEntry {
   cooldownMinutes: number;
   cooldownType?: 'rest' | 'limit';
   cooldownUnit?: 'minutes' | 'hours' | 'days' | 'weeks';
-  /** Opt-in daily star rating (1-3 stars). Undefined = feature off.
+  /** Opt-in star rating (1-3 stars). Undefined = feature off.
    *  A `null` slot means that tier is skipped (e.g. `[1, null, 5]` = jump
    *  from 1★ to 3★; `[1, 3, null]` = only 1★ and 2★).
    *  When all three slots are null, saving clears `starThresholds`
    *  and the feature is treated as off. */
   starThresholds?: [number, number | null, number | null];
+  /** Period over which `starThresholds` are evaluated. Defaults to `'day'`
+   *  for v1 stored data that predates this field. Ignored when
+   *  `starThresholds` is undefined. */
+  starPeriod?: StarPeriod;
   /** Opt-in XP calculation (level, XP bar). Sub-feature `xpDecay` is gated on this.
    *  Undefined = feature off. */
   xpEnabled?: true;
@@ -52,3 +56,6 @@ export interface BehaviorEntry {
 }
 
 export type XpDecayUnit = 'days' | 'weeks' | 'months';
+
+/** Period used to evaluate `BehaviorEntry.starThresholds`. */
+export type StarPeriod = 'day' | 'week' | 'month';

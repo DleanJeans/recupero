@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { BehaviorEntry } from '../types/behavior';
+import type { BehaviorEntry, StarPeriod } from '../types/behavior';
 import { DEFAULT_STAR_THRESHOLDS } from '../utils/starUtils';
 
 export const STAR_SLOTS = ['1', '2', '3'] as const;
@@ -15,25 +15,29 @@ export interface ParsedStarThresholds {
   error: string | null;
 }
 
-interface UseStarThresholdsFormResult {
+export interface UseStarThresholdsFormResult {
   enabled: boolean;
+  period: StarPeriod;
   inputs: StarInputs;
   validationError: string | null;
   parsedStars: ParsedStarThresholds;
   starThresholdsChanged: boolean;
+  starPeriodChanged: boolean;
   handleToggle: () => void;
   handleInputChange: (slot: StarSlot, value: string) => void;
+  handlePeriodChange: (period: StarPeriod) => void;
   setValidationError: (error: string | null) => void;
 }
 
-/** Encapsulates the opt-in daily-stars sub-form for the Behavior
- *  form: toggle state, threshold inputs, parsing/validation, and the
- *  dirty-check against an existing behavior. */
+/** Encapsulates the opt-in stars sub-form for the Behavior form:
+ *  toggle state, evaluation period, threshold inputs, parsing/
+ *  validation, and dirty-check against an existing behavior. */
 export function useStarThresholdsForm(
   behavior: BehaviorEntry | undefined,
   isEdit: boolean,
 ): UseStarThresholdsFormResult {
   const [enabled, setEnabled] = useState<boolean>(!!behavior?.starThresholds);
+  const [period, setPeriod] = useState<StarPeriod>(behavior?.starPeriod ?? 'day');
   const [inputs, setInputs] = useState<StarInputs>({
     '1': '',
     '2': '',
@@ -46,6 +50,7 @@ export function useStarThresholdsForm(
     if (!behavior) return;
     const hasStars = behavior.starThresholds !== undefined;
     setEnabled(hasStars);
+    setPeriod(behavior.starPeriod ?? 'day');
     setInputs(
       hasStars && behavior.starThresholds
         ? {
@@ -80,6 +85,8 @@ export function useStarThresholdsForm(
     setInputs(prev => ({ ...prev, [slot]: value.replace(/[^0-9]/g, '') }));
   };
 
+  const handlePeriodChange = (next: StarPeriod) => setPeriod(next);
+
   const parsedStars = useMemo<ParsedStarThresholds>(() => {
     if (!enabled) return { values: null, error: null };
     // Parse each slot. `null` = blank input (skip this tier). `NaN` = invalid.
@@ -102,20 +109,38 @@ export function useStarThresholdsForm(
     return { values: parsed as [number, number | null, number | null], error: null };
   }, [enabled, inputs]);
 
-  const starThresholdsChanged =
-    isEdit && behavior
-      ? JSON.stringify(behavior.starThresholds ?? null) !==
-        JSON.stringify(enabled ? (parsedStars.values ?? null) : null)
-      : false;
+  if (!isEdit || !behavior) {
+    return {
+      enabled,
+      period,
+      inputs,
+      validationError,
+      parsedStars,
+      starThresholdsChanged: false,
+      starPeriodChanged: false,
+      handleToggle,
+      handleInputChange,
+      handlePeriodChange,
+      setValidationError,
+    };
+  }
+
+  const savedStars = behavior.starThresholds ?? null;
+  const newStars = enabled ? (parsedStars.values ?? null) : null;
+  const starThresholdsChanged = JSON.stringify(savedStars) !== JSON.stringify(newStars);
+  const starPeriodChanged = enabled && (behavior.starPeriod ?? 'day') !== period;
 
   return {
     enabled,
+    period,
     inputs,
     validationError,
     parsedStars,
     starThresholdsChanged,
+    starPeriodChanged,
     handleToggle,
     handleInputChange,
+    handlePeriodChange,
     setValidationError,
   };
 }

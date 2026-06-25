@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { BehaviorEntry, BehaviorType, Category, MetadataField } from '../types/behavior';
+import type { BehaviorEntry, BehaviorType, Category, MetadataField, StarPeriod } from '../types/behavior';
 
 interface BehaviorStore {
   behaviors: BehaviorEntry[];
@@ -22,6 +22,7 @@ interface BehaviorStore {
     isPrivate?: boolean,
     defaultMetadata?: Record<string, number>,
     starThresholds?: [number, number | null, number | null],
+    starPeriod?: StarPeriod,
     xpEnabled?: true,
     xpDecay?: { every: number; unit: 'days' | 'weeks' | 'months' },
   ) => void;
@@ -44,6 +45,7 @@ interface BehaviorStore {
       private?: boolean;
       defaultMetadata?: Record<string, number>;
       starThresholds?: [number, number | null, number | null] | undefined;
+      starPeriod?: StarPeriod | undefined;
       xpEnabled?: true;
       xpDecay?: { every: number; unit: 'days' | 'weeks' | 'months' } | undefined;
     },
@@ -75,6 +77,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
         isPrivate = false,
         defaultMetadata,
         starThresholds,
+        starPeriod,
         xpEnabled,
         xpDecay,
       ) =>
@@ -96,6 +99,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               cooldownType,
               cooldownUnit,
               starThresholds,
+              starPeriod,
               xpEnabled,
               xpDecay,
             },

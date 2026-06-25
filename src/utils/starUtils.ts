@@ -1,5 +1,5 @@
-import type { BehaviorEntry, LogEntry } from '../types/behavior';
-import { toDateString } from './dateUtils';
+import type { BehaviorEntry, LogEntry, StarPeriod } from '../types/behavior';
+import { getMonthStart, getWeekStart, toDateString } from './dateUtils';
 
 export const DEFAULT_STAR_THRESHOLDS: [number, number, number] = [1, 3, 5];
 
@@ -9,7 +9,33 @@ export function getThresholds(behavior: BehaviorEntry): [number, number | null, 
   return behavior.starThresholds;
 }
 
-/** Number of stars earned (0..3) given a daily log count and the
+/** Effective evaluation period for a behavior's star thresholds. Defaults
+ *  to `'day'` for v1 stored data that predates `starPeriod`. */
+export function getStarPeriod(behavior: BehaviorEntry): StarPeriod {
+  return behavior.starPeriod ?? 'day';
+}
+
+/** Inclusive `[start, end]` date-string range for the calendar period
+ *  that contains `dateStr`:
+ *  - `'day'`:   start === end === dateStr
+ *  - `'week'`:  Sun–Sat week (en-US)
+ *  - `'month'`: first–last day of the calendar month */
+export function getPeriodRange(period: StarPeriod, dateStr: string): { start: string; end: string } {
+  if (period === 'day') return { start: dateStr, end: dateStr };
+  if (period === 'week') {
+    const start = getWeekStart(dateStr);
+    const startDate = new Date(start);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 6);
+    return { start, end: toDateString(endDate) };
+  }
+  const start = getMonthStart(dateStr);
+  const startDate = new Date(start);
+  const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0);
+  return { start, end: toDateString(endDate) };
+}
+
+/** Number of stars earned (0..3) given a log count and the
  *  behavior's thresholds. A null at index 0 or 1 is a placeholder:
  *  it fills when the first non-null threshold to its right is met.
  *  Nulls with no real threshold to their right are dropped. Pure math;
@@ -29,14 +55,25 @@ export function getLogsForDate(behavior: BehaviorEntry, dateStr: string): LogEnt
   return behavior.logs.filter(log => toDateString(new Date(log.timestamp)) === dateStr);
 }
 
+/** Logs for a given behavior whose timestamps fall inside the calendar
+ *  `period` (daily / weekly / monthly) containing `dateStr`. */
+export function getLogsForPeriod(behavior: BehaviorEntry, period: StarPeriod, dateStr: string): LogEntry[] {
+  const { start, end } = getPeriodRange(period, dateStr);
+  return behavior.logs.filter(log => {
+    const d = toDateString(new Date(log.timestamp));
+    return d >= start && d <= end;
+  });
+}
+
 /** Sum of earned stars across all opted-in behaviors for a given date.
+ *  Each behavior uses its own `starPeriod` (defaulting to `'day'`).
  *  Behaviors without `starThresholds` contribute 0. */
 export function getTotalStarsForDate(behaviors: BehaviorEntry[], dateStr: string): number {
   let total = 0;
   for (const behavior of behaviors) {
     const thresholds = getThresholds(behavior);
     if (!thresholds) continue;
-    const logCount = getLogsForDate(behavior, dateStr).length;
+    const logCount = getLogsForPeriod(behavior, getStarPeriod(behavior), dateStr).length;
     total += getEarnedStars(logCount, thresholds);
   }
   return total;
