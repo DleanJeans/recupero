@@ -258,6 +258,7 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
 
   // Track the deferred close after logging so we can cancel on unmount.
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [pending, setPending] = useState(false);
   useEffect(() => {
     return () => {
       if (closeTimeoutRef.current != null) clearTimeout(closeTimeoutRef.current);
@@ -292,7 +293,11 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
     logBehavior(behaviorId, ts, metadataOrUndefined);
 
     const delay = behavior.xpEnabled ? 1500 : 0;
-    closeTimeoutRef.current = setTimeout(onSaved, delay);
+    if (delay > 0) setPending(true);
+    closeTimeoutRef.current = setTimeout(() => {
+      setPending(false);
+      onSaved();
+    }, delay);
   }, [
     selectedDate,
     hour,
@@ -387,6 +392,7 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
         size="lg"
         style={styles.fab}
         onPress={handleConfirm}
+        disabled={pending}
       >
         {editLogId ? 'Save' : 'Log'}
       </Button>
