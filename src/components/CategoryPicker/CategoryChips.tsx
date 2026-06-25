@@ -19,6 +19,8 @@ export interface CategoryChipsProps {
   behaviorCounts?: Record<string, number>;
   /** Total behavior count, shown on the "All" chip when `showAll` is true. */
   allCount?: number;
+  /** Override the global "hide category names" setting. `true` = always show names regardless of store. */
+  forceShowNames?: boolean;
 }
 
 type ChipItem = Category | { id: undefined; emoji: string; name: string };
@@ -32,8 +34,10 @@ export function CategoryChips({
   horizontal = false,
   behaviorCounts,
   allCount,
+  forceShowNames = false,
 }: CategoryChipsProps) {
-  const hideNames = useSettingsStore(s => s.hideCategoryNames);
+  const storeHideNames = useSettingsStore(s => s.hideCategoryNames);
+  const hideNames = !forceShowNames && storeHideNames;
   const items: ChipItem[] = showAll
     ? [{ id: undefined, emoji: '', name: 'All' }, ...categories]
     : [{ id: undefined, emoji: '', name: 'None' }, ...categories];

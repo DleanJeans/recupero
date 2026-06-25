@@ -272,6 +272,7 @@ export function BehaviorFormScreen() {
             onChange={handleCategoryChange}
             behaviors={behaviors}
             dark
+            forceShowNames
             onCategoryCreated={setCategoryId}
             onCategoryDeleted={id => {
               if (categoryId === id) setCategoryId(undefined);

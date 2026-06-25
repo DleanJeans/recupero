@@ -24,8 +24,8 @@ interface CategoryPickerProps {
   onLongPress?: (category: Category) => void;
   /** Behaviors used to compute per-category and total counts. */
   behaviors: BehaviorEntry[];
-  /** Hide category names, show only emoji and counts. */
-  hideNames?: boolean;
+  /** Override the global "hide category names" setting. `true` = always show names regardless of store. */
+  forceShowNames?: boolean;
   /** Optional leading element rendered at the start of the horizontal filter bar. */
   leadingAccessory?: ReactNode;
   /** Use darker background for nested contexts (e.g. inside a form) */
@@ -48,6 +48,7 @@ export function CategoryPicker({
   dark = false,
   onCategoryCreated,
   onCategoryDeleted,
+  forceShowNames,
 }: CategoryPickerProps) {
   const { addCategory, removeCategory, updateCategory } = useBehaviorStore();
 
@@ -156,6 +157,7 @@ export function CategoryPicker({
             horizontal
             behaviorCounts={behaviorCounts}
             allCount={allCount}
+            forceShowNames={forceShowNames}
           />
           <AddCategoryButton
             isOpen={isFormOpen}
@@ -188,6 +190,7 @@ export function CategoryPicker({
           showAll={showAll}
           behaviorCounts={behaviorCounts}
           allCount={allCount}
+          forceShowNames={forceShowNames}
         />
       </View>
     </View>
