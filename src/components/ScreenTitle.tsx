@@ -1,16 +1,25 @@
 import React from 'react';
-import { StyleSheet, type TextStyle } from 'react-native';
+import type { NativeSyntheticEvent, TextLayoutEventData } from 'react-native';
+import { StyleSheet, type StyleProp, type TextStyle } from 'react-native';
 import { Colors } from '../utils/colors';
 import { Text } from './Text';
 
 interface ScreenTitleProps {
   children: React.ReactNode;
   large?: boolean;
-  style?: TextStyle;
+  style?: StyleProp<TextStyle>;
+  onTextLayout?: (e: NativeSyntheticEvent<TextLayoutEventData>) => void;
 }
 
-export function ScreenTitle({ children, style }: ScreenTitleProps) {
-  return <Text style={[styles.title, style]}>{children}</Text>;
+export function ScreenTitle({ children, style, onTextLayout }: ScreenTitleProps) {
+  return (
+    <Text
+      style={[styles.title, style]}
+      onTextLayout={onTextLayout}
+    >
+      {children}
+    </Text>
+  );
 }
 
 const styles = StyleSheet.create({

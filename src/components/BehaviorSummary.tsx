@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { useBehaviorStore } from '../store/behaviorStore';
 import type { BehaviorEntry } from '../types/behavior';
 import { getBehaviorTypeColor } from '../utils/behaviorTypeUtils';
 import { Colors } from '../utils/colors';
 import { getEffectiveLogCount } from '../utils/xpUtils';
+import { AutoFitHeaderTitle } from './AutoFitHeaderTitle';
 import { BehaviorIcon } from './BehaviorIcon';
+import { CategoryEmoji } from './CategoryEmoji';
 import { CooldownBar } from './CooldownBar';
 import { DecayBar } from './DecayBar';
-import { ScreenTitle } from './ScreenTitle';
 import { StarRow } from './StarRow';
 import { XpBar } from './XpBar';
 
@@ -84,12 +84,16 @@ interface BehaviorTitleProps {
   titleOverride?: string;
   titleSize?: 'card' | 'header';
 }
+
 function BehaviorTitle({ behavior, showCategory, titleOverride, titleSize = 'card' }: BehaviorTitleProps) {
   const name = titleOverride ?? behavior.name;
   if (titleSize === 'header') {
     return (
-      <ScreenTitle style={styles.headerTitle}>
-        {name}{' '}
+      <AutoFitHeaderTitle
+        name={name}
+        style={styles.headerTitle}
+      >
+        {' '}
         {showCategory && (
           <CategoryEmoji
             behavior={behavior}
@@ -97,7 +101,7 @@ function BehaviorTitle({ behavior, showCategory, titleOverride, titleSize = 'car
           />
         )}
         {!behavior.xpEnabled && <Text style={styles.headerLogCount}> ×{behavior.logs.length}</Text>}
-      </ScreenTitle>
+      </AutoFitHeaderTitle>
     );
   }
   return (
@@ -107,13 +111,6 @@ function BehaviorTitle({ behavior, showCategory, titleOverride, titleSize = 'car
       {!behavior.xpEnabled && <Text style={styles.logCount}>×{behavior.logs.length}</Text>}
     </View>
   );
-}
-
-function CategoryEmoji({ behavior, size = 15 }: { behavior: BehaviorEntry; size?: number }) {
-  const { categories } = useBehaviorStore();
-  const category = behavior.categoryId ? categories.find(c => c.id === behavior.categoryId) : null;
-  if (!category) return null;
-  return <Text style={{ fontSize: size }}>{category.emoji}</Text>;
 }
 
 const styles = StyleSheet.create({
