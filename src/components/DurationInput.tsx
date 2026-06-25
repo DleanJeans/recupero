@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Text, TextInput } from './Text';
 import { Colors } from '../utils/colors';
+import { Text, TextInput } from './Text';
 
 export type DurationUnit = 'minutes' | 'hours' | 'days' | 'weeks' | 'months';
 

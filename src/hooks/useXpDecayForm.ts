@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { DurationInput } from '../components/DurationInput';
 import type { DurationUnit } from '../components/DurationInput';
 import type { BehaviorEntry, XpDecayUnit } from '../types/behavior';
 

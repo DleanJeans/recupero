@@ -1,6 +1,6 @@
 import React from 'react';
-import { DurationInput } from '../../../components/DurationInput';
 import type { DurationUnit } from '../../../components/DurationInput';
+import { DurationInput } from '../../../components/DurationInput';
 
 export type CooldownUnit = 'minutes' | 'hours' | 'days' | 'weeks';
 

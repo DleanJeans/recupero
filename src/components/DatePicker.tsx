@@ -2,9 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { Text } from './Text';
 import { Colors } from '../utils/colors';
 import { formatDateDisplay } from '../utils/dateUtils';
+import { Text } from './Text';
 
 interface DatePickerProps {
   selectedDate: string;

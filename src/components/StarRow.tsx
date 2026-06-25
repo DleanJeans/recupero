@@ -41,7 +41,7 @@ export function StarRow({
   }, [behavior, thresholds, targetDate]);
 
   if (!thresholds) return null;
-  
+
   const slots: Array<{ key: number; filled: boolean; threshold: number | null }> = [];
   for (let i = 0; i < thresholds.length; i++) {
     const t = thresholds[i];
