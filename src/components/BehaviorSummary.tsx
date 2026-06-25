@@ -48,13 +48,11 @@ export function BehaviorSummary({ behavior, showCategory, dateStr, titleOverride
           behavior={behavior}
           size={isHeader ? 24 : 32}
         />
-        {!isHeader && (
-          <StarRow
-            behavior={behavior}
-            dateStr={dateStr}
-            size={11}
-          />
-        )}
+        <StarRow
+          behavior={behavior}
+          dateStr={dateStr}
+          size={11}
+        />
       </View>
       <View style={styles.info}>
         <BehaviorTitle
