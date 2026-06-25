@@ -329,6 +329,7 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
         keyboardDismissMode="interactive"
         showsVerticalScrollIndicator={false}
       >
+        <Text style={styles.sectionLabel}>Metadata</Text>
         {metadataFields.map(field => (
           <View
             key={field.key}
