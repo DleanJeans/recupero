@@ -9,6 +9,7 @@ type Size = 'sm' | 'md' | 'lg';
 interface Props {
   variant?: Variant;
   size?: Size;
+  fab?: boolean;
   active?: boolean;
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
@@ -18,7 +19,13 @@ interface Props {
   accessibilityLabel?: string;
 }
 
-const PRESSED_OPACITY: Record<Variant, number> = { primary: 0.85, secondary: 0.6, danger: 0.8, ghost: 0.7, icon: 0.5 };
+const PRESSED_OPACITY: Record<Variant, number> = {
+  primary: 0.85,
+  secondary: 0.6,
+  danger: 0.8,
+  ghost: 0.7,
+  icon: 0.5,
+};
 
 const SCALE = { primary: 0.98, secondary: 0.98 } as const;
 
@@ -32,6 +39,7 @@ function pressedStyle(variant: Variant) {
 export function Button({
   variant = 'secondary',
   size = 'md',
+  fab,
   active,
   children,
   style,
@@ -46,7 +54,8 @@ export function Button({
       style={({ pressed }) => [
         commonStyles.base,
         baseStyles[variant],
-        variant !== 'icon' && sizeStyles[size],
+        variant !== 'icon' && !fab && sizeStyles[size],
+        fab && fabStyles.fab,
         active && activeStyles[variant],
         pressed && pressedStyle(variant),
         disabled && { opacity: 0.4 },
@@ -57,10 +66,13 @@ export function Button({
       disabled={disabled}
       accessibilityLabel={accessibilityLabel}
     >
-      {isText ? 
-        <Text style={[commonTextStyles.base, textStyles[variant], active && textActiveStyles[variant]]}>{children}</Text> 
-        : children
-      }
+      {isText ? (
+        <Text style={[commonTextStyles.base, textStyles[variant], active && textActiveStyles[variant]]}>
+          {children}
+        </Text>
+      ) : (
+        children
+      )}
     </Pressable>
   );
 }
@@ -109,4 +121,16 @@ const textActiveStyles = StyleSheet.create({
   danger: {},
   ghost: { color: Colors.text.primary },
   icon: {},
+});
+
+export const fabStyles = StyleSheet.create({
+  fab: {
+    position: 'absolute',
+    bottom: 30,
+    left: 16,
+    right: 16,
+    flex: 0,
+    borderRadius: 12,
+    paddingVertical: 14,
+  },
 });

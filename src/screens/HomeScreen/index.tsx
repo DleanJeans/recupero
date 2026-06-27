@@ -210,7 +210,7 @@ function BehaviorList({ behaviors, selectedCategoryId, searchQuery }: BehaviorLi
         />
       )}
       ListEmptyComponent={<Text style={styles.empty}>{emptyMessage}</Text>}
-      contentContainerStyle={behaviors.length === 0 && styles.emptyContainer}
+      contentContainerStyle={[styles.listContent, behaviors.length === 0 && styles.emptyContainer]}
     />
   );
 }
@@ -308,6 +308,9 @@ const styles = StyleSheet.create({
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
+  },
+  listContent: {
+    paddingBottom: 80,
   },
   empty: {
     color: Colors.text.faint,

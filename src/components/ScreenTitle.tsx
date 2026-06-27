@@ -1,6 +1,6 @@
 import React from 'react';
 import type { NativeSyntheticEvent, TextLayoutEventData } from 'react-native';
-import { StyleSheet, type StyleProp, type TextStyle } from 'react-native';
+import { type StyleProp, StyleSheet, type TextStyle } from 'react-native';
 import { Colors } from '../utils/colors';
 import { Text } from './Text';
 

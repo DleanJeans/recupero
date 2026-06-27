@@ -148,10 +148,9 @@ interface DetailsActionsProps {
 
 function DetailsActions({ onEdit, onLog }: DetailsActionsProps) {
   return (
-    <>
+    <View style={styles.detailsActionsRow}>
       <Button
         variant="secondary"
-        size="lg"
         style={styles.detailAction}
         onPress={onEdit}
       >
@@ -166,13 +165,12 @@ function DetailsActions({ onEdit, onLog }: DetailsActionsProps) {
       </Button>
       <Button
         variant="primary"
-        size="lg"
         style={styles.detailAction}
         onPress={onLog}
       >
         Log
       </Button>
-    </>
+    </View>
   );
 }
 
@@ -389,8 +387,8 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
       </ScrollView>
       <Button
         variant="primary"
-        size="lg"
-        style={styles.fab}
+        fab
+        style={{ bottom: 16 }}
         onPress={handleConfirm}
         disabled={pending}
       >
@@ -458,7 +456,7 @@ function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
         );
       }}
       ListEmptyComponent={<Text style={styles.empty}>No logs yet.{'\n'}Press Log below to record this behavior.</Text>}
-      contentContainerStyle={logs.length === 0 && styles.emptyContainer}
+      contentContainerStyle={[logs.length === 0 && styles.emptyContainer, { paddingBottom: 80 }]}
     />
   );
 }
@@ -599,15 +597,11 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   primaryAction: { flex: 0, width: '100%' },
-  fab: {
-    position: 'absolute',
-    bottom: 16,
-    left: 16,
-    right: 16,
-    borderRadius: 12,
-    flex: 0,
+  detailAction: { flex: 1, position: 'relative', bottom: 0, left: 0, right: 0 },
+  detailsActionsRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
-  detailAction: { flex: 1 },
   actionIconRow: {
     flexDirection: 'row',
     alignItems: 'center',

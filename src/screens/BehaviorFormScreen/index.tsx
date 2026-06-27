@@ -368,8 +368,7 @@ export function BehaviorFormScreen() {
         <View style={styles.actions}>
           <Button
             variant="primary"
-            size="lg"
-            style={styles.primaryAction}
+            fab
             onPress={handleSave}
             disabled={isEdit ? !hasChanges : !name.trim() || !icon.trim()}
           >
@@ -518,5 +517,4 @@ const styles = StyleSheet.create({
     width: 80,
     textAlign: 'right',
   },
-  primaryAction: { flex: 0, width: '100%' },
 });
