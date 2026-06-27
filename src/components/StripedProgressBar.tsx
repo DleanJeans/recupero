@@ -1,6 +1,15 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useMemo, useRef } from 'react';
-import { Animated, Dimensions, Easing, StyleSheet, View } from 'react-native';
+import React, { useEffect, useMemo } from 'react';
+import { Dimensions, StyleSheet, View } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { Colors } from '../utils/colors';
 
 interface Props {
@@ -30,6 +39,10 @@ const STRIPE_LOOP_DURATION_MS = 1000;
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRADIENT_SIZE = Math.ceil((SCREEN_WIDTH + STRIPE_PERIOD) / STRIPE_PERIOD) * STRIPE_PERIOD;
 const N_PERIODS = GRADIENT_SIZE / STRIPE_PERIOD;
+
+/** Spring config for the ratio → width transition. Matches XpBar so all
+ *  animated bars in the summary feel consistent when they move together. */
+const RATIO_SPRING = { damping: 18, stiffness: 120, mass: 0.8 } as const;
 
 /** Build the colors/locations arrays that produce a diagonal stripe pattern in
  *  a single `LinearGradient`. Each period is half-stripe, half-gap with hard
@@ -67,39 +80,62 @@ export function StripedProgressBar({ ratio, color, direction = -1, height = 3 }:
   const showStripes = safeRatio < 1;
   const stripePattern = useMemo(() => buildStripePattern(N_PERIODS), []);
 
+  // Smoothly transition width when the prop changes (e.g., a fresh log
+  // resets cooldown ratio from ~1 down to a small value). Springs match
+  // XpBar so the summary feels coherent when several bars move together.
+  const animatedRatio = useSharedValue(safeRatio);
+  useEffect(() => {
+    animatedRatio.value = withSpring(safeRatio, RATIO_SPRING);
+  }, [safeRatio, animatedRatio]);
+
   // Direction multiplier: 1 scrolls left-to-right, -1 right-to-left.
   // Driving direction via the animation's toValue (not a `scaleX: -1`
   // transform) keeps the wrapper transform single-axis, which the native
   // driver animates most cleanly.
   const movedWidth = direction * STRIPE_PERIOD * 2;
-  const translateX = useRef(new Animated.Value(direction > 0 ? -movedWidth : 0)).current;
+  const translateX = useSharedValue(direction > 0 ? -movedWidth : 0);
   const animateTo = direction > 0 ? 0 : movedWidth;
 
   useEffect(() => {
-    if (!showStripes) return;
-    const loop = Animated.loop(
-      Animated.timing(translateX, {
-        toValue: animateTo,
+    if (!showStripes) {
+      cancelAnimation(translateX);
+      return;
+    }
+    // Reset to the start of the period before each repeat so the loop
+    // boundary is invisible (the gradient is periodic in STRIPE_PERIOD * 2).
+    translateX.value = direction > 0 ? -movedWidth : 0;
+    translateX.value = withRepeat(
+      withTiming(animateTo, {
         duration: STRIPE_LOOP_DURATION_MS,
-        // Easing.linear is critical: the default Easing.ease decelerates at
+        // Easing.linear is critical: any non-linear easing decelerates at
         // every loop boundary, which reads as a visible stutter.
         easing: Easing.linear,
-        useNativeDriver: true,
       }),
+      -1,
+      false,
     );
-    loop.start();
-    return () => loop.stop();
-  }, [translateX, animateTo, showStripes]);
+    return () => cancelAnimation(translateX);
+  }, [showStripes, animateTo, direction, movedWidth, translateX]);
+
+  const fillStyle = useAnimatedStyle(() => ({
+    width: `${animatedRatio.value * 100}%`,
+  }));
+  const stripeOverlayStyle = useAnimatedStyle(() => ({
+    width: `${animatedRatio.value * 100}%`,
+  }));
+  const stripeTransformStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
 
   return (
     <View style={[styles.track, { height }]}>
-      <View style={[styles.fill, { width: `${safeRatio * 100}%`, backgroundColor: color }]} />
+      <Animated.View style={[styles.fill, { backgroundColor: color }, fillStyle]} />
       {showStripes && (
-        <View
+        <Animated.View
           pointerEvents="none"
-          style={[styles.stripeOverlay, { width: `${safeRatio * 100}%` }]}
+          style={[styles.stripeOverlay, stripeOverlayStyle]}
         >
-          <Animated.View style={{ transform: [{ translateX }] }}>
+          <Animated.View style={stripeTransformStyle}>
             <LinearGradient
               colors={stripePattern.colors as unknown as readonly [string, string, ...string[]]}
               locations={stripePattern.locations as unknown as readonly [number, number, ...number[]]}
@@ -108,7 +144,7 @@ export function StripedProgressBar({ ratio, color, direction = -1, height = 3 }:
               style={{ width: GRADIENT_SIZE, height: GRADIENT_SIZE }}
             />
           </Animated.View>
-        </View>
+        </Animated.View>
       )}
     </View>
   );
