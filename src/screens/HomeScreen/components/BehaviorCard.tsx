@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useRef } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { Alert, type GestureResponderEvent, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { BehaviorSummary } from '../../../components/BehaviorSummary';
 import { SwipeDeleteButton, SwipeEditButton } from '../../../components/SwipeActionButton';
@@ -25,6 +25,7 @@ export function BehaviorCard({ behavior, showCategory, dateStr }: Props) {
   const navigation = useNavigation<NavProp>();
   const { removeBehavior } = useBehaviorStore();
   const swipeableRef = useRef<Swipeable>(null);
+  const [width, setWidth] = useState(0);
 
   const handleRemove = () => {
     swipeableRef.current?.close();
@@ -38,12 +39,9 @@ export function BehaviorCard({ behavior, showCategory, dateStr }: Props) {
     ]);
   };
 
-  const handlePress = () => {
-    navigation.navigate('BehaviorLog', { behaviorId: behavior.id, initialMode: 'log' });
-  };
-
-  const handleLongPress = () => {
-    navigation.navigate('BehaviorLog', { behaviorId: behavior.id, initialMode: 'details' });
+  const handlePress = (e: GestureResponderEvent) => {
+    const mode = e.nativeEvent.locationX < width / 2 ? 'details' : 'log';
+    navigation.navigate('BehaviorLog', { behaviorId: behavior.id, initialMode: mode });
   };
 
   const handleEdit = () => {
@@ -63,7 +61,7 @@ export function BehaviorCard({ behavior, showCategory, dateStr }: Props) {
         <Pressable
           style={styles.content}
           onPress={handlePress}
-          onLongPress={handleLongPress}
+          onLayout={e => setWidth(e.nativeEvent.layout.width)}
         >
           <BehaviorSummary
             behavior={behavior}
