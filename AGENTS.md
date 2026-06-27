@@ -6,7 +6,7 @@
 
 4. Make sure behaviorStore is compatible with logs from previous versions
 
-5. Run format:imports on changed files only and format:changed after completing coding
+5. Run `format:imports {touched-files-paths}` and format:changed after completing coding
 
 6. New branch naming: {feat|bug}/issue{number}-{issue title or feature/fix content}
 
