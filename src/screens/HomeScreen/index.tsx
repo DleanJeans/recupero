@@ -20,7 +20,6 @@ import { toDateString, yesterday } from '../../utils/dateUtils';
 import { getTotalStarsForDate } from '../../utils/starUtils';
 import { Label } from '../../utils/strings';
 import { getTaskStarsForDate } from '../../utils/taskUtils';
-import { AddBehaviorButton } from './components/AddBehaviorButton';
 import { BehaviorCard } from './components/BehaviorCard';
 import { CategoryXpBar } from './components/CategoryXpBar';
 import { HomeSearchBar } from './components/HomeSearchBar';
@@ -104,10 +103,14 @@ export function HomeScreen() {
         searchQuery={isSearching ? searchQuery : undefined}
       />
 
-      <AddBehaviorButton
+      <Button
+        fab
+        variant="primary"
         onPress={() => navigation.navigate('BehaviorForm', { defaultCategoryId: selectedCategoryId ?? undefined })}
         style={styles.addButton}
-      />
+      >
+        + Add behavior
+      </Button>
       <BottomNav />
     </SafeAreaView>
   );
