@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import type { MetadataField } from '../../types/behavior';
+import type { MetadataField, MetadataFieldCalculation } from '../../types/behavior';
 import { Colors } from '../../utils/colors';
 import { Text, TextInput } from '../Text';
 
@@ -53,6 +53,22 @@ function MetadataFieldsSection({ fields, onChange }: Props) {
     [onChange],
   );
 
+  const handleCalculationChange = useCallback(
+    (index: number, calculation: MetadataFieldCalculation) => {
+      const next = latestRef.current.map((field, i) => {
+        if (i !== index) return field;
+        return {
+          ...field,
+          calculation: calculation === 'manual' ? undefined : calculation,
+        };
+      });
+      latestRef.current = next;
+      setLocalFields(next);
+      onChange(next);
+    },
+    [onChange],
+  );
+
   return (
     <View style={styles.section}>
       <View style={styles.header}>
@@ -89,6 +105,23 @@ function MetadataFieldsSection({ fields, onChange }: Props) {
               value={field.unit ?? ''}
               onChangeText={v => handleUnitChange(index, v)}
             />
+            <View style={styles.calculationRow}>
+              <CalculationPill
+                label="Manual"
+                active={!field.calculation || field.calculation === 'manual'}
+                onPress={() => handleCalculationChange(index, 'manual')}
+              />
+              <CalculationPill
+                label="Amount"
+                active={field.calculation === 'amount'}
+                onPress={() => handleCalculationChange(index, 'amount')}
+              />
+              <CalculationPill
+                label="/100"
+                active={field.calculation === 'per100'}
+                onPress={() => handleCalculationChange(index, 'per100')}
+              />
+            </View>
           </View>
           <Pressable
             onPress={() => handleRemoveField(index)}
@@ -103,6 +136,23 @@ function MetadataFieldsSection({ fields, onChange }: Props) {
         </View>
       ))}
     </View>
+  );
+}
+
+interface CalculationPillProps {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}
+
+function CalculationPill({ label, active, onPress }: CalculationPillProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.calculationPill, active && styles.calculationPillActive]}
+    >
+      <Text style={[styles.calculationPillText, active && styles.calculationPillTextActive]}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -136,13 +186,14 @@ const styles = StyleSheet.create({
   },
   fieldRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 6,
   },
   fieldInputs: {
     flex: 1,
     flexDirection: 'row',
     gap: 6,
+    flexWrap: 'wrap',
   },
   fieldInput: {
     flex: 1,
@@ -158,5 +209,28 @@ const styles = StyleSheet.create({
   },
   removeBtn: {
     padding: 2,
+    paddingTop: 6,
+  },
+  calculationRow: {
+    width: '100%',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  calculationPill: {
+    backgroundColor: Colors.bg.input,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+  calculationPillActive: {
+    backgroundColor: Colors.text.light,
+  },
+  calculationPillText: {
+    color: Colors.text.faint,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  calculationPillTextActive: {
+    color: Colors.bg.primary,
   },
 });

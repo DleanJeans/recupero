@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { BehaviorEntry, BehaviorType, Category, MetadataField, StarPeriod } from '../types/behavior';
 import type { AddTaskInput, TaskEntry } from '../types/task';
+import { getLoggableDefaultMetadata } from '../utils/metadataCalculationUtils';
 import { isTaskCompleteOnDate, timestampForTaskDate } from '../utils/taskUtils';
 
 interface BehaviorStore {
@@ -24,6 +25,7 @@ interface BehaviorStore {
     cooldownUnit?: 'minutes' | 'hours' | 'days' | 'weeks',
     isPrivate?: boolean,
     defaultMetadata?: Record<string, number>,
+    metadataAmountFieldKey?: string,
     starThresholds?: [number, number | null, number | null],
     starPeriod?: StarPeriod,
     xpEnabled?: true,
@@ -49,6 +51,7 @@ interface BehaviorStore {
       cooldownEnabled?: boolean;
       private?: boolean;
       defaultMetadata?: Record<string, number>;
+      metadataAmountFieldKey?: string;
       starThresholds?: [number, number | null, number | null] | undefined;
       starPeriod?: StarPeriod | undefined;
       xpEnabled?: true;
@@ -86,6 +89,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
         cooldownUnit,
         isPrivate = false,
         defaultMetadata,
+        metadataAmountFieldKey,
         starThresholds,
         starPeriod,
         xpEnabled,
@@ -105,6 +109,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               lastTimestamp: null,
               metadata: {},
               defaultMetadata,
+              metadataAmountFieldKey,
               logs: [],
               cooldownMinutes,
               cooldownType,
@@ -263,8 +268,9 @@ export const useBehaviorStore = create<BehaviorStore>()(
             task.behaviorId && logIdToAdd
               ? state.behaviors.map(b => {
                   if (b.id !== task.behaviorId) return b;
+                  const category = b.categoryId ? state.categories.find(c => c.id === b.categoryId) : undefined;
                   const metadata = {
-                    ...(b.defaultMetadata ?? {}),
+                    ...getLoggableDefaultMetadata(b.defaultMetadata, category?.metadataFields),
                     ...(task.source !== 'behavior' ? { notes: task.title } : {}),
                   };
                   return {

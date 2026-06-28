@@ -20,11 +20,20 @@ import { DatePicker } from '../../components/DatePicker';
 import { SafeAreaView } from '../../components/SafeAreaView';
 import { Text, TextInput } from '../../components/Text';
 import { useBehaviorStore } from '../../store/behaviorStore';
-import type { BehaviorEntry } from '../../types/behavior';
+import type { BehaviorEntry, MetadataField } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { groupLogsByRecency } from '../../utils/behaviorUtils';
 import { Colors } from '../../utils/colors';
 import { toDateString } from '../../utils/dateUtils';
+import {
+  buildCalculatedMetadata,
+  formatMetadataFieldLabel,
+  formatMetadataRateUnit,
+  getCalculatedMetadataFields,
+  getManualMetadataFields,
+  getSelectedAmountMetadataField,
+  sanitizeDecimalInput,
+} from '../../utils/metadataCalculationUtils';
 import { BehaviorScreenLayout } from '../components/BehaviorScreenLayout';
 import { BehaviorLogItem } from './components/BehaviorLogItem';
 import { FloatingXpBurst, type XpBurst } from './components/FloatingXpBurst';
@@ -217,6 +226,13 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
   const nextXpBurstId = useRef(0);
 
   const metadataFields = useMemo(() => category?.metadataFields ?? [], [category?.metadataFields]);
+  const amountField = useMemo(
+    () =>
+      getSelectedAmountMetadataField(metadataFields, behavior.metadataAmountFieldKey, behavior.metadataQuantityUnit),
+    [behavior.metadataAmountFieldKey, behavior.metadataQuantityUnit, metadataFields],
+  );
+  const manualMetadataFields = useMemo(() => getManualMetadataFields(metadataFields), [metadataFields]);
+  const calculatedMetadataFields = useMemo(() => getCalculatedMetadataFields(metadataFields), [metadataFields]);
   const [metadataValues, setMetadataValues] = useState<Record<string, string>>(() => {
     const vals: Record<string, string> = {};
     if (editLogId) {
@@ -228,13 +244,19 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
         }
       }
     } else if (behavior.defaultMetadata) {
-      for (const field of metadataFields) {
+      for (const field of manualMetadataFields) {
         const v = behavior.defaultMetadata[field.key];
         if (v != null) vals[field.key] = String(v);
       }
     }
     return vals;
   });
+  const calculatedMetadataValues = useMemo(() => {
+    if (!amountField) return {};
+    const amountValue = metadataValues[amountField.key];
+    if (amountValue === undefined || amountValue === '') return {};
+    return buildCalculatedMetadata(metadataFields, behavior.defaultMetadata, Number(amountValue));
+  }, [amountField, behavior.defaultMetadata, metadataFields, metadataValues]);
 
   const isToday = selectedDate === todayStr;
   const maxHour = isToday ? nowRef.current.getHours() : 23;
@@ -282,10 +304,25 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
       const ts = new Date(y, m - 1, d, hour, minute, 0, 0).getTime();
       const metadata: Record<string, string | number> = {};
       if (notes.trim()) metadata.notes = notes.trim();
-      for (const field of metadataFields) {
+      const metadataInputFields: MetadataField[] = amountField
+        ? [amountField, ...manualMetadataFields]
+        : metadataFields;
+      for (const field of metadataInputFields) {
         const val = metadataValues[field.key];
-        if (val !== undefined && val !== '') {
-          metadata[field.key] = Number(val);
+        const parsed = Number(val);
+        if (val !== undefined && val !== '' && Number.isFinite(parsed)) {
+          metadata[field.key] = parsed;
+        }
+      }
+      if (amountField) {
+        Object.assign(metadata, calculatedMetadataValues);
+        for (const field of calculatedMetadataFields) {
+          if (metadata[field.key] != null) continue;
+          const val = metadataValues[field.key];
+          const parsed = Number(val);
+          if (val !== undefined && val !== '' && Number.isFinite(parsed)) {
+            metadata[field.key] = parsed;
+          }
         }
       }
       const metadataOrUndefined = Object.keys(metadata).length > 0 ? metadata : undefined;
@@ -319,6 +356,10 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
       notes,
       metadataValues,
       metadataFields,
+      amountField,
+      manualMetadataFields,
+      calculatedMetadataFields,
+      calculatedMetadataValues,
       editLogId,
       behaviorId,
       behavior.xpEnabled,
@@ -363,29 +404,46 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
         showsVerticalScrollIndicator={false}
       >
         {metadataFields.length > 0 && <Text style={styles.sectionLabel}>Metadata</Text>}
-        {metadataFields.map(field => (
-          <View
+        {amountField && (
+          <MetadataInputRow
+            field={amountField}
+            value={metadataValues[amountField.key] ?? ''}
+            label={formatMetadataFieldLabel(amountField)}
+            onChange={setMetadataValues}
+            onFocus={() => setMetadataFocused(true)}
+            onBlur={() => setMetadataFocused(false)}
+          />
+        )}
+        {manualMetadataFields.map(field => (
+          <MetadataInputRow
             key={field.key}
-            style={styles.metadataFieldRow}
-          >
-            <Text style={styles.metadataFieldLabel}>
-              {field.label}
-              {field.unit ? ` (${field.unit})` : ''}
-            </Text>
-            <TextInput
-              style={styles.metadataInput}
-              value={metadataValues[field.key] ?? ''}
-              onChangeText={v => setMetadataValues(prev => ({ ...prev, [field.key]: v.replace(/[^0-9.]/g, '') }))}
-              onFocus={() => setMetadataFocused(true)}
-              onBlur={() => setMetadataFocused(false)}
-              placeholder="0"
-              placeholderTextColor={Colors.text.dim}
-              keyboardType="decimal-pad"
-              returnKeyType="done"
-              maxLength={8}
-            />
-          </View>
+            field={field}
+            value={metadataValues[field.key] ?? ''}
+            label={formatMetadataFieldLabel(field)}
+            onChange={setMetadataValues}
+            onFocus={() => setMetadataFocused(true)}
+            onBlur={() => setMetadataFocused(false)}
+          />
         ))}
+        {calculatedMetadataFields.map(field => {
+          const value = calculatedMetadataValues[field.key];
+          const existingValue = metadataValues[field.key];
+          const displayValue = value != null ? String(value) : (existingValue ?? '');
+          return (
+            <View
+              key={field.key}
+              style={[styles.metadataFieldRow, styles.metadataCalculatedRow]}
+            >
+              <Text style={styles.metadataFieldLabel}>{formatMetadataFieldLabel(field)}</Text>
+              <View style={styles.metadataCalculatedValueRow}>
+                <Text style={styles.metadataCalculatedValue}>{displayValue || '0'}</Text>
+                <Text style={styles.metadataCalculatedRate}>
+                  {behavior.defaultMetadata?.[field.key] ?? 0} {formatMetadataRateUnit(field, amountField)}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
 
         <Text style={styles.sectionLabel}>Notes</Text>
         <TextInput
@@ -423,6 +481,38 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
 }
 
 // #endregion
+
+interface MetadataInputRowProps {
+  field: MetadataField;
+  value: string;
+  label: string;
+  onChange: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  onFocus: () => void;
+  onBlur: () => void;
+}
+
+function MetadataInputRow({ field, value, label, onChange, onFocus, onBlur }: MetadataInputRowProps) {
+  return (
+    <View
+      key={field.key}
+      style={styles.metadataFieldRow}
+    >
+      <Text style={styles.metadataFieldLabel}>{label}</Text>
+      <TextInput
+        style={styles.metadataInput}
+        value={value}
+        onChangeText={v => onChange(prev => ({ ...prev, [field.key]: sanitizeDecimalInput(v) }))}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        placeholder="0"
+        placeholderTextColor={Colors.text.dim}
+        keyboardType="decimal-pad"
+        returnKeyType="done"
+        maxLength={8}
+      />
+    </View>
+  );
+}
 
 // #region Log list view
 
@@ -647,6 +737,29 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     color: Colors.text.primary,
     fontSize: 16,
+  },
+  metadataCalculatedRow: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: Colors.border.default,
+  },
+  metadataCalculatedValueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  metadataCalculatedValue: {
+    color: Colors.text.primary,
+    fontSize: 18,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  metadataCalculatedRate: {
+    color: Colors.text.faint,
+    fontSize: 12,
+    fontWeight: '600',
+    flexShrink: 1,
+    textAlign: 'right',
   },
   notesInput: {
     backgroundColor: Colors.bg.input,

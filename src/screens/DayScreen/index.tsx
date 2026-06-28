@@ -8,10 +8,11 @@ import { ScreenTitle } from '../../components/ScreenTitle';
 import { StarRow } from '../../components/StarRow';
 import { Text } from '../../components/Text';
 import { useBehaviorStore } from '../../store/behaviorStore';
-import type { Category, LogEntry } from '../../types/behavior';
+import type { BehaviorEntry, Category, LogEntry } from '../../types/behavior';
 import { getAllDailyMetadataTotals } from '../../utils/behaviorUtils';
 import { Colors } from '../../utils/colors';
 import { describeDay, toDateString } from '../../utils/dateUtils';
+import { formatMetadataValueUnit } from '../../utils/metadataCalculationUtils';
 import { roundTo2 } from '../../utils/numberUtils';
 import { getThresholds, getTotalStarsForDate } from '../../utils/starUtils';
 import { getTaskStarsForDate } from '../../utils/taskUtils';
@@ -19,12 +20,12 @@ import { formatDuration, formatTime, MS_PER_MINUTE } from '../../utils/timeUtils
 
 function formatEntryMetadata(
   metadata: LogEntry['metadata'],
-  categoryId: string | undefined,
+  behavior: BehaviorEntry,
   categories: Category[],
 ): React.ReactNode | null {
   if (!metadata || Object.keys(metadata).length === 0) return null;
 
-  const category = categories.find(c => c.id === categoryId);
+  const category = categories.find(c => c.id === behavior.categoryId);
   const fields = category?.metadataFields ?? [];
   const parts: string[] = [];
 
@@ -39,7 +40,7 @@ function formatEntryMetadata(
     const val = metadata[field.key];
     if (val != null) {
       const displayVal = typeof val === 'number' ? roundTo2(val) : val;
-      parts.push(`${field.label}: ${displayVal}${field.unit ? ` ${field.unit}` : ''}`);
+      parts.push(`${field.label}: ${displayVal}${formatMetadataValueUnit(field)}`);
     }
   }
 
@@ -288,7 +289,7 @@ export function DayScreen() {
                               style={{ marginTop: -12 }}
                             />
                           </View>
-                          {formatEntryMetadata(entry.log.metadata, entry.behavior.categoryId, categories)}
+                          {formatEntryMetadata(entry.log.metadata, entry.behavior, categories)}
                         </View>
                       </React.Fragment>
                     ))}

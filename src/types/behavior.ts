@@ -1,7 +1,10 @@
+export type MetadataFieldCalculation = 'manual' | 'amount' | 'per100';
+
 export interface MetadataField {
   key: string;
   label: string;
   unit?: string;
+  calculation?: MetadataFieldCalculation;
 }
 
 export interface Category {
@@ -33,6 +36,8 @@ export interface BehaviorEntry {
   lastTimestamp: number | null;
   metadata: Record<string, string | number>;
   defaultMetadata?: Record<string, number>;
+  metadataAmountFieldKey?: string;
+  metadataQuantityUnit?: string;
   logs: LogEntry[];
   cooldownMinutes: number;
   cooldownType?: 'rest' | 'limit';

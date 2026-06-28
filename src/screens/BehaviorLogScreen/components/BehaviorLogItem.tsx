@@ -7,6 +7,7 @@ import { useBehaviorStore } from '../../../store/behaviorStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import type { LogEntry, MetadataField } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
+import { formatMetadataValueUnit } from '../../../utils/metadataCalculationUtils';
 import { formatElapsedNumeric, formatTime } from '../../../utils/timeUtils';
 
 interface Props {
@@ -70,7 +71,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
               >
                 <Text style={styles.metaChipText}>
                   {field.label} {val}
-                  {field.unit ?? ''}
+                  {formatMetadataValueUnit(field)}
                 </Text>
               </View>
             );

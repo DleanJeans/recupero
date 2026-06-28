@@ -1,9 +1,9 @@
 import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TextInput as RNTextInput } from 'react-native';
-import { Alert, Keyboard, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Keyboard, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { BackButton } from '../../components/BackButton';
 import { Button } from '../../components/Button';
@@ -20,6 +20,16 @@ import { useBehaviorStore } from '../../store/behaviorStore';
 import type { BehaviorEntry, BehaviorType, Category, MetadataField } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
+import {
+  formatMetadataAmountBasis,
+  formatMetadataFieldLabel,
+  formatMetadataRateUnit,
+  getAmountMetadataFields,
+  getCalculatedMetadataFields,
+  getManualMetadataFields,
+  getSelectedAmountMetadataField,
+  sanitizeDecimalInput,
+} from '../../utils/metadataCalculationUtils';
 import { BehaviorTypePicker } from './components/BehaviorTypePicker';
 import type { CooldownUnit } from './components/CooldownInput';
 import { CooldownInput } from './components/CooldownInput';
@@ -73,7 +83,17 @@ export function BehaviorFormScreen() {
   const [behaviorDefaultMetadata, setBehaviorDefaultMetadata] = useState<Record<string, string>>(() =>
     Object.fromEntries(Object.entries(behavior?.defaultMetadata ?? {}).map(([k, v]) => [k, String(v)])),
   );
+  const [metadataAmountFieldKey, setMetadataAmountFieldKey] = useState<string | undefined>(
+    () => behavior?.metadataAmountFieldKey,
+  );
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  const selectedCategory = useMemo(() => categories.find(c => c.id === categoryId), [categories, categoryId]);
+  const metadataFields = selectedCategory?.metadataFields ?? [];
+  const selectedAmountField = getSelectedAmountMetadataField(
+    metadataFields,
+    metadataAmountFieldKey,
+    behavior?.metadataQuantityUnit,
+  );
 
   const {
     enabled: starsEnabled,
@@ -128,7 +148,19 @@ export function BehaviorFormScreen() {
     setBehaviorDefaultMetadata(
       Object.fromEntries(Object.entries(behavior.defaultMetadata ?? {}).map(([k, v]) => [k, String(v)])),
     );
+    setMetadataAmountFieldKey(behavior.metadataAmountFieldKey);
   }, [behavior]);
+
+  useEffect(() => {
+    const amountFields = getAmountMetadataFields(metadataFields);
+    if (amountFields.length === 0) {
+      if (metadataAmountFieldKey !== undefined) setMetadataAmountFieldKey(undefined);
+      return;
+    }
+    if (!amountFields.some(field => field.key === metadataAmountFieldKey)) {
+      setMetadataAmountFieldKey(selectedAmountField?.key);
+    }
+  }, [metadataAmountFieldKey, metadataFields, selectedAmountField?.key]);
 
   let defaultMetadataChanged = false;
   if (isEdit && behavior) {
@@ -151,6 +183,8 @@ export function BehaviorFormScreen() {
       cooldownType !== (behavior.cooldownType || 'rest') ||
       cooldownUnit !== behavior.cooldownUnit ||
       defaultMetadataChanged ||
+      selectedAmountField?.key !==
+        getSelectedAmountMetadataField(metadataFields, behavior.metadataAmountFieldKey)?.key ||
       starThresholdsChanged ||
       starPeriodChanged ||
       xpDecayChanged);
@@ -186,7 +220,7 @@ export function BehaviorFormScreen() {
     setStarValidationError(null);
     const defaultMetadataObj = Object.fromEntries(
       Object.entries(behaviorDefaultMetadata)
-        .filter(([, v]) => v !== '' && v !== '0')
+        .filter(([, v]) => v !== '' && v !== '0' && Number.isFinite(Number(v)))
         .map(([k, v]) => [k, Number(v)]),
     );
     if (isEdit && behavior) {
@@ -201,6 +235,7 @@ export function BehaviorFormScreen() {
         cooldownEnabled,
         private: isPrivate,
         defaultMetadata: defaultMetadataObj,
+        metadataAmountFieldKey: selectedAmountField?.key,
         starThresholds: starsEnabled ? (parsedStars.values ?? undefined) : undefined,
         starPeriod: starsEnabled ? starPeriod : undefined,
         // XP is opt-in. When off, preserve the existing xpDecay config (it's ignored at runtime).
@@ -218,6 +253,7 @@ export function BehaviorFormScreen() {
         cooldownUnit || undefined,
         isPrivate,
         defaultMetadataObj,
+        selectedAmountField?.key,
         starsEnabled ? (parsedStars.values ?? undefined) : undefined,
         starsEnabled ? starPeriod : undefined,
         xpEnabled ? true : undefined,
@@ -281,7 +317,9 @@ export function BehaviorFormScreen() {
             categoryId={categoryId}
             categories={categories}
             defaults={behaviorDefaultMetadata}
+            amountFieldKey={selectedAmountField?.key}
             onChange={setBehaviorDefaultMetadata}
+            onAmountFieldChange={setMetadataAmountFieldKey}
           />
 
           <CheckboxRow
@@ -392,38 +430,116 @@ interface MetadataEditorProps {
   categoryId: string | undefined;
   categories: Category[];
   defaults: Record<string, string>;
+  amountFieldKey: string | undefined;
   onChange: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  onAmountFieldChange: (fieldKey: string) => void;
 }
 
-function MetadataEditor({ categoryId, categories, defaults, onChange }: MetadataEditorProps) {
+function MetadataEditor({
+  categoryId,
+  categories,
+  defaults,
+  amountFieldKey,
+  onChange,
+  onAmountFieldChange,
+}: MetadataEditorProps) {
   const selectedCat = categories.find(c => c.id === categoryId);
-  const fields = selectedCat?.metadataFields;
+  const fields = selectedCat?.metadataFields ?? [];
   if (!fields?.length) return null;
+
+  const amountFields = getAmountMetadataFields(fields);
+  const selectedAmountField = getSelectedAmountMetadataField(fields, amountFieldKey);
+  const manualFields = getManualMetadataFields(fields);
+  const calculatedFields = getCalculatedMetadataFields(fields);
 
   return (
     <View style={styles.defaultMetaSection}>
-      <Text style={styles.defaultMetaLabel}>Default values</Text>
-      {fields.map((field: MetadataField) => (
-        <View
-          key={field.key}
-          style={styles.defaultMetaRow}
-        >
-          <Text style={styles.defaultMetaFieldLabel}>
-            {field.label}
-            {field.unit ? ` (${field.unit})` : ''}
-          </Text>
-          <TextInput
-            style={styles.defaultMetaInput}
-            value={defaults[field.key] ?? ''}
-            onChangeText={v => onChange(prev => ({ ...prev, [field.key]: v.replace(/[^0-9.]/g, '') }))}
-            placeholder="0"
-            placeholderTextColor={Colors.text.dim}
-            keyboardType="decimal-pad"
-            returnKeyType="done"
-            maxLength={8}
-          />
-        </View>
-      ))}
+      {amountFields.length > 0 && (
+        <>
+          <Text style={styles.defaultMetaLabel}>Amount unit</Text>
+          <View style={styles.quantityUnitRow}>
+            {amountFields.map(field => (
+              <Pressable
+                key={field.key}
+                onPress={() => onAmountFieldChange(field.key)}
+                style={[
+                  styles.quantityUnitOption,
+                  selectedAmountField?.key === field.key && styles.quantityUnitOptionActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.quantityUnitOptionText,
+                    selectedAmountField?.key === field.key && styles.quantityUnitOptionTextActive,
+                  ]}
+                >
+                  {formatMetadataFieldLabel(field)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      )}
+
+      {manualFields.length > 0 && (
+        <>
+          <Text style={styles.defaultMetaLabel}>Default values</Text>
+          {manualFields.map((field: MetadataField) => (
+            <MetadataDefaultInput
+              key={field.key}
+              field={field}
+              value={defaults[field.key] ?? ''}
+              label={formatMetadataFieldLabel(field)}
+              onChange={onChange}
+            />
+          ))}
+        </>
+      )}
+
+      {calculatedFields.length > 0 && (
+        <>
+          <Text style={styles.defaultMetaLabel}>Rates per {formatMetadataAmountBasis(selectedAmountField)}</Text>
+          {calculatedFields.map((field: MetadataField) => (
+            <MetadataDefaultInput
+              key={field.key}
+              field={field}
+              value={defaults[field.key] ?? ''}
+              label={field.label}
+              unitLabel={formatMetadataRateUnit(field, selectedAmountField)}
+              onChange={onChange}
+            />
+          ))}
+        </>
+      )}
+    </View>
+  );
+}
+
+interface MetadataDefaultInputProps {
+  field: MetadataField;
+  value: string;
+  label: string;
+  unitLabel?: string;
+  onChange: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+}
+
+function MetadataDefaultInput({ field, value, label, unitLabel, onChange }: MetadataDefaultInputProps) {
+  return (
+    <View style={styles.defaultMetaRow}>
+      <Text style={styles.defaultMetaFieldLabel}>{label}</Text>
+      <View style={styles.defaultMetaInputGroup}>
+        <TextInput
+          style={styles.defaultMetaInput}
+          value={value}
+          onChangeText={v => onChange(prev => ({ ...prev, [field.key]: sanitizeDecimalInput(v) }))}
+          placeholder="0"
+          placeholderTextColor={Colors.text.dim}
+          keyboardType="decimal-pad"
+          returnKeyType="done"
+          maxLength={8}
+        />
+        {unitLabel ? <Text style={styles.defaultMetaUnit}>{unitLabel}</Text> : null}
+      </View>
     </View>
   );
 }
@@ -508,7 +624,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   defaultMetaSection: {
-    gap: 6,
+    gap: 8,
     marginTop: 12,
   },
   defaultMetaLabel: {
@@ -539,5 +655,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     width: 80,
     textAlign: 'right',
+  },
+  defaultMetaInputGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  defaultMetaUnit: {
+    color: Colors.text.faint,
+    fontSize: 12,
+    fontWeight: '600',
+    minWidth: 48,
+  },
+  quantityUnitRow: {
+    flexDirection: 'row',
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.border.default,
+  },
+  quantityUnitOption: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 9,
+    backgroundColor: Colors.bg.card,
+  },
+  quantityUnitOptionActive: {
+    backgroundColor: Colors.text.light,
+  },
+  quantityUnitOptionText: {
+    color: Colors.text.muted,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  quantityUnitOptionTextActive: {
+    color: Colors.bg.primary,
   },
 });
