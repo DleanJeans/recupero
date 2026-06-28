@@ -163,6 +163,25 @@ export function TaskScreen() {
       </View>
 
       <View style={styles.content}>
+        {composerOpen && (
+          <TaskComposer
+            title={title}
+            behaviorQuery={behaviorQuery}
+            stars={stars}
+            behaviors={availableBehaviors}
+            selectedBehaviorId={selectedBehaviorId}
+            onTitleChange={setTitle}
+            onBehaviorQueryChange={setBehaviorQuery}
+            onStarsChange={setStars}
+            onBehaviorSelect={setSelectedBehaviorId}
+            onAdd={handleAddTask}
+            onCancel={() => {
+              resetComposer();
+              setComposerOpen(false);
+            }}
+          />
+        )}
+
         <View style={styles.listHeader}>
           <Text style={styles.sectionTitle}>SCHEDULED</Text>
         </View>
@@ -191,25 +210,8 @@ export function TaskScreen() {
         />
       </View>
 
-      <View style={styles.bottomAction}>
-        {composerOpen ? (
-          <TaskComposer
-            title={title}
-            behaviorQuery={behaviorQuery}
-            stars={stars}
-            behaviors={availableBehaviors}
-            selectedBehaviorId={selectedBehaviorId}
-            onTitleChange={setTitle}
-            onBehaviorQueryChange={setBehaviorQuery}
-            onStarsChange={setStars}
-            onBehaviorSelect={setSelectedBehaviorId}
-            onAdd={handleAddTask}
-            onCancel={() => {
-              resetComposer();
-              setComposerOpen(false);
-            }}
-          />
-        ) : (
+      {!composerOpen && (
+        <View style={styles.bottomAction}>
           <Button
             variant="primary"
             onPress={() => setComposerOpen(true)}
@@ -217,8 +219,8 @@ export function TaskScreen() {
           >
             + Add task
           </Button>
-        )}
-      </View>
+        </View>
+      )}
 
       <BottomNav />
     </SafeAreaView>
