@@ -14,10 +14,10 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../../components/BackButton';
 import { Button } from '../../components/Button';
 import { DatePicker } from '../../components/DatePicker';
+import { SafeAreaView } from '../../components/SafeAreaView';
 import { Text, TextInput } from '../../components/Text';
 import { useBehaviorStore } from '../../store/behaviorStore';
 import type { BehaviorEntry } from '../../types/behavior';

@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../../components/BackButton';
 import { BehaviorIcon } from '../../components/BehaviorIcon';
 import { DatePicker } from '../../components/DatePicker';
+import { SafeAreaView } from '../../components/SafeAreaView';
 import { ScreenTitle } from '../../components/ScreenTitle';
 import { StarRow } from '../../components/StarRow';
 import { Text } from '../../components/Text';

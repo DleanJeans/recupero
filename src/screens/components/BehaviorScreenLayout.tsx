@@ -1,9 +1,9 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '../../components/BackButton';
 import { BehaviorSummary } from '../../components/BehaviorSummary';
 import { fabStyles } from '../../components/Button';
+import { SafeAreaView } from '../../components/SafeAreaView';
 import type { BehaviorEntry } from '../../types/behavior';
 import { Colors } from '../../utils/colors';
 

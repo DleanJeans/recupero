@@ -4,7 +4,7 @@ import 'expo-dev-client';
 import React from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConfettiOverlay } from './src/components/ConfettiOverlay';
 import { useAppFonts } from './src/hooks/useAppFonts';
 
@@ -43,7 +43,7 @@ export default function App() {
       }}
     >
       <KeyboardProvider>
-        <SafeAreaProvider>
+        <SafeAreaProvider initialMetrics={initialWindowMetrics}>
           <NavigationContainer linking={linking}>
             <Stack.Navigator
               screenOptions={{
@@ -53,6 +53,7 @@ export default function App() {
               <Stack.Screen
                 name="Home"
                 component={HomeScreen}
+                options={{ animation: 'none' }}
               />
               <Stack.Screen
                 name="Day"
@@ -61,6 +62,7 @@ export default function App() {
               <Stack.Screen
                 name="Tasks"
                 component={TaskScreen}
+                options={{ animation: 'none' }}
               />
 
               <Stack.Screen
