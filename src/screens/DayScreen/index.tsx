@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { BehaviorIcon } from '../../components/BehaviorIcon';
-import { BottomNav } from '../../components/BottomNav';
 import { DatePicker } from '../../components/DatePicker';
 import { SafeAreaView } from '../../components/SafeAreaView';
 import { ScreenTitle } from '../../components/ScreenTitle';
@@ -141,7 +140,10 @@ export function DayScreen() {
   const isToday = selectedDate === todayStr;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={styles.container}
+      edges={['top', 'left', 'right']}
+    >
       <View style={styles.header}>
         <ScreenTitle>Day</ScreenTitle>
       </View>
@@ -297,8 +299,6 @@ export function DayScreen() {
           })
         )}
       </ScrollView>
-
-      <BottomNav />
     </SafeAreaView>
   );
 }

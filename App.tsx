@@ -1,10 +1,12 @@
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import 'expo-dev-client';
-import React from 'react';
+import React, { useCallback, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context';
+import { BottomNav, type BottomNavRoute } from './src/components/BottomNav';
 import { ConfettiOverlay } from './src/components/ConfettiOverlay';
 import { useAppFonts } from './src/hooks/useAppFonts';
 
@@ -14,8 +16,10 @@ import { DayScreen } from './src/screens/DayScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { TaskScreen } from './src/screens/TaskScreen';
+import type { RootStackParamList } from './src/types/navigation';
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
+const BOTTOM_NAV_ROUTES = new Set<string>(['Home', 'Day', 'Tasks']);
 
 const linking = {
   prefixes: ['exp+recupero://'],
@@ -31,8 +35,30 @@ const linking = {
   },
 };
 
+function isBottomNavRoute(routeName: string | undefined): routeName is BottomNavRoute {
+  return routeName != null && BOTTOM_NAV_ROUTES.has(routeName);
+}
+
 export default function App() {
   const fontsReady = useAppFonts();
+  const navigationRef = useNavigationContainerRef<RootStackParamList>();
+  const [activeRouteName, setActiveRouteName] = useState<string | undefined>();
+
+  const syncActiveRoute = useCallback(() => {
+    setActiveRouteName(navigationRef.getCurrentRoute()?.name);
+  }, [navigationRef]);
+
+  const handleBottomNavNavigate = useCallback(
+    (routeName: BottomNavRoute) => {
+      setActiveRouteName(routeName);
+      requestAnimationFrame(() => {
+        if (navigationRef.isReady()) {
+          navigationRef.navigate(routeName);
+        }
+      });
+    },
+    [navigationRef],
+  );
 
   if (!fontsReady) return null;
 
@@ -44,41 +70,56 @@ export default function App() {
     >
       <KeyboardProvider>
         <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-          <NavigationContainer linking={linking}>
-            <Stack.Navigator
-              screenOptions={{
-                headerShown: false,
-              }}
-            >
-              <Stack.Screen
-                name="Home"
-                component={HomeScreen}
-                options={{ animation: 'none' }}
-              />
-              <Stack.Screen
-                name="Day"
-                component={DayScreen}
-                options={{ animation: 'none' }}
-              />
-              <Stack.Screen
-                name="Tasks"
-                component={TaskScreen}
-                options={{ animation: 'none' }}
-              />
+          <NavigationContainer
+            ref={navigationRef}
+            linking={linking}
+            onReady={syncActiveRoute}
+            onStateChange={syncActiveRoute}
+          >
+            <View style={styles.appShell}>
+              <View style={styles.navigator}>
+                <Stack.Navigator
+                  screenOptions={{
+                    headerShown: false,
+                  }}
+                >
+                  <Stack.Screen
+                    name="Home"
+                    component={HomeScreen}
+                    options={{ animation: 'ios_from_left' }}
+                  />
+                  <Stack.Screen
+                    name="Day"
+                    component={DayScreen}
+                    options={{ animation: 'fade_from_bottom' }}
+                  />
+                  <Stack.Screen
+                    name="Tasks"
+                    component={TaskScreen}
+                    options={{ animation: 'ios_from_right' }}
+                  />
 
-              <Stack.Screen
-                name="BehaviorLog"
-                component={BehaviorLogScreen}
-              />
-              <Stack.Screen
-                name="BehaviorForm"
-                component={BehaviorFormScreen}
-              />
-              <Stack.Screen
-                name="Settings"
-                component={SettingsScreen}
-              />
-            </Stack.Navigator>
+                  <Stack.Screen
+                    name="BehaviorLog"
+                    component={BehaviorLogScreen}
+                  />
+                  <Stack.Screen
+                    name="BehaviorForm"
+                    component={BehaviorFormScreen}
+                  />
+                  <Stack.Screen
+                    name="Settings"
+                    component={SettingsScreen}
+                  />
+                </Stack.Navigator>
+              </View>
+              {isBottomNavRoute(activeRouteName) && (
+                <BottomNav
+                  activeRoute={activeRouteName}
+                  onNavigate={handleBottomNavNavigate}
+                />
+              )}
+            </View>
           </NavigationContainer>
           <ConfettiOverlay />
         </SafeAreaProvider>
@@ -86,3 +127,12 @@ export default function App() {
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  appShell: {
+    flex: 1,
+  },
+  navigator: {
+    flex: 1,
+  },
+});

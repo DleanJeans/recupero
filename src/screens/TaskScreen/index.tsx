@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
-import { BottomNav } from '../../components/BottomNav';
 import { Button } from '../../components/Button';
 import { DatePicker } from '../../components/DatePicker';
 import { SafeAreaView } from '../../components/SafeAreaView';
@@ -124,7 +123,10 @@ export function TaskScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={styles.container}
+      edges={['top', 'left', 'right']}
+    >
       <View style={styles.header}>
         <ScreenTitle>Tasks</ScreenTitle>
       </View>
@@ -243,8 +245,6 @@ export function TaskScreen() {
           </Button>
         </View>
       )}
-
-      <BottomNav />
     </SafeAreaView>
   );
 }

@@ -3,7 +3,6 @@ import { useIsFocused, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { startTransition, useCallback, useEffect, useMemo, useState } from 'react';
 import { SectionList, StyleSheet, View } from 'react-native';
-import { BottomNav } from '../../components/BottomNav';
 import { Button } from '../../components/Button';
 import { CategoryFilter } from '../../components/CategoryFilter';
 import { SafeAreaView } from '../../components/SafeAreaView';
@@ -67,7 +66,10 @@ export function HomeScreen() {
   const [showXp, setShowXp] = useState(true);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={styles.container}
+      edges={['top', 'left', 'right']}
+    >
       <HomeHeader
         showXp={showXp}
         onToggleXp={() => setShowXp(v => !v)}
@@ -117,7 +119,6 @@ export function HomeScreen() {
       >
         + Add behavior
       </Button>
-      <BottomNav />
     </SafeAreaView>
   );
 }
@@ -328,7 +329,7 @@ const styles = StyleSheet.create({
     paddingBottom: 140,
   },
   addButton: {
-    bottom: 92,
+    bottom: 16,
   },
   empty: {
     color: Colors.text.faint,

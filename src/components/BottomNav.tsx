@@ -1,13 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { RootStackParamList } from '../types/navigation';
 import { Colors } from '../utils/colors';
 import { Text } from './Text';
-
-type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const ITEMS: Array<{
   route: keyof Pick<RootStackParamList, 'Home' | 'Day' | 'Tasks'>;
@@ -19,22 +17,68 @@ const ITEMS: Array<{
   { route: 'Day', label: 'Day', icon: 'calendar-outline', activeIcon: 'calendar' },
   { route: 'Tasks', label: 'Tasks', icon: 'checkmark-circle-outline', activeIcon: 'checkmark-circle' },
 ];
+export type BottomNavRoute = (typeof ITEMS)[number]['route'];
 
-export function BottomNav() {
-  const navigation = useNavigation<NavProp>();
-  const route = useRoute();
+const BAR_PADDING = 4;
+const WRAP_BOTTOM_PADDING = 10;
+const HIGHLIGHT_DURATION_MS = 400;
+
+interface BottomNavProps {
+  activeRoute: BottomNavRoute;
+  onNavigate: (route: BottomNavRoute) => void;
+}
+
+export function BottomNav({ activeRoute, onNavigate }: BottomNavProps) {
+  const insets = useSafeAreaInsets();
+  const [barWidth, setBarWidth] = useState(0);
+  const activeIndex = Math.max(
+    0,
+    ITEMS.findIndex(item => item.route === activeRoute),
+  );
+  const itemWidth = barWidth > 0 ? (barWidth - BAR_PADDING * 2) / ITEMS.length : 0;
+  const highlightX = useSharedValue(0);
+  const highlightPositioned = useRef(false);
+
+  useEffect(() => {
+    if (itemWidth <= 0) return;
+    const nextX = activeIndex * itemWidth;
+    if (!highlightPositioned.current) {
+      highlightX.value = nextX;
+      highlightPositioned.current = true;
+      return;
+    }
+    highlightX.value = withTiming(nextX, { duration: HIGHLIGHT_DURATION_MS });
+  }, [activeIndex, highlightX, itemWidth]);
+
+  const highlightStyle = useAnimatedStyle(() => ({
+    width: itemWidth,
+    transform: [{ translateX: highlightX.value }],
+  }));
+
+  const startHighlightAnimation = (index: number) => {
+    if (itemWidth <= 0) return;
+    highlightPositioned.current = true;
+    highlightX.value = withTiming(index * itemWidth, { duration: HIGHLIGHT_DURATION_MS });
+  };
 
   return (
-    <View style={styles.wrap}>
-      <View style={styles.bar}>
-        {ITEMS.map(item => {
-          const active = route.name === item.route;
+    <View style={[styles.wrap, { paddingBottom: insets.bottom + WRAP_BOTTOM_PADDING }]}>
+      <View
+        style={styles.bar}
+        onLayout={event => setBarWidth(event.nativeEvent.layout.width)}
+      >
+        {itemWidth > 0 && <Animated.View style={[styles.highlight, highlightStyle]} />}
+        {ITEMS.map((item, index) => {
+          const active = activeRoute === item.route;
           return (
             <Pressable
               key={item.route}
-              style={({ pressed }) => [styles.item, active && styles.itemActive, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.item, pressed && styles.pressed]}
               onPress={() => {
-                if (!active) navigation.navigate(item.route);
+                if (!active) {
+                  startHighlightAnimation(index);
+                  onNavigate(item.route);
+                }
               }}
               accessibilityRole="button"
               accessibilityLabel={item.label}
@@ -67,6 +111,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border.default,
     padding: 4,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  highlight: {
+    position: 'absolute',
+    top: BAR_PADDING,
+    bottom: BAR_PADDING,
+    left: BAR_PADDING,
+    borderRadius: 10,
+    backgroundColor: Colors.bg.input,
   },
   item: {
     flex: 1,
@@ -75,9 +129,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
-  },
-  itemActive: {
-    backgroundColor: Colors.bg.input,
+    zIndex: 1,
   },
   pressed: {
     opacity: 0.72,
