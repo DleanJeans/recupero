@@ -1,16 +1,15 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
 import Animated, {
   cancelAnimation,
-  Easing,
   useAnimatedStyle,
   useSharedValue,
-  withRepeat,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { Colors } from '../utils/colors';
+import { buildStripePattern } from '../utils/stripeProgressUtils';
 
 interface Props {
   /** 0 to 1. Clamped before rendering. */
@@ -28,9 +27,9 @@ const STRIPE_COLOR = 'rgba(255, 255, 255, 0.28)';
 const STRIPE_GAP_COLOR = 'rgba(255, 255, 255, 0)';
 
 /** One stripe + one gap in pixels. The gradient repeats this period; the
- *  animation translates by exactly one period for a seamless loop. */
+ *  one-shot sweep moves by two periods so the pattern visibly advances. */
 const STRIPE_PERIOD = 10;
-const STRIPE_LOOP_DURATION_MS = 1000;
+const STRIPE_SWEEP_DURATION_MS = 450;
 
 /** Gradient is a square sized to the widest possible bar (screen width) plus
  *  one stripe period, rounded up to an integer number of periods so the
@@ -44,49 +43,30 @@ const N_PERIODS = GRADIENT_SIZE / STRIPE_PERIOD;
  *  animated bars in the summary feel consistent when they move together. */
 const RATIO_SPRING = { damping: 18, stiffness: 120, mass: 0.8 } as const;
 
-/** Build the colors/locations arrays that produce a diagonal stripe pattern in
- *  a single `LinearGradient`. Each period is half-stripe, half-gap with hard
- *  transitions (location i === location i+1). */
-function buildStripePattern(periods: number): {
-  colors: string[];
-  locations: number[];
-} {
-  const colors: string[] = [];
-  const locations: number[] = [];
-  const stripeFraction = 0.5 / periods; // half of each period is the stripe
-  for (let i = 0; i < periods; i++) {
-    const start = i / periods;
-    const stripeEnd = start + stripeFraction;
-    const periodEnd = (i + 1) / periods;
-    colors.push(STRIPE_COLOR);
-    locations.push(start);
-    colors.push(STRIPE_COLOR);
-    locations.push(stripeEnd);
-    colors.push(STRIPE_GAP_COLOR);
-    locations.push(stripeEnd);
-    colors.push(STRIPE_GAP_COLOR);
-    locations.push(periodEnd);
-  }
-  return { colors, locations };
-}
-
 /** Animated progress bar: solid fill clipped to `ratio` width, with a
- *  diagonally-striped overlay that scrolls continuously to signal an
- *  ongoing process. Used as the visual base for both DecayBar and CooldownBar. */
+ *  diagonally-striped overlay that briefly sweeps when progress changes. Used
+ *  as the visual base for both DecayBar and CooldownBar. */
 export function StripedProgressBar({ ratio, color, direction = -1, height = 3 }: Props) {
   const safeRatio = Math.max(0, Math.min(1, ratio));
-  // Stripes signal an ongoing process; skip the overlay (and its native-loop
-  // animation) once the bar is full — the solid fill already says "done".
+  // Stripes signal an ongoing process; skip the overlay once the bar is full
+  // because the solid fill already says "done".
   const showStripes = safeRatio < 1;
-  const stripePattern = useMemo(() => buildStripePattern(N_PERIODS), []);
+  const stripePattern = useMemo(
+    () =>
+      buildStripePattern({
+        periods: N_PERIODS,
+        stripeColor: STRIPE_COLOR,
+        gapColor: STRIPE_GAP_COLOR,
+      }),
+    [],
+  );
 
   // Smoothly transition width when the prop changes (e.g., a fresh log
   // resets cooldown ratio from ~1 down to a small value). Springs match
   // XpBar so the summary feels coherent when several bars move together.
   const animatedRatio = useSharedValue(safeRatio);
-  useEffect(() => {
-    animatedRatio.value = withSpring(safeRatio, RATIO_SPRING);
-  }, [safeRatio, animatedRatio]);
+  const previousRatio = useRef(safeRatio);
+  const hasMounted = useRef(false);
 
   // Direction multiplier: 1 scrolls left-to-right, -1 right-to-left.
   // Driving direction via the animation's toValue (not a `scaleX: -1`
@@ -97,25 +77,33 @@ export function StripedProgressBar({ ratio, color, direction = -1, height = 3 }:
   const animateTo = direction > 0 ? 0 : movedWidth;
 
   useEffect(() => {
-    if (!showStripes) {
-      cancelAnimation(translateX);
+    animatedRatio.value = withSpring(safeRatio, RATIO_SPRING);
+
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      previousRatio.current = safeRatio;
       return;
     }
-    // Reset to the start of the period before each repeat so the loop
-    // boundary is invisible (the gradient is periodic in STRIPE_PERIOD * 2).
+
+    if (previousRatio.current === safeRatio) {
+      return;
+    }
+
+    previousRatio.current = safeRatio;
+
+    if (!showStripes) {
+      cancelAnimation(translateX);
+      translateX.value = direction > 0 ? -movedWidth : 0;
+      return;
+    }
+
+    // A short sweep makes new logs feel responsive without leaving every
+    // visible bar in a perpetual idle animation.
+    cancelAnimation(translateX);
     translateX.value = direction > 0 ? -movedWidth : 0;
-    translateX.value = withRepeat(
-      withTiming(animateTo, {
-        duration: STRIPE_LOOP_DURATION_MS,
-        // Easing.linear is critical: any non-linear easing decelerates at
-        // every loop boundary, which reads as a visible stutter.
-        easing: Easing.linear,
-      }),
-      -1,
-      false,
-    );
+    translateX.value = withTiming(animateTo, { duration: STRIPE_SWEEP_DURATION_MS });
     return () => cancelAnimation(translateX);
-  }, [showStripes, animateTo, direction, movedWidth, translateX]);
+  }, [safeRatio, showStripes, animateTo, direction, movedWidth, animatedRatio, translateX]);
 
   const fillStyle = useAnimatedStyle(() => ({
     width: `${animatedRatio.value * 100}%`,
