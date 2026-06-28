@@ -221,7 +221,6 @@ interface SectionHeaderProps {
   selectedCategoryId: string | null;
 }
 function SectionHeader({ title, behaviors, selectedCategoryId }: SectionHeaderProps) {
-  const { categories } = useBehaviorStore();
   const today = toDateString(new Date());
   const yesterdayStr = toDateString(yesterday());
   const sectionDate = (() => {
@@ -229,11 +228,6 @@ function SectionHeader({ title, behaviors, selectedCategoryId }: SectionHeaderPr
     if (title === Label.YESTERDAY) return yesterdayStr;
     return null;
   })();
-  const metaCategory =
-    (title === Label.TODAY || title === Label.YESTERDAY) && selectedCategoryId !== null
-      ? categories.find(c => c.id === selectedCategoryId && c.metadataFields?.length)
-      : undefined;
-  const totals = metaCategory ? getDailyMetadataTotals(behaviors, metaCategory, sectionDate ?? today) : null;
 
   const sectionStars = useMemo(() => {
     if (!sectionDate) return null;
@@ -260,22 +254,6 @@ function SectionHeader({ title, behaviors, selectedCategoryId }: SectionHeaderPr
           </View>
         )}
       </View>
-      {totals && metaCategory && (
-        <View style={styles.sectionTotals}>
-          {metaCategory.metadataFields?.map(field => {
-            const val = totals?.[field.key];
-            if (val == null) return null;
-            return (
-              <Text
-                key={field.key}
-                style={styles.sectionTotalValue}
-              >
-                {field.label}: {Number(val).toFixed(2)} {field.unit ?? ''}
-              </Text>
-            );
-          })}
-        </View>
-      )}
     </View>
   );
 }
