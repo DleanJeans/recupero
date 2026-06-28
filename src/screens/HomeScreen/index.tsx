@@ -230,10 +230,10 @@ function SectionHeader({ title, behaviors, selectedCategoryId }: SectionHeaderPr
     return null;
   })();
   const metaCategory =
-    title === Label.TODAY && selectedCategoryId !== null
+    (title === Label.TODAY || title === Label.YESTERDAY) && selectedCategoryId !== null
       ? categories.find(c => c.id === selectedCategoryId && c.metadataFields?.length)
       : undefined;
-  const totals = metaCategory ? getDailyMetadataTotals(behaviors, metaCategory, today) : null;
+  const totals = metaCategory ? getDailyMetadataTotals(behaviors, metaCategory, sectionDate ?? today) : null;
 
   const sectionStars = useMemo(() => {
     if (!sectionDate) return null;
@@ -270,8 +270,7 @@ function SectionHeader({ title, behaviors, selectedCategoryId }: SectionHeaderPr
                 key={field.key}
                 style={styles.sectionTotalValue}
               >
-                {field.label} {val}
-                {field.unit ?? ''}
+                {field.label}: {Number(val).toFixed(2)} {field.unit ?? ''}
               </Text>
             );
           })}
@@ -354,8 +353,8 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   sectionTotals: {
-    flexDirection: 'row',
-    gap: 8,
+    flexDirection: 'column',
+    gap: 4,
   },
   sectionTotalValue: {
     color: Colors.text.faint,
