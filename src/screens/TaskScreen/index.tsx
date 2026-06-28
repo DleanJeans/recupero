@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { BehaviorIcon } from '../../components/BehaviorIcon';
 import { BottomNav } from '../../components/BottomNav';
 import { Button } from '../../components/Button';
@@ -153,12 +153,7 @@ export function TaskScreen() {
         )}
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        contentInsetAdjustmentBehavior="automatic"
-      >
+      <View style={styles.content}>
         <TaskComposer
           mode={mode}
           title={title}
@@ -172,27 +167,32 @@ export function TaskScreen() {
           onAdd={handleAddTask}
         />
 
-        <View style={styles.listSection}>
+        <View style={styles.listHeader}>
           <Text style={styles.sectionTitle}>SCHEDULED</Text>
-          {dayTasks.length === 0 ? (
-            <Text style={styles.empty}>No tasks for this date.</Text>
-          ) : (
-            dayTasks.map(task => {
-              const behavior = task.behaviorId ? behaviors.find(item => item.id === task.behaviorId) : undefined;
-              return (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  behavior={behavior}
-                  selectedDate={selectedDate}
-                  onToggle={() => toggleTaskCompletion(task.id, selectedDate)}
-                  onRemove={() => confirmRemove(task)}
-                />
-              );
-            })
-          )}
         </View>
-      </ScrollView>
+
+        <FlatList
+          data={dayTasks}
+          keyExtractor={task => task.id}
+          style={styles.scheduledList}
+          contentContainerStyle={[styles.scheduledContent, dayTasks.length === 0 && styles.scheduledEmptyContent]}
+          keyboardShouldPersistTaps="handled"
+          contentInsetAdjustmentBehavior="automatic"
+          ListEmptyComponent={<Text style={styles.empty}>No tasks for this date.</Text>}
+          renderItem={({ item: task }) => {
+            const behavior = task.behaviorId ? behaviors.find(item => item.id === task.behaviorId) : undefined;
+            return (
+              <TaskCard
+                task={task}
+                behavior={behavior}
+                selectedDate={selectedDate}
+                onToggle={() => toggleTaskCompletion(task.id, selectedDate)}
+                onRemove={() => confirmRemove(task)}
+              />
+            );
+          }}
+        />
+      </View>
 
       <BottomNav />
     </SafeAreaView>
@@ -462,7 +462,7 @@ function TaskCard({ task, behavior, selectedDate, onToggle, onRemove }: TaskCard
       >
         <Ionicons
           name={complete ? 'checkmark-circle' : 'ellipse-outline'}
-          size={26}
+          size={22}
           color={complete ? Colors.status.successLight : Colors.text.faint}
         />
         <View style={styles.taskTextStack}>
@@ -498,7 +498,7 @@ function TaskCard({ task, behavior, selectedDate, onToggle, onRemove }: TaskCard
       >
         <Ionicons
           name="trash-outline"
-          size={19}
+          size={18}
           color={Colors.text.faint}
         />
       </Button>
@@ -579,14 +579,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  scroll: {
+  content: {
     flex: 1,
-  },
-  scrollContent: {
     paddingHorizontal: 16,
     paddingTop: 4,
-    paddingBottom: 18,
-    gap: 18,
+    gap: 10,
   },
   composer: {
     backgroundColor: Colors.bg.card,
@@ -649,6 +646,7 @@ const styles = StyleSheet.create({
   },
   behaviorList: {
     gap: 6,
+    maxHeight: 220,
   },
   behaviorRow: {
     flexDirection: 'row',
@@ -695,8 +693,19 @@ const styles = StyleSheet.create({
   behaviorAddButton: {
     flex: 1,
   },
-  listSection: {
-    gap: 8,
+  listHeader: {
+    paddingTop: 4,
+  },
+  scheduledList: {
+    flex: 1,
+  },
+  scheduledContent: {
+    gap: 6,
+    paddingBottom: 14,
+  },
+  scheduledEmptyContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   sectionTitle: {
     color: Colors.text.faint,
@@ -710,7 +719,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.bg.card,
-    borderRadius: 12,
+    borderRadius: 10,
     overflow: 'hidden',
   },
   taskCardComplete: {
@@ -720,12 +729,13 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 14,
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
   },
   taskTextStack: {
     flex: 1,
-    gap: 6,
+    gap: 3,
   },
   taskTitleRow: {
     flexDirection: 'row',
@@ -734,7 +744,7 @@ const styles = StyleSheet.create({
   },
   taskTitle: {
     color: Colors.text.primary,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     flex: 1,
   },
@@ -749,7 +759,7 @@ const styles = StyleSheet.create({
   },
   taskMeta: {
     color: Colors.text.faint,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   taskStars: {
@@ -764,7 +774,7 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   removeButton: {
-    width: 48,
+    width: 42,
     height: '100%',
   },
   empty: {
