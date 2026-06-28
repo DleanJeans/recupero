@@ -14,7 +14,8 @@ export interface CategoryChipsProps {
   onChange: (id: CategoryId) => void;
   onLongPress?: (category: Category) => void;
   showAll?: boolean;
-  horizontal?: boolean;
+  /** Render as a horizontal scrollable filter bar (default: false) */
+  bar?: boolean;
   /** Count of behaviors per category. */
   behaviorCounts?: Record<string, number>;
   /** Total behavior count, shown on the "All" chip when `showAll` is true. */
@@ -31,7 +32,7 @@ export function CategoryChips({
   onChange,
   onLongPress,
   showAll = false,
-  horizontal = false,
+  bar = false,
   behaviorCounts,
   allCount,
   forceShowNames = false,
@@ -56,15 +57,13 @@ export function CategoryChips({
             active={active}
             onPress={() => onChange(item.id)}
             onLongPress={item.id && onLongPress ? () => onLongPress(item as Category) : undefined}
-            style={[horizontal ? styles.horizontalChip : styles.chip, horizontal && styles.chipHorizontal]}
+            style={[bar ? styles.barChip : styles.chip, bar && styles.chipHorizontal]}
           >
             <Text style={[styles.chipEmoji, !active && styles.chipEmojiInactive]}>{item.emoji ?? ''}</Text>
             {(!hideNames || (showAll && item.id == null)) && (
               <Text style={[styles.chipText, active && styles.chipTextActive]}>{item.name}</Text>
             )}
-            {count != null && horizontal && (
-              <Text style={[styles.chipCount, active && styles.chipCountActive]}>{count}</Text>
-            )}
+            {count != null && bar && <Text style={[styles.chipCount, active && styles.chipCountActive]}>{count}</Text>}
           </Button>
         );
       })}
@@ -74,7 +73,7 @@ export function CategoryChips({
 
 const styles = StyleSheet.create({
   chip: { backgroundColor: 'transparent', paddingHorizontal: 10, paddingVertical: 6, gap: 4 },
-  horizontalChip: {
+  barChip: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.bg.card,

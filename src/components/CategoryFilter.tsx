@@ -18,7 +18,7 @@ export function CategoryFilter({ selectedCategoryId, onSelectCategory }: Categor
         categories={categories}
         selectedId={selectedCategoryId}
         onChange={id => onSelectCategory(id ?? null)}
-        horizontal
+        bar
         showAll
         behaviors={behaviors}
         leadingAccessory={<ToggleNamesButton />}

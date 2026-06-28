@@ -16,8 +16,8 @@ interface CategoryPickerProps {
   categories: Category[];
   selectedId: CategoryId;
   onChange: (id: CategoryId) => void;
-  /** Show as horizontal scrollable filter bar (default: false) */
-  horizontal?: boolean;
+  /** Render as a horizontal scrollable filter bar (default: false) */
+  bar?: boolean;
   /** Show "All" option instead of "None" */
   showAll?: boolean;
   /** External long-press hook (e.g. analytics). Internal edit flow is also triggered. */
@@ -40,7 +40,7 @@ export function CategoryPicker({
   categories,
   selectedId,
   onChange,
-  horizontal = false,
+  bar = false,
   showAll = false,
   onLongPress,
   behaviors,
@@ -151,10 +151,10 @@ export function CategoryPicker({
   const addButtonProps = {
     isOpen: isFormOpen,
     onPress: toggleForm,
-    style: styles.horizontalChip,
+    style: styles.barChip,
   };
 
-  if (horizontal) {
+  if (bar) {
     return (
       <>
         <ScrollView
@@ -163,10 +163,7 @@ export function CategoryPicker({
           contentContainerStyle={styles.scrollContent}
         >
           {leadingAccessory}
-          <CategoryChips
-            horizontal
-            {...chipsProps}
-          />
+          <CategoryChips bar {...chipsProps} />
           <AddCategoryButton {...addButtonProps} />
         </ScrollView>
         {isFormOpen && <View style={{ marginHorizontal: 16 }}>
@@ -205,5 +202,5 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   scrollContent: { paddingHorizontal: 16, gap: 8, paddingVertical: 4 },
-  horizontalChip: { paddingHorizontal: 8 },
+  barChip: { paddingHorizontal: 8 },
 });
