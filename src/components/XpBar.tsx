@@ -25,9 +25,17 @@ export function XpBar({ logCount, color = Colors.type.neutral }: XpBarProps) {
 
   const animatedProgress = useSharedValue(progress);
   const prevLevel = useRef(level);
+  const hasMounted = useRef(false);
   const glowOpacity = useSharedValue(0);
 
   useEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      animatedProgress.value = progress;
+      prevLevel.current = level;
+      return;
+    }
+
     animatedProgress.value = withSpring(progress, {
       damping: 18,
       stiffness: 120,

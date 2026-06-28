@@ -77,11 +77,10 @@ export function StripedProgressBar({ ratio, color, direction = -1, height = 3 }:
   const animateTo = direction > 0 ? 0 : movedWidth;
 
   useEffect(() => {
-    animatedRatio.value = withSpring(safeRatio, RATIO_SPRING);
-
     if (!hasMounted.current) {
       hasMounted.current = true;
       previousRatio.current = safeRatio;
+      animatedRatio.value = safeRatio;
       return;
     }
 
@@ -90,6 +89,7 @@ export function StripedProgressBar({ ratio, color, direction = -1, height = 3 }:
     }
 
     previousRatio.current = safeRatio;
+    animatedRatio.value = withSpring(safeRatio, RATIO_SPRING);
 
     if (!showStripes) {
       cancelAnimation(translateX);

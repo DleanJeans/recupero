@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { BehaviorEntry } from '../types/behavior';
 import { getBehaviorTypeColor } from '../utils/behaviorTypeUtils';
@@ -30,8 +30,14 @@ interface Props {
  *  icon column + info section (name, XpBar, CooldownBar, DecayBar).
  *  Card and headers use the same body — the only difference is the title
  *  font size, controlled by `titleSize`. */
-export function BehaviorSummary({ behavior, showCategory, dateStr, titleOverride, titleSize = 'card' }: Props) {
-  const [, setTick] = useState(0);
+export const BehaviorSummary = React.memo(function BehaviorSummary({
+  behavior,
+  showCategory,
+  dateStr,
+  titleOverride,
+  titleSize = 'card',
+}: Props) {
+  const [tick, setTick] = useState(0);
 
   // Re-render every minute so "2h ago" / CooldownBar stay current.
   useEffect(() => {
@@ -40,6 +46,8 @@ export function BehaviorSummary({ behavior, showCategory, dateStr, titleOverride
   }, []);
 
   const isHeader = titleSize === 'header';
+  const effectiveLogCount = useMemo(() => getEffectiveLogCount(behavior), [behavior, tick]);
+  const behaviorColor = useMemo(() => getBehaviorTypeColor(behavior.type), [behavior.type]);
 
   return (
     <View style={styles.body}>
@@ -63,20 +71,18 @@ export function BehaviorSummary({ behavior, showCategory, dateStr, titleOverride
         />
         {behavior.xpEnabled && (
           <XpBar
-            logCount={getEffectiveLogCount(behavior)}
-            color={getBehaviorTypeColor(behavior.type)}
+            logCount={effectiveLogCount}
+            color={behaviorColor}
           />
         )}
         <View style={styles.elapsedRow}>
           <CooldownBar behavior={behavior} />
         </View>
-        {behavior.xpEnabled && behavior.xpDecay && getEffectiveLogCount(behavior) > 0 && (
-          <DecayBar behavior={behavior} />
-        )}
+        {behavior.xpEnabled && behavior.xpDecay && effectiveLogCount > 0 && <DecayBar behavior={behavior} />}
       </View>
     </View>
   );
-}
+});
 
 interface BehaviorTitleProps {
   behavior: BehaviorEntry;

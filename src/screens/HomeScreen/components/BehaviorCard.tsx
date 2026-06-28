@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useRef, useState } from 'react';
-import { Alert, type GestureResponderEvent, Pressable, StyleSheet, View } from 'react-native';
+import React, { useCallback, useRef } from 'react';
+import { Alert, type GestureResponderEvent, type LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { BehaviorSummary } from '../../../components/BehaviorSummary';
 import { SwipeDeleteButton, SwipeEditButton } from '../../../components/SwipeActionButton';
@@ -21,13 +21,13 @@ interface Props {
   dateStr?: string;
 }
 
-export function BehaviorCard({ behavior, showCategory, dateStr }: Props) {
+export const BehaviorCard = React.memo(function BehaviorCard({ behavior, showCategory, dateStr }: Props) {
   const navigation = useNavigation<NavProp>();
-  const { removeBehavior } = useBehaviorStore();
+  const removeBehavior = useBehaviorStore(s => s.removeBehavior);
   const swipeableRef = useRef<Swipeable>(null);
-  const [width, setWidth] = useState(0);
+  const contentWidth = useRef(0);
 
-  const handleRemove = () => {
+  const handleRemove = useCallback(() => {
     swipeableRef.current?.close();
     Alert.alert('Remove Behavior', `Remove "${behavior.name}"?`, [
       { text: 'Cancel', style: 'cancel' },
@@ -37,31 +37,53 @@ export function BehaviorCard({ behavior, showCategory, dateStr }: Props) {
         onPress: () => removeBehavior(behavior.id),
       },
     ]);
-  };
+  }, [behavior.id, behavior.name, removeBehavior]);
 
-  const handlePress = (e: GestureResponderEvent) => {
-    const mode = e.nativeEvent.locationX < width / 2 ? 'details' : 'log';
-    navigation.navigate('BehaviorLog', { behaviorId: behavior.id, initialMode: mode });
-  };
+  const handlePress = useCallback(
+    (e: GestureResponderEvent) => {
+      const mode = e.nativeEvent.locationX < contentWidth.current / 2 ? 'details' : 'log';
+      navigation.navigate('BehaviorLog', { behaviorId: behavior.id, initialMode: mode });
+    },
+    [behavior.id, navigation],
+  );
 
-  const handleEdit = () => {
+  const handleLayout = useCallback((e: LayoutChangeEvent) => {
+    contentWidth.current = e.nativeEvent.layout.width;
+  }, []);
+
+  const handleEdit = useCallback(() => {
     swipeableRef.current?.close();
     navigation.navigate('BehaviorForm', { behaviorId: behavior.id });
-  };
+  }, [behavior.id, navigation]);
+
+  const renderLeftActions = useCallback(() => <SwipeDeleteButton onPress={handleRemove} />, [handleRemove]);
+
+  const renderRightActions = useCallback(() => <SwipeEditButton onPress={handleEdit} />, [handleEdit]);
+
+  const handlePressFallback = useCallback(
+    (e: GestureResponderEvent) => {
+      if (contentWidth.current === 0) {
+        navigation.navigate('BehaviorLog', { behaviorId: behavior.id, initialMode: 'log' });
+        return;
+      }
+      handlePress(e);
+    },
+    [behavior.id, handlePress, navigation],
+  );
 
   return (
     <Swipeable
       ref={swipeableRef}
-      renderLeftActions={() => <SwipeDeleteButton onPress={handleRemove} />}
-      renderRightActions={() => <SwipeEditButton onPress={handleEdit} />}
+      renderLeftActions={renderLeftActions}
+      renderRightActions={renderRightActions}
       overshootLeft={false}
       overshootRight={false}
     >
       <View style={styles.card}>
         <Pressable
           style={styles.content}
-          onPress={handlePress}
-          onLayout={e => setWidth(e.nativeEvent.layout.width)}
+          onPress={handlePressFallback}
+          onLayout={handleLayout}
         >
           <BehaviorSummary
             behavior={behavior}
@@ -72,7 +94,7 @@ export function BehaviorCard({ behavior, showCategory, dateStr }: Props) {
       </View>
     </Swipeable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

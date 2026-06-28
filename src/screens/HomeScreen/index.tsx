@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { SectionList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
@@ -12,7 +12,7 @@ import { useBehaviorStore } from '../../store/behaviorStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import type { BehaviorEntry } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
-import { getDailyMetadataTotals, groupBehaviorsByRecency } from '../../utils/behaviorUtils';
+import { groupBehaviorsByRecency } from '../../utils/behaviorUtils';
 import { Colors } from '../../utils/colors';
 import { toDateString, yesterday } from '../../utils/dateUtils';
 import { getTotalStarsForDate } from '../../utils/starUtils';
@@ -27,7 +27,8 @@ import { TypeXpBar } from './components/TypeXpBar';
 export function HomeScreen() {
   useBackGuard();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { behaviors, categories } = useBehaviorStore();
+  const behaviors = useBehaviorStore(s => s.behaviors);
+  const categories = useBehaviorStore(s => s.categories);
   const hidePrivate = useSettingsStore(s => s.hidePrivate);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -175,54 +176,73 @@ interface BehaviorListProps {
   selectedCategoryId: string | null;
   searchQuery?: string;
 }
-function BehaviorList({ behaviors, selectedCategoryId, searchQuery }: BehaviorListProps) {
+const BehaviorList = React.memo(function BehaviorList({
+  behaviors,
+  selectedCategoryId,
+  searchQuery,
+}: BehaviorListProps) {
   const sections = useMemo(() => groupBehaviorsByRecency(behaviors), [behaviors]);
-  const todayStr = toDateString(new Date());
-  const yesterdayStr = toDateString(yesterday());
-  const dateForSection = (title: string): string | undefined => {
-    if (title === Label.TODAY) return todayStr;
-    if (title === Label.YESTERDAY) return yesterdayStr;
-    return undefined;
-  };
+  const todayStr = useMemo(() => toDateString(new Date()), []);
+  const yesterdayStr = useMemo(() => toDateString(yesterday()), []);
+  const dateForSection = useCallback(
+    (title: string): string | undefined => {
+      if (title === Label.TODAY) return todayStr;
+      if (title === Label.YESTERDAY) return yesterdayStr;
+      return undefined;
+    },
+    [todayStr, yesterdayStr],
+  );
   const emptyMessage = (() => {
     if (searchQuery) return `No behaviors matching "${searchQuery}".`;
     if (selectedCategoryId !== null) return 'No behaviors in this category.\nTap + to add one.';
     return 'No behaviors yet.\nAdd your first one.';
   })();
+  const listEmptyComponent = useMemo(() => <Text style={styles.empty}>{emptyMessage}</Text>, [emptyMessage]);
+  const contentContainerStyle = useMemo(
+    () => [styles.listContent, behaviors.length === 0 && styles.emptyContainer],
+    [behaviors.length],
+  );
+  const renderItem = useCallback(
+    ({ item, section }: { item: BehaviorEntry; section: { title: string } }) => (
+      <BehaviorCard
+        behavior={item}
+        showCategory={selectedCategoryId === null}
+        dateStr={dateForSection(section.title)}
+      />
+    ),
+    [dateForSection, selectedCategoryId],
+  );
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: { title: string } }) => (
+      <SectionHeader
+        title={section.title}
+        behaviors={behaviors}
+      />
+    ),
+    [behaviors],
+  );
 
   return (
     <SectionList
       key={selectedCategoryId ?? 'all'}
       sections={sections}
       keyExtractor={item => item.id}
-      renderItem={({ item, section }) => (
-        <BehaviorCard
-          behavior={item}
-          showCategory={selectedCategoryId === null}
-          dateStr={dateForSection(section.title)}
-        />
-      )}
-      renderSectionHeader={({ section }) => (
-        <SectionHeader
-          title={section.title}
-          behaviors={behaviors}
-          selectedCategoryId={selectedCategoryId}
-        />
-      )}
-      ListEmptyComponent={<Text style={styles.empty}>{emptyMessage}</Text>}
-      contentContainerStyle={[styles.listContent, behaviors.length === 0 && styles.emptyContainer]}
+      renderItem={renderItem}
+      renderSectionHeader={renderSectionHeader}
+      ListEmptyComponent={listEmptyComponent}
+      contentContainerStyle={contentContainerStyle}
+      contentInsetAdjustmentBehavior="automatic"
     />
   );
-}
+});
 
 interface SectionHeaderProps {
   title: string;
   behaviors: BehaviorEntry[];
-  selectedCategoryId: string | null;
 }
-function SectionHeader({ title, behaviors, selectedCategoryId }: SectionHeaderProps) {
-  const today = toDateString(new Date());
-  const yesterdayStr = toDateString(yesterday());
+const SectionHeader = React.memo(function SectionHeader({ title, behaviors }: SectionHeaderProps) {
+  const today = useMemo(() => toDateString(new Date()), []);
+  const yesterdayStr = useMemo(() => toDateString(yesterday()), []);
   const sectionDate = (() => {
     if (title === Label.TODAY) return today;
     if (title === Label.YESTERDAY) return yesterdayStr;
@@ -256,7 +276,7 @@ function SectionHeader({ title, behaviors, selectedCategoryId }: SectionHeaderPr
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
