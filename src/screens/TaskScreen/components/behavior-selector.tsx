@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { BehaviorIcon } from '../../../components/BehaviorIcon';
 import { Text, TextInput } from '../../../components/Text';
 import type { BehaviorEntry } from '../../../types/behavior';
@@ -72,7 +72,12 @@ export function BehaviorSelector({
         )}
       </View>
 
-      <View style={styles.behaviorList}>
+      <ScrollView
+        style={styles.behaviorList}
+        contentContainerStyle={styles.behaviorListContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={filteredBehaviors.length > 4}
+      >
         {!hasQuery ? null : filteredBehaviors.length === 0 ? (
           <Text style={styles.emptyInline}>No matching behaviors.</Text>
         ) : (
@@ -109,7 +114,7 @@ export function BehaviorSelector({
             );
           })
         )}
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -136,8 +141,10 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   behaviorList: {
-    gap: 6,
     maxHeight: 220,
+  },
+  behaviorListContent: {
+    gap: 6,
   },
   behaviorRow: {
     flexDirection: 'row',
