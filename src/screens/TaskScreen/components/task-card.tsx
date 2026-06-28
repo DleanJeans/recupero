@@ -18,7 +18,7 @@ interface TaskCardProps {
   onRemove: () => void;
 }
 
-export function TaskCard({ task, behavior, selectedDate, onToggle, onRemove }: TaskCardProps) {
+function TaskCardComponent({ task, behavior, selectedDate, onToggle, onRemove }: TaskCardProps) {
   const complete = isTaskCompleteOnDate(task, selectedDate);
   const isBehaviorTask = task.source === 'behavior' || (!task.source && task.behaviorId);
   const taskMeta = isBehaviorTask ? 'Behavior task' : behavior ? `One-off · ${behavior.name}` : 'One-off';
@@ -75,6 +75,10 @@ export function TaskCard({ task, behavior, selectedDate, onToggle, onRemove }: T
     </View>
   );
 }
+
+export const TaskCard = React.memo(TaskCardComponent, (prev, next) => {
+  return prev.task === next.task && prev.behavior === next.behavior && prev.selectedDate === next.selectedDate;
+});
 
 const styles = StyleSheet.create({
   taskCard: {

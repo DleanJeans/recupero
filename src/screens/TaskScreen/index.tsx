@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { BottomNav } from '../../components/BottomNav';
 import { Button } from '../../components/Button';
@@ -33,13 +33,18 @@ export function TaskScreen() {
   const hidePrivate = useSettingsStore(s => s.hidePrivate);
 
   const availableBehaviors = useMemo(() => {
+    if (!composerOpen) return [];
     const visible = hidePrivate ? behaviors.filter(behavior => !behavior.private) : behaviors;
     return [...visible].sort((a, b) => a.name.localeCompare(b.name));
-  }, [behaviors, hidePrivate]);
+  }, [behaviors, composerOpen, hidePrivate]);
+  const behaviorById = useMemo(() => new Map(behaviors.map(behavior => [behavior.id, behavior])), [behaviors]);
 
   const selectedBehavior = availableBehaviors.find(behavior => behavior.id === selectedBehaviorId);
   const dayTasks = useMemo(() => getTasksForDate(tasks, selectedDate), [tasks, selectedDate]);
-  const completedCount = dayTasks.filter(task => isTaskCompleteOnDate(task, selectedDate)).length;
+  const completedCount = useMemo(
+    () => dayTasks.filter(task => isTaskCompleteOnDate(task, selectedDate)).length,
+    [dayTasks, selectedDate],
+  );
   const taskStars = useMemo(() => getTaskStarsForDate(tasks, selectedDate), [tasks, selectedDate]);
   const dayLabel = describeDay(selectedDate);
 
@@ -80,16 +85,34 @@ export function TaskScreen() {
     setSelectedDate(toDateString(d));
   };
 
-  const confirmRemove = (task: TaskEntry) => {
-    Alert.alert('Remove Task', `Remove "${task.title}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () => removeTask(task.id),
-      },
-    ]);
-  };
+  const confirmRemove = useCallback(
+    (task: TaskEntry) => {
+      Alert.alert('Remove Task', `Remove "${task.title}"?`, [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => removeTask(task.id),
+        },
+      ]);
+    },
+    [removeTask],
+  );
+  const renderTask = useCallback(
+    ({ item: task }: { item: TaskEntry }) => {
+      const behavior = task.behaviorId ? behaviorById.get(task.behaviorId) : undefined;
+      return (
+        <TaskCard
+          task={task}
+          behavior={behavior}
+          selectedDate={selectedDate}
+          onToggle={() => toggleTaskCompletion(task.id, selectedDate)}
+          onRemove={() => confirmRemove(task)}
+        />
+      );
+    },
+    [behaviorById, confirmRemove, selectedDate, toggleTaskCompletion],
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -195,18 +218,7 @@ export function TaskScreen() {
           contentInsetAdjustmentBehavior="automatic"
           ItemSeparatorComponent={TaskSeparator}
           ListEmptyComponent={<Text style={styles.empty}>No tasks for this date.</Text>}
-          renderItem={({ item: task }) => {
-            const behavior = task.behaviorId ? behaviors.find(item => item.id === task.behaviorId) : undefined;
-            return (
-              <TaskCard
-                task={task}
-                behavior={behavior}
-                selectedDate={selectedDate}
-                onToggle={() => toggleTaskCompletion(task.id, selectedDate)}
-                onRemove={() => confirmRemove(task)}
-              />
-            );
-          }}
+          renderItem={renderTask}
         />
       </View>
 
