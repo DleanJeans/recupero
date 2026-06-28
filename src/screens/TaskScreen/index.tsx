@@ -13,12 +13,11 @@ import { Colors } from '../../utils/colors';
 import { describeDay, toDateString } from '../../utils/dateUtils';
 import { getTaskStarsForDate, getTasksForDate, isTaskCompleteOnDate } from '../../utils/taskUtils';
 import { TaskCard } from './components/task-card';
-import { TaskComposer, type TaskMode } from './components/task-composer';
+import { TaskComposer } from './components/task-composer';
 
 export function TaskScreen() {
   const todayStr = useMemo(() => toDateString(new Date()), []);
   const [selectedDate, setSelectedDate] = useState(todayStr);
-  const [mode, setMode] = useState<TaskMode>('oneOff');
   const [title, setTitle] = useState('');
   const [stars, setStars] = useState<TaskStarValue>(1);
   const [selectedBehaviorId, setSelectedBehaviorId] = useState<string | undefined>();
@@ -42,20 +41,20 @@ export function TaskScreen() {
   const dayLabel = describeDay(selectedDate);
 
   const handleAddTask = () => {
-    const behaviorTitle = selectedBehavior?.name.trim() ?? '';
-    const trimmed = mode === 'behavior' ? behaviorTitle : title.trim();
-    if (!trimmed) return;
-    if (mode === 'behavior' && !selectedBehavior) return;
-    const hasAttachedBehavior = mode === 'oneOff' && selectedBehavior != null;
+    const trimmedTitle = title.trim();
+    const taskTitle = trimmedTitle || selectedBehavior?.name.trim() || '';
+    if (!taskTitle) return;
+    const isBehaviorOnlyTask = !trimmedTitle && selectedBehavior != null;
 
     addTask({
-      title: trimmed,
+      title: taskTitle,
       scheduledDate: selectedDate,
-      stars: mode === 'oneOff' && !hasAttachedBehavior ? stars : 0,
-      source: mode === 'behavior' ? 'behavior' : 'oneOff',
+      stars: selectedBehavior ? 0 : stars,
+      source: isBehaviorOnlyTask ? 'behavior' : 'oneOff',
       behaviorId: selectedBehavior?.id,
     });
     setTitle('');
+    setSelectedBehaviorId(undefined);
   };
 
   const goToPrevDay = () => {
@@ -154,12 +153,10 @@ export function TaskScreen() {
 
       <View style={styles.content}>
         <TaskComposer
-          mode={mode}
           title={title}
           stars={stars}
           behaviors={availableBehaviors}
           selectedBehaviorId={selectedBehaviorId}
-          onModeChange={setMode}
           onTitleChange={setTitle}
           onStarsChange={setStars}
           onBehaviorSelect={setSelectedBehaviorId}
