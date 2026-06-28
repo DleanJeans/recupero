@@ -38,11 +38,6 @@ export function TaskScreen() {
     return [...visible].sort((a, b) => a.name.localeCompare(b.name));
   }, [behaviors, hidePrivate]);
 
-  useEffect(() => {
-    if (selectedBehaviorId && availableBehaviors.some(behavior => behavior.id === selectedBehaviorId)) return;
-    setSelectedBehaviorId(availableBehaviors[0]?.id);
-  }, [availableBehaviors, selectedBehaviorId]);
-
   const selectedBehavior = availableBehaviors.find(behavior => behavior.id === selectedBehaviorId);
   const dayTasks = useMemo(() => getTasksForDate(tasks, selectedDate), [tasks, selectedDate]);
   const completedCount = dayTasks.filter(task => isTaskCompleteOnDate(task, selectedDate)).length;
@@ -58,7 +53,7 @@ export function TaskScreen() {
     addTask({
       title: trimmed,
       scheduledDate: selectedDate,
-      stars,
+      stars: mode === 'oneOff' ? stars : 0,
       behaviorId: mode === 'behavior' ? selectedBehavior?.id : undefined,
     });
     setTitle('');
@@ -213,7 +208,7 @@ interface TaskComposerProps {
   onModeChange: (mode: TaskMode) => void;
   onTitleChange: (title: string) => void;
   onStarsChange: (stars: TaskStarValue) => void;
-  onBehaviorSelect: (behaviorId: string) => void;
+  onBehaviorSelect: (behaviorId: string | undefined) => void;
   onAdd: () => void;
 }
 
@@ -230,6 +225,10 @@ function TaskComposer({
   onAdd,
 }: TaskComposerProps) {
   const canAdd = mode === 'behavior' ? !!selectedBehaviorId : title.trim().length > 0;
+  const handleModeChange = (nextMode: TaskMode) => {
+    if (nextMode === 'behavior') onBehaviorSelect(undefined);
+    onModeChange(nextMode);
+  };
 
   return (
     <View style={styles.composer}>
@@ -238,13 +237,13 @@ function TaskComposer({
           label="One-off"
           icon="create-outline"
           active={mode === 'oneOff'}
-          onPress={() => onModeChange('oneOff')}
+          onPress={() => handleModeChange('oneOff')}
         />
         <ModeButton
           label="Behavior"
           icon="repeat-outline"
           active={mode === 'behavior'}
-          onPress={() => onModeChange('behavior')}
+          onPress={() => handleModeChange('behavior')}
         />
       </View>
 
@@ -267,15 +266,18 @@ function TaskComposer({
       )}
 
       <View style={styles.composerFooter}>
-        <StarPicker
-          value={stars}
-          onChange={onStarsChange}
-        />
+        {mode === 'oneOff' && (
+          <StarPicker
+            value={stars}
+            onChange={onStarsChange}
+          />
+        )}
         <Button
           variant="primary"
           size="sm"
           onPress={onAdd}
           disabled={!canAdd}
+          style={mode === 'behavior' && styles.behaviorAddButton}
         >
           Add
         </Button>
@@ -310,46 +312,101 @@ function ModeButton({ label, icon, active, onPress }: ModeButtonProps) {
 interface BehaviorSelectorProps {
   behaviors: BehaviorEntry[];
   selectedBehaviorId: string | undefined;
-  onSelect: (behaviorId: string) => void;
+  onSelect: (behaviorId: string | undefined) => void;
 }
 
 function BehaviorSelector({ behaviors, selectedBehaviorId, onSelect }: BehaviorSelectorProps) {
+  const [query, setQuery] = useState('');
+  const filteredBehaviors = useMemo(() => {
+    const trimmed = query.trim().toLowerCase();
+    if (!trimmed) return [];
+    return behaviors.filter(behavior => behavior.name.toLowerCase().includes(trimmed));
+  }, [behaviors, query]);
+  const hasQuery = query.trim().length > 0;
+  const selectedIsVisible = filteredBehaviors.some(behavior => behavior.id === selectedBehaviorId);
+
+  useEffect(() => {
+    if (selectedBehaviorId && !selectedIsVisible) {
+      onSelect(undefined);
+    }
+  }, [onSelect, selectedBehaviorId, selectedIsVisible]);
+
   if (behaviors.length === 0) {
     return <Text style={styles.emptyInline}>No behaviors available.</Text>;
   }
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.behaviorChips}
-    >
-      {behaviors.map(behavior => {
-        const active = behavior.id === selectedBehaviorId;
-        return (
+    <View style={styles.behaviorPicker}>
+      <View style={styles.behaviorSearchWrap}>
+        <Ionicons
+          name="search-outline"
+          size={17}
+          color={Colors.text.faint}
+        />
+        <TextInput
+          style={styles.behaviorSearchInput}
+          placeholder="Search behaviors"
+          placeholderTextColor={Colors.text.faint}
+          value={query}
+          onChangeText={setQuery}
+          returnKeyType="search"
+        />
+        {query.length > 0 && (
           <Pressable
-            key={behavior.id}
-            style={({ pressed }) => [
-              styles.behaviorChip,
-              active && styles.behaviorChipActive,
-              pressed && styles.pressed,
-            ]}
-            onPress={() => onSelect(behavior.id)}
+            onPress={() => {
+              setQuery('');
+              onSelect(undefined);
+            }}
+            hitSlop={8}
           >
-            <BehaviorIcon
-              behavior={behavior}
-              size={20}
+            <Ionicons
+              name="close-circle"
+              size={17}
+              color={Colors.text.faint}
             />
-            <Text
-              style={[styles.behaviorChipText, active && styles.behaviorChipTextActive]}
-              numberOfLines={1}
-            >
-              {behavior.name}
-            </Text>
           </Pressable>
-        );
-      })}
-    </ScrollView>
+        )}
+      </View>
+
+      <View style={styles.behaviorList}>
+        {!hasQuery ? null : filteredBehaviors.length === 0 ? (
+          <Text style={styles.emptyInline}>No matching behaviors.</Text>
+        ) : (
+          filteredBehaviors.map(behavior => {
+            const active = behavior.id === selectedBehaviorId;
+            return (
+              <Pressable
+                key={behavior.id}
+                style={({ pressed }) => [
+                  styles.behaviorRow,
+                  active && styles.behaviorRowActive,
+                  pressed && styles.pressed,
+                ]}
+                onPress={() => onSelect(behavior.id)}
+              >
+                <BehaviorIcon
+                  behavior={behavior}
+                  size={22}
+                />
+                <Text
+                  style={[styles.behaviorRowText, active && styles.behaviorRowTextActive]}
+                  numberOfLines={1}
+                >
+                  {behavior.name}
+                </Text>
+                {active && (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={18}
+                    color={Colors.text.primary}
+                  />
+                )}
+              </Pressable>
+            );
+          })
+        )}
+      </View>
+    </View>
   );
 }
 
@@ -429,7 +486,7 @@ function TaskCard({ task, behavior, selectedDate, onToggle, onRemove }: TaskCard
             ) : (
               <Text style={styles.taskMeta}>One-off</Text>
             )}
-            <TaskStarRow stars={task.stars} />
+            {task.stars > 0 && <TaskStarRow stars={task.stars} />}
           </View>
         </View>
       </Pressable>
@@ -572,32 +629,49 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
   },
-  behaviorChips: {
-    gap: 8,
-    paddingRight: 12,
+  behaviorPicker: {
+    gap: 10,
   },
-  behaviorChip: {
+  behaviorSearchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     backgroundColor: Colors.bg.input,
-    borderRadius: 10,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  behaviorSearchInput: {
+    flex: 1,
+    color: Colors.text.primary,
+    fontSize: 14,
+    paddingVertical: 0,
+  },
+  behaviorList: {
+    gap: 6,
+  },
+  behaviorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: Colors.bg.input,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: Colors.bg.input,
     paddingHorizontal: 10,
-    paddingVertical: 8,
-    maxWidth: 180,
+    paddingVertical: 10,
   },
-  behaviorChipActive: {
+  behaviorRowActive: {
     borderColor: Colors.text.light,
+    backgroundColor: Colors.bg.elevated,
   },
-  behaviorChipText: {
+  behaviorRowText: {
     color: Colors.text.light,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
-    flexShrink: 1,
+    flex: 1,
   },
-  behaviorChipTextActive: {
+  behaviorRowTextActive: {
     color: Colors.text.primary,
   },
   composerFooter: {
@@ -617,6 +691,9 @@ const styles = StyleSheet.create({
   },
   starButton: {
     padding: 3,
+  },
+  behaviorAddButton: {
+    flex: 1,
   },
   listSection: {
     gap: 8,
