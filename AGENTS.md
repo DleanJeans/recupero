@@ -1,6 +1,6 @@
 1. Never add package-lock.json to commit
 
-2. Update pnpm-lock.yaml when there is change to package.json
+2. Update pnpm-lock.yaml when there is change to package.json dependencies or devDependencies
 
 3. Put util functions in src/utils instead of in component files
 
