@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { BehaviorIcon } from '../../../components/BehaviorIcon';
 import { Text, TextInput } from '../../../components/Text';
@@ -9,11 +9,18 @@ import { Colors } from '../../../utils/colors';
 interface BehaviorSelectorProps {
   behaviors: BehaviorEntry[];
   selectedBehaviorId: string | undefined;
+  query: string;
+  onQueryChange: (query: string) => void;
   onSelect: (behaviorId: string | undefined) => void;
 }
 
-export function BehaviorSelector({ behaviors, selectedBehaviorId, onSelect }: BehaviorSelectorProps) {
-  const [query, setQuery] = useState('');
+export function BehaviorSelector({
+  behaviors,
+  selectedBehaviorId,
+  query,
+  onQueryChange,
+  onSelect,
+}: BehaviorSelectorProps) {
   const filteredBehaviors = useMemo(() => {
     const trimmed = query.trim().toLowerCase();
     if (!trimmed) return [];
@@ -45,13 +52,13 @@ export function BehaviorSelector({ behaviors, selectedBehaviorId, onSelect }: Be
           placeholder="Search behaviors"
           placeholderTextColor={Colors.text.faint}
           value={query}
-          onChangeText={setQuery}
+          onChangeText={onQueryChange}
           returnKeyType="search"
         />
         {query.length > 0 && (
           <Pressable
             onPress={() => {
-              setQuery('');
+              onQueryChange('');
               onSelect(undefined);
             }}
             hitSlop={8}

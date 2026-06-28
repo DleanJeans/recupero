@@ -10,10 +10,12 @@ import { StarPicker } from './star-picker';
 
 interface TaskComposerProps {
   title: string;
+  behaviorQuery: string;
   stars: TaskStarValue;
   behaviors: BehaviorEntry[];
   selectedBehaviorId: string | undefined;
   onTitleChange: (title: string) => void;
+  onBehaviorQueryChange: (query: string) => void;
   onStarsChange: (stars: TaskStarValue) => void;
   onBehaviorSelect: (behaviorId: string | undefined) => void;
   onAdd: () => void;
@@ -21,10 +23,12 @@ interface TaskComposerProps {
 
 export function TaskComposer({
   title,
+  behaviorQuery,
   stars,
   behaviors,
   selectedBehaviorId,
   onTitleChange,
+  onBehaviorQueryChange,
   onStarsChange,
   onBehaviorSelect,
   onAdd,
@@ -47,6 +51,8 @@ export function TaskComposer({
         <BehaviorSelector
           behaviors={behaviors}
           selectedBehaviorId={selectedBehaviorId}
+          query={behaviorQuery}
+          onQueryChange={onBehaviorQueryChange}
           onSelect={onBehaviorSelect}
         />
       </View>

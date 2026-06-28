@@ -19,6 +19,7 @@ export function TaskScreen() {
   const todayStr = useMemo(() => toDateString(new Date()), []);
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [title, setTitle] = useState('');
+  const [behaviorQuery, setBehaviorQuery] = useState('');
   const [stars, setStars] = useState<TaskStarValue>(1);
   const [selectedBehaviorId, setSelectedBehaviorId] = useState<string | undefined>();
 
@@ -54,6 +55,7 @@ export function TaskScreen() {
       behaviorId: selectedBehavior?.id,
     });
     setTitle('');
+    setBehaviorQuery('');
     setSelectedBehaviorId(undefined);
   };
 
@@ -154,10 +156,12 @@ export function TaskScreen() {
       <View style={styles.content}>
         <TaskComposer
           title={title}
+          behaviorQuery={behaviorQuery}
           stars={stars}
           behaviors={availableBehaviors}
           selectedBehaviorId={selectedBehaviorId}
           onTitleChange={setTitle}
+          onBehaviorQueryChange={setBehaviorQuery}
           onStarsChange={setStars}
           onBehaviorSelect={setSelectedBehaviorId}
           onAdd={handleAddTask}
