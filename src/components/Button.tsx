@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, type StyleProp, StyleSheet, type ViewStyle } from 'react-native';
+import { type GestureResponderEvent, Pressable, type StyleProp, StyleSheet, type ViewStyle } from 'react-native';
 import { Colors } from '../utils/colors';
 import { Text } from './Text';
 
@@ -12,9 +12,10 @@ interface Props {
   fab?: boolean;
   active?: boolean;
   children: React.ReactNode;
+  overlay?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
-  onPress?: () => void;
-  onLongPress?: () => void;
+  onPress?: (event: GestureResponderEvent) => void;
+  onLongPress?: (event: GestureResponderEvent) => void;
   disabled?: boolean;
   accessibilityLabel?: string;
 }
@@ -42,6 +43,7 @@ export function Button({
   fab,
   active,
   children,
+  overlay,
   style,
   onPress,
   onLongPress,
@@ -73,12 +75,13 @@ export function Button({
       ) : (
         children
       )}
+      {overlay}
     </Pressable>
   );
 }
 
 const commonStyles = StyleSheet.create({
-  base: { borderRadius: 8, alignItems: 'center' },
+  base: { borderRadius: 8, alignItems: 'center', position: 'relative' },
 });
 
 const baseStyles = StyleSheet.create({

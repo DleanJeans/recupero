@@ -4,6 +4,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  type GestureResponderEvent,
   Keyboard,
   KeyboardAvoidingView,
   LayoutAnimation,
@@ -26,6 +27,7 @@ import { Colors } from '../../utils/colors';
 import { toDateString } from '../../utils/dateUtils';
 import { BehaviorScreenLayout } from '../components/BehaviorScreenLayout';
 import { BehaviorLogItem } from './components/BehaviorLogItem';
+import { FloatingXpBurst, type XpBurst } from './components/FloatingXpBurst';
 import { LogGap } from './components/LogGap';
 import { NumberWheel } from './components/NumberWheel';
 
@@ -211,6 +213,8 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
   const [notes, setNotes] = useState(editNotes);
   const [notesFocused, setNotesFocused] = useState(false);
   const [metadataFocused, setMetadataFocused] = useState(false);
+  const [xpBursts, setXpBursts] = useState<XpBurst[]>([]);
+  const nextXpBurstId = useRef(0);
 
   const metadataFields = useMemo(() => category?.metadataFields ?? [], [category?.metadataFields]);
   const [metadataValues, setMetadataValues] = useState<Record<string, string>>(() => {
@@ -268,47 +272,61 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
     setNotesFocused(false);
   }, []);
 
-  const handleConfirm = useCallback(() => {
-    const [y, m, d] = selectedDate.split('-').map(Number);
-    const ts = new Date(y, m - 1, d, hour, minute, 0, 0).getTime();
-    const metadata: Record<string, string | number> = {};
-    if (notes.trim()) metadata.notes = notes.trim();
-    for (const field of metadataFields) {
-      const val = metadataValues[field.key];
-      if (val !== undefined && val !== '') {
-        metadata[field.key] = Number(val);
+  const removeXpBurst = useCallback((id: number) => {
+    setXpBursts(prev => prev.filter(burst => burst.id !== id));
+  }, []);
+
+  const handleConfirm = useCallback(
+    (event: GestureResponderEvent) => {
+      const [y, m, d] = selectedDate.split('-').map(Number);
+      const ts = new Date(y, m - 1, d, hour, minute, 0, 0).getTime();
+      const metadata: Record<string, string | number> = {};
+      if (notes.trim()) metadata.notes = notes.trim();
+      for (const field of metadataFields) {
+        const val = metadataValues[field.key];
+        if (val !== undefined && val !== '') {
+          metadata[field.key] = Number(val);
+        }
       }
-    }
-    const metadataOrUndefined = Object.keys(metadata).length > 0 ? metadata : undefined;
+      const metadataOrUndefined = Object.keys(metadata).length > 0 ? metadata : undefined;
 
-    if (editLogId) {
-      updateLog(behaviorId, editLogId, ts, metadataOrUndefined);
-      onSaved();
-      return;
-    }
+      if (editLogId) {
+        updateLog(behaviorId, editLogId, ts, metadataOrUndefined);
+        onSaved();
+        return;
+      }
 
-    logBehavior(behaviorId, ts, metadataOrUndefined);
+      logBehavior(behaviorId, ts, metadataOrUndefined);
 
-    const delay = behavior.xpEnabled ? 1500 : 0;
-    if (delay > 0) setPending(true);
-    closeTimeoutRef.current = setTimeout(() => {
-      setPending(false);
-      onSaved();
-    }, delay);
-  }, [
-    selectedDate,
-    hour,
-    minute,
-    notes,
-    metadataValues,
-    metadataFields,
-    editLogId,
-    behaviorId,
-    behavior.xpEnabled,
-    logBehavior,
-    updateLog,
-    onSaved,
-  ]);
+      if (behavior.xpEnabled) {
+        const { locationX, locationY } = event.nativeEvent;
+        const id = nextXpBurstId.current;
+        nextXpBurstId.current += 1;
+        setXpBursts(prev => [...prev, { id, x: locationX, y: locationY }]);
+      }
+
+      const delay = behavior.xpEnabled ? 1500 : 0;
+      if (delay > 0) setPending(true);
+      closeTimeoutRef.current = setTimeout(() => {
+        setPending(false);
+        onSaved();
+      }, delay);
+    },
+    [
+      selectedDate,
+      hour,
+      minute,
+      notes,
+      metadataValues,
+      metadataFields,
+      editLogId,
+      behaviorId,
+      behavior.xpEnabled,
+      logBehavior,
+      updateLog,
+      onSaved,
+    ],
+  );
 
   return (
     <KeyboardAvoidingView
@@ -387,9 +405,16 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
       <Button
         variant="primary"
         fab
-        style={{ bottom: 16 }}
+        style={{ bottom: 16, opacity: 1 }}
         onPress={handleConfirm}
         disabled={pending}
+        overlay={xpBursts.map(burst => (
+          <FloatingXpBurst
+            key={burst.id}
+            burst={burst}
+            onDone={removeXpBurst}
+          />
+        ))}
       >
         {editLogId ? 'Save' : 'Log'}
       </Button>
