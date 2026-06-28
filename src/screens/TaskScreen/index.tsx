@@ -46,12 +46,14 @@ export function TaskScreen() {
     const trimmed = mode === 'behavior' ? behaviorTitle : title.trim();
     if (!trimmed) return;
     if (mode === 'behavior' && !selectedBehavior) return;
+    const hasAttachedBehavior = mode === 'oneOff' && selectedBehavior != null;
 
     addTask({
       title: trimmed,
       scheduledDate: selectedDate,
-      stars: mode === 'oneOff' ? stars : 0,
-      behaviorId: mode === 'behavior' ? selectedBehavior?.id : undefined,
+      stars: mode === 'oneOff' && !hasAttachedBehavior ? stars : 0,
+      source: mode === 'behavior' ? 'behavior' : 'oneOff',
+      behaviorId: selectedBehavior?.id,
     });
     setTitle('');
   };

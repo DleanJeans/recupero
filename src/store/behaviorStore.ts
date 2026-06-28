@@ -216,6 +216,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               title: input.title,
               scheduledDate: input.scheduledDate,
               stars: input.stars,
+              source: input.source,
               behaviorId: input.behaviorId,
               completedDates: [],
               createdAt: Date.now(),

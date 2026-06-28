@@ -38,9 +38,10 @@ export function TaskComposer({
 }: TaskComposerProps) {
   const canAdd = mode === 'behavior' ? !!selectedBehaviorId : title.trim().length > 0;
   const handleModeChange = (nextMode: TaskMode) => {
-    if (nextMode === 'behavior') onBehaviorSelect(undefined);
+    if (nextMode !== mode) onBehaviorSelect(undefined);
     onModeChange(nextMode);
   };
+  const oneOffHasAttachedBehavior = mode === 'oneOff' && selectedBehaviorId != null;
 
   return (
     <View style={styles.composer}>
@@ -60,15 +61,22 @@ export function TaskComposer({
       </View>
 
       {mode === 'oneOff' ? (
-        <TextInput
-          style={styles.titleInput}
-          placeholder="Task name"
-          placeholderTextColor={Colors.text.faint}
-          value={title}
-          onChangeText={onTitleChange}
-          returnKeyType="done"
-          onSubmitEditing={onAdd}
-        />
+        <View style={styles.oneOffFields}>
+          <TextInput
+            style={styles.titleInput}
+            placeholder="Task name"
+            placeholderTextColor={Colors.text.faint}
+            value={title}
+            onChangeText={onTitleChange}
+            returnKeyType="done"
+            onSubmitEditing={onAdd}
+          />
+          <BehaviorSelector
+            behaviors={behaviors}
+            selectedBehaviorId={selectedBehaviorId}
+            onSelect={onBehaviorSelect}
+          />
+        </View>
       ) : (
         <BehaviorSelector
           behaviors={behaviors}
@@ -78,7 +86,7 @@ export function TaskComposer({
       )}
 
       <View style={styles.composerFooter}>
-        {mode === 'oneOff' && (
+        {mode === 'oneOff' && !oneOffHasAttachedBehavior && (
           <StarPicker
             value={stars}
             onChange={onStarsChange}
@@ -113,12 +121,16 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   titleInput: {
+    height: 44,
     backgroundColor: Colors.bg.input,
     color: Colors.text.primary,
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingVertical: 0,
     fontSize: 15,
+  },
+  oneOffFields: {
+    gap: 10,
   },
   composerFooter: {
     flexDirection: 'row',

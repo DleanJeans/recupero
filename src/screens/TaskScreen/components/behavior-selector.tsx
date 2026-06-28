@@ -112,18 +112,20 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   behaviorSearchWrap: {
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     backgroundColor: Colors.bg.input,
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 0,
   },
   behaviorSearchInput: {
     flex: 1,
+    height: 44,
     color: Colors.text.primary,
-    fontSize: 14,
+    fontSize: 15,
     paddingVertical: 0,
   },
   behaviorList: {

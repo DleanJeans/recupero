@@ -20,6 +20,8 @@ interface TaskCardProps {
 
 export function TaskCard({ task, behavior, selectedDate, onToggle, onRemove }: TaskCardProps) {
   const complete = isTaskCompleteOnDate(task, selectedDate);
+  const isBehaviorTask = task.source === 'behavior' || (!task.source && task.behaviorId);
+  const taskMeta = isBehaviorTask ? 'Behavior task' : behavior ? `One-off · ${behavior.name}` : 'One-off';
 
   return (
     <View style={[styles.taskCard, complete && styles.taskCardComplete]}>
@@ -48,11 +50,12 @@ export function TaskCard({ task, behavior, selectedDate, onToggle, onRemove }: T
             </Text>
           </View>
           <View style={styles.taskMetaRow}>
-            {task.behaviorId ? (
-              <Text style={styles.taskMeta}>Behavior task</Text>
-            ) : (
-              <Text style={styles.taskMeta}>One-off</Text>
-            )}
+            <Text
+              style={styles.taskMeta}
+              numberOfLines={1}
+            >
+              {taskMeta}
+            </Text>
             {task.stars > 0 && <TaskStarRow stars={task.stars} />}
           </View>
         </View>
@@ -120,6 +123,7 @@ const styles = StyleSheet.create({
     color: Colors.text.faint,
     fontSize: 11,
     fontWeight: '600',
+    flexShrink: 1,
   },
   removeButton: {
     alignSelf: 'stretch',
