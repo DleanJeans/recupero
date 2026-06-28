@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   removeButton: {
+    alignSelf: 'stretch',
     width: 42,
-    height: '100%',
   },
 });

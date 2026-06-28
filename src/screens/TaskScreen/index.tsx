@@ -175,6 +175,7 @@ export function TaskScreen() {
           contentContainerStyle={[styles.scheduledContent, dayTasks.length === 0 && styles.scheduledEmptyContent]}
           keyboardShouldPersistTaps="handled"
           contentInsetAdjustmentBehavior="automatic"
+          ItemSeparatorComponent={TaskSeparator}
           ListEmptyComponent={<Text style={styles.empty}>No tasks for this date.</Text>}
           renderItem={({ item: task }) => {
             const behavior = task.behaviorId ? behaviors.find(item => item.id === task.behaviorId) : undefined;
@@ -194,6 +195,10 @@ export function TaskScreen() {
       <BottomNav />
     </SafeAreaView>
   );
+}
+
+function TaskSeparator() {
+  return <View style={styles.taskSeparator} />;
 }
 
 const styles = StyleSheet.create({
@@ -266,7 +271,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scheduledContent: {
-    gap: 6,
     paddingBottom: 14,
   },
   scheduledEmptyContent: {
@@ -280,6 +284,9 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginLeft: 4,
+  },
+  taskSeparator: {
+    height: 6,
   },
   empty: {
     color: Colors.text.faint,
