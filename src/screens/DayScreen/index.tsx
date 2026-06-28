@@ -266,21 +266,24 @@ export function DayScreen() {
                       <React.Fragment key={entry.log.id}>
                         {ei > 0 && <View style={styles.entrySep} />}
                         <View style={styles.entryRow}>
-                          <BehaviorIcon
-                            behavior={entry.behavior}
-                            size={20}
-                          />
-                          <Text
-                            style={styles.behaviorName}
-                            numberOfLines={1}
-                          >
-                            {entry.behavior.name}
-                          </Text>
-                          <StarRow
-                            behavior={entry.behavior}
-                            dateStr={selectedDate}
-                            size={12}
-                          />
+                          <View style={styles.entryInlineRow}>
+                            <BehaviorIcon
+                              behavior={entry.behavior}
+                              size={14}
+                            />
+                            <Text
+                              style={styles.behaviorName}
+                              numberOfLines={1}
+                            >
+                              {entry.behavior.name}
+                            </Text>
+                            <StarRow
+                              behavior={entry.behavior}
+                              dateStr={selectedDate}
+                              size={12}
+                              style={{ marginTop: -12 }}
+                            />
+                          </View>
                           {formatEntryMetadata(entry.log.metadata, entry.behavior.categoryId, categories)}
                         </View>
                       </React.Fragment>
@@ -415,15 +418,19 @@ const styles = StyleSheet.create({
   },
 
   // Log row
+  entryInlineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   logRow: {
     flexDirection: 'row',
     gap: 12,
     paddingVertical: 6,
   },
   entryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    flexDirection: 'column',
+    gap: 2,
   },
   entrySep: {
     height: 6,
@@ -444,8 +451,7 @@ const styles = StyleSheet.create({
   behaviorName: {
     color: Colors.text.primary,
     fontSize: 15,
-    fontWeight: '600',
-    flexShrink: 1,
+    marginTop: 2,
   },
 
   // Gap between logs
