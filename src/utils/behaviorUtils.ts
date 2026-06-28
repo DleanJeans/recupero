@@ -1,5 +1,6 @@
 import type { BehaviorEntry, Category, LogEntry } from '../types/behavior';
 import { toDateString, yesterday } from './dateUtils';
+import { roundTo2 } from './numberUtils';
 import { Group } from './strings';
 
 /**
@@ -147,7 +148,7 @@ export function getAllDailyMetadataTotals(
       if (total !== undefined) {
         // Prefix with category name to disambiguate same-label fields across categories
         const label = `${category.name} — ${field.label}${field.unit ? ` (${field.unit})` : ''}`;
-        result.push({ label, value: total });
+        result.push({ label, value: roundTo2(total) });
       }
     }
   }

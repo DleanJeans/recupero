@@ -13,6 +13,7 @@ import type { Category, LogEntry } from '../../types/behavior';
 import { getAllDailyMetadataTotals } from '../../utils/behaviorUtils';
 import { Colors } from '../../utils/colors';
 import { describeDay, toDateString } from '../../utils/dateUtils';
+import { roundTo2 } from '../../utils/numberUtils';
 import { getThresholds, getTotalStarsForDate } from '../../utils/starUtils';
 import { formatDuration, formatTime, MS_PER_MINUTE } from '../../utils/timeUtils';
 
@@ -37,7 +38,8 @@ function formatEntryMetadata(
     if (field.key === 'notes') continue;
     const val = metadata[field.key];
     if (val != null) {
-      parts.push(`${field.label}: ${val}${field.unit ? ` ${field.unit}` : ''}`);
+      const displayVal = typeof val === 'number' ? roundTo2(val) : val;
+      parts.push(`${field.label}: ${displayVal}${field.unit ? ` ${field.unit}` : ''}`);
     }
   }
 
