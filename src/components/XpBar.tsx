@@ -7,6 +7,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { useAnimatedXpNumbers } from '../hooks/useAnimatedXpNumbers';
 import { Colors } from '../utils/colors';
 import { getLevel, getLevelProgress, getLevelXp, getXp, getXpToNextLevel } from '../utils/xpUtils';
 import { Text } from './Text';
@@ -14,19 +15,28 @@ import { Text } from './Text';
 interface XpBarProps {
   logCount: number;
   color?: string;
+  animateNumbers?: boolean;
 }
 
-export function XpBar({ logCount, color = Colors.type.neutral }: XpBarProps) {
+export function XpBar({ logCount, color = Colors.type.neutral, animateNumbers = false }: XpBarProps) {
   const xp = getXp(logCount);
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
-  const curXp = getLevelXp(xp);
+  const currentXp = getLevelXp(xp);
   const nextXp = getXpToNextLevel(xp);
+  const levelXp = currentXp + nextXp;
 
   const animatedProgress = useSharedValue(progress);
   const prevLevel = useRef(level);
   const hasMounted = useRef(false);
   const glowOpacity = useSharedValue(0);
+  const { displayedCurrentXp, displayedLevelXp } = useAnimatedXpNumbers({
+    animateNumbers,
+    logCount,
+    level,
+    currentXp,
+    levelXp,
+  });
 
   useEffect(() => {
     if (!hasMounted.current) {
@@ -65,7 +75,7 @@ export function XpBar({ logCount, color = Colors.type.neutral }: XpBarProps) {
         <Animated.View style={[styles.glow, { backgroundColor: color }, glowStyle]} />
       </View>
       <Text style={styles.value}>
-        {curXp}/{curXp + nextXp}
+        {displayedCurrentXp}/{displayedLevelXp}
       </Text>
     </View>
   );

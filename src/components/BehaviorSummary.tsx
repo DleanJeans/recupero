@@ -73,6 +73,7 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
           <XpBar
             logCount={effectiveLogCount}
             color={behaviorColor}
+            animateNumbers
           />
         )}
         <View style={styles.elapsedRow}>
