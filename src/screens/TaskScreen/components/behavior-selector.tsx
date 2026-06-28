@@ -86,7 +86,7 @@ export function BehaviorSelector({
                   active && styles.behaviorRowActive,
                   pressed && styles.pressed,
                 ]}
-                onPress={() => onSelect(behavior.id)}
+                onPress={() => onSelect(active ? undefined : behavior.id)}
               >
                 <BehaviorIcon
                   behavior={behavior}
