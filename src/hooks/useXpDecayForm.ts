@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { DurationUnit } from '../components/DurationInput';
 import type { BehaviorEntry, XpDecayUnit } from '../types/behavior';
 
@@ -28,12 +28,25 @@ interface UseXpDecayFormResult {
  *  toggle, `every` value + unit, dirty-check, and serialization. */
 export function useXpDecayForm(behavior: BehaviorEntry | undefined, isEdit: boolean): UseXpDecayFormResult {
   const [enabled, setEnabled] = useState<boolean>(!!behavior?.xpDecay);
-  const [everyMinutes, setEveryMinutes] = useState(1440); // 1 day
-  const [unit, setUnit] = useState<DurationUnit>('days');
+  const [everyMinutes, setEveryMinutes] = useState(() =>
+    behavior?.xpDecay ? toMinutes(behavior.xpDecay.every, behavior.xpDecay.unit) : 1440,
+  );
+  const [unit, setUnit] = useState<DurationUnit>(() => behavior?.xpDecay?.unit ?? 'days');
+  const skipInitialHydration = useRef(behavior != null);
 
   // Hydrate from the behavior whenever it changes (e.g. on edit mount).
   useEffect(() => {
-    if (!behavior?.xpDecay) return;
+    if (!behavior) return;
+    if (skipInitialHydration.current) {
+      skipInitialHydration.current = false;
+      return;
+    }
+    if (!behavior.xpDecay) {
+      setEnabled(false);
+      setEveryMinutes(1440);
+      setUnit('days');
+      return;
+    }
     setEnabled(true);
     setUnit(behavior.xpDecay.unit);
     setEveryMinutes(toMinutes(behavior.xpDecay.every, behavior.xpDecay.unit));

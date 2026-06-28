@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { BehaviorEntry, StarPeriod } from '../types/behavior';
 import { DEFAULT_STAR_THRESHOLDS } from '../utils/starUtils';
 
@@ -38,16 +38,29 @@ export function useStarThresholdsForm(
 ): UseStarThresholdsFormResult {
   const [enabled, setEnabled] = useState<boolean>(!!behavior?.starThresholds);
   const [period, setPeriod] = useState<StarPeriod>(behavior?.starPeriod ?? 'day');
-  const [inputs, setInputs] = useState<StarInputs>({
-    '1': '',
-    '2': '',
-    '3': '',
-  });
+  const [inputs, setInputs] = useState<StarInputs>(() =>
+    behavior?.starThresholds
+      ? {
+          '1': thresholdToInput(behavior.starThresholds[0]),
+          '2': thresholdToInput(behavior.starThresholds[1]),
+          '3': thresholdToInput(behavior.starThresholds[2]),
+        }
+      : {
+          '1': '',
+          '2': '',
+          '3': '',
+        },
+  );
   const [validationError, setValidationError] = useState<string | null>(null);
+  const skipInitialHydration = useRef(behavior != null);
 
   // Hydrate from the behavior whenever it changes (e.g. on edit mount).
   useEffect(() => {
     if (!behavior) return;
+    if (skipInitialHydration.current) {
+      skipInitialHydration.current = false;
+      return;
+    }
     const hasStars = behavior.starThresholds !== undefined;
     setEnabled(hasStars);
     setPeriod(behavior.starPeriod ?? 'day');

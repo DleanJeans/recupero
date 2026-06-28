@@ -87,14 +87,16 @@ export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChang
           />
         )}
       </Pressable>
-      <EmojiKeyboard
-        open={open}
-        onEmojiSelected={handlePick}
-        onClose={handleClose}
-        enableSearchBar
-        theme={pickerTheme}
-        emojisByCategory={emojiData}
-      />
+      {open && (
+        <EmojiKeyboard
+          open={open}
+          onEmojiSelected={handlePick}
+          onClose={handleClose}
+          enableSearchBar
+          theme={pickerTheme}
+          emojisByCategory={emojiData}
+        />
+      )}
     </>
   );
 }

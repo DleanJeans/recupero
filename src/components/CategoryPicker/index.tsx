@@ -23,7 +23,7 @@ interface CategoryPickerProps {
   /** External long-press hook (e.g. analytics). Internal edit flow is also triggered. */
   onLongPress?: (category: Category) => void;
   /** Behaviors used to compute per-category and total counts. */
-  behaviors: BehaviorEntry[];
+  behaviors?: BehaviorEntry[];
   /** Override the global "hide category names" setting. `true` = always show names regardless of store. */
   forceShowNames?: boolean;
   /** Optional leading element rendered at the start of the horizontal filter bar. */
@@ -36,6 +36,8 @@ interface CategoryPickerProps {
   onCategoryDeleted?: (id: string) => void;
 }
 
+const EMPTY_BEHAVIORS: BehaviorEntry[] = [];
+
 export function CategoryPicker({
   categories,
   selectedId,
@@ -43,7 +45,7 @@ export function CategoryPicker({
   bar = false,
   showAll = false,
   onLongPress,
-  behaviors,
+  behaviors = EMPTY_BEHAVIORS,
   leadingAccessory,
   dark = false,
   onCategoryCreated,
@@ -123,7 +125,10 @@ export function CategoryPicker({
     ]);
   };
 
-  const { behaviorCounts, allCount } = useMemo(() => computeBehaviorCounts(behaviors), [behaviors]);
+  const { behaviorCounts, allCount } = useMemo(
+    () => (bar ? computeBehaviorCounts(behaviors) : { behaviorCounts: undefined, allCount: undefined }),
+    [bar, behaviors],
+  );
 
   const formProps = {
     emoji,

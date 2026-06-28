@@ -39,8 +39,7 @@ export function BehaviorLogScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { behaviorId, initialMode } = route.params;
 
-  const { behaviors } = useBehaviorStore();
-  const behavior = behaviors.find(b => b.id === behaviorId);
+  const behavior = useBehaviorStore(useCallback(state => state.behaviors.find(b => b.id === behaviorId), [behaviorId]));
 
   const [mode, setMode] = useState<ScreenMode>(initialMode ?? 'details');
   const [editLogId, setEditLogId] = useState<string | undefined>(undefined);
@@ -188,7 +187,14 @@ interface LogFormProps {
 }
 
 function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, onSaved }: LogFormProps) {
-  const { categories, logBehavior, updateLog } = useBehaviorStore();
+  const category = useBehaviorStore(
+    useCallback(
+      state => (behavior.categoryId ? state.categories.find(c => c.id === behavior.categoryId) : undefined),
+      [behavior.categoryId],
+    ),
+  );
+  const logBehavior = useBehaviorStore(state => state.logBehavior);
+  const updateLog = useBehaviorStore(state => state.updateLog);
 
   const nowRef = useRef(new Date());
   const todayStr = toDateString(nowRef.current);
@@ -205,33 +211,26 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
   const [notes, setNotes] = useState(editNotes);
   const [notesFocused, setNotesFocused] = useState(false);
   const [metadataFocused, setMetadataFocused] = useState(false);
-  const [metadataValues, setMetadataValues] = useState<Record<string, string>>({});
 
-  const category = categories.find(c => c.id === behavior.categoryId);
-  const metadataFields = category?.metadataFields ?? [];
-
-  // Load metadata values from existing log or defaults
-  useEffect(() => {
+  const metadataFields = useMemo(() => category?.metadataFields ?? [], [category?.metadataFields]);
+  const [metadataValues, setMetadataValues] = useState<Record<string, string>>(() => {
+    const vals: Record<string, string> = {};
     if (editLogId) {
       const existingLog = behavior.logs.find(l => l.id === editLogId);
       if (existingLog?.metadata) {
-        const vals: Record<string, string> = {};
         for (const field of metadataFields) {
           const v = existingLog.metadata[field.key];
           if (v != null) vals[field.key] = String(v);
         }
-        setMetadataValues(vals);
       }
     } else if (behavior.defaultMetadata) {
-      const vals: Record<string, string> = {};
       for (const field of metadataFields) {
         const v = behavior.defaultMetadata[field.key];
         if (v != null) vals[field.key] = String(v);
       }
-      setMetadataValues(vals);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editLogId]);
+    return vals;
+  });
 
   const isToday = selectedDate === todayStr;
   const maxHour = isToday ? nowRef.current.getHours() : 23;
@@ -408,55 +407,94 @@ interface BehaviorLogListProps {
 }
 
 function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
-  const { categories } = useBehaviorStore();
+  const category = useBehaviorStore(
+    useCallback(
+      state => (behavior.categoryId ? state.categories.find(c => c.id === behavior.categoryId) : undefined),
+      [behavior.categoryId],
+    ),
+  );
+  const [elapsedTick, setElapsedTick] = useState(0);
 
   const logs = behavior.logs ?? [];
   const sections = useMemo(() => groupLogsByRecency(logs), [logs]);
-  const category = behavior.categoryId ? categories.find(c => c.id === behavior.categoryId) : undefined;
   const metadataFields = category?.metadataFields;
+
+  useEffect(() => {
+    const interval = setInterval(() => setElapsedTick(t => t + 1), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const renderItem = useCallback(
+    ({
+      item,
+      index,
+      section,
+    }: {
+      item: BehaviorEntry['logs'][number];
+      index: number;
+      section: { data: BehaviorEntry['logs'] };
+    }) => (
+      <>
+        {index > 0 && (
+          <LogGap
+            earlierMs={item.timestamp}
+            laterMs={section.data[index - 1].timestamp}
+            xpDecay={behavior.xpDecay}
+          />
+        )}
+        <BehaviorLogItem
+          log={item}
+          behaviorId={behavior.id}
+          metadataFields={metadataFields}
+          elapsedTick={elapsedTick}
+          onEdit={() => onEditLog(item.id, item.timestamp, (item.metadata?.notes as string | undefined) ?? '')}
+        />
+      </>
+    ),
+    [behavior.id, behavior.xpDecay, elapsedTick, metadataFields, onEditLog],
+  );
+
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: (typeof sections)[number] }) => {
+      const sectionIdx = sections.indexOf(section);
+      const prevLast = sectionIdx > 0 ? sections[sectionIdx - 1].data.at(-1)?.timestamp : null;
+      const showDistance = prevLast != null && section.data.length > 0;
+
+      return (
+        <View style={[styles.sectionHeader, sectionIdx > 0 && styles.sectionHeaderWithDistance]}>
+          {showDistance && (
+            <LogGap
+              earlierMs={section.data[0].timestamp}
+              laterMs={prevLast!}
+              xpDecay={behavior.xpDecay}
+              style={styles.logGapAbsolute}
+            />
+          )}
+          <Text style={styles.sectionHeaderText}>{section.title}</Text>
+        </View>
+      );
+    },
+    [behavior.xpDecay, sections],
+  );
+
+  const listEmptyComponent = useMemo(
+    () => <Text style={styles.empty}>No logs yet.{'\n'}Press Log below to record this behavior.</Text>,
+    [],
+  );
+  const contentContainerStyle = useMemo(
+    () => [logs.length === 0 && styles.emptyContainer, { paddingBottom: 80 }],
+    [logs.length],
+  );
 
   return (
     <SectionList
       sections={sections}
       keyExtractor={item => item.id}
-      renderItem={({ item, index, section }) => (
-        <>
-          {index > 0 && (
-            <LogGap
-              earlierMs={item.timestamp}
-              laterMs={section.data[index - 1].timestamp}
-              xpDecay={behavior.xpDecay}
-            />
-          )}
-          <BehaviorLogItem
-            log={item}
-            behaviorId={behavior.id}
-            metadataFields={metadataFields}
-            onEdit={() => onEditLog(item.id, item.timestamp, (item.metadata?.notes as string | undefined) ?? '')}
-          />
-        </>
-      )}
-      renderSectionHeader={({ section }) => {
-        const sectionIdx = sections.indexOf(section);
-        const prevLast = sectionIdx > 0 ? sections[sectionIdx - 1].data.at(-1)?.timestamp : null;
-        const showDistance = prevLast != null && section.data.length > 0;
-
-        return (
-          <View style={[styles.sectionHeader, sectionIdx > 0 && styles.sectionHeaderWithDistance]}>
-            {showDistance && (
-              <LogGap
-                earlierMs={section.data[0].timestamp}
-                laterMs={prevLast!}
-                xpDecay={behavior.xpDecay}
-                style={styles.logGapAbsolute}
-              />
-            )}
-            <Text style={styles.sectionHeaderText}>{section.title}</Text>
-          </View>
-        );
-      }}
-      ListEmptyComponent={<Text style={styles.empty}>No logs yet.{'\n'}Press Log below to record this behavior.</Text>}
-      contentContainerStyle={[logs.length === 0 && styles.emptyContainer, { paddingBottom: 80 }]}
+      renderItem={renderItem}
+      renderSectionHeader={renderSectionHeader}
+      ListEmptyComponent={listEmptyComponent}
+      contentContainerStyle={contentContainerStyle}
+      contentInsetAdjustmentBehavior="automatic"
     />
   );
 }

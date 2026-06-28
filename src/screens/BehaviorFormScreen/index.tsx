@@ -1,7 +1,7 @@
 import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { TextInput as RNTextInput } from 'react-native';
 import { Alert, Keyboard, ScrollView, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
@@ -44,28 +44,35 @@ export function BehaviorFormScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { behaviorId, defaultCategoryId } = route.params;
 
-  const { behaviors, categories } = useBehaviorStore();
-  const behavior = behaviorId ? behaviors.find(b => b.id === behaviorId) : undefined;
+  const behavior = useBehaviorStore(
+    useCallback(state => (behaviorId ? state.behaviors.find(b => b.id === behaviorId) : undefined), [behaviorId]),
+  );
+  const categories = useBehaviorStore(state => state.categories);
 
   const isEdit = behavior != null;
   const nameRef = useRef<RNTextInput>(null);
   const savedRef = useRef<boolean>(false);
+  const skipInitialHydration = useRef(behavior != null);
 
-  const [name, setName] = useState('');
-  const [icon, setIcon] = useState('');
+  const [name, setName] = useState(() => behavior?.name ?? '');
+  const [icon, setIcon] = useState(() => iconFromStore(behavior?.icon));
   const [categoryId, setCategoryId] = useState<string | undefined>(behavior ? behavior.categoryId : defaultCategoryId);
   const handleCategoryChange = (id: string | undefined | null) => setCategoryId(id ?? undefined);
   const [emojiKeyboardOpen, setEmojiKeyboardOpen] = useState(false);
-  const [isPrivate, setIsPrivate] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(() => behavior?.private ?? false);
   // New behaviors default to XP-on; existing behaviors inherit their saved state.
   const [xpEnabled, setXpEnabled] = useState(behavior?.xpEnabled === true);
   const [type, setType] = useState<BehaviorType>(behavior?.type ?? 'neutral');
-  const [cooldownMinutes, setCooldownMinutes] = useState(0);
-  const [cooldownType, setCooldownType] = useState<'rest' | 'limit'>('rest');
-  const [cooldownUnit, setCooldownUnit] = useState<CooldownUnit | undefined>(undefined);
-  const [cooldownEnabled, setCooldownEnabled] = useState(false);
+  const [cooldownMinutes, setCooldownMinutes] = useState(() => behavior?.cooldownMinutes || 0);
+  const [cooldownType, setCooldownType] = useState<'rest' | 'limit'>(() => behavior?.cooldownType || 'rest');
+  const [cooldownUnit, setCooldownUnit] = useState<CooldownUnit | undefined>(() => behavior?.cooldownUnit);
+  const [cooldownEnabled, setCooldownEnabled] = useState(
+    () => behavior?.cooldownEnabled ?? !!behavior?.cooldownMinutes,
+  );
   const handleCooldownToggle = () => setCooldownEnabled(v => !v);
-  const [behaviorDefaultMetadata, setBehaviorDefaultMetadata] = useState<Record<string, string>>({});
+  const [behaviorDefaultMetadata, setBehaviorDefaultMetadata] = useState<Record<string, string>>(() =>
+    Object.fromEntries(Object.entries(behavior?.defaultMetadata ?? {}).map(([k, v]) => [k, String(v)])),
+  );
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   const {
@@ -104,6 +111,10 @@ export function BehaviorFormScreen() {
 
   useEffect(() => {
     if (!behavior) return;
+    if (skipInitialHydration.current) {
+      skipInitialHydration.current = false;
+      return;
+    }
     setName(behavior.name);
     setType(behavior.type || 'neutral');
     setIcon(iconFromStore(behavior.icon));
@@ -258,7 +269,6 @@ export function BehaviorFormScreen() {
             categories={categories}
             selectedId={categoryId}
             onChange={handleCategoryChange}
-            behaviors={behaviors}
             dark
             forceShowNames
             onCategoryCreated={setCategoryId}

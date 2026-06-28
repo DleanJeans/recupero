@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { SwipeDeleteButton, SwipeEditButton } from '../../../components/SwipeActionButton';
@@ -14,20 +14,22 @@ interface Props {
   behaviorId: string;
   onEdit: () => void;
   metadataFields?: MetadataField[];
+  elapsedTick: number;
 }
 
-export function BehaviorLogItem({ log, behaviorId, onEdit, metadataFields }: Props) {
-  const [, setTick] = useState(0);
+export const BehaviorLogItem = React.memo(function BehaviorLogItem({
+  log,
+  behaviorId,
+  onEdit,
+  metadataFields,
+  elapsedTick,
+}: Props) {
+  const removeLog = useBehaviorStore(state => state.removeLog);
+  const timeFormat = useSettingsStore(state => state.timeFormat);
+  const timeText = useMemo(() => formatTime(log.timestamp, timeFormat === '12h'), [log.timestamp, timeFormat]);
+  const elapsedText = useMemo(() => formatElapsedNumeric(log.timestamp), [log.timestamp, elapsedTick]);
 
-  useEffect(() => {
-    const interval = setInterval(() => setTick(t => t + 1), 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const { removeLog } = useBehaviorStore();
-  const { timeFormat } = useSettingsStore();
-
-  const handleRemove = () => {
+  const handleRemove = useCallback(() => {
     Alert.alert('Remove Log', 'Remove this log entry?', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -36,12 +38,15 @@ export function BehaviorLogItem({ log, behaviorId, onEdit, metadataFields }: Pro
         onPress: () => removeLog(behaviorId, log.id),
       },
     ]);
-  };
+  }, [behaviorId, log.id, removeLog]);
+
+  const renderLeftActions = useCallback(() => <SwipeDeleteButton onPress={handleRemove} />, [handleRemove]);
+  const renderRightActions = useCallback(() => <SwipeEditButton onPress={onEdit} />, [onEdit]);
 
   return (
     <Swipeable
-      renderLeftActions={() => <SwipeDeleteButton onPress={handleRemove} />}
-      renderRightActions={() => <SwipeEditButton onPress={onEdit} />}
+      renderLeftActions={renderLeftActions}
+      renderRightActions={renderRightActions}
       overshootLeft={false}
       overshootRight={false}
     >
@@ -51,8 +56,8 @@ export function BehaviorLogItem({ log, behaviorId, onEdit, metadataFields }: Pro
         delayLongPress={300}
       >
         <View style={styles.timeContent}>
-          <Text style={styles.dateText}>{formatTime(log.timestamp, timeFormat === '12h')}</Text>
-          <Text style={styles.elapsedText}>{formatElapsedNumeric(log.timestamp)}</Text>
+          <Text style={styles.dateText}>{timeText}</Text>
+          <Text style={styles.elapsedText}>{elapsedText}</Text>
         </View>
         <View style={log.metadata ? styles.contentArea : undefined}>
           {metadataFields?.map(field => {
@@ -84,7 +89,7 @@ export function BehaviorLogItem({ log, behaviorId, onEdit, metadataFields }: Pro
       </Pressable>
     </Swipeable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   logItem: {
