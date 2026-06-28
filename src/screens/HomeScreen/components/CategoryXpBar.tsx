@@ -1,4 +1,3 @@
-import { useIsFocused } from '@react-navigation/native';
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/Text';
@@ -7,16 +6,12 @@ import { useBehaviorStore } from '../../../store/behaviorStore';
 import { Colors } from '../../../utils/colors';
 import { getEffectiveLogCount } from '../../../utils/xpUtils';
 
-const EMPTY_BEHAVIORS: ReturnType<typeof useBehaviorStore.getState>['behaviors'] = [];
-const EMPTY_CATEGORIES: ReturnType<typeof useBehaviorStore.getState>['categories'] = [];
-
 interface Props {
   selectedCategoryId: string | null;
 }
 export function CategoryXpBar({ selectedCategoryId }: Props) {
-  const isFocused = useIsFocused();
-  const behaviors = useBehaviorStore(s => (isFocused ? s.behaviors : EMPTY_BEHAVIORS));
-  const categories = useBehaviorStore(s => (isFocused ? s.categories : EMPTY_CATEGORIES));
+  const behaviors = useBehaviorStore(s => s.behaviors);
+  const categories = useBehaviorStore(s => s.categories);
 
   const logCount = useMemo(() => {
     if (selectedCategoryId === null) return 0;

@@ -1,4 +1,3 @@
-import { useIsFocused } from '@react-navigation/native';
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/Text';
@@ -7,8 +6,6 @@ import { useBehaviorStore } from '../../../store/behaviorStore';
 import type { BehaviorType } from '../../../types/behavior';
 import { getBehaviorTypeColor } from '../../../utils/behaviorTypeUtils';
 import { getEffectiveLogCount } from '../../../utils/xpUtils';
-
-const EMPTY_BEHAVIORS: ReturnType<typeof useBehaviorStore.getState>['behaviors'] = [];
 
 const TYPE_LABELS: Record<BehaviorType, string> = {
   desirable: 'Desirable',
@@ -22,8 +19,7 @@ interface Props {
   selectedCategoryId: string | null;
 }
 export function TypeXpBar({ selectedCategoryId }: Props) {
-  const isFocused = useIsFocused();
-  const behaviors = useBehaviorStore(s => (isFocused ? s.behaviors : EMPTY_BEHAVIORS));
+  const behaviors = useBehaviorStore(s => s.behaviors);
 
   const typeLogCounts = useMemo(() => {
     const counts: Record<BehaviorType, number> = { desirable: 0, neutral: 0, undesirable: 0 };

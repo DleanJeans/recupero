@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useIsFocused, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { startTransition, useCallback, useEffect, useMemo, useState } from 'react';
 import { SectionList, StyleSheet, View } from 'react-native';
@@ -10,7 +10,7 @@ import { Text } from '../../components/Text';
 import { useBackGuard } from '../../hooks/useBackGuard';
 import { useBehaviorStore } from '../../store/behaviorStore';
 import { useSettingsStore } from '../../store/settingsStore';
-import type { BehaviorEntry, Category } from '../../types/behavior';
+import type { BehaviorEntry } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import type { TaskEntry } from '../../types/task';
 import { groupBehaviorsByRecency } from '../../utils/behaviorUtils';
@@ -25,17 +25,12 @@ import { HomeSearchBar } from './components/HomeSearchBar';
 import { StatsIcon } from './components/StatsIcon';
 import { TypeXpBar } from './components/TypeXpBar';
 
-const EMPTY_BEHAVIORS: BehaviorEntry[] = [];
-const EMPTY_CATEGORIES: Category[] = [];
-const EMPTY_TASKS: TaskEntry[] = [];
-
 export function HomeScreen() {
   useBackGuard();
-  const isFocused = useIsFocused();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const behaviors = useBehaviorStore(s => (isFocused ? s.behaviors : EMPTY_BEHAVIORS));
-  const categories = useBehaviorStore(s => (isFocused ? s.categories : EMPTY_CATEGORIES));
-  const tasks = useBehaviorStore(s => (isFocused ? s.tasks : EMPTY_TASKS));
+  const behaviors = useBehaviorStore(s => s.behaviors);
+  const categories = useBehaviorStore(s => s.categories);
+  const tasks = useBehaviorStore(s => s.tasks);
   const hidePrivate = useSettingsStore(s => s.hidePrivate);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -46,11 +41,10 @@ export function HomeScreen() {
 
   // Reset selection if the selected category no longer exists
   useEffect(() => {
-    if (!isFocused) return;
     if (selectedCategoryId !== null && !categories.some(c => c.id === selectedCategoryId)) {
       setSelectedCategoryId(null);
     }
-  }, [categories, isFocused, selectedCategoryId]);
+  }, [categories, selectedCategoryId]);
 
   const filteredBehaviors = useMemo(() => {
     let result = behaviors;
