@@ -10,12 +10,13 @@ import { Text } from './Text';
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 const ITEMS: Array<{
-  route: keyof Pick<RootStackParamList, 'Home' | 'Tasks'>;
+  route: keyof Pick<RootStackParamList, 'Home' | 'Day' | 'Tasks'>;
   label: string;
   icon: React.ComponentProps<typeof Ionicons>['name'];
   activeIcon: React.ComponentProps<typeof Ionicons>['name'];
 }> = [
   { route: 'Home', label: 'Home', icon: 'home-outline', activeIcon: 'home' },
+  { route: 'Day', label: 'Day', icon: 'calendar-outline', activeIcon: 'calendar' },
   { route: 'Tasks', label: 'Tasks', icon: 'checkmark-circle-outline', activeIcon: 'checkmark-circle' },
 ];
 

@@ -58,6 +58,7 @@ export default function App() {
               <Stack.Screen
                 name="Day"
                 component={DayScreen}
+                options={{ animation: 'none' }}
               />
               <Stack.Screen
                 name="Tasks"

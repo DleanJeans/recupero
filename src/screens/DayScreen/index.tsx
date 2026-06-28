@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { BackButton } from '../../components/BackButton';
 import { BehaviorIcon } from '../../components/BehaviorIcon';
+import { BottomNav } from '../../components/BottomNav';
 import { DatePicker } from '../../components/DatePicker';
 import { SafeAreaView } from '../../components/SafeAreaView';
 import { ScreenTitle } from '../../components/ScreenTitle';
@@ -143,7 +143,6 @@ export function DayScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <BackButton />
         <ScreenTitle>Day</ScreenTitle>
       </View>
 
@@ -298,6 +297,8 @@ export function DayScreen() {
           })
         )}
       </ScrollView>
+
+      <BottomNav />
     </SafeAreaView>
   );
 }
@@ -308,10 +309,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg.primary,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 10,
   },
 
   // Date selector
