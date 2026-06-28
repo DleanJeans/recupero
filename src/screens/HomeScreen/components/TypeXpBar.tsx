@@ -22,10 +22,9 @@ export function TypeXpBar({ selectedCategoryId }: Props) {
   const behaviors = useBehaviorStore(s => s.behaviors);
 
   const typeLogCounts = useMemo(() => {
-    const filtered =
-      selectedCategoryId !== null ? behaviors.filter(b => b.categoryId === selectedCategoryId) : behaviors;
     const counts: Record<BehaviorType, number> = { desirable: 0, neutral: 0, undesirable: 0 };
-    for (const behavior of filtered) {
+    for (const behavior of behaviors) {
+      if (selectedCategoryId !== null && behavior.categoryId !== selectedCategoryId) continue;
       // Skip behaviors with XP disabled, or where decay has wiped the effective count to 0.
       if (!behavior.xpEnabled) continue;
       const effective = getEffectiveLogCount(behavior);

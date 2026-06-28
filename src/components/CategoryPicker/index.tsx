@@ -50,7 +50,9 @@ export function CategoryPicker({
   onCategoryDeleted,
   forceShowNames,
 }: CategoryPickerProps) {
-  const { addCategory, removeCategory, updateCategory } = useBehaviorStore();
+  const addCategory = useBehaviorStore(s => s.addCategory);
+  const removeCategory = useBehaviorStore(s => s.removeCategory);
+  const updateCategory = useBehaviorStore(s => s.updateCategory);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -163,12 +165,17 @@ export function CategoryPicker({
           contentContainerStyle={styles.scrollContent}
         >
           {leadingAccessory}
-          <CategoryChips bar {...chipsProps} />
+          <CategoryChips
+            bar
+            {...chipsProps}
+          />
           <AddCategoryButton {...addButtonProps} />
         </ScrollView>
-        {isFormOpen && <View style={{ marginHorizontal: 16 }}>
-          <CategoryForm {...formProps} />
-        </View>}
+        {isFormOpen && (
+          <View style={{ marginHorizontal: 16 }}>
+            <CategoryForm {...formProps} />
+          </View>
+        )}
       </>
     );
   }

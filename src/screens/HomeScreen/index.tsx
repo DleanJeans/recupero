@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { startTransition, useCallback, useEffect, useMemo, useState } from 'react';
 import { SectionList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
@@ -33,6 +33,9 @@ export function HomeScreen() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const handleSelectCategory = useCallback((id: string | null) => {
+    startTransition(() => setSelectedCategoryId(id));
+  }, []);
 
   // Reset selection if the selected category no longer exists
   useEffect(() => {
@@ -85,7 +88,7 @@ export function HomeScreen() {
 
       <CategoryFilter
         selectedCategoryId={selectedCategoryId}
-        onSelectCategory={setSelectedCategoryId}
+        onSelectCategory={handleSelectCategory}
       />
 
       {isSearching ? null : showXp && <CategoryXpBar selectedCategoryId={selectedCategoryId} />}
@@ -224,7 +227,6 @@ const BehaviorList = React.memo(function BehaviorList({
 
   return (
     <SectionList
-      key={selectedCategoryId ?? 'all'}
       sections={sections}
       keyExtractor={item => item.id}
       renderItem={renderItem}

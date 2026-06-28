@@ -10,20 +10,18 @@ interface Props {
   selectedCategoryId: string | null;
 }
 export function CategoryXpBar({ selectedCategoryId }: Props) {
-  const { behaviors, categories } = useBehaviorStore();
+  const behaviors = useBehaviorStore(s => s.behaviors);
+  const categories = useBehaviorStore(s => s.categories);
 
   const logCount = useMemo(() => {
     if (selectedCategoryId === null) return 0;
-    return (
-      behaviors
-        .filter(b => b.categoryId === selectedCategoryId)
-        // Skip behaviors with XP disabled, or where decay has wiped the effective count to 0.
-        .filter(b => b.xpEnabled)
-        .reduce((sum, b) => {
-          const effective = getEffectiveLogCount(b);
-          return sum + (effective > 0 ? effective : 0);
-        }, 0)
-    );
+    let total = 0;
+    for (const behavior of behaviors) {
+      if (behavior.categoryId !== selectedCategoryId || !behavior.xpEnabled) continue;
+      const effective = getEffectiveLogCount(behavior);
+      if (effective > 0) total += effective;
+    }
+    return total;
   }, [behaviors, selectedCategoryId]);
 
   if (selectedCategoryId === null) return null;
