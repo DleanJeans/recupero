@@ -104,7 +104,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg.card,
     borderRadius: 12,
     padding: 12,
-    marginHorizontal: 16,
     marginTop: 8,
     gap: 10,
   },

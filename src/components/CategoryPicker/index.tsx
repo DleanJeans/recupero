@@ -123,7 +123,7 @@ export function CategoryPicker({
 
   const { behaviorCounts, allCount } = useMemo(() => computeBehaviorCounts(behaviors), [behaviors]);
 
-  const formContent = isFormOpen && (
+  const categoryForm = isFormOpen && (
     <CategoryForm
       emoji={emoji}
       name={name}
@@ -149,12 +149,12 @@ export function CategoryPicker({
         >
           {leadingAccessory}
           <CategoryChips
+            horizontal
             categories={categories}
             selectedId={selectedId}
             onChange={onChange}
             onLongPress={handleLongPress}
             showAll={showAll}
-            horizontal
             behaviorCounts={behaviorCounts}
             allCount={allCount}
             forceShowNames={forceShowNames}
@@ -165,7 +165,7 @@ export function CategoryPicker({
             style={styles.horizontalChip}
           />
         </ScrollView>
-        {formContent}
+        <View style={{ marginHorizontal: 16 }}>{categoryForm}</View>
       </>
     );
   }
@@ -174,13 +174,8 @@ export function CategoryPicker({
     <View style={styles.section}>
       <View style={styles.labelRow}>
         <Text style={styles.label}>Category</Text>
-        <AddCategoryButton
-          isOpen={isFormOpen}
-          onPress={toggleForm}
-          style={styles.addButton}
-        />
       </View>
-      {formContent}
+
       <View style={styles.row}>
         <CategoryChips
           categories={categories}
@@ -192,7 +187,13 @@ export function CategoryPicker({
           allCount={allCount}
           forceShowNames={forceShowNames}
         />
+        <AddCategoryButton
+          isOpen={isFormOpen}
+          onPress={toggleForm}
+          style={styles.horizontalChip}
+        />
       </View>
+      {categoryForm}
     </View>
   );
 }
