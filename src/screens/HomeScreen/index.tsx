@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     paddingBottom: 140,
   },
   addButton: {
-    bottom: 16,
+    bottom: 0,
   },
   empty: {
     color: Colors.text.faint,
