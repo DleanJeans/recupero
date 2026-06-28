@@ -17,7 +17,7 @@ import { Text, TextInput } from '../../components/Text';
 import { useStarThresholdsForm } from '../../hooks/useStarThresholdsForm';
 import { useXpDecayForm } from '../../hooks/useXpDecayForm';
 import { useBehaviorStore } from '../../store/behaviorStore';
-import type { BehaviorEntry, BehaviorType } from '../../types/behavior';
+import type { BehaviorEntry, BehaviorType, Category, MetadataField } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import { BehaviorTypePicker } from './components/BehaviorTypePicker';
@@ -267,39 +267,12 @@ export function BehaviorFormScreen() {
             }}
           />
 
-          {(() => {
-            const selectedCat = categories.find(c => c.id === categoryId);
-            const fields = selectedCat?.metadataFields;
-            if (!fields?.length) return null;
-            return (
-              <View style={styles.defaultMetaSection}>
-                <Text style={styles.defaultMetaLabel}>Default values</Text>
-                {fields.map(field => (
-                  <View
-                    key={field.key}
-                    style={styles.defaultMetaRow}
-                  >
-                    <Text style={styles.defaultMetaFieldLabel}>
-                      {field.label}
-                      {field.unit ? ` (${field.unit})` : ''}
-                    </Text>
-                    <TextInput
-                      style={styles.defaultMetaInput}
-                      value={behaviorDefaultMetadata[field.key] ?? ''}
-                      onChangeText={v =>
-                        setBehaviorDefaultMetadata(prev => ({ ...prev, [field.key]: v.replace(/[^0-9.]/g, '') }))
-                      }
-                      placeholder="0"
-                      placeholderTextColor={Colors.text.dim}
-                      keyboardType="decimal-pad"
-                      returnKeyType="done"
-                      maxLength={8}
-                    />
-                  </View>
-                ))}
-              </View>
-            );
-          })()}
+          <MetadataEditor
+            categoryId={categoryId}
+            categories={categories}
+            defaults={behaviorDefaultMetadata}
+            onChange={setBehaviorDefaultMetadata}
+          />
 
           <CheckboxRow
             label="Cooldown"
@@ -404,6 +377,46 @@ const NameInput = React.forwardRef<RNTextInput, NameInputProps>(function NameInp
     />
   );
 });
+
+interface MetadataEditorProps {
+  categoryId: string | undefined;
+  categories: Category[];
+  defaults: Record<string, string>;
+  onChange: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+}
+
+function MetadataEditor({ categoryId, categories, defaults, onChange }: MetadataEditorProps) {
+  const selectedCat = categories.find(c => c.id === categoryId);
+  const fields = selectedCat?.metadataFields;
+  if (!fields?.length) return null;
+
+  return (
+    <View style={styles.defaultMetaSection}>
+      <Text style={styles.defaultMetaLabel}>Default values</Text>
+      {fields.map((field: MetadataField) => (
+        <View
+          key={field.key}
+          style={styles.defaultMetaRow}
+        >
+          <Text style={styles.defaultMetaFieldLabel}>
+            {field.label}
+            {field.unit ? ` (${field.unit})` : ''}
+          </Text>
+          <TextInput
+            style={styles.defaultMetaInput}
+            value={defaults[field.key] ?? ''}
+            onChangeText={v => onChange(prev => ({ ...prev, [field.key]: v.replace(/[^0-9.]/g, '') }))}
+            placeholder="0"
+            placeholderTextColor={Colors.text.dim}
+            keyboardType="decimal-pad"
+            returnKeyType="done"
+            maxLength={8}
+          />
+        </View>
+      ))}
+    </View>
+  );
+}
 
 // #endregion
 
