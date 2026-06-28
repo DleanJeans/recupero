@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 import { BottomNav } from '../../components/BottomNav';
 import { Button } from '../../components/Button';
 import { DatePicker } from '../../components/DatePicker';
@@ -15,6 +16,8 @@ import { describeDay, toDateString } from '../../utils/dateUtils';
 import { getTaskStarsForDate, getTasksForDate, isTaskCompleteOnDate } from '../../utils/taskUtils';
 import { TaskCard } from './components/task-card';
 import { TaskComposer } from './components/task-composer';
+
+const TASK_LIST_LAYOUT = LinearTransition.duration(240);
 
 export function TaskScreen() {
   const todayStr = useMemo(() => toDateString(new Date()), []);
@@ -98,6 +101,12 @@ export function TaskScreen() {
     },
     [removeTask],
   );
+  const handleToggleTask = useCallback(
+    (taskId: string) => {
+      toggleTaskCompletion(taskId, selectedDate);
+    },
+    [selectedDate, toggleTaskCompletion],
+  );
   const renderTask = useCallback(
     ({ item: task }: { item: TaskEntry }) => {
       const behavior = task.behaviorId ? behaviorById.get(task.behaviorId) : undefined;
@@ -106,12 +115,12 @@ export function TaskScreen() {
           task={task}
           behavior={behavior}
           selectedDate={selectedDate}
-          onToggle={() => toggleTaskCompletion(task.id, selectedDate)}
+          onToggle={() => handleToggleTask(task.id)}
           onRemove={() => confirmRemove(task)}
         />
       );
     },
-    [behaviorById, confirmRemove, selectedDate, toggleTaskCompletion],
+    [behaviorById, confirmRemove, handleToggleTask, selectedDate],
   );
 
   return (
@@ -209,7 +218,7 @@ export function TaskScreen() {
           <Text style={styles.sectionTitle}>SCHEDULED</Text>
         </View>
 
-        <FlatList
+        <Animated.FlatList
           data={dayTasks}
           keyExtractor={task => task.id}
           style={styles.scheduledList}
@@ -217,6 +226,7 @@ export function TaskScreen() {
           keyboardShouldPersistTaps="handled"
           contentInsetAdjustmentBehavior="automatic"
           ItemSeparatorComponent={TaskSeparator}
+          itemLayoutAnimation={TASK_LIST_LAYOUT}
           ListEmptyComponent={<Text style={styles.empty}>No tasks for this date.</Text>}
           renderItem={renderTask}
         />

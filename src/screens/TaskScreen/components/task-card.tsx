@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 import { BehaviorIcon } from '../../../components/BehaviorIcon';
 import { Button } from '../../../components/Button';
 import { Text } from '../../../components/Text';
@@ -9,6 +10,8 @@ import type { TaskEntry } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
 import { isTaskCompleteOnDate } from '../../../utils/taskUtils';
 import { TaskStarRow } from './task-star-row';
+
+const TASK_CARD_LAYOUT = LinearTransition.duration(240);
 
 interface TaskCardProps {
   task: TaskEntry;
@@ -24,7 +27,10 @@ function TaskCardComponent({ task, behavior, selectedDate, onToggle, onRemove }:
   const taskMeta = isBehaviorTask ? 'Behavior task' : behavior ? `One-off · ${behavior.name}` : 'One-off';
 
   return (
-    <View style={[styles.taskCard, complete && styles.taskCardComplete]}>
+    <Animated.View
+      layout={TASK_CARD_LAYOUT}
+      style={[styles.taskCard, complete && styles.taskCardComplete]}
+    >
       <Pressable
         style={styles.taskMain}
         onPress={onToggle}
@@ -72,7 +78,7 @@ function TaskCardComponent({ task, behavior, selectedDate, onToggle, onRemove }:
           color={Colors.text.faint}
         />
       </Button>
-    </View>
+    </Animated.View>
   );
 }
 
