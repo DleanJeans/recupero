@@ -3,13 +3,21 @@ import { toDateString } from './dateUtils';
 
 export function getTasksForDate(tasks: TaskEntry[] | undefined, dateStr: string): TaskEntry[] {
   return (tasks ?? [])
-    .filter(task => !task.archived && task.scheduledDate === dateStr)
+    .filter(task => isTaskVisibleOnDate(task, dateStr))
     .sort((a, b) => {
       const aDone = isTaskCompleteOnDate(a, dateStr);
       const bDone = isTaskCompleteOnDate(b, dateStr);
       if (aDone !== bDone) return aDone ? 1 : -1;
       return a.createdAt - b.createdAt;
     });
+}
+
+export function isTaskVisibleOnDate(task: TaskEntry, dateStr: string): boolean {
+  if (task.archived) return false;
+  if (isTaskCompleteOnDate(task, dateStr)) return true;
+  if (task.completedDates.length > 0) return false;
+  if (task.scheduledDate === dateStr) return true;
+  return dateStr === toDateString(new Date()) && getTaskCreatedDate(task) <= dateStr;
 }
 
 export function isTaskCompleteOnDate(task: TaskEntry, dateStr: string): boolean {
@@ -27,4 +35,9 @@ export function timestampForTaskDate(dateStr: string): number {
   const todayStr = toDateString(new Date());
   if (dateStr === todayStr) return Date.now();
   return new Date(`${dateStr}T12:00:00`).getTime();
+}
+
+function getTaskCreatedDate(task: TaskEntry): string {
+  if (Number.isFinite(task.createdAt)) return toDateString(new Date(task.createdAt));
+  return task.scheduledDate;
 }
