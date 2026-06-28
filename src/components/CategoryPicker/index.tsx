@@ -123,21 +123,36 @@ export function CategoryPicker({
 
   const { behaviorCounts, allCount } = useMemo(() => computeBehaviorCounts(behaviors), [behaviors]);
 
-  const categoryForm = isFormOpen && (
-    <CategoryForm
-      emoji={emoji}
-      name={name}
-      isEditing={isEditing}
-      onEmojiChange={setEmoji}
-      onNameChange={setName}
-      metadataFields={metadataFields}
-      onMetadataFieldsChange={setMetadataFields}
-      onSave={handleSave}
-      onCancel={resetForm}
-      onDelete={handleDelete}
-      dark={dark}
-    />
-  );
+  const formProps = {
+    emoji,
+    name,
+    isEditing,
+    onEmojiChange: setEmoji,
+    onNameChange: setName,
+    metadataFields,
+    onMetadataFieldsChange: setMetadataFields,
+    onSave: handleSave,
+    onCancel: resetForm,
+    onDelete: handleDelete,
+    dark,
+  };
+
+  const chipsProps = {
+    categories,
+    selectedId,
+    onChange,
+    onLongPress: handleLongPress,
+    showAll,
+    behaviorCounts,
+    allCount,
+    forceShowNames,
+  };
+
+  const addButtonProps = {
+    isOpen: isFormOpen,
+    onPress: toggleForm,
+    style: styles.horizontalChip,
+  };
 
   if (horizontal) {
     return (
@@ -150,22 +165,13 @@ export function CategoryPicker({
           {leadingAccessory}
           <CategoryChips
             horizontal
-            categories={categories}
-            selectedId={selectedId}
-            onChange={onChange}
-            onLongPress={handleLongPress}
-            showAll={showAll}
-            behaviorCounts={behaviorCounts}
-            allCount={allCount}
-            forceShowNames={forceShowNames}
+            {...chipsProps}
           />
-          <AddCategoryButton
-            isOpen={isFormOpen}
-            onPress={toggleForm}
-            style={styles.horizontalChip}
-          />
+          <AddCategoryButton {...addButtonProps} />
         </ScrollView>
-        <View style={{ marginHorizontal: 16 }}>{categoryForm}</View>
+        {isFormOpen && <View style={{ marginHorizontal: 16 }}>
+          <CategoryForm {...formProps} />
+        </View>}
       </>
     );
   }
@@ -177,23 +183,10 @@ export function CategoryPicker({
       </View>
 
       <View style={styles.row}>
-        <CategoryChips
-          categories={categories}
-          selectedId={selectedId}
-          onChange={onChange}
-          onLongPress={handleLongPress}
-          showAll={showAll}
-          behaviorCounts={behaviorCounts}
-          allCount={allCount}
-          forceShowNames={forceShowNames}
-        />
-        <AddCategoryButton
-          isOpen={isFormOpen}
-          onPress={toggleForm}
-          style={styles.horizontalChip}
-        />
+        <CategoryChips {...chipsProps} />
+        <AddCategoryButton {...addButtonProps} />
       </View>
-      {categoryForm}
+      {isFormOpen && <CategoryForm {...formProps} />}
     </View>
   );
 }
