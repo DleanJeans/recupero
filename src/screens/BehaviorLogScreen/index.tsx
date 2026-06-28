@@ -405,7 +405,7 @@ function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, on
       <Button
         variant="primary"
         fab
-        style={{ bottom: 16, opacity: 1 }}
+        style={styles.logButton}
         onPress={handleConfirm}
         disabled={pending}
         overlay={xpBursts.map(burst => (
@@ -661,6 +661,7 @@ const styles = StyleSheet.create({
   },
   primaryAction: { flex: 0, width: '100%' },
   detailAction: { flex: 1, position: 'relative', bottom: 0, left: 0, right: 0 },
+  logButton: { bottom: 16 },
   detailsActionsRow: {
     flexDirection: 'row',
     gap: 12,
