@@ -13,6 +13,7 @@ import { BehaviorLogScreen } from './src/screens/BehaviorLogScreen';
 import { DayScreen } from './src/screens/DayScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
+import { TaskScreen } from './src/screens/TaskScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -22,6 +23,7 @@ const linking = {
     screens: {
       Home: 'home',
       Day: 'day',
+      Tasks: 'tasks',
       BehaviorDetails: 'behavior/:behaviorId',
       BehaviorLog: 'behavior-log/:behaviorId',
       BehaviorForm: 'behavior-form',
@@ -55,6 +57,10 @@ export default function App() {
               <Stack.Screen
                 name="Day"
                 component={DayScreen}
+              />
+              <Stack.Screen
+                name="Tasks"
+                component={TaskScreen}
               />
 
               <Stack.Screen

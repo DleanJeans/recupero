@@ -15,6 +15,7 @@ import { Colors } from '../../utils/colors';
 import { describeDay, toDateString } from '../../utils/dateUtils';
 import { roundTo2 } from '../../utils/numberUtils';
 import { getThresholds, getTotalStarsForDate } from '../../utils/starUtils';
+import { getTaskStarsForDate } from '../../utils/taskUtils';
 import { formatDuration, formatTime, MS_PER_MINUTE } from '../../utils/timeUtils';
 
 function formatEntryMetadata(
@@ -54,7 +55,7 @@ function formatEntryMetadata(
 }
 
 export function DayScreen() {
-  const { behaviors, categories } = useBehaviorStore();
+  const { behaviors, categories, tasks } = useBehaviorStore();
 
   const todayStr = toDateString(new Date());
   const [selectedDate, setSelectedDate] = useState(todayStr);
@@ -96,13 +97,15 @@ export function DayScreen() {
     return { first: minTs, last: maxTs, spanMs: maxTs - minTs };
   }, [dayLogs]);
 
-  // Star rating: total across opted-in behaviors for the selected date.
-  // Summary item renders only when at least one opted-in behavior has a log.
+  // Star rating: total across opted-in behaviors and completed tasks for the selected date.
+  // Summary item renders when either source contributed stars.
   const hasOptedInLog = useMemo(() => dayLogs.some(entry => getThresholds(entry.behavior) !== undefined), [dayLogs]);
+  const taskStars = useMemo(() => getTaskStarsForDate(tasks, selectedDate), [tasks, selectedDate]);
   const totalStars = useMemo(() => {
-    if (!hasOptedInLog) return 0;
-    return getTotalStarsForDate(behaviors, selectedDate);
-  }, [behaviors, selectedDate, hasOptedInLog]);
+    const behaviorStars = hasOptedInLog ? getTotalStarsForDate(behaviors, selectedDate) : 0;
+    return behaviorStars + taskStars;
+  }, [behaviors, selectedDate, hasOptedInLog, taskStars]);
+  const hasStars = hasOptedInLog || taskStars > 0;
 
   // Group logs that fall in the same calendar minute so time is shown once
   const minuteGroups = useMemo(() => {
@@ -186,7 +189,7 @@ export function DayScreen() {
           <Text style={styles.summaryValue}>{totalEntries}</Text>
           <Text style={styles.summaryLabel}>entries</Text>
         </View>
-        {hasOptedInLog && (
+        {hasStars && (
           <View
             style={styles.summaryItem}
             accessible

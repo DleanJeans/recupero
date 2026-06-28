@@ -3,10 +3,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { BehaviorEntry, BehaviorType, Category, MetadataField, StarPeriod } from '../types/behavior';
+import type { AddTaskInput, TaskEntry } from '../types/task';
+import { isTaskCompleteOnDate, timestampForTaskDate } from '../utils/taskUtils';
 
 interface BehaviorStore {
   behaviors: BehaviorEntry[];
   categories: Category[];
+  tasks: TaskEntry[];
   addBehavior: (
     name: string,
     type: BehaviorType,
@@ -61,6 +64,10 @@ interface BehaviorStore {
   removeCategory: (id: string) => void;
   updateCategory: (id: string, updates: { name?: string; emoji?: string; metadataFields?: MetadataField[] }) => void;
   updateCategoryMetadataFields: (id: string, metadataFields: MetadataField[]) => void;
+  addTask: (input: AddTaskInput) => void;
+  updateTask: (taskId: string, updates: Partial<Pick<TaskEntry, 'title' | 'stars' | 'scheduledDate'>>) => void;
+  toggleTaskCompletion: (taskId: string, dateStr: string) => void;
+  removeTask: (taskId: string) => void;
 }
 
 export const useBehaviorStore = create<BehaviorStore>()(
@@ -68,6 +75,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
     (set, get) => ({
       behaviors: [],
       categories: [],
+      tasks: [],
       addBehavior: (
         name,
         type,
@@ -135,6 +143,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
       removeBehavior: id =>
         set(state => ({
           behaviors: state.behaviors.filter(t => t.id !== id),
+          tasks: (state.tasks ?? []).map(task => (task.behaviorId === id ? { ...task, behaviorId: undefined } : task)),
         })),
       removeLog: (behaviorId, logId) =>
         set(state => ({
@@ -198,6 +207,97 @@ export const useBehaviorStore = create<BehaviorStore>()(
         set(state => ({
           categories: state.categories.map(c => (c.id === id ? { ...c, metadataFields } : c)),
         })),
+      addTask: input =>
+        set(state => ({
+          tasks: [
+            ...(state.tasks ?? []),
+            {
+              id: uuidv4(),
+              title: input.title,
+              scheduledDate: input.scheduledDate,
+              stars: input.stars,
+              behaviorId: input.behaviorId,
+              completedDates: [],
+              createdAt: Date.now(),
+            },
+          ],
+        })),
+      updateTask: (taskId, updates) =>
+        set(state => ({
+          tasks: (state.tasks ?? []).map(task => (task.id === taskId ? { ...task, ...updates } : task)),
+        })),
+      toggleTaskCompletion: (taskId, dateStr) =>
+        set(state => {
+          const task = (state.tasks ?? []).find(t => t.id === taskId);
+          if (!task) return state;
+
+          const wasComplete = isTaskCompleteOnDate(task, dateStr);
+          const logIdToRemove = wasComplete ? task.completionLogIds?.[dateStr] : undefined;
+          const logIdToAdd = !wasComplete && task.behaviorId ? uuidv4() : undefined;
+          const taskTimestamp = timestampForTaskDate(dateStr);
+
+          const tasks = (state.tasks ?? []).map(t => {
+            if (t.id !== taskId) return t;
+            if (wasComplete) {
+              const { [dateStr]: _removedLogId, ...remainingLogIds } = t.completionLogIds ?? {};
+              return {
+                ...t,
+                completedDates: t.completedDates.filter(date => date !== dateStr),
+                completionLogIds: Object.keys(remainingLogIds).length > 0 ? remainingLogIds : undefined,
+              };
+            }
+            return {
+              ...t,
+              completedDates: [...t.completedDates, dateStr],
+              completionLogIds: logIdToAdd
+                ? {
+                    ...(t.completionLogIds ?? {}),
+                    [dateStr]: logIdToAdd,
+                  }
+                : t.completionLogIds,
+            };
+          });
+
+          const behaviors =
+            task.behaviorId && logIdToAdd
+              ? state.behaviors.map(b => {
+                  if (b.id !== task.behaviorId) return b;
+                  const metadata = b.defaultMetadata ?? {};
+                  return {
+                    ...b,
+                    lastTimestamp: b.lastTimestamp === null ? taskTimestamp : Math.max(b.lastTimestamp, taskTimestamp),
+                    metadata: {
+                      ...b.metadata,
+                      ...metadata,
+                    },
+                    logs: [
+                      ...b.logs,
+                      {
+                        id: logIdToAdd,
+                        timestamp: taskTimestamp,
+                        metadata,
+                      },
+                    ],
+                  };
+                })
+              : task.behaviorId && logIdToRemove
+                ? state.behaviors.map(b => {
+                    if (b.id !== task.behaviorId) return b;
+                    const logs = b.logs.filter(log => log.id !== logIdToRemove);
+                    return {
+                      ...b,
+                      logs,
+                      lastTimestamp: logs.length > 0 ? Math.max(...logs.map(log => log.timestamp)) : null,
+                    };
+                  })
+                : state.behaviors;
+
+          return { tasks, behaviors };
+        }),
+      removeTask: taskId =>
+        set(state => ({
+          tasks: (state.tasks ?? []).filter(task => task.id !== taskId),
+        })),
       updateLog: (behaviorId, logId, timestamp, metadata) =>
         set(state => ({
           behaviors: state.behaviors.map(b =>
@@ -226,15 +326,16 @@ export const useBehaviorStore = create<BehaviorStore>()(
     {
       name: 'recupero-behaviors',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 2,
+      version: 3,
       // v0 → v1: rename `xp` field to `xpEnabled` and drop the old key.
       // v1 → v2: backfill `cooldownEnabled` from `cooldownMinutes` (old logs had no opt-in flag).
+      // v2 → v3: add persisted tasks.
       migrate: (persistedState, version) => {
+        let state = persistedState as BehaviorStore & { tasks?: TaskEntry[] };
         if (version < 1) {
-          const state = persistedState as BehaviorStore;
-          return {
+          state = {
             ...state,
-            behaviors: state.behaviors.map(b => {
+            behaviors: (state.behaviors ?? []).map(b => {
               const { xp: legacyXp, ...rest } = b as BehaviorEntry & { xp?: true };
               return {
                 ...rest,
@@ -244,16 +345,21 @@ export const useBehaviorStore = create<BehaviorStore>()(
           };
         }
         if (version < 2) {
-          const state = persistedState as BehaviorStore;
-          return {
+          state = {
             ...state,
-            behaviors: state.behaviors.map(b => ({
+            behaviors: (state.behaviors ?? []).map(b => ({
               ...b,
               cooldownEnabled: b.cooldownEnabled ?? !!b.cooldownMinutes,
             })),
           };
         }
-        return persistedState;
+        if (version < 3) {
+          state = {
+            ...state,
+            tasks: state.tasks ?? [],
+          };
+        }
+        return state;
       },
     },
   ),

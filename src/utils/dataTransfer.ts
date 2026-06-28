@@ -28,8 +28,10 @@ export async function exportToFile(): Promise<{ success: boolean; message: strin
 
     await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: 'Export Recupero Data' });
 
-    const behaviorCount = behaviors ? (JSON.parse(behaviors).state?.behaviors?.length ?? 0) : 0;
-    return { success: true, message: `Exported ${behaviorCount} behaviors` };
+    const behaviorState = behaviors ? JSON.parse(behaviors).state : null;
+    const behaviorCount = behaviorState?.behaviors?.length ?? 0;
+    const taskCount = behaviorState?.tasks?.length ?? 0;
+    return { success: true, message: `Exported ${behaviorCount} behaviors and ${taskCount} tasks` };
   } catch (error) {
     return { success: false, message: `Export failed: ${error instanceof Error ? error.message : 'Unknown error'}` };
   }
@@ -57,8 +59,10 @@ export async function importFromFile(fileUri: string): Promise<{ success: boolea
 
     await Promise.all(operations);
 
-    const behaviorCount = data.behaviors ? (JSON.parse(data.behaviors).state?.behaviors?.length ?? 0) : 0;
-    return { success: true, message: `Imported ${behaviorCount} behaviors` };
+    const behaviorState = data.behaviors ? JSON.parse(data.behaviors).state : null;
+    const behaviorCount = behaviorState?.behaviors?.length ?? 0;
+    const taskCount = behaviorState?.tasks?.length ?? 0;
+    return { success: true, message: `Imported ${behaviorCount} behaviors and ${taskCount} tasks` };
   } catch (error) {
     return { success: false, message: `Import failed: ${error instanceof Error ? error.message : 'Unknown error'}` };
   }

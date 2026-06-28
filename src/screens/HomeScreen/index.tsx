@@ -4,6 +4,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { startTransition, useCallback, useEffect, useMemo, useState } from 'react';
 import { SectionList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BottomNav } from '../../components/BottomNav';
 import { Button } from '../../components/Button';
 import { CategoryFilter } from '../../components/CategoryFilter';
 import { Text } from '../../components/Text';
@@ -12,11 +13,13 @@ import { useBehaviorStore } from '../../store/behaviorStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import type { BehaviorEntry } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
+import type { TaskEntry } from '../../types/task';
 import { groupBehaviorsByRecency } from '../../utils/behaviorUtils';
 import { Colors } from '../../utils/colors';
 import { toDateString, yesterday } from '../../utils/dateUtils';
 import { getTotalStarsForDate } from '../../utils/starUtils';
 import { Label } from '../../utils/strings';
+import { getTaskStarsForDate } from '../../utils/taskUtils';
 import { AddBehaviorButton } from './components/AddBehaviorButton';
 import { BehaviorCard } from './components/BehaviorCard';
 import { CategoryXpBar } from './components/CategoryXpBar';
@@ -29,6 +32,7 @@ export function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const behaviors = useBehaviorStore(s => s.behaviors);
   const categories = useBehaviorStore(s => s.categories);
+  const tasks = useBehaviorStore(s => s.tasks);
   const hidePrivate = useSettingsStore(s => s.hidePrivate);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -95,13 +99,16 @@ export function HomeScreen() {
 
       <BehaviorList
         behaviors={filteredBehaviors}
+        tasks={tasks}
         selectedCategoryId={selectedCategoryId}
         searchQuery={isSearching ? searchQuery : undefined}
       />
 
       <AddBehaviorButton
         onPress={() => navigation.navigate('BehaviorForm', { defaultCategoryId: selectedCategoryId ?? undefined })}
+        style={styles.addButton}
       />
+      <BottomNav />
     </SafeAreaView>
   );
 }
@@ -176,11 +183,13 @@ function HeaderIcon({ icon, name, onPress, accessibilityLabel }: HeaderIconProps
 
 interface BehaviorListProps {
   behaviors: BehaviorEntry[];
+  tasks: TaskEntry[];
   selectedCategoryId: string | null;
   searchQuery?: string;
 }
 const BehaviorList = React.memo(function BehaviorList({
   behaviors,
+  tasks,
   selectedCategoryId,
   searchQuery,
 }: BehaviorListProps) {
@@ -220,9 +229,10 @@ const BehaviorList = React.memo(function BehaviorList({
       <SectionHeader
         title={section.title}
         behaviors={behaviors}
+        tasks={tasks}
       />
     ),
-    [behaviors],
+    [behaviors, tasks],
   );
 
   return (
@@ -241,8 +251,9 @@ const BehaviorList = React.memo(function BehaviorList({
 interface SectionHeaderProps {
   title: string;
   behaviors: BehaviorEntry[];
+  tasks: TaskEntry[];
 }
-const SectionHeader = React.memo(function SectionHeader({ title, behaviors }: SectionHeaderProps) {
+const SectionHeader = React.memo(function SectionHeader({ title, behaviors, tasks }: SectionHeaderProps) {
   const today = useMemo(() => toDateString(new Date()), []);
   const yesterdayStr = useMemo(() => toDateString(yesterday()), []);
   const sectionDate = (() => {
@@ -254,9 +265,10 @@ const SectionHeader = React.memo(function SectionHeader({ title, behaviors }: Se
   const sectionStars = useMemo(() => {
     if (!sectionDate) return null;
     const hasOptedIn = behaviors.some(b => b.starThresholds);
-    if (!hasOptedIn) return null;
-    return getTotalStarsForDate(behaviors, sectionDate);
-  }, [behaviors, sectionDate]);
+    const taskStars = getTaskStarsForDate(tasks, sectionDate);
+    if (!hasOptedIn && taskStars === 0) return null;
+    return getTotalStarsForDate(behaviors, sectionDate) + taskStars;
+  }, [behaviors, tasks, sectionDate]);
 
   return (
     <View style={styles.sectionHeader}>
@@ -309,7 +321,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   listContent: {
-    paddingBottom: 80,
+    paddingBottom: 140,
+  },
+  addButton: {
+    bottom: 92,
   },
   empty: {
     color: Colors.text.faint,
