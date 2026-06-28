@@ -163,33 +163,6 @@ export function TaskScreen() {
       </View>
 
       <View style={styles.content}>
-        {composerOpen ? (
-          <TaskComposer
-            title={title}
-            behaviorQuery={behaviorQuery}
-            stars={stars}
-            behaviors={availableBehaviors}
-            selectedBehaviorId={selectedBehaviorId}
-            onTitleChange={setTitle}
-            onBehaviorQueryChange={setBehaviorQuery}
-            onStarsChange={setStars}
-            onBehaviorSelect={setSelectedBehaviorId}
-            onAdd={handleAddTask}
-            onCancel={() => {
-              resetComposer();
-              setComposerOpen(false);
-            }}
-          />
-        ) : (
-          <Button
-            variant="primary"
-            onPress={() => setComposerOpen(true)}
-            style={styles.openComposerButton}
-          >
-            + Add task
-          </Button>
-        )}
-
         <View style={styles.listHeader}>
           <Text style={styles.sectionTitle}>SCHEDULED</Text>
         </View>
@@ -216,6 +189,35 @@ export function TaskScreen() {
             );
           }}
         />
+      </View>
+
+      <View style={styles.bottomAction}>
+        {composerOpen ? (
+          <TaskComposer
+            title={title}
+            behaviorQuery={behaviorQuery}
+            stars={stars}
+            behaviors={availableBehaviors}
+            selectedBehaviorId={selectedBehaviorId}
+            onTitleChange={setTitle}
+            onBehaviorQueryChange={setBehaviorQuery}
+            onStarsChange={setStars}
+            onBehaviorSelect={setSelectedBehaviorId}
+            onAdd={handleAddTask}
+            onCancel={() => {
+              resetComposer();
+              setComposerOpen(false);
+            }}
+          />
+        ) : (
+          <Button
+            variant="primary"
+            onPress={() => setComposerOpen(true)}
+            style={styles.openComposerButton}
+          >
+            + Add task
+          </Button>
+        )}
       </View>
 
       <BottomNav />
@@ -289,6 +291,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 4,
     gap: 10,
+  },
+  bottomAction: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   openComposerButton: {
     alignSelf: 'stretch',
