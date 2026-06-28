@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   unitButton: {
-    backgroundColor: Colors.bg.input,
+    backgroundColor: Colors.bg.elevated,
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     bottom: 44,
     right: 0,
     minWidth: 140,
-    backgroundColor: Colors.bg.input,
+    backgroundColor: Colors.bg.elevated,
     borderRadius: 10,
     padding: 4,
     zIndex: 11,

@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   },
   numberInput: {
     flex: 1,
-    backgroundColor: Colors.bg.input,
+    backgroundColor: Colors.bg.elevated,
     color: Colors.text.primary,
     borderRadius: 8,
     paddingHorizontal: 12,

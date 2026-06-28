@@ -33,13 +33,12 @@ export function StarThresholdsFormField({
   onPeriodChange,
 }: Props) {
   return (
-    <View style={styles.section}>
-      <CheckboxRow
-        label="Track stars"
-        hint="Show a 1-3 star rating on Home and Day view"
-        checked={enabled}
-        onToggle={onToggle}
-      />
+    <CheckboxRow
+      label="Track stars"
+      hint="Show a 1-3 star rating on Home and Day view"
+      checked={enabled}
+      onToggle={onToggle}
+    >
       {enabled && (
         <View style={styles.inputsSection}>
           <StarPeriodPicker
@@ -70,15 +69,11 @@ export function StarThresholdsFormField({
           {validationError && <Text style={styles.error}>{validationError}</Text>}
         </View>
       )}
-    </View>
+    </CheckboxRow>
   );
 }
 
 const styles = StyleSheet.create({
-  section: {
-    gap: 10,
-    marginTop: 4,
-  },
   inputsSection: {
     gap: 12,
   },
@@ -105,7 +100,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   input: {
-    backgroundColor: Colors.bg.input,
+    backgroundColor: Colors.bg.elevated,
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 6,

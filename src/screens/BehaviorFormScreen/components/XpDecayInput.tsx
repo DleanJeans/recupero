@@ -25,6 +25,7 @@ export function XpDecayInput({ enabled, everyMinutes, unit, onToggle, onChangeMi
         hint="Lose 1 log per period without logging"
         checked={enabled}
         onToggle={onToggle}
+        variant="row"
       />
       {enabled && (
         <View style={styles.inputsSection}>
@@ -45,7 +46,6 @@ export function XpDecayInput({ enabled, everyMinutes, unit, onToggle, onChangeMi
 const styles = StyleSheet.create({
   section: {
     gap: 10,
-    marginTop: 4,
   },
   inputsSection: {
     gap: 8,

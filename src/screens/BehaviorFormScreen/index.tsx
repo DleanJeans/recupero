@@ -279,27 +279,27 @@ export function BehaviorFormScreen() {
             hint="Limit how often this can be logged"
             checked={cooldownEnabled}
             onToggle={handleCooldownToggle}
-          />
-
-          {cooldownEnabled && (
-            <View style={styles.cooldownSection}>
-              <View style={styles.cooldownLabelRow}>
-                <CooldownIcon size={14} />
-                <Text style={styles.cooldownLabel}>Type</Text>
-                <CooldownTypeToggle
-                  value={cooldownType}
-                  onChange={setCooldownType}
-                  style={styles.cooldownTypeRow}
+          >
+            {cooldownEnabled && (
+              <View style={styles.cooldownSection}>
+                <View style={styles.cooldownLabelRow}>
+                  <CooldownIcon size={14} />
+                  <Text style={styles.cooldownLabel}>Type</Text>
+                  <CooldownTypeToggle
+                    value={cooldownType}
+                    onChange={setCooldownType}
+                    style={styles.cooldownTypeRow}
+                  />
+                </View>
+                <CooldownInput
+                  cooldownMinutes={cooldownMinutes}
+                  onChange={setCooldownMinutes}
+                  preferredUnit={cooldownUnit}
+                  onUnitChange={setCooldownUnit}
                 />
               </View>
-              <CooldownInput
-                cooldownMinutes={cooldownMinutes}
-                onChange={setCooldownMinutes}
-                preferredUnit={cooldownUnit}
-                onUnitChange={setCooldownUnit}
-              />
-            </View>
-          )}
+            )}
+          </CheckboxRow>
 
           <StarThresholdsFormField
             enabled={starsEnabled}
@@ -316,18 +316,18 @@ export function BehaviorFormScreen() {
             hint="Show level, XP bar, and decay"
             checked={xpEnabled}
             onToggle={() => setXpEnabled(v => !v)}
-          />
-
-          {xpEnabled && (
-            <XpDecayInput
-              enabled={xpDecayEnabled}
-              everyMinutes={xpDecayEveryMinutes}
-              unit={xpDecayUnit}
-              onToggle={handleXpDecayToggle}
-              onChangeMinutes={handleXpDecayChangeMinutes}
-              onUnitChange={handleXpDecayUnitChange}
-            />
-          )}
+          >
+            {xpEnabled && (
+              <XpDecayInput
+                enabled={xpDecayEnabled}
+                everyMinutes={xpDecayEveryMinutes}
+                unit={xpDecayUnit}
+                onToggle={handleXpDecayToggle}
+                onChangeMinutes={handleXpDecayChangeMinutes}
+                onUnitChange={handleXpDecayUnitChange}
+              />
+            )}
+          </CheckboxRow>
 
           <CheckboxRow
             label="Private"
