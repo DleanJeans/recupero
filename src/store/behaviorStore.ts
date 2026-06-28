@@ -263,7 +263,10 @@ export const useBehaviorStore = create<BehaviorStore>()(
             task.behaviorId && logIdToAdd
               ? state.behaviors.map(b => {
                   if (b.id !== task.behaviorId) return b;
-                  const metadata = b.defaultMetadata ?? {};
+                  const metadata = {
+                    ...(b.defaultMetadata ?? {}),
+                    ...(task.source !== 'behavior' ? { notes: task.title } : {}),
+                  };
                   return {
                     ...b,
                     lastTimestamp: b.lastTimestamp === null ? taskTimestamp : Math.max(b.lastTimestamp, taskTimestamp),
