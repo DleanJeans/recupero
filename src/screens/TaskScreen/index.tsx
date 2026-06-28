@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { BottomNav } from '../../components/BottomNav';
+import { Button } from '../../components/Button';
 import { DatePicker } from '../../components/DatePicker';
 import { SafeAreaView } from '../../components/SafeAreaView';
 import { ScreenTitle } from '../../components/ScreenTitle';
@@ -22,6 +23,7 @@ export function TaskScreen() {
   const [behaviorQuery, setBehaviorQuery] = useState('');
   const [stars, setStars] = useState<TaskStarValue>(1);
   const [selectedBehaviorId, setSelectedBehaviorId] = useState<string | undefined>();
+  const [composerOpen, setComposerOpen] = useState(false);
 
   const behaviors = useBehaviorStore(s => s.behaviors);
   const tasks = useBehaviorStore(s => s.tasks);
@@ -54,6 +56,13 @@ export function TaskScreen() {
       source: isBehaviorOnlyTask ? 'behavior' : 'oneOff',
       behaviorId: selectedBehavior?.id,
     });
+    setTitle('');
+    setBehaviorQuery('');
+    setSelectedBehaviorId(undefined);
+    setComposerOpen(false);
+  };
+
+  const resetComposer = () => {
     setTitle('');
     setBehaviorQuery('');
     setSelectedBehaviorId(undefined);
@@ -154,18 +163,32 @@ export function TaskScreen() {
       </View>
 
       <View style={styles.content}>
-        <TaskComposer
-          title={title}
-          behaviorQuery={behaviorQuery}
-          stars={stars}
-          behaviors={availableBehaviors}
-          selectedBehaviorId={selectedBehaviorId}
-          onTitleChange={setTitle}
-          onBehaviorQueryChange={setBehaviorQuery}
-          onStarsChange={setStars}
-          onBehaviorSelect={setSelectedBehaviorId}
-          onAdd={handleAddTask}
-        />
+        {composerOpen ? (
+          <TaskComposer
+            title={title}
+            behaviorQuery={behaviorQuery}
+            stars={stars}
+            behaviors={availableBehaviors}
+            selectedBehaviorId={selectedBehaviorId}
+            onTitleChange={setTitle}
+            onBehaviorQueryChange={setBehaviorQuery}
+            onStarsChange={setStars}
+            onBehaviorSelect={setSelectedBehaviorId}
+            onAdd={handleAddTask}
+            onCancel={() => {
+              resetComposer();
+              setComposerOpen(false);
+            }}
+          />
+        ) : (
+          <Button
+            variant="primary"
+            onPress={() => setComposerOpen(true)}
+            style={styles.openComposerButton}
+          >
+            + Add task
+          </Button>
+        )}
 
         <View style={styles.listHeader}>
           <Text style={styles.sectionTitle}>SCHEDULED</Text>
@@ -266,6 +289,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 4,
     gap: 10,
+  },
+  openComposerButton: {
+    alignSelf: 'stretch',
   },
   listHeader: {
     paddingTop: 4,

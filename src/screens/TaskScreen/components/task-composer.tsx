@@ -19,6 +19,7 @@ interface TaskComposerProps {
   onStarsChange: (stars: TaskStarValue) => void;
   onBehaviorSelect: (behaviorId: string | undefined) => void;
   onAdd: () => void;
+  onCancel: () => void;
 }
 
 export function TaskComposer({
@@ -32,6 +33,7 @@ export function TaskComposer({
   onStarsChange,
   onBehaviorSelect,
   onAdd,
+  onCancel,
 }: TaskComposerProps) {
   const hasAttachedBehavior = selectedBehaviorId != null;
   const canAdd = title.trim().length > 0 || hasAttachedBehavior;
@@ -65,11 +67,19 @@ export function TaskComposer({
           />
         )}
         <Button
+          variant="ghost"
+          size="sm"
+          onPress={onCancel}
+          style={styles.footerButton}
+        >
+          Cancel
+        </Button>
+        <Button
           variant="primary"
           size="sm"
           onPress={onAdd}
           disabled={!canAdd}
-          style={hasAttachedBehavior && styles.fullWidthAddButton}
+          style={[styles.footerButton, hasAttachedBehavior && styles.fullWidthAddButton]}
         >
           Add
         </Button>
@@ -105,5 +115,8 @@ const styles = StyleSheet.create({
   },
   fullWidthAddButton: {
     flex: 1,
+  },
+  footerButton: {
+    minWidth: 88,
   },
 });
