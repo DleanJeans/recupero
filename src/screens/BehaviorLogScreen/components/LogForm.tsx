@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type GestureResponderEvent, Keyboard, KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
 import { Button } from '../../../components/Button';
+import { CheckboxRow } from '../../../components/CheckboxRow';
 import { DatePicker } from '../../../components/DatePicker';
 import { Text, TextInput } from '../../../components/Text';
 import { useBehaviorStore } from '../../../store/behaviorStore';
@@ -26,14 +27,24 @@ interface LogFormProps {
   behaviorId: string;
   behavior: BehaviorEntry;
   editLogId?: string;
+  timerStartTimestamp?: number;
+  timerEndTimestamp?: number;
   onSaved: () => void;
 }
 
-export function LogForm({ behaviorId, behavior, editLogId, onSaved }: LogFormProps) {
+export function LogForm({
+  behaviorId,
+  behavior,
+  editLogId,
+  timerStartTimestamp,
+  timerEndTimestamp,
+  onSaved,
+}: LogFormProps) {
   const existingLog = useMemo(
     () => (editLogId ? behavior.logs.find(log => log.id === editLogId) : undefined),
     [behavior.logs, editLogId],
   );
+  const hasTimerRange = timerStartTimestamp != null && timerEndTimestamp != null;
   const category = useBehaviorStore(
     useCallback(
       state => (behavior.categoryId ? state.categories.find(c => c.id === behavior.categoryId) : undefined),
@@ -46,10 +57,16 @@ export function LogForm({ behaviorId, behavior, editLogId, onSaved }: LogFormPro
   const nowRef = useRef(new Date());
   const todayStr = toDateString(nowRef.current);
 
-  const initialDate = existingLog ? toDateString(new Date(existingLog.timestamp)) : todayStr;
-  const initialStartTimestamp = existingLog?.timestamp ?? getDefaultTimedLogStartTimestamp(nowRef.current);
+  const initialDate = existingLog
+    ? toDateString(new Date(existingLog.timestamp))
+    : timerStartTimestamp != null
+      ? toDateString(new Date(timerStartTimestamp))
+      : todayStr;
+  const initialStartTimestamp =
+    existingLog?.timestamp ?? timerStartTimestamp ?? getDefaultTimedLogStartTimestamp(nowRef.current);
   const initialEndTimestamp = useMemo(() => {
     if (existingLog?.endTimestamp != null) return existingLog.endTimestamp;
+    if (timerEndTimestamp != null) return timerEndTimestamp;
     if (existingLog) {
       return Math.min(
         getDayMaxTimestamp(initialDate, nowRef.current),
@@ -57,7 +74,7 @@ export function LogForm({ behaviorId, behavior, editLogId, onSaved }: LogFormPro
       );
     }
     return nowRef.current.getTime();
-  }, [existingLog, initialDate]);
+  }, [existingLog, initialDate, timerEndTimestamp]);
   const initialStartMinutes =
     new Date(initialStartTimestamp).getHours() * 60 + new Date(initialStartTimestamp).getMinutes();
   const initialEndMinutes = new Date(initialEndTimestamp).getHours() * 60 + new Date(initialEndTimestamp).getMinutes();
@@ -65,6 +82,7 @@ export function LogForm({ behaviorId, behavior, editLogId, onSaved }: LogFormPro
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [startMinutes, setStartMinutes] = useState(initialStartMinutes);
   const [endMinutes, setEndMinutes] = useState(Math.max(initialStartMinutes, initialEndMinutes));
+  const [showTimeRange, setShowTimeRange] = useState(hasTimerRange || existingLog?.endTimestamp != null);
   const [startWheelKey, setStartWheelKey] = useState(0);
   const [endWheelKey, setEndWheelKey] = useState(0);
   const notesRef = useRef<import('react-native').TextInput>(null);
@@ -146,6 +164,16 @@ export function LogForm({ behaviorId, behavior, editLogId, onSaved }: LogFormPro
   const handleMetadataBlur = useCallback(() => setMetadataFocused(false), []);
   const handleNotesFocus = useCallback(() => setNotesFocused(true), []);
   const handleNotesBlur = useCallback(() => setNotesFocused(false), []);
+  const handleToggleTimeRange = useCallback(() => {
+    setShowTimeRange(current => {
+      const next = !current;
+      if (next && endMinutes <= startMinutes) {
+        setEndMinutes(Math.min(maxTimeMinutes, startMinutes + XP_PER_LOG));
+        setEndWheelKey(key => key + 1);
+      }
+      return next;
+    });
+  }, [endMinutes, maxTimeMinutes, startMinutes]);
 
   const applyStartMinutes = useCallback(
     (nextMinutes: number) => {
@@ -181,7 +209,7 @@ export function LogForm({ behaviorId, behavior, editLogId, onSaved }: LogFormPro
   const startMinute = startMinutes % 60;
   const endHour = Math.floor(endMinutes / 60);
   const endMinute = endMinutes % 60;
-  const durationMinutes = Math.max(1, endMinutes - startMinutes);
+  const durationMinutes = showTimeRange ? Math.max(1, endMinutes - startMinutes) : 1;
   const durationMs = durationMinutes * MS_PER_MINUTE;
   const earnedXp = durationMinutes;
 
@@ -190,6 +218,8 @@ export function LogForm({ behaviorId, behavior, editLogId, onSaved }: LogFormPro
       const [year, month, day] = selectedDate.split('-').map(Number);
       const startTimestamp = new Date(year, month - 1, day, startHour, startMinute, 0, 0).getTime();
       const endTimestamp = new Date(year, month - 1, day, endHour, endMinute, 0, 0).getTime();
+      const saveEndTimestamp =
+        showTimeRange || !editLogId ? (showTimeRange ? endTimestamp : startTimestamp + MS_PER_MINUTE) : undefined;
 
       const metadata: Record<string, string | number> = {};
       if (notes.trim()) metadata.notes = notes.trim();
@@ -217,12 +247,12 @@ export function LogForm({ behaviorId, behavior, editLogId, onSaved }: LogFormPro
       const metadataOrUndefined = Object.keys(metadata).length > 0 ? metadata : undefined;
 
       if (editLogId) {
-        updateLog(behaviorId, editLogId, startTimestamp, metadataOrUndefined, endTimestamp);
+        updateLog(behaviorId, editLogId, startTimestamp, metadataOrUndefined, saveEndTimestamp);
         onSaved();
         return;
       }
 
-      logBehavior(behaviorId, startTimestamp, metadataOrUndefined, endTimestamp);
+      logBehavior(behaviorId, startTimestamp, metadataOrUndefined, saveEndTimestamp);
 
       if (behavior.xpEnabled) {
         const { locationX, locationY } = event.nativeEvent;
@@ -255,6 +285,7 @@ export function LogForm({ behaviorId, behavior, editLogId, onSaved }: LogFormPro
       notes,
       onSaved,
       selectedDate,
+      showTimeRange,
       startHour,
       startMinute,
       updateLog,
@@ -276,10 +307,54 @@ export function LogForm({ behaviorId, behavior, editLogId, onSaved }: LogFormPro
           />
         </View>
 
-        <View style={styles.timePickerRow}>
-          <View style={styles.timePickerColumn}>
+        {!hasTimerRange && (
+          <CheckboxRow
+            label="Use start and end time"
+            checked={showTimeRange}
+            onToggle={handleToggleTimeRange}
+            variant="row"
+            style={styles.timeRangeToggle}
+          />
+        )}
+
+        {showTimeRange ? (
+          <View style={styles.timePickerRow}>
+            <View style={styles.timePickerColumn}>
+              <TimePicker
+                label="Start"
+                hour={startHour}
+                minute={startMinute}
+                maxHour={Math.floor(maxTimeMinutes / 60)}
+                maxMinute={Math.floor(maxTimeMinutes / 60) === startHour ? maxTimeMinutes % 60 : 59}
+                wheelKey={startWheelKey}
+                collapsed={notesFocused || metadataFocused}
+                onHourChange={hour => applyStartMinutes(hour * 60 + startMinute)}
+                onMinuteChange={minute => applyStartMinutes(startHour * 60 + minute)}
+                onExpand={handleExpandTime}
+              />
+            </View>
+
+            <Text style={styles.timePickerSeparator}>-</Text>
+
+            <View style={styles.timePickerColumn}>
+              <TimePicker
+                label="End"
+                hour={endHour}
+                minute={endMinute}
+                maxHour={Math.floor(maxTimeMinutes / 60)}
+                maxMinute={Math.floor(maxTimeMinutes / 60) === endHour ? maxTimeMinutes % 60 : 59}
+                wheelKey={endWheelKey}
+                collapsed={notesFocused || metadataFocused}
+                onHourChange={hour => applyEndMinutes(hour * 60 + endMinute)}
+                onMinuteChange={minute => applyEndMinutes(endHour * 60 + minute)}
+                onExpand={handleExpandTime}
+              />
+            </View>
+          </View>
+        ) : (
+          <View style={styles.singleTimePicker}>
             <TimePicker
-              label="Start"
+              label="Time"
               hour={startHour}
               minute={startMinute}
               maxHour={Math.floor(maxTimeMinutes / 60)}
@@ -291,24 +366,7 @@ export function LogForm({ behaviorId, behavior, editLogId, onSaved }: LogFormPro
               onExpand={handleExpandTime}
             />
           </View>
-
-          <Text style={styles.timePickerSeparator}>-</Text>
-
-          <View style={styles.timePickerColumn}>
-            <TimePicker
-              label="End"
-              hour={endHour}
-              minute={endMinute}
-              maxHour={Math.floor(maxTimeMinutes / 60)}
-              maxMinute={Math.floor(maxTimeMinutes / 60) === endHour ? maxTimeMinutes % 60 : 59}
-              wheelKey={endWheelKey}
-              collapsed={notesFocused || metadataFocused}
-              onHourChange={hour => applyEndMinutes(hour * 60 + endMinute)}
-              onMinuteChange={minute => applyEndMinutes(endHour * 60 + minute)}
-              onExpand={handleExpandTime}
-            />
-          </View>
-        </View>
+        )}
 
         <View style={styles.durationCard}>
           <Text style={styles.durationLabel}>Duration</Text>
@@ -410,10 +468,18 @@ const styles = StyleSheet.create({
   datePickerWrapper: {
     marginBottom: 20,
   },
+  timeRangeToggle: {
+    marginBottom: 8,
+  },
   timePickerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  singleTimePicker: {
+    alignSelf: 'center',
+    width: '58%',
+    minWidth: 170,
   },
   timePickerColumn: {
     flex: 1,

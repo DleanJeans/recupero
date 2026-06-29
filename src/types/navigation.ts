@@ -10,6 +10,8 @@ export type RootStackParamList = {
     logId?: string;
     initialTimestamp?: number;
     initialNotes?: string;
+    timerStartTimestamp?: number;
+    timerEndTimestamp?: number;
   };
   BehaviorForm: {
     behaviorId?: string;
