@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/Text';
 import { Colors } from '../../../utils/colors';
@@ -19,7 +19,7 @@ interface TimePickerProps {
   onExpand: () => void;
 }
 
-export function TimePicker({
+function TimePickerComponent({
   hour,
   minute,
   maxHour,
@@ -30,45 +30,48 @@ export function TimePicker({
   onMinuteChange,
   onExpand,
 }: TimePickerProps) {
-  const hourValues = ALL_HOURS.slice(0, maxHour + 1);
-  const minuteValues = ALL_MINUTES.slice(0, maxMinute + 1);
-
-  if (collapsed) {
-    const displayTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-    return (
-      <>
-        <Text style={styles.sectionLabel}>Time</Text>
-        <Pressable
-          style={styles.collapsedTime}
-          onPress={onExpand}
-        >
-          <Text style={styles.collapsedTimeText}>{displayTime}</Text>
-        </Pressable>
-      </>
-    );
-  }
+  const hourValues = useMemo(() => ALL_HOURS.slice(0, maxHour + 1), [maxHour]);
+  const minuteValues = useMemo(() => ALL_MINUTES.slice(0, maxMinute + 1), [maxMinute]);
+  const displayTime = useMemo(
+    () => `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+    [hour, minute],
+  );
 
   return (
     <>
       <Text style={styles.sectionLabel}>Time</Text>
-      <View style={styles.wheels}>
-        <NumberWheel
-          key={`hour-${wheelKey}-${maxHour}`}
-          values={hourValues}
-          initialIndex={Math.min(hour, maxHour)}
-          onChange={onHourChange}
-        />
-        <Text style={styles.colon}>:</Text>
-        <NumberWheel
-          key={`min-${wheelKey}-${maxMinute}`}
-          values={minuteValues}
-          initialIndex={Math.min(minute, maxMinute)}
-          onChange={onMinuteChange}
-        />
+      <Pressable
+        style={[styles.collapsedTime, !collapsed && styles.hiddenControl]}
+        onPress={onExpand}
+        pointerEvents={collapsed ? 'auto' : 'none'}
+      >
+        <Text style={styles.collapsedTimeText}>{displayTime}</Text>
+      </Pressable>
+      <View style={[styles.wheels, collapsed && styles.hiddenWheels]}>
+        <View
+          style={[styles.wheelsContent, collapsed && styles.hiddenControl]}
+          pointerEvents={collapsed ? 'none' : 'auto'}
+        >
+          <NumberWheel
+            resetKey={wheelKey}
+            values={hourValues}
+            initialIndex={Math.min(hour, maxHour)}
+            onChange={onHourChange}
+          />
+          <Text style={styles.colon}>:</Text>
+          <NumberWheel
+            resetKey={wheelKey}
+            values={minuteValues}
+            initialIndex={Math.min(minute, maxMinute)}
+            onChange={onMinuteChange}
+          />
+        </View>
       </View>
     </>
   );
 }
+
+export const TimePicker = memo(TimePickerComponent);
 
 const styles = StyleSheet.create({
   sectionLabel: {
@@ -79,9 +82,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     marginBottom: 10,
   },
-  wheels: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 16, gap: 8 },
+  wheels: { marginBottom: 16, overflow: 'hidden' },
+  wheelsContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   colon: { color: Colors.text.primary, fontSize: 28, fontWeight: '700', marginBottom: 4 },
   collapsedTime: { alignItems: 'center', marginBottom: 16 },
+  hiddenWheels: { height: 0, marginBottom: 0 },
+  hiddenControl: { height: 0, marginBottom: 0, opacity: 0, overflow: 'hidden' },
   collapsedTimeText: {
     color: Colors.text.primary,
     fontSize: 28,

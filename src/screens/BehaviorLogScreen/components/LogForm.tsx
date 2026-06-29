@@ -128,6 +128,11 @@ export function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNo
     setXpBursts(prev => prev.filter(burst => burst.id !== id));
   }, []);
 
+  const handleMetadataFocus = useCallback(() => setMetadataFocused(true), []);
+  const handleMetadataBlur = useCallback(() => setMetadataFocused(false), []);
+  const handleNotesFocus = useCallback(() => setNotesFocused(true), []);
+  const handleNotesBlur = useCallback(() => setNotesFocused(false), []);
+
   const handleConfirm = useCallback(
     (event: GestureResponderEvent) => {
       const [y, m, d] = selectedDate.split('-').map(Number);
@@ -232,6 +237,7 @@ export function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNo
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         showsVerticalScrollIndicator={false}
+        removeClippedSubviews
       >
         {metadataFields.length > 0 && <Text style={styles.sectionLabel}>Metadata</Text>}
         {amountField && (
@@ -240,8 +246,8 @@ export function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNo
             value={metadataValues[amountField.key] ?? ''}
             label={formatMetadataFieldLabel(amountField)}
             onChange={setMetadataValues}
-            onFocus={() => setMetadataFocused(true)}
-            onBlur={() => setMetadataFocused(false)}
+            onFocus={handleMetadataFocus}
+            onBlur={handleMetadataBlur}
           />
         )}
         {manualMetadataFields.map(field => (
@@ -251,8 +257,8 @@ export function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNo
             value={metadataValues[field.key] ?? ''}
             label={formatMetadataFieldLabel(field)}
             onChange={setMetadataValues}
-            onFocus={() => setMetadataFocused(true)}
-            onBlur={() => setMetadataFocused(false)}
+            onFocus={handleMetadataFocus}
+            onBlur={handleMetadataBlur}
           />
         ))}
         {calculatedMetadataFields.map(field => {
@@ -286,8 +292,8 @@ export function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNo
           multiline
           maxLength={500}
           textAlignVertical="top"
-          onFocus={() => setNotesFocused(true)}
-          onBlur={() => setNotesFocused(false)}
+          onFocus={handleNotesFocus}
+          onBlur={handleNotesBlur}
         />
       </ScrollView>
       <Button

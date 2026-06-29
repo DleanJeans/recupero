@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/Text';
 import { Colors } from '../../../utils/colors';
@@ -10,18 +10,19 @@ const PAD = ITEM_HEIGHT * Math.floor(VISIBLE_ITEMS / 2);
 interface Props {
   values: string[];
   initialIndex: number;
+  resetKey: number;
   onChange: (index: number) => void;
 }
 
-export function NumberWheel({ values, initialIndex, onChange }: Props) {
+function NumberWheelComponent({ values, initialIndex, resetKey, onChange }: Props) {
   const ref = useRef<ScrollView>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const frame = requestAnimationFrame(() => {
       ref.current?.scrollTo({ y: initialIndex * ITEM_HEIGHT, animated: false });
-    }, 50);
-    return () => clearTimeout(timer);
-  }, [initialIndex]);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [initialIndex, resetKey]);
 
   const onScrollEnd = useCallback(
     (e: { nativeEvent: { contentOffset: { y: number } } }) => {
@@ -29,6 +30,19 @@ export function NumberWheel({ values, initialIndex, onChange }: Props) {
       onChange(index);
     },
     [onChange, values.length],
+  );
+
+  const items = useMemo(
+    () =>
+      values.map(v => (
+        <View
+          key={v}
+          style={styles.item}
+        >
+          <Text style={styles.text}>{v}</Text>
+        </View>
+      )),
+    [values],
   );
 
   return (
@@ -43,20 +57,17 @@ export function NumberWheel({ values, initialIndex, onChange }: Props) {
         decelerationRate="fast"
         showsVerticalScrollIndicator={false}
         onMomentumScrollEnd={onScrollEnd}
-        contentContainerStyle={{ paddingVertical: PAD }}
+        contentContainerStyle={styles.content}
+        contentOffset={{ x: 0, y: initialIndex * ITEM_HEIGHT }}
+        removeClippedSubviews
       >
-        {values.map(v => (
-          <View
-            key={v}
-            style={styles.item}
-          >
-            <Text style={styles.text}>{v}</Text>
-          </View>
-        ))}
+        {items}
       </ScrollView>
     </View>
   );
 }
+
+export const NumberWheel = memo(NumberWheelComponent);
 
 const styles = StyleSheet.create({
   container: { width: 64, height: ITEM_HEIGHT * VISIBLE_ITEMS, overflow: 'hidden' },
@@ -70,6 +81,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     zIndex: 1,
   },
+  content: { paddingVertical: PAD },
   item: { height: ITEM_HEIGHT, justifyContent: 'center', alignItems: 'center' },
   text: { color: Colors.text.secondary, fontSize: 22, fontVariant: ['tabular-nums'] },
 });
