@@ -1,8 +1,16 @@
 import type { BehaviorEntry, Category, LogEntry } from '../types/behavior';
 import { toDateString, yesterday } from './dateUtils';
-import { formatMetadataFieldLabel } from './metadataCalculationUtils';
 import { roundTo2 } from './numberUtils';
 import { Group } from './strings';
+
+export interface DailyMetadataTotal {
+  categoryId: string;
+  categoryName: string;
+  label: string;
+  value: number;
+  unit?: string;
+  goal?: number;
+}
 
 /**
  * Sort behaviors by most recent activity (lastTimestamp descending),
@@ -120,8 +128,8 @@ export function getAllDailyMetadataTotals(
   behaviors: BehaviorEntry[],
   categories: Category[],
   dateStr: string,
-): { label: string; value: number }[] {
-  const result: { label: string; value: number }[] = [];
+): DailyMetadataTotal[] {
+  const result: DailyMetadataTotal[] = [];
 
   for (const category of categories) {
     const fields = category.metadataFields ?? [];
@@ -138,15 +146,24 @@ export function getAllDailyMetadataTotals(
         for (const field of fields) {
           const val = log.metadata[field.key];
           if (typeof val === 'number') {
-            const label = `${category.name} — ${formatMetadataFieldLabel(field)}`;
-            categoryTotals.set(label, (categoryTotals.get(label) ?? 0) + val);
+            const key = field.key;
+            categoryTotals.set(key, (categoryTotals.get(key) ?? 0) + val);
           }
         }
       }
     }
 
-    for (const [label, total] of categoryTotals) {
-      result.push({ label, value: roundTo2(total) });
+    for (const field of fields) {
+      const total = categoryTotals.get(field.key);
+      if (total === undefined) continue;
+      result.push({
+        categoryId: category.id,
+        categoryName: category.name,
+        label: field.label,
+        value: roundTo2(total),
+        unit: field.unit,
+        goal: field.dailyGoal,
+      });
     }
   }
 

@@ -5,6 +5,7 @@ export interface MetadataField {
   label: string;
   unit?: string;
   calculation?: MetadataFieldCalculation;
+  dailyGoal?: number;
 }
 
 export interface Category {

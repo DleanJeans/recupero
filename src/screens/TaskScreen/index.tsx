@@ -1,9 +1,7 @@
-import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { Button } from '../../components/Button';
-import { DatePicker } from '../../components/DatePicker';
 import { SafeAreaView } from '../../components/SafeAreaView';
 import { ScreenTitle } from '../../components/ScreenTitle';
 import { Text } from '../../components/Text';
@@ -13,6 +11,8 @@ import type { TaskEntry, TaskStarValue } from '../../types/task';
 import { Colors } from '../../utils/colors';
 import { describeDay, toDateString } from '../../utils/dateUtils';
 import { getTaskStarsForDate, getTasksForDate, isTaskCompleteOnDate } from '../../utils/taskUtils';
+import { DateNavigationRow } from '../components/DateNavigationRow';
+import { SummaryRow } from '../components/SummaryRow';
 import { TaskCard } from './components/task-card';
 import { TaskComposer } from './components/task-composer';
 
@@ -51,6 +51,20 @@ export function TaskScreen() {
   );
   const taskStars = useMemo(() => getTaskStarsForDate(tasks, selectedDate), [tasks, selectedDate]);
   const dayLabel = describeDay(selectedDate);
+  const summaryItems = useMemo(
+    () => [
+      { label: 'done', value: completedCount },
+      { label: 'tasks', value: dayTasks.length },
+      {
+        label: 'stars',
+        value: taskStars,
+        icon: 'star' as const,
+        accessibilityLabel: `${taskStars} task stars on this date`,
+      },
+      ...(dayLabel !== '' ? [{ label: 'when', value: dayLabel }] : []),
+    ],
+    [completedCount, dayLabel, dayTasks.length, taskStars],
+  );
 
   const resetComposer = () => {
     setTitle('');
@@ -162,70 +176,14 @@ export function TaskScreen() {
         <ScreenTitle>Tasks</ScreenTitle>
       </View>
 
-      <View style={styles.dateRow}>
-        <Pressable
-          onPress={goToPrevDay}
-          style={styles.arrowBtn}
-          hitSlop={8}
-        >
-          <Ionicons
-            name="chevron-back"
-            size={20}
-            color={Colors.text.primary}
-          />
-        </Pressable>
+      <DateNavigationRow
+        selectedDate={selectedDate}
+        onSelect={setSelectedDate}
+        onPrevious={goToPrevDay}
+        onNext={goToNextDay}
+      />
 
-        <View style={styles.dateLabelWrap}>
-          <DatePicker
-            selectedDate={selectedDate}
-            onSelect={setSelectedDate}
-          />
-        </View>
-
-        <Pressable
-          onPress={goToNextDay}
-          style={styles.arrowBtn}
-          hitSlop={8}
-        >
-          <Ionicons
-            name="chevron-forward"
-            size={20}
-            color={Colors.text.primary}
-          />
-        </Pressable>
-      </View>
-
-      <View style={styles.summaryRow}>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryValue}>{completedCount}</Text>
-          <Text style={styles.summaryLabel}>done</Text>
-        </View>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryValue}>{dayTasks.length}</Text>
-          <Text style={styles.summaryLabel}>tasks</Text>
-        </View>
-        <View
-          style={styles.summaryItem}
-          accessible
-          accessibilityLabel={`${taskStars} task stars on this date`}
-        >
-          <View style={styles.starSummaryValue}>
-            <Ionicons
-              name="star"
-              size={18}
-              color={Colors.star.filled}
-            />
-            <Text style={styles.summaryValue}>{taskStars}</Text>
-          </View>
-          <Text style={styles.summaryLabel}>stars</Text>
-        </View>
-        {dayLabel !== '' && (
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryValue}>{dayLabel}</Text>
-            <Text style={styles.summaryLabel}>when</Text>
-          </View>
-        )}
-      </View>
+      <SummaryRow items={summaryItems} />
 
       <View style={styles.content}>
         {composerOpen && (
@@ -291,53 +249,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 10,
-  },
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-  },
-  arrowBtn: {
-    backgroundColor: Colors.bg.input,
-    borderRadius: 10,
-    padding: 12,
-  },
-  dateLabelWrap: {
-    flex: 1,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: Colors.bg.card,
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 10,
-    borderRadius: 12,
-    paddingVertical: 14,
-  },
-  summaryItem: {
-    alignItems: 'center',
-    gap: 4,
-    minWidth: 54,
-  },
-  summaryValue: {
-    color: Colors.text.primary,
-    fontSize: 18,
-    fontWeight: '700',
-    fontVariant: ['tabular-nums'],
-  },
-  summaryLabel: {
-    color: Colors.text.faint,
-    fontSize: 11,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-  starSummaryValue: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
   },
   content: {
     flex: 1,
