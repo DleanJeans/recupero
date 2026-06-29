@@ -62,19 +62,14 @@ export function LogForm({
     : timerStartTimestamp != null
       ? toDateString(new Date(timerStartTimestamp))
       : todayStr;
-  const initialStartTimestamp =
-    existingLog?.timestamp ?? timerStartTimestamp ?? getDefaultTimedLogStartTimestamp(nowRef.current);
   const initialEndTimestamp = useMemo(() => {
     if (existingLog?.endTimestamp != null) return existingLog.endTimestamp;
+    if (existingLog) return existingLog.timestamp;
     if (timerEndTimestamp != null) return timerEndTimestamp;
-    if (existingLog) {
-      return Math.min(
-        getDayMaxTimestamp(initialDate, nowRef.current),
-        existingLog.timestamp + XP_PER_LOG * MS_PER_MINUTE,
-      );
-    }
     return nowRef.current.getTime();
-  }, [existingLog, initialDate, timerEndTimestamp]);
+  }, [existingLog, timerEndTimestamp]);
+  const initialStartTimestamp =
+    existingLog?.timestamp ?? timerStartTimestamp ?? getDefaultTimedLogStartTimestamp(new Date(initialEndTimestamp));
   const initialStartMinutes =
     new Date(initialStartTimestamp).getHours() * 60 + new Date(initialStartTimestamp).getMinutes();
   const initialEndMinutes = new Date(initialEndTimestamp).getHours() * 60 + new Date(initialEndTimestamp).getMinutes();
@@ -168,12 +163,12 @@ export function LogForm({
     setShowTimeRange(current => {
       const next = !current;
       if (next && endMinutes <= startMinutes) {
-        setEndMinutes(Math.min(maxTimeMinutes, startMinutes + XP_PER_LOG));
-        setEndWheelKey(key => key + 1);
+        setStartMinutes(Math.max(0, endMinutes - XP_PER_LOG));
+        setStartWheelKey(key => key + 1);
       }
       return next;
     });
-  }, [endMinutes, maxTimeMinutes, startMinutes]);
+  }, [endMinutes, startMinutes]);
 
   const applyStartMinutes = useCallback(
     (nextMinutes: number) => {
@@ -217,7 +212,9 @@ export function LogForm({
   const handleConfirm = useCallback(
     (event: GestureResponderEvent) => {
       const [year, month, day] = selectedDate.split('-').map(Number);
-      const startTimestamp = new Date(year, month - 1, day, startHour, startMinute, 0, 0).getTime();
+      const logHour = showTimeRange ? startHour : endHour;
+      const logMinute = showTimeRange ? startMinute : endMinute;
+      const startTimestamp = new Date(year, month - 1, day, logHour, logMinute, 0, 0).getTime();
       const endTimestamp = new Date(year, month - 1, day, endHour, endMinute, 0, 0).getTime();
       const saveEndTimestamp = showTimeRange ? endTimestamp : undefined;
 
@@ -355,14 +352,14 @@ export function LogForm({
           <View style={styles.singleTimePicker}>
             <TimePicker
               label="Time"
-              hour={startHour}
-              minute={startMinute}
+              hour={endHour}
+              minute={endMinute}
               maxHour={Math.floor(maxTimeMinutes / 60)}
-              maxMinute={Math.floor(maxTimeMinutes / 60) === startHour ? maxTimeMinutes % 60 : 59}
-              wheelKey={startWheelKey}
+              maxMinute={Math.floor(maxTimeMinutes / 60) === endHour ? maxTimeMinutes % 60 : 59}
+              wheelKey={endWheelKey}
               collapsed={notesFocused || metadataFocused}
-              onHourChange={hour => applyStartMinutes(hour * 60 + startMinute)}
-              onMinuteChange={minute => applyStartMinutes(startHour * 60 + minute)}
+              onHourChange={hour => applyEndMinutes(hour * 60 + endMinute)}
+              onMinuteChange={minute => applyEndMinutes(endHour * 60 + minute)}
               onExpand={handleExpandTime}
             />
           </View>
