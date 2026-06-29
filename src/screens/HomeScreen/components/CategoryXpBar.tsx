@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/Text';
 import { XpBar } from '../../../components/XpBar';
 import { useBehaviorStore } from '../../../store/behaviorStore';
+import { useSettingsStore } from '../../../store/settingsStore';
 import { Colors } from '../../../utils/colors';
 import { getEffectiveXp } from '../../../utils/xpUtils';
 
@@ -12,17 +13,18 @@ interface Props {
 export function CategoryXpBar({ selectedCategoryId }: Props) {
   const behaviors = useBehaviorStore(s => s.behaviors);
   const categories = useBehaviorStore(s => s.categories);
+  const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
 
   const xp = useMemo(() => {
     if (selectedCategoryId === null) return 0;
     let total = 0;
     for (const behavior of behaviors) {
       if (behavior.categoryId !== selectedCategoryId || !behavior.xpEnabled) continue;
-      const effectiveXp = getEffectiveXp(behavior);
+      const effectiveXp = getEffectiveXp(behavior, Date.now(), dayCutoffHour);
       if (effectiveXp > 0) total += effectiveXp;
     }
     return total;
-  }, [behaviors, selectedCategoryId]);
+  }, [behaviors, dayCutoffHour, selectedCategoryId]);
 
   if (selectedCategoryId === null) return null;
 

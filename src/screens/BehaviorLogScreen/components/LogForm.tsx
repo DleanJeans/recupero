@@ -5,9 +5,10 @@ import { CheckboxRow } from '../../../components/CheckboxRow';
 import { DatePicker } from '../../../components/DatePicker';
 import { Text, TextInput } from '../../../components/Text';
 import { useBehaviorStore } from '../../../store/behaviorStore';
+import { useSettingsStore } from '../../../store/settingsStore';
 import type { BehaviorEntry, MetadataField } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
-import { toDateString } from '../../../utils/dateUtils';
+import { timestampForDateTime, toDateString } from '../../../utils/dateUtils';
 import { getDayMaxTimestamp, getDefaultTimedLogStartTimestamp } from '../../../utils/logUtils';
 import {
   buildCalculatedMetadata,
@@ -53,14 +54,15 @@ export function LogForm({
   );
   const logBehavior = useBehaviorStore(state => state.logBehavior);
   const updateLog = useBehaviorStore(state => state.updateLog);
+  const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
 
   const nowRef = useRef(new Date());
-  const todayStr = toDateString(nowRef.current);
+  const todayStr = toDateString(nowRef.current, dayCutoffHour);
 
   const initialDate = existingLog
-    ? toDateString(new Date(existingLog.timestamp))
+    ? toDateString(new Date(existingLog.timestamp), dayCutoffHour)
     : timerStartTimestamp != null
-      ? toDateString(new Date(timerStartTimestamp))
+      ? toDateString(new Date(timerStartTimestamp), dayCutoffHour)
       : todayStr;
   const initialEndTimestamp = useMemo(() => {
     if (existingLog?.endTimestamp != null) return existingLog.endTimestamp;
@@ -69,7 +71,9 @@ export function LogForm({
     return nowRef.current.getTime();
   }, [existingLog, timerEndTimestamp]);
   const initialStartTimestamp =
-    existingLog?.timestamp ?? timerStartTimestamp ?? getDefaultTimedLogStartTimestamp(new Date(initialEndTimestamp));
+    existingLog?.timestamp ??
+    timerStartTimestamp ??
+    getDefaultTimedLogStartTimestamp(new Date(initialEndTimestamp), dayCutoffHour);
   const initialStartMinutes =
     new Date(initialStartTimestamp).getHours() * 60 + new Date(initialStartTimestamp).getMinutes();
   const initialEndMinutes = new Date(initialEndTimestamp).getHours() * 60 + new Date(initialEndTimestamp).getMinutes();
@@ -117,11 +121,15 @@ export function LogForm({
     return buildCalculatedMetadata(metadataFields, behavior.defaultMetadata, Number(amountValue));
   }, [amountField, behavior.defaultMetadata, metadataFields, metadataValues]);
 
-  const maxTimestampForDate = useMemo(() => getDayMaxTimestamp(selectedDate, nowRef.current), [selectedDate]);
+  const maxTimestampForDate = useMemo(
+    () => getDayMaxTimestamp(selectedDate, nowRef.current, dayCutoffHour),
+    [dayCutoffHour, selectedDate],
+  );
   const maxTimeMinutes = useMemo(() => {
+    if (selectedDate !== todayStr) return 23 * 60 + 59;
     const date = new Date(maxTimestampForDate);
     return date.getHours() * 60 + date.getMinutes();
-  }, [maxTimestampForDate]);
+  }, [maxTimestampForDate, selectedDate, todayStr]);
 
   useEffect(() => {
     const clampedEndMinutes = Math.min(endMinutes, maxTimeMinutes);
@@ -211,11 +219,12 @@ export function LogForm({
 
   const handleConfirm = useCallback(
     (event: GestureResponderEvent) => {
-      const [year, month, day] = selectedDate.split('-').map(Number);
       const logHour = showTimeRange ? startHour : endHour;
       const logMinute = showTimeRange ? startMinute : endMinute;
-      const startTimestamp = new Date(year, month - 1, day, logHour, logMinute, 0, 0).getTime();
-      const endTimestamp = new Date(year, month - 1, day, endHour, endMinute, 0, 0).getTime();
+      const rawStartTimestamp = timestampForDateTime(selectedDate, logHour, logMinute, dayCutoffHour);
+      const rawEndTimestamp = timestampForDateTime(selectedDate, endHour, endMinute, dayCutoffHour);
+      const endTimestamp = Math.min(rawEndTimestamp, maxTimestampForDate);
+      const startTimestamp = Math.min(rawStartTimestamp, endTimestamp);
       const saveEndTimestamp = showTimeRange ? endTimestamp : undefined;
 
       const metadata: Record<string, string | number> = {};
@@ -275,8 +284,10 @@ export function LogForm({
       earnedXp,
       endHour,
       endMinute,
+      dayCutoffHour,
       logBehavior,
       manualMetadataFields,
+      maxTimestampForDate,
       metadataFields,
       metadataValues,
       notes,

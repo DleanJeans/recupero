@@ -9,6 +9,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { useSettingsStore } from '../store/settingsStore';
 import type { BehaviorEntry } from '../types/behavior';
 import { Colors } from '../utils/colors';
 import { toDateString } from '../utils/dateUtils';
@@ -40,14 +41,15 @@ export function StarRow({
   emptyColor = Colors.star.empty,
   style,
 }: Props) {
+  const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const thresholds = getThresholds(behavior);
-  const todayStr = useMemo(() => toDateString(new Date()), []);
+  const todayStr = useMemo(() => toDateString(new Date(), dayCutoffHour), [dayCutoffHour]);
   const targetDate = dateStr ?? todayStr;
   const earned = useMemo(() => {
     if (!thresholds) return 0;
-    const logCount = getLogsForPeriod(behavior, getStarPeriod(behavior), targetDate).length;
+    const logCount = getLogsForPeriod(behavior, getStarPeriod(behavior), targetDate, dayCutoffHour).length;
     return getEarnedStars(logCount, thresholds);
-  }, [behavior, thresholds, targetDate]);
+  }, [behavior, dayCutoffHour, thresholds, targetDate]);
 
   if (!thresholds) return null;
 

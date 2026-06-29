@@ -1,9 +1,9 @@
 import type { TaskEntry } from '../types/task';
-import { toDateString } from './dateUtils';
+import { timestampAtOperationalMidday, toDateString } from './dateUtils';
 
-export function getTasksForDate(tasks: TaskEntry[] | undefined, dateStr: string): TaskEntry[] {
+export function getTasksForDate(tasks: TaskEntry[] | undefined, dateStr: string, dayCutoffHour = 0): TaskEntry[] {
   return (tasks ?? [])
-    .filter(task => isTaskVisibleOnDate(task, dateStr))
+    .filter(task => isTaskVisibleOnDate(task, dateStr, dayCutoffHour))
     .sort((a, b) => {
       const aDone = isTaskCompleteOnDate(a, dateStr);
       const bDone = isTaskCompleteOnDate(b, dateStr);
@@ -12,12 +12,12 @@ export function getTasksForDate(tasks: TaskEntry[] | undefined, dateStr: string)
     });
 }
 
-export function isTaskVisibleOnDate(task: TaskEntry, dateStr: string): boolean {
+export function isTaskVisibleOnDate(task: TaskEntry, dateStr: string, dayCutoffHour = 0): boolean {
   if (task.archived) return false;
   if (isTaskCompleteOnDate(task, dateStr)) return true;
   if (task.completedDates.length > 0) return false;
   if (task.scheduledDate === dateStr) return true;
-  return dateStr === toDateString(new Date()) && getTaskCreatedDate(task) <= dateStr;
+  return dateStr === toDateString(new Date(), dayCutoffHour) && getTaskCreatedDate(task, dayCutoffHour) <= dateStr;
 }
 
 export function isTaskCompleteOnDate(task: TaskEntry, dateStr: string): boolean {
@@ -31,13 +31,13 @@ export function getTaskStarsForDate(tasks: TaskEntry[] | undefined, dateStr: str
   }, 0);
 }
 
-export function timestampForTaskDate(dateStr: string): number {
-  const todayStr = toDateString(new Date());
+export function timestampForTaskDate(dateStr: string, dayCutoffHour = 0): number {
+  const todayStr = toDateString(new Date(), dayCutoffHour);
   if (dateStr === todayStr) return Date.now();
-  return new Date(`${dateStr}T12:00:00`).getTime();
+  return timestampAtOperationalMidday(dateStr, dayCutoffHour);
 }
 
-function getTaskCreatedDate(task: TaskEntry): string {
-  if (Number.isFinite(task.createdAt)) return toDateString(new Date(task.createdAt));
+function getTaskCreatedDate(task: TaskEntry, dayCutoffHour = 0): string {
+  if (Number.isFinite(task.createdAt)) return toDateString(new Date(task.createdAt), dayCutoffHour);
   return task.scheduledDate;
 }

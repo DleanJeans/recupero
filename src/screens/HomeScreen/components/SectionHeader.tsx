@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/Text';
+import { useSettingsStore } from '../../../store/settingsStore';
 import type { BehaviorEntry } from '../../../types/behavior';
 import type { TaskEntry } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
@@ -17,8 +18,9 @@ interface SectionHeaderProps {
 }
 
 export const SectionHeader = React.memo(function SectionHeader({ title, behaviors, tasks }: SectionHeaderProps) {
-  const today = useMemo(() => toDateString(new Date()), []);
-  const yesterdayStr = useMemo(() => toDateString(yesterday()), []);
+  const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
+  const today = useMemo(() => toDateString(new Date(), dayCutoffHour), [dayCutoffHour]);
+  const yesterdayStr = useMemo(() => toDateString(yesterday(new Date(), dayCutoffHour)), [dayCutoffHour]);
   const sectionDate = (() => {
     if (title === Label.TODAY) return today;
     if (title === Label.YESTERDAY) return yesterdayStr;
@@ -30,8 +32,8 @@ export const SectionHeader = React.memo(function SectionHeader({ title, behavior
     const hasOptedIn = behaviors.some(b => b.starThresholds);
     const taskStars = getTaskStarsForDate(tasks, sectionDate);
     if (!hasOptedIn && taskStars === 0) return null;
-    return getTotalStarsForDate(behaviors, sectionDate) + taskStars;
-  }, [behaviors, tasks, sectionDate]);
+    return getTotalStarsForDate(behaviors, sectionDate, dayCutoffHour) + taskStars;
+  }, [behaviors, dayCutoffHour, tasks, sectionDate]);
 
   return (
     <View style={styles.sectionHeader}>

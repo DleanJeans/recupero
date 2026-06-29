@@ -4,6 +4,7 @@ import { SafeAreaView } from '../../components/SafeAreaView';
 import { ScreenTitle } from '../../components/ScreenTitle';
 import { Text } from '../../components/Text';
 import { useBehaviorStore } from '../../store/behaviorStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import { getAllDailyMetadataTotals } from '../../utils/behaviorUtils';
 import { Colors } from '../../utils/colors';
 import { describeDay, toDateString } from '../../utils/dateUtils';
@@ -18,8 +19,9 @@ import { MetadataSummaryRow } from './components/MetadataSummaryRow';
 
 export function DayScreen() {
   const { behaviors, categories, tasks } = useBehaviorStore();
+  const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
 
-  const todayStr = toDateString(new Date());
+  const todayStr = toDateString(new Date(), dayCutoffHour);
   const [selectedDate, setSelectedDate] = useState(todayStr);
 
   // Logs for the selected date
@@ -31,7 +33,7 @@ export function DayScreen() {
 
     for (const behavior of behaviors) {
       for (const log of behavior.logs) {
-        const logDate = toDateString(new Date(log.timestamp));
+        const logDate = toDateString(new Date(log.timestamp), dayCutoffHour);
         if (logDate === selectedDate) {
           entries.push({ log, behavior });
         }
@@ -40,15 +42,15 @@ export function DayScreen() {
 
     entries.sort((a, b) => b.log.timestamp - a.log.timestamp);
     return entries;
-  }, [behaviors, selectedDate]);
+  }, [behaviors, dayCutoffHour, selectedDate]);
 
   // Total entry count
   const totalEntries = dayLogs.length;
 
   // Metadata totals for the selected date
   const metadataTotals = useMemo(() => {
-    return getAllDailyMetadataTotals(behaviors, categories, selectedDate);
-  }, [behaviors, categories, selectedDate]);
+    return getAllDailyMetadataTotals(behaviors, categories, selectedDate, dayCutoffHour);
+  }, [behaviors, categories, dayCutoffHour, selectedDate]);
 
   // Earliest and latest log for duration calculation
   const daySpan = useMemo(() => {
@@ -63,11 +65,11 @@ export function DayScreen() {
   const hasOptedInLog = useMemo(() => dayLogs.some(entry => getThresholds(entry.behavior) !== undefined), [dayLogs]);
   const taskStars = useMemo(() => getTaskStarsForDate(tasks, selectedDate), [tasks, selectedDate]);
   const totalStars = useMemo(() => {
-    const behaviorStars = hasOptedInLog ? getTotalStarsForDate(behaviors, selectedDate) : 0;
+    const behaviorStars = hasOptedInLog ? getTotalStarsForDate(behaviors, selectedDate, dayCutoffHour) : 0;
     return behaviorStars + taskStars;
-  }, [behaviors, selectedDate, hasOptedInLog, taskStars]);
+  }, [behaviors, dayCutoffHour, selectedDate, hasOptedInLog, taskStars]);
   const hasStars = hasOptedInLog || taskStars > 0;
-  const dayLabel = describeDay(selectedDate);
+  const dayLabel = describeDay(selectedDate, dayCutoffHour);
   const summaryItems = useMemo(
     () => [
       { label: 'entries', value: totalEntries },

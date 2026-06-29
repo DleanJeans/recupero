@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useSettingsStore } from '../store/settingsStore';
 import type { BehaviorEntry } from '../types/behavior';
 import { getBehaviorTypeColor } from '../utils/behaviorTypeUtils';
 import { Colors } from '../utils/colors';
@@ -37,6 +38,7 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
   titleOverride,
   titleSize = 'card',
 }: Props) {
+  const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const [tick, setTick] = useState(0);
 
   // Re-render every minute so "2h ago" / CooldownBar stay current.
@@ -46,7 +48,10 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
   }, []);
 
   const isHeader = titleSize === 'header';
-  const effectiveXp = useMemo(() => getEffectiveXp(behavior), [behavior, tick]);
+  const effectiveXp = useMemo(
+    () => getEffectiveXp(behavior, Date.now(), dayCutoffHour),
+    [behavior, dayCutoffHour, tick],
+  );
   const behaviorColor = useMemo(() => getBehaviorTypeColor(behavior.type), [behavior.type]);
 
   return (

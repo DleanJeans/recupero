@@ -11,16 +11,17 @@ interface Props {
   laterMs: number;
   /** When set, renders a red `-N XP` label below the duration showing decay accrued in this gap. */
   xpDecay?: BehaviorEntry['xpDecay'];
+  dayCutoffHour?: number;
   style?: ViewStyle;
 }
 
-export function LogGap({ earlierMs, laterMs, xpDecay, style }: Props) {
+export function LogGap({ earlierMs, laterMs, xpDecay, dayCutoffHour = 0, style }: Props) {
   const durationMs = Math.max(0, laterMs - earlierMs);
   const decayLabel = useMemo(() => {
     if (!xpDecay) return undefined;
-    const lost = getDecayForGap(earlierMs, laterMs, xpDecay);
+    const lost = getDecayForGap(earlierMs, laterMs, xpDecay, dayCutoffHour);
     return lost > 0 ? `- ${lost * XP_PER_LOG} XP` : undefined;
-  }, [earlierMs, laterMs, xpDecay]);
+  }, [dayCutoffHour, earlierMs, laterMs, xpDecay]);
 
   return (
     <View style={[styles.connector, style]}>

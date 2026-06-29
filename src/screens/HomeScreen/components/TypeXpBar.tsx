@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/Text';
 import { XpBar } from '../../../components/XpBar';
 import { useBehaviorStore } from '../../../store/behaviorStore';
+import { useSettingsStore } from '../../../store/settingsStore';
 import type { BehaviorType } from '../../../types/behavior';
 import { getBehaviorTypeColor } from '../../../utils/behaviorTypeUtils';
 import { getEffectiveXp } from '../../../utils/xpUtils';
@@ -20,18 +21,19 @@ interface Props {
 }
 export function TypeXpBar({ selectedCategoryId }: Props) {
   const behaviors = useBehaviorStore(s => s.behaviors);
+  const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
 
   const typeXp = useMemo(() => {
     const counts: Record<BehaviorType, number> = { desirable: 0, neutral: 0, undesirable: 0 };
     for (const behavior of behaviors) {
       if (selectedCategoryId !== null && behavior.categoryId !== selectedCategoryId) continue;
       if (!behavior.xpEnabled) continue;
-      const effectiveXp = getEffectiveXp(behavior);
+      const effectiveXp = getEffectiveXp(behavior, Date.now(), dayCutoffHour);
       if (effectiveXp === 0) continue;
       counts[behavior.type ?? 'neutral'] += effectiveXp;
     }
     return counts;
-  }, [behaviors, selectedCategoryId]);
+  }, [behaviors, dayCutoffHour, selectedCategoryId]);
 
   const hasLogs = TYPE_ORDER.some(t => typeXp[t] > 0);
   if (!hasLogs) return null;

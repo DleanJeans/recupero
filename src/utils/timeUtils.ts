@@ -1,5 +1,5 @@
 import { useSettingsStore } from '../store/settingsStore';
-import { yesterday } from './dateUtils';
+import { toDateString, yesterday } from './dateUtils';
 
 import { Label, Unit } from './strings';
 
@@ -57,8 +57,8 @@ function computeElapsed(timestamp: number): { now: Date } & ElapsedInfo {
   return { now, date, seconds, minutes, hours, days, weeks, months, years };
 }
 
-function isSameCalendarDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+function isSameCalendarDay(a: Date, b: Date, dayCutoffHour = 0): boolean {
+  return toDateString(a, dayCutoffHour) === toDateString(b, dayCutoffHour);
 }
 
 function isPreviousCalendarMonth(now: Date, date: Date): boolean {
@@ -74,12 +74,13 @@ export function formatElapsedText(timestamp: number | null): string {
   if (timestamp === null) return '';
 
   const { now, date, seconds, hours, days } = computeElapsed(timestamp);
+  const dayCutoffHour = useSettingsStore.getState().dayCutoffHour;
 
   if (seconds < 60 || hours < 1) return '';
 
-  if (isSameCalendarDay(date, now)) return Label.TODAY;
+  if (isSameCalendarDay(date, now, dayCutoffHour)) return Label.TODAY;
 
-  if (isSameCalendarDay(date, yesterday())) return Label.YESTERDAY;
+  if (isSameCalendarDay(date, yesterday(now, dayCutoffHour))) return Label.YESTERDAY;
 
   if (days < 7) return DAY_NAMES[date.getDay()];
 
@@ -131,9 +132,9 @@ export function formatCompactDate(timestamp: number): string {
 export function isOlderThanYesterday(timestamp: number): boolean {
   const now = new Date();
   const date = new Date(timestamp);
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const y = yesterday(today);
-  return date < y;
+  const dayCutoffHour = useSettingsStore.getState().dayCutoffHour;
+  const y = yesterday(now, dayCutoffHour);
+  return toDateString(date, dayCutoffHour) < toDateString(y);
 }
 
 export function formatDuration(ms: number): string {

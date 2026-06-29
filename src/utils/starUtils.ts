@@ -51,16 +51,21 @@ export function getEarnedStars(logCount: number, thresholds: readonly (number | 
 }
 
 /** Logs for a given behavior that fall on a given local calendar date. */
-export function getLogsForDate(behavior: BehaviorEntry, dateStr: string): LogEntry[] {
-  return behavior.logs.filter(log => toDateString(new Date(log.timestamp)) === dateStr);
+export function getLogsForDate(behavior: BehaviorEntry, dateStr: string, dayCutoffHour = 0): LogEntry[] {
+  return behavior.logs.filter(log => toDateString(new Date(log.timestamp), dayCutoffHour) === dateStr);
 }
 
 /** Logs for a given behavior whose timestamps fall inside the calendar
  *  `period` (daily / weekly / monthly) containing `dateStr`. */
-export function getLogsForPeriod(behavior: BehaviorEntry, period: StarPeriod, dateStr: string): LogEntry[] {
+export function getLogsForPeriod(
+  behavior: BehaviorEntry,
+  period: StarPeriod,
+  dateStr: string,
+  dayCutoffHour = 0,
+): LogEntry[] {
   const { start, end } = getPeriodRange(period, dateStr);
   return behavior.logs.filter(log => {
-    const d = toDateString(new Date(log.timestamp));
+    const d = toDateString(new Date(log.timestamp), dayCutoffHour);
     return d >= start && d <= end;
   });
 }
@@ -68,12 +73,12 @@ export function getLogsForPeriod(behavior: BehaviorEntry, period: StarPeriod, da
 /** Sum of earned stars across all opted-in behaviors for a given date.
  *  Each behavior uses its own `starPeriod` (defaulting to `'day'`).
  *  Behaviors without `starThresholds` contribute 0. */
-export function getTotalStarsForDate(behaviors: BehaviorEntry[], dateStr: string): number {
+export function getTotalStarsForDate(behaviors: BehaviorEntry[], dateStr: string, dayCutoffHour = 0): number {
   let total = 0;
   for (const behavior of behaviors) {
     const thresholds = getThresholds(behavior);
     if (!thresholds) continue;
-    const logCount = getLogsForPeriod(behavior, getStarPeriod(behavior), dateStr).length;
+    const logCount = getLogsForPeriod(behavior, getStarPeriod(behavior), dateStr, dayCutoffHour).length;
     total += getEarnedStars(logCount, thresholds);
   }
   return total;

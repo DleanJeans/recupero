@@ -1,5 +1,5 @@
 import type { BehaviorEntry, XpDecayUnit } from '../types/behavior';
-import { calendarDayDiff, MS_PER_DAY } from './dateUtils';
+import { MS_PER_DAY, operationalDayDiff } from './dateUtils';
 import { getLogDurationMinutes, getLogEndTimestamp, getLogStartTimestamp, LEGACY_LOG_XP } from './logUtils';
 
 export const XP_PER_LOG = LEGACY_LOG_XP;
@@ -22,7 +22,7 @@ export function decayEveryInDays(every: number, unit: XpDecayUnit): number {
  *  Each gap counts days *strictly between* its endpoints (excludes both), so a
  *  same-day or 1-day-apart pair never decays. Returns 0 when the feature is off,
  *  no logs exist, or no decay has accrued. */
-export function getDecayLogCount(behavior: BehaviorEntry, now: number = Date.now()): number {
+export function getDecayLogCount(behavior: BehaviorEntry, now: number = Date.now(), dayCutoffHour = 0): number {
   const { xpDecay, logs } = behavior;
   if (!behavior.xpEnabled) return 0;
   if (!xpDecay) return 0;
@@ -39,19 +39,24 @@ export function getDecayLogCount(behavior: BehaviorEntry, now: number = Date.now
   // is >= the number of logs in the current era — that gap wipes them out.
   let eraStart = 0;
   for (let i = 1; i < N; i++) {
-    const gapDecay = decayForGap(getLogEndTimestamp(sorted[i - 1]), getLogStartTimestamp(sorted[i]), everyDays);
+    const gapDecay = decayForGap(
+      getLogEndTimestamp(sorted[i - 1]),
+      getLogStartTimestamp(sorted[i]),
+      everyDays,
+      dayCutoffHour,
+    );
     if (gapDecay >= i - eraStart) {
       eraStart = i;
     }
   }
 
   // Final gap: most recent log → now. Caps at N since we can't cancel more logs than exist.
-  const finalDecay = decayForGap(getLogEndTimestamp(sorted[N - 1]), now, everyDays);
+  const finalDecay = decayForGap(getLogEndTimestamp(sorted[N - 1]), now, everyDays, dayCutoffHour);
   return Math.min(N, eraStart + finalDecay);
 }
 
-function decayForGap(earlierMs: number, laterMs: number, everyDays: number): number {
-  const diff = calendarDayDiff(laterMs, earlierMs);
+function decayForGap(earlierMs: number, laterMs: number, everyDays: number, dayCutoffHour = 0): number {
+  const diff = operationalDayDiff(laterMs, earlierMs, dayCutoffHour);
   const between = Math.max(0, diff - 1);
   if (between === 0) return 0;
   return Math.floor(between / everyDays);
@@ -59,17 +64,22 @@ function decayForGap(earlierMs: number, laterMs: number, everyDays: number): num
 
 /** XP decay accrued within a single gap (earlier → later), given a behavior's decay config.
  *  Returns 0 when the feature is off, config is invalid, or the gap is too short to accrue decay. */
-export function getDecayForGap(earlierMs: number, laterMs: number, decay: BehaviorEntry['xpDecay']): number {
+export function getDecayForGap(
+  earlierMs: number,
+  laterMs: number,
+  decay: BehaviorEntry['xpDecay'],
+  dayCutoffHour = 0,
+): number {
   if (!decay) return 0;
   const everyDays = decayEveryInDays(decay.every, decay.unit);
   if (!Number.isFinite(everyDays) || everyDays <= 0) return 0;
-  return decayForGap(earlierMs, laterMs, everyDays);
+  return decayForGap(earlierMs, laterMs, everyDays, dayCutoffHour);
 }
 
 /** Effective log count for a behavior after applying XP decay. Floors at 0.
  *  Returns the raw log count when XP is off (decay is implicitly 0). */
-export function getEffectiveLogCount(behavior: BehaviorEntry, now: number = Date.now()): number {
-  return Math.max(0, behavior.logs.length - getDecayLogCount(behavior, now));
+export function getEffectiveLogCount(behavior: BehaviorEntry, now: number = Date.now(), dayCutoffHour = 0): number {
+  return Math.max(0, behavior.logs.length - getDecayLogCount(behavior, now, dayCutoffHour));
 }
 
 export function getLogXp(log: BehaviorEntry['logs'][number]): number {
@@ -80,8 +90,8 @@ export function getBehaviorXp(behavior: BehaviorEntry): number {
   return behavior.logs.reduce((total, log) => total + getLogXp(log), 0);
 }
 
-export function getEffectiveXp(behavior: BehaviorEntry, now: number = Date.now()): number {
-  const decayXp = behavior.xpEnabled ? getDecayLogCount(behavior, now) * XP_PER_LOG : 0;
+export function getEffectiveXp(behavior: BehaviorEntry, now: number = Date.now(), dayCutoffHour = 0): number {
+  const decayXp = behavior.xpEnabled ? getDecayLogCount(behavior, now, dayCutoffHour) * XP_PER_LOG : 0;
   return Math.max(0, getBehaviorXp(behavior) - decayXp);
 }
 

@@ -1,5 +1,5 @@
 import type { BehaviorEntry, Category, LogEntry } from '../types/behavior';
-import { toDateString, yesterday } from './dateUtils';
+import { operationalDayDiff, toDateString, yesterday } from './dateUtils';
 import { getLogEndTimestamp } from './logUtils';
 import { roundTo2 } from './numberUtils';
 import { Group } from './strings';
@@ -45,22 +45,18 @@ export const GROUP_ORDER: RecencyGroup[] = [
   Group.OLDER,
 ];
 
-export function getRecencyGroup(lastTimestamp: number | null): RecencyGroup {
+export function getRecencyGroup(lastTimestamp: number | null, dayCutoffHour = 0): RecencyGroup {
   if (lastTimestamp === null) return 'Older';
 
   const now = new Date();
   const date = new Date(lastTimestamp);
-  const elapsed = now.getTime() - lastTimestamp;
-  const minutes = Math.floor(elapsed / 1000 / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
+  const dayDiff = operationalDayDiff(now, date, dayCutoffHour);
+  const days = Math.max(0, dayDiff);
 
-  if (days < 1 && date.getDate() === now.getDate()) return Group.TODAY;
+  if (dayDiff === 0) return Group.TODAY;
 
-  const y = yesterday();
-  const isYesterday =
-    date.getFullYear() === y.getFullYear() && date.getMonth() === y.getMonth() && date.getDate() === y.getDate();
-  if (isYesterday) return Group.YESTERDAY;
+  const y = yesterday(now, dayCutoffHour);
+  if (toDateString(date, dayCutoffHour) === toDateString(y)) return Group.YESTERDAY;
 
   if (days < 7) return Group.THIS_WEEK;
   if (days < 14) return Group.LAST_WEEK;
@@ -73,7 +69,7 @@ export interface RecencySection<T = BehaviorEntry> {
   data: T[];
 }
 
-export function groupBehaviorsByRecency(behaviors: BehaviorEntry[]): RecencySection[] {
+export function groupBehaviorsByRecency(behaviors: BehaviorEntry[], dayCutoffHour = 0): RecencySection[] {
   const sorted = sortBehaviorsByRecent(behaviors);
   const groups = new Map<RecencyGroup, BehaviorEntry[]>();
 
@@ -82,7 +78,7 @@ export function groupBehaviorsByRecency(behaviors: BehaviorEntry[]): RecencySect
   }
 
   for (const behavior of sorted) {
-    const group = getRecencyGroup(behavior.lastTimestamp);
+    const group = getRecencyGroup(behavior.lastTimestamp, dayCutoffHour);
     groups.get(group)!.push(behavior);
   }
 
@@ -97,6 +93,7 @@ export function getDailyMetadataTotals(
   behaviors: BehaviorEntry[],
   category: Category,
   dateStr: string,
+  dayCutoffHour = 0,
 ): Record<string, number> {
   const fields = category.metadataFields ?? [];
   if (fields.length === 0) return {};
@@ -107,7 +104,7 @@ export function getDailyMetadataTotals(
   for (const behavior of categoryBehaviors) {
     for (const log of behavior.logs) {
       if (!log.metadata) continue;
-      const logDate = toDateString(new Date(log.timestamp));
+      const logDate = toDateString(new Date(log.timestamp), dayCutoffHour);
       if (logDate !== dateStr) continue;
       for (const field of fields) {
         const val = log.metadata[field.key];
@@ -129,6 +126,7 @@ export function getAllDailyMetadataTotals(
   behaviors: BehaviorEntry[],
   categories: Category[],
   dateStr: string,
+  dayCutoffHour = 0,
 ): DailyMetadataTotal[] {
   const result: DailyMetadataTotal[] = [];
 
@@ -142,7 +140,7 @@ export function getAllDailyMetadataTotals(
     for (const behavior of categoryBehaviors) {
       for (const log of behavior.logs) {
         if (!log.metadata) continue;
-        const logDate = toDateString(new Date(log.timestamp));
+        const logDate = toDateString(new Date(log.timestamp), dayCutoffHour);
         if (logDate !== dateStr) continue;
         for (const field of fields) {
           const val = log.metadata[field.key];
@@ -171,7 +169,7 @@ export function getAllDailyMetadataTotals(
   return result;
 }
 
-export function groupLogsByRecency(logs: LogEntry[]): RecencySection<LogEntry>[] {
+export function groupLogsByRecency(logs: LogEntry[], dayCutoffHour = 0): RecencySection<LogEntry>[] {
   const sorted = [...logs].sort((a, b) => getLogEndTimestamp(b) - getLogEndTimestamp(a));
   const groups = new Map<RecencyGroup, LogEntry[]>();
 
@@ -180,7 +178,7 @@ export function groupLogsByRecency(logs: LogEntry[]): RecencySection<LogEntry>[]
   }
 
   for (const log of sorted) {
-    const group = getRecencyGroup(getLogEndTimestamp(log));
+    const group = getRecencyGroup(getLogEndTimestamp(log), dayCutoffHour);
     groups.get(group)!.push(log);
   }
 

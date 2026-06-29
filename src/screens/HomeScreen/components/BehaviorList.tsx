@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { SectionList, StyleSheet } from 'react-native';
 import { Text } from '../../../components/Text';
+import { useSettingsStore } from '../../../store/settingsStore';
 import type { BehaviorEntry } from '../../../types/behavior';
 import type { TaskEntry } from '../../../types/task';
 import { groupBehaviorsByRecency } from '../../../utils/behaviorUtils';
@@ -23,9 +24,10 @@ export const BehaviorList = React.memo(function BehaviorList({
   selectedCategoryId,
   searchQuery,
 }: BehaviorListProps) {
-  const sections = useMemo(() => groupBehaviorsByRecency(behaviors), [behaviors]);
-  const todayStr = useMemo(() => toDateString(new Date()), []);
-  const yesterdayStr = useMemo(() => toDateString(yesterday()), []);
+  const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
+  const sections = useMemo(() => groupBehaviorsByRecency(behaviors, dayCutoffHour), [behaviors, dayCutoffHour]);
+  const todayStr = useMemo(() => toDateString(new Date(), dayCutoffHour), [dayCutoffHour]);
+  const yesterdayStr = useMemo(() => toDateString(yesterday(new Date(), dayCutoffHour)), [dayCutoffHour]);
   const dateForSection = useCallback(
     (title: string): string | undefined => {
       if (title === Label.TODAY) return todayStr;

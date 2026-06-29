@@ -7,6 +7,7 @@ import type { AddTaskInput, TaskEntry } from '../types/task';
 import { getLogEndTimestamp } from '../utils/logUtils';
 import { getLoggableDefaultMetadata } from '../utils/metadataCalculationUtils';
 import { isTaskCompleteOnDate, timestampForTaskDate } from '../utils/taskUtils';
+import { useSettingsStore } from './settingsStore';
 
 interface BehaviorStore {
   behaviors: BehaviorEntry[];
@@ -257,7 +258,8 @@ export const useBehaviorStore = create<BehaviorStore>()(
           const wasComplete = isTaskCompleteOnDate(task, dateStr);
           const logIdToRemove = wasComplete ? task.completionLogIds?.[dateStr] : undefined;
           const logIdToAdd = !wasComplete && task.behaviorId ? uuidv4() : undefined;
-          const taskTimestamp = timestampForTaskDate(dateStr);
+          const dayCutoffHour = useSettingsStore.getState().dayCutoffHour;
+          const taskTimestamp = timestampForTaskDate(dateStr, dayCutoffHour);
 
           const tasks = (state.tasks ?? []).map(t => {
             if (t.id !== taskId) return t;

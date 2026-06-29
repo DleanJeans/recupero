@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { SectionList, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useBehaviorStore } from '../../../store/behaviorStore';
+import { useSettingsStore } from '../../../store/settingsStore';
 import type { BehaviorEntry } from '../../../types/behavior';
 import { groupLogsByRecency } from '../../../utils/behaviorUtils';
 import { Colors } from '../../../utils/colors';
@@ -15,6 +16,7 @@ interface BehaviorLogListProps {
 }
 
 export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
+  const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const category = useBehaviorStore(
     useCallback(
       state => (behavior.categoryId ? state.categories.find(c => c.id === behavior.categoryId) : undefined),
@@ -24,7 +26,7 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
   const [elapsedTick, setElapsedTick] = useState(0);
 
   const logs = behavior.logs ?? [];
-  const sections = useMemo(() => groupLogsByRecency(logs), [logs]);
+  const sections = useMemo(() => groupLogsByRecency(logs, dayCutoffHour), [dayCutoffHour, logs]);
   const metadataFields = category?.metadataFields;
 
   useEffect(() => {
@@ -51,6 +53,7 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
                 earlierMs={earlierMs}
                 laterMs={laterMs}
                 xpDecay={behavior.xpDecay}
+                dayCutoffHour={dayCutoffHour}
               />
             );
           })()}
@@ -63,7 +66,7 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
         />
       </>
     ),
-    [behavior.id, behavior.xpDecay, elapsedTick, metadataFields, onEditLog],
+    [behavior.id, behavior.xpDecay, dayCutoffHour, elapsedTick, metadataFields, onEditLog],
   );
 
   const renderSectionHeader = useCallback(
@@ -82,6 +85,7 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
                   earlierMs={earlierMs}
                   laterMs={laterMs}
                   xpDecay={behavior.xpDecay}
+                  dayCutoffHour={dayCutoffHour}
                   style={styles.logGapAbsolute}
                 />
               );
@@ -90,7 +94,7 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
         </View>
       );
     },
-    [behavior.xpDecay, sections],
+    [behavior.xpDecay, dayCutoffHour, sections],
   );
 
   const listEmptyComponent = useMemo(

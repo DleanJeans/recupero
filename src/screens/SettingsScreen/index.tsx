@@ -5,6 +5,7 @@ import { SafeAreaView } from '../../components/SafeAreaView';
 import { ScreenTitle } from '../../components/ScreenTitle';
 import { Colors } from '../../utils/colors';
 import { DataTransferSection } from './components/DataTransferSection';
+import { DayCutoffPicker } from './components/DayCutoffPicker';
 import { PrivateBehaviorSection } from './components/PrivateBehaviorSection';
 import { TimeFormatPicker } from './components/TimeFormatPicker';
 
@@ -17,6 +18,7 @@ export function SettingsScreen() {
       </View>
 
       <TimeFormatPicker />
+      <DayCutoffPicker />
       <PrivateBehaviorSection />
       <DataTransferSection />
     </SafeAreaView>

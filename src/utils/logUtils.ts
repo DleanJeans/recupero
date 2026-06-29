@@ -1,5 +1,5 @@
 import type { LogEntry } from '../types/behavior';
-import { toDateString } from './dateUtils';
+import { getDayStartTimestamp, MS_PER_DAY, toDateString } from './dateUtils';
 import { MS_PER_MINUTE } from './timeUtils';
 
 export const LEGACY_LOG_XP = 5;
@@ -38,13 +38,12 @@ export function getLogGapDurationMs(olderLog: LogEntry, newerLog: LogEntry): num
   return Math.max(0, laterMs - earlierMs);
 }
 
-export function getDayMaxTimestamp(dateStr: string, now: Date = new Date()): number {
-  if (dateStr === toDateString(now)) return now.getTime();
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day, 23, 59, 0, 0).getTime();
+export function getDayMaxTimestamp(dateStr: string, now: Date = new Date(), dayCutoffHour = 0): number {
+  if (dateStr === toDateString(now, dayCutoffHour)) return now.getTime();
+  return getDayStartTimestamp(dateStr, dayCutoffHour) + MS_PER_DAY - MS_PER_MINUTE;
 }
 
-export function getDefaultTimedLogStartTimestamp(now: Date = new Date()): number {
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).getTime();
+export function getDefaultTimedLogStartTimestamp(now: Date = new Date(), dayCutoffHour = 0): number {
+  const todayStart = getDayStartTimestamp(toDateString(now, dayCutoffHour), dayCutoffHour);
   return Math.max(todayStart, now.getTime() - LEGACY_LOG_XP * MS_PER_MINUTE);
 }

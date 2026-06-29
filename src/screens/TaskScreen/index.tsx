@@ -19,7 +19,8 @@ import { TaskComposer } from './components/task-composer';
 const TASK_LIST_LAYOUT = LinearTransition.duration(240);
 
 export function TaskScreen() {
-  const todayStr = useMemo(() => toDateString(new Date()), []);
+  const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
+  const todayStr = useMemo(() => toDateString(new Date(), dayCutoffHour), [dayCutoffHour]);
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [title, setTitle] = useState('');
   const [behaviorQuery, setBehaviorQuery] = useState('');
@@ -44,13 +45,16 @@ export function TaskScreen() {
   const behaviorById = useMemo(() => new Map(behaviors.map(behavior => [behavior.id, behavior])), [behaviors]);
 
   const selectedBehavior = selectedBehaviorId ? behaviorById.get(selectedBehaviorId) : undefined;
-  const dayTasks = useMemo(() => getTasksForDate(tasks, selectedDate), [tasks, selectedDate]);
+  const dayTasks = useMemo(
+    () => getTasksForDate(tasks, selectedDate, dayCutoffHour),
+    [tasks, dayCutoffHour, selectedDate],
+  );
   const completedCount = useMemo(
     () => dayTasks.filter(task => isTaskCompleteOnDate(task, selectedDate)).length,
     [dayTasks, selectedDate],
   );
   const taskStars = useMemo(() => getTaskStarsForDate(tasks, selectedDate), [tasks, selectedDate]);
-  const dayLabel = describeDay(selectedDate);
+  const dayLabel = describeDay(selectedDate, dayCutoffHour);
   const summaryItems = useMemo(
     () => [
       { label: 'done', value: completedCount },
