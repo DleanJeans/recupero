@@ -209,17 +209,17 @@ export function LogForm({
   const startMinute = startMinutes % 60;
   const endHour = Math.floor(endMinutes / 60);
   const endMinute = endMinutes % 60;
-  const durationMinutes = showTimeRange ? Math.max(1, endMinutes - startMinutes) : 1;
+  const durationMinutes = Math.max(1, endMinutes - startMinutes);
   const durationMs = durationMinutes * MS_PER_MINUTE;
-  const earnedXp = durationMinutes;
+  const earnedXp = showTimeRange ? durationMinutes : XP_PER_LOG;
+  const logButtonLabel = editLogId ? 'Save' : !showTimeRange && behavior.xpEnabled ? `Log +${XP_PER_LOG} XP` : 'Log';
 
   const handleConfirm = useCallback(
     (event: GestureResponderEvent) => {
       const [year, month, day] = selectedDate.split('-').map(Number);
       const startTimestamp = new Date(year, month - 1, day, startHour, startMinute, 0, 0).getTime();
       const endTimestamp = new Date(year, month - 1, day, endHour, endMinute, 0, 0).getTime();
-      const saveEndTimestamp =
-        showTimeRange || !editLogId ? (showTimeRange ? endTimestamp : startTimestamp + MS_PER_MINUTE) : undefined;
+      const saveEndTimestamp = showTimeRange ? endTimestamp : undefined;
 
       const metadata: Record<string, string | number> = {};
       if (notes.trim()) metadata.notes = notes.trim();
@@ -309,7 +309,7 @@ export function LogForm({
 
         {!hasTimerRange && (
           <CheckboxRow
-            label="Use start and end time"
+            label="Track duration for XP"
             checked={showTimeRange}
             onToggle={handleToggleTimeRange}
             variant="row"
@@ -368,11 +368,13 @@ export function LogForm({
           </View>
         )}
 
-        <View style={styles.durationCard}>
-          <Text style={styles.durationLabel}>Duration</Text>
-          <Text style={styles.durationValue}>{formatDuration(durationMs)}</Text>
-          {behavior.xpEnabled && <Text style={styles.durationHint}>+{earnedXp} XP</Text>}
-        </View>
+        {showTimeRange && (
+          <View style={styles.durationCard}>
+            <Text style={styles.durationLabel}>Duration</Text>
+            <Text style={styles.durationValue}>{formatDuration(durationMs)}</Text>
+            {behavior.xpEnabled && <Text style={styles.durationHint}>+{earnedXp} XP</Text>}
+          </View>
+        )}
       </View>
       <ScrollView
         style={styles.body}
@@ -453,7 +455,7 @@ export function LogForm({
           />
         ))}
       >
-        {editLogId ? 'Save' : 'Log'}
+        {logButtonLabel}
       </Button>
     </KeyboardAvoidingView>
   );
