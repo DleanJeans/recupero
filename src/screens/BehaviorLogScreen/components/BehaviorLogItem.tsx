@@ -7,8 +7,9 @@ import { useBehaviorStore } from '../../../store/behaviorStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import type { LogEntry, MetadataField } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
+import { getLogDurationMs, getLogEndTimestamp, hasTimedLogRange } from '../../../utils/logUtils';
 import { formatMetadataValueUnit } from '../../../utils/metadataCalculationUtils';
-import { formatElapsedNumeric, formatTime } from '../../../utils/timeUtils';
+import { formatDuration, formatElapsedNumeric, formatTimeRange } from '../../../utils/timeUtils';
 
 interface Props {
   log: LogEntry;
@@ -27,8 +28,15 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
 }: Props) {
   const removeLog = useBehaviorStore(state => state.removeLog);
   const timeFormat = useSettingsStore(state => state.timeFormat);
-  const timeText = useMemo(() => formatTime(log.timestamp, timeFormat === '12h'), [log.timestamp, timeFormat]);
-  const elapsedText = useMemo(() => formatElapsedNumeric(log.timestamp), [log.timestamp, elapsedTick]);
+  const timeText = useMemo(
+    () => formatTimeRange(log.timestamp, log.endTimestamp, timeFormat === '12h'),
+    [log.endTimestamp, log.timestamp, timeFormat],
+  );
+  const elapsedText = useMemo(() => formatElapsedNumeric(getLogEndTimestamp(log)), [elapsedTick, log]);
+  const durationText = useMemo(
+    () => (hasTimedLogRange(log) ? formatDuration(getLogDurationMs(log)) : undefined),
+    [log],
+  );
 
   const handleRemove = useCallback(() => {
     Alert.alert('Remove Log', 'Remove this log entry?', [
@@ -58,6 +66,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
       >
         <View style={styles.timeContent}>
           <Text style={styles.dateText}>{timeText}</Text>
+          {durationText ? <Text style={styles.timeText}>{durationText}</Text> : null}
           <Text style={styles.elapsedText}>{elapsedText}</Text>
         </View>
         <View style={log.metadata ? styles.contentArea : undefined}>

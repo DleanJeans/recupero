@@ -5,7 +5,7 @@ const NUMBER_TWEEN_MS = 420;
 const LEVEL_UP_CURRENT_TWEEN_MS = 220;
 
 interface XpBarNumberState {
-  logCount: number;
+  xp: number;
   level: number;
   currentXp: number;
   levelXp: number;
@@ -15,10 +15,10 @@ interface Options extends XpBarNumberState {
   animateNumbers: boolean;
 }
 
-export function useAnimatedXpNumbers({ animateNumbers, logCount, level, currentXp, levelXp }: Options) {
+export function useAnimatedXpNumbers({ animateNumbers, xp, level, currentXp, levelXp }: Options) {
   const [displayedCurrentXp, setDisplayedCurrentXp] = useState(currentXp);
   const [displayedLevelXp, setDisplayedLevelXp] = useState(levelXp);
-  const previousValues = useRef<XpBarNumberState>({ logCount, level, currentXp, levelXp });
+  const previousValues = useRef<XpBarNumberState>({ xp, level, currentXp, levelXp });
   const hasMounted = useRef(false);
   const activeTweens = useRef<Array<() => void>>([]);
 
@@ -31,7 +31,7 @@ export function useAnimatedXpNumbers({ animateNumbers, logCount, level, currentX
 
   useEffect(() => {
     const previous = previousValues.current;
-    const next = { logCount, level, currentXp, levelXp };
+    const next = { xp, level, currentXp, levelXp };
 
     for (const cancel of activeTweens.current) cancel();
     activeTweens.current = [];
@@ -44,7 +44,7 @@ export function useAnimatedXpNumbers({ animateNumbers, logCount, level, currentX
       return;
     }
 
-    if (logCount === previous.logCount && currentXp === previous.currentXp && levelXp === previous.levelXp) {
+    if (xp === previous.xp && currentXp === previous.currentXp && levelXp === previous.levelXp) {
       previousValues.current = next;
       return;
     }
@@ -89,7 +89,7 @@ export function useAnimatedXpNumbers({ animateNumbers, logCount, level, currentX
     }
 
     previousValues.current = next;
-  }, [animateNumbers, currentXp, level, levelXp, logCount]);
+  }, [animateNumbers, currentXp, level, levelXp, xp]);
 
   return { displayedCurrentXp, displayedLevelXp };
 }

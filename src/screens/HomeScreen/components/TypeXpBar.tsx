@@ -5,7 +5,7 @@ import { XpBar } from '../../../components/XpBar';
 import { useBehaviorStore } from '../../../store/behaviorStore';
 import type { BehaviorType } from '../../../types/behavior';
 import { getBehaviorTypeColor } from '../../../utils/behaviorTypeUtils';
-import { getEffectiveLogCount } from '../../../utils/xpUtils';
+import { getEffectiveXp } from '../../../utils/xpUtils';
 
 const TYPE_LABELS: Record<BehaviorType, string> = {
   desirable: 'Desirable',
@@ -21,27 +21,26 @@ interface Props {
 export function TypeXpBar({ selectedCategoryId }: Props) {
   const behaviors = useBehaviorStore(s => s.behaviors);
 
-  const typeLogCounts = useMemo(() => {
+  const typeXp = useMemo(() => {
     const counts: Record<BehaviorType, number> = { desirable: 0, neutral: 0, undesirable: 0 };
     for (const behavior of behaviors) {
       if (selectedCategoryId !== null && behavior.categoryId !== selectedCategoryId) continue;
-      // Skip behaviors with XP disabled, or where decay has wiped the effective count to 0.
       if (!behavior.xpEnabled) continue;
-      const effective = getEffectiveLogCount(behavior);
-      if (effective === 0) continue;
-      counts[behavior.type ?? 'neutral'] += effective;
+      const effectiveXp = getEffectiveXp(behavior);
+      if (effectiveXp === 0) continue;
+      counts[behavior.type ?? 'neutral'] += effectiveXp;
     }
     return counts;
   }, [behaviors, selectedCategoryId]);
 
-  const hasLogs = TYPE_ORDER.some(t => typeLogCounts[t] > 0);
+  const hasLogs = TYPE_ORDER.some(t => typeXp[t] > 0);
   if (!hasLogs) return null;
 
   return (
     <View style={styles.section}>
       {TYPE_ORDER.map(type => {
-        const logCount = typeLogCounts[type];
-        if (logCount === 0) return null;
+        const xp = typeXp[type];
+        if (xp === 0) return null;
         return (
           <View
             key={type}
@@ -50,7 +49,7 @@ export function TypeXpBar({ selectedCategoryId }: Props) {
             <Text style={[styles.label, { color: getBehaviorTypeColor(type) }]}>{TYPE_LABELS[type]}</Text>
             <View style={styles.barContainer}>
               <XpBar
-                logCount={logCount}
+                xp={xp}
                 color={getBehaviorTypeColor(type)}
               />
             </View>

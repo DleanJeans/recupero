@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function LogGap({ earlierMs, laterMs, xpDecay, style }: Props) {
-  const durationMs = laterMs - earlierMs;
+  const durationMs = Math.max(0, laterMs - earlierMs);
   const decayLabel = useMemo(() => {
     if (!xpDecay) return undefined;
     const lost = getDecayForGap(earlierMs, laterMs, xpDecay);

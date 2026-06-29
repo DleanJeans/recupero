@@ -8,6 +8,7 @@ const ALL_HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'
 const ALL_MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
 interface TimePickerProps {
+  label: string;
   hour: number;
   minute: number;
   maxHour: number;
@@ -20,6 +21,7 @@ interface TimePickerProps {
 }
 
 function TimePickerComponent({
+  label,
   hour,
   minute,
   maxHour,
@@ -39,7 +41,7 @@ function TimePickerComponent({
 
   return (
     <>
-      <Text style={styles.sectionLabel}>Time</Text>
+      <Text style={styles.sectionLabel}>{label}</Text>
       <Pressable
         style={[styles.collapsedTime, !collapsed && styles.hiddenControl]}
         onPress={onExpand}
@@ -81,6 +83,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 10,
+    textAlign: 'center',
   },
   wheels: { marginBottom: 16, overflow: 'hidden' },
   wheelsContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },

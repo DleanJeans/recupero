@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { useBehaviorStore } from '../store/behaviorStore';
-import { getEffectiveLogCount, getLevel } from '../utils/xpUtils';
+import { getEffectiveXp, getLevel } from '../utils/xpUtils';
 
 export function ConfettiOverlay() {
   const behaviors = useBehaviorStore(s => s.behaviors);
@@ -16,7 +16,7 @@ export function ConfettiOverlay() {
     if (!seeded.current) {
       for (const behavior of behaviors) {
         if (!behavior.xpEnabled) continue;
-        lastLevels.current.set(behavior.id, getLevel(getEffectiveLogCount(behavior) * 5));
+        lastLevels.current.set(behavior.id, getLevel(getEffectiveXp(behavior)));
       }
       seeded.current = true;
     }
@@ -36,7 +36,7 @@ export function ConfettiOverlay() {
       if (behavior.type !== 'desirable') continue;
       if (!behavior.xpEnabled) continue;
 
-      const level = getLevel(getEffectiveLogCount(behavior) * 5);
+      const level = getLevel(getEffectiveXp(behavior));
       const prevLevel = lastLevels.current.get(behavior.id) ?? 0;
 
       if (level > prevLevel) {

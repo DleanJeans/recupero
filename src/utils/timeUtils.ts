@@ -17,6 +17,13 @@ export function formatTime(timestamp: number, hour12?: boolean): string {
   });
 }
 
+export function formatTimeRange(startTimestamp: number, endTimestamp?: number, hour12?: boolean): string {
+  const start = formatTime(startTimestamp, hour12);
+  if (endTimestamp == null) return start;
+  const end = formatTime(endTimestamp, hour12);
+  return `${start} - ${end}`;
+}
+
 export function formatCooldown(totalMinutes: number): string {
   if (!totalMinutes || totalMinutes <= 0 || isNaN(totalMinutes)) return '';
   if (totalMinutes < 60) return `${totalMinutes} min`;

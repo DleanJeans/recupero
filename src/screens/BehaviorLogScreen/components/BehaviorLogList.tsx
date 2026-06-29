@@ -5,12 +5,13 @@ import { useBehaviorStore } from '../../../store/behaviorStore';
 import type { BehaviorEntry } from '../../../types/behavior';
 import { groupLogsByRecency } from '../../../utils/behaviorUtils';
 import { Colors } from '../../../utils/colors';
+import { getLogGapBounds } from '../../../utils/logUtils';
 import { BehaviorLogItem } from './BehaviorLogItem';
 import { LogGap } from './LogGap';
 
 interface BehaviorLogListProps {
   behavior: BehaviorEntry;
-  onEditLog: (logId: string, timestamp: number, notes: string) => void;
+  onEditLog: (logId: string) => void;
 }
 
 export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
@@ -42,19 +43,23 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
       section: { data: BehaviorEntry['logs'] };
     }) => (
       <>
-        {index > 0 && (
-          <LogGap
-            earlierMs={item.timestamp}
-            laterMs={section.data[index - 1].timestamp}
-            xpDecay={behavior.xpDecay}
-          />
-        )}
+        {index > 0 &&
+          (() => {
+            const { earlierMs, laterMs } = getLogGapBounds(item, section.data[index - 1]);
+            return (
+              <LogGap
+                earlierMs={earlierMs}
+                laterMs={laterMs}
+                xpDecay={behavior.xpDecay}
+              />
+            );
+          })()}
         <BehaviorLogItem
           log={item}
           behaviorId={behavior.id}
           metadataFields={metadataFields}
           elapsedTick={elapsedTick}
-          onEdit={() => onEditLog(item.id, item.timestamp, (item.metadata?.notes as string | undefined) ?? '')}
+          onEdit={() => onEditLog(item.id)}
         />
       </>
     ),
@@ -64,19 +69,23 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
   const renderSectionHeader = useCallback(
     ({ section }: { section: (typeof sections)[number] }) => {
       const sectionIdx = sections.indexOf(section);
-      const prevLast = sectionIdx > 0 ? sections[sectionIdx - 1].data.at(-1)?.timestamp : null;
+      const prevLast = sectionIdx > 0 ? sections[sectionIdx - 1].data.at(-1) : undefined;
       const showDistance = prevLast != null && section.data.length > 0;
 
       return (
         <View style={[styles.sectionHeader, sectionIdx > 0 && styles.sectionHeaderWithDistance]}>
-          {showDistance && (
-            <LogGap
-              earlierMs={section.data[0].timestamp}
-              laterMs={prevLast!}
-              xpDecay={behavior.xpDecay}
-              style={styles.logGapAbsolute}
-            />
-          )}
+          {showDistance &&
+            (() => {
+              const { earlierMs, laterMs } = getLogGapBounds(section.data[0], prevLast!);
+              return (
+                <LogGap
+                  earlierMs={earlierMs}
+                  laterMs={laterMs}
+                  xpDecay={behavior.xpDecay}
+                  style={styles.logGapAbsolute}
+                />
+              );
+            })()}
           <Text style={styles.sectionHeaderText}>{section.title}</Text>
         </View>
       );

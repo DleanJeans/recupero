@@ -16,16 +16,18 @@ import { DayScreen } from './src/screens/DayScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { TaskScreen } from './src/screens/TaskScreen';
+import { TimerScreen } from './src/screens/TimerScreen';
 import type { RootStackParamList } from './src/types/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-const BOTTOM_NAV_ROUTES = new Set<string>(['Home', 'Day', 'Tasks']);
+const BOTTOM_NAV_ROUTES = new Set<string>(['Home', 'Timer', 'Day', 'Tasks']);
 
 const linking = {
   prefixes: ['exp+recupero://'],
   config: {
     screens: {
       Home: 'home',
+      Timer: 'timer',
       Day: 'day',
       Tasks: 'tasks',
       BehaviorDetails: 'behavior/:behaviorId',
@@ -87,6 +89,11 @@ export default function App() {
                     name="Home"
                     component={HomeScreen}
                     options={{ animation: 'ios_from_left' }}
+                  />
+                  <Stack.Screen
+                    name="Timer"
+                    component={TimerScreen}
+                    options={{ animation: 'fade_from_bottom' }}
                   />
                   <Stack.Screen
                     name="Day"

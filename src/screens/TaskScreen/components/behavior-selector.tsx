@@ -10,6 +10,7 @@ interface BehaviorSelectorProps {
   behaviors: BehaviorEntry[];
   selectedBehaviorId: string | undefined;
   query: string;
+  showAllWhenEmpty?: boolean;
   onQueryChange: (query: string) => void;
   onSelect: (behaviorId: string | undefined) => void;
 }
@@ -18,14 +19,15 @@ export function BehaviorSelector({
   behaviors,
   selectedBehaviorId,
   query,
+  showAllWhenEmpty = false,
   onQueryChange,
   onSelect,
 }: BehaviorSelectorProps) {
   const filteredBehaviors = useMemo(() => {
     const trimmed = query.trim().toLowerCase();
-    if (!trimmed) return [];
+    if (!trimmed) return showAllWhenEmpty ? behaviors : [];
     return behaviors.filter(behavior => behavior.name.toLowerCase().includes(trimmed));
-  }, [behaviors, query]);
+  }, [behaviors, query, showAllWhenEmpty]);
   const hasQuery = query.trim().length > 0;
   const selectedIsVisible = filteredBehaviors.some(behavior => behavior.id === selectedBehaviorId);
 
@@ -78,7 +80,7 @@ export function BehaviorSelector({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={filteredBehaviors.length > 4}
       >
-        {!hasQuery ? null : filteredBehaviors.length === 0 ? (
+        {!hasQuery && !showAllWhenEmpty ? null : filteredBehaviors.length === 0 ? (
           <Text style={styles.emptyInline}>No matching behaviors.</Text>
         ) : (
           filteredBehaviors.map(behavior => {

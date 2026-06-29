@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { BehaviorEntry } from '../types/behavior';
 import { getBehaviorTypeColor } from '../utils/behaviorTypeUtils';
 import { Colors } from '../utils/colors';
-import { getEffectiveLogCount } from '../utils/xpUtils';
+import { getEffectiveXp } from '../utils/xpUtils';
 import { AutoFitHeaderTitle } from './AutoFitHeaderTitle';
 import { BehaviorIcon } from './BehaviorIcon';
 import { CategoryEmoji } from './CategoryEmoji';
@@ -46,7 +46,7 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
   }, []);
 
   const isHeader = titleSize === 'header';
-  const effectiveLogCount = useMemo(() => getEffectiveLogCount(behavior), [behavior, tick]);
+  const effectiveXp = useMemo(() => getEffectiveXp(behavior), [behavior, tick]);
   const behaviorColor = useMemo(() => getBehaviorTypeColor(behavior.type), [behavior.type]);
 
   return (
@@ -71,7 +71,7 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
         />
         {behavior.xpEnabled && (
           <XpBar
-            logCount={effectiveLogCount}
+            xp={effectiveXp}
             color={behaviorColor}
             animateNumbers
           />
@@ -79,7 +79,7 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
         <View style={styles.elapsedRow}>
           <CooldownBar behavior={behavior} />
         </View>
-        {behavior.xpEnabled && behavior.xpDecay && effectiveLogCount > 0 && <DecayBar behavior={behavior} />}
+        {behavior.xpEnabled && behavior.xpDecay && effectiveXp > 0 && <DecayBar behavior={behavior} />}
       </View>
     </View>
   );

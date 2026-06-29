@@ -1,9 +1,11 @@
 import type { BehaviorEntry, LogEntry } from '../src/types/behavior';
 import {
   decayEveryInDays,
+  getBehaviorXp,
   getDecayForGap,
   getDecayLogCount,
   getEffectiveLogCount,
+  getEffectiveXp,
   getTimeUntilNextDecay,
 } from '../src/utils/xpUtils';
 
@@ -24,6 +26,14 @@ function makeBehavior(overrides: Partial<BehaviorEntry> = {}): BehaviorEntry {
 
 function makeLog(timestamp: number): LogEntry {
   return { id: `l-${timestamp}`, timestamp };
+}
+
+function makeTimedLog(startTimestamp: number, minutes: number): LogEntry {
+  return {
+    id: `timed-${startTimestamp}-${minutes}`,
+    timestamp: startTimestamp,
+    endTimestamp: startTimestamp + minutes * 60_000,
+  };
 }
 
 function lastLog(daysAgo: number): number {
@@ -331,6 +341,36 @@ describe('getEffectiveLogCount', () => {
       lastTimestamp: null,
     });
     expect(getEffectiveLogCount(b, NOW_TS)).toBe(0);
+  });
+});
+
+describe('duration-based XP', () => {
+  it('uses 5 XP for legacy logs without an end timestamp', () => {
+    const b = makeBehavior({
+      logs: [makeLog(NOW_TS), makeLog(NOW_TS - 60_000)],
+    });
+    expect(getBehaviorXp(b)).toBe(10);
+  });
+
+  it('uses 1 XP per minute for timed logs', () => {
+    const b = makeBehavior({
+      logs: [makeTimedLog(NOW_TS - 40 * 60_000, 25)],
+    });
+    expect(getBehaviorXp(b)).toBe(25);
+  });
+
+  it('subtracts decay in legacy 5-XP chunks from timed XP totals', () => {
+    const start = lastLog(3);
+    const b = makeBehavior({
+      xpEnabled: true,
+      xpDecay: { every: 1, unit: 'days' },
+      lastTimestamp: start + 30 * 60_000,
+      logs: [makeTimedLog(start, 30)],
+    });
+
+    expect(getBehaviorXp(b)).toBe(30);
+    expect(getDecayLogCount(b, NOW_TS)).toBe(1);
+    expect(getEffectiveXp(b, NOW_TS)).toBe(25);
   });
 });
 

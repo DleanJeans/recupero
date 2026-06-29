@@ -7,6 +7,7 @@ import { useBehaviorStore } from '../../store/behaviorStore';
 import { getAllDailyMetadataTotals } from '../../utils/behaviorUtils';
 import { Colors } from '../../utils/colors';
 import { describeDay, toDateString } from '../../utils/dateUtils';
+import { getLogEndTimestamp } from '../../utils/logUtils';
 import { getThresholds, getTotalStarsForDate } from '../../utils/starUtils';
 import { getTaskStarsForDate } from '../../utils/taskUtils';
 import { formatDuration } from '../../utils/timeUtils';
@@ -52,9 +53,8 @@ export function DayScreen() {
   // Earliest and latest log for duration calculation
   const daySpan = useMemo(() => {
     if (dayLogs.length === 0) return null;
-    const timestamps = dayLogs.map(e => e.log.timestamp);
-    const minTs = Math.min(...timestamps);
-    const maxTs = Math.max(...timestamps);
+    const minTs = Math.min(...dayLogs.map(entry => entry.log.timestamp));
+    const maxTs = Math.max(...dayLogs.map(entry => getLogEndTimestamp(entry.log)));
     return { first: minTs, last: maxTs, spanMs: maxTs - minTs };
   }, [dayLogs]);
 

@@ -1,7 +1,8 @@
 import type { BehaviorEntry, XpDecayUnit } from '../types/behavior';
 import { calendarDayDiff, MS_PER_DAY } from './dateUtils';
+import { getLogDurationMinutes, getLogEndTimestamp, getLogStartTimestamp, LEGACY_LOG_XP } from './logUtils';
 
-export const XP_PER_LOG = 5;
+export const XP_PER_LOG = LEGACY_LOG_XP;
 
 /** Convert a `xpDecay.unit` + `every` to a day count. */
 export function decayEveryInDays(every: number, unit: XpDecayUnit): number {
@@ -31,21 +32,21 @@ export function getDecayLogCount(behavior: BehaviorEntry, now: number = Date.now
   if (!Number.isFinite(everyDays) || everyDays <= 0) return 0;
 
   // Defensive: assume logs may arrive out of order. Cheaper than trusting call sites.
-  const sorted = [...logs].sort((a, b) => a.timestamp - b.timestamp);
+  const sorted = [...logs].sort((a, b) => getLogStartTimestamp(a) - getLogStartTimestamp(b));
   const N = sorted.length;
 
   // Walk inter-log gaps. Reset the era at any log whose incoming gap's decay
   // is >= the number of logs in the current era — that gap wipes them out.
   let eraStart = 0;
   for (let i = 1; i < N; i++) {
-    const gapDecay = decayForGap(sorted[i - 1].timestamp, sorted[i].timestamp, everyDays);
+    const gapDecay = decayForGap(getLogEndTimestamp(sorted[i - 1]), getLogStartTimestamp(sorted[i]), everyDays);
     if (gapDecay >= i - eraStart) {
       eraStart = i;
     }
   }
 
   // Final gap: most recent log → now. Caps at N since we can't cancel more logs than exist.
-  const finalDecay = decayForGap(sorted[N - 1].timestamp, now, everyDays);
+  const finalDecay = decayForGap(getLogEndTimestamp(sorted[N - 1]), now, everyDays);
   return Math.min(N, eraStart + finalDecay);
 }
 
@@ -69,6 +70,19 @@ export function getDecayForGap(earlierMs: number, laterMs: number, decay: Behavi
  *  Returns the raw log count when XP is off (decay is implicitly 0). */
 export function getEffectiveLogCount(behavior: BehaviorEntry, now: number = Date.now()): number {
   return Math.max(0, behavior.logs.length - getDecayLogCount(behavior, now));
+}
+
+export function getLogXp(log: BehaviorEntry['logs'][number]): number {
+  return getLogDurationMinutes(log);
+}
+
+export function getBehaviorXp(behavior: BehaviorEntry): number {
+  return behavior.logs.reduce((total, log) => total + getLogXp(log), 0);
+}
+
+export function getEffectiveXp(behavior: BehaviorEntry, now: number = Date.now()): number {
+  const decayXp = behavior.xpEnabled ? getDecayLogCount(behavior, now) * XP_PER_LOG : 0;
+  return Math.max(0, getBehaviorXp(behavior) - decayXp);
 }
 
 /** Time remaining in the current decay cycle (until the next decay event).
@@ -114,10 +128,6 @@ export function cumulativeXpForLevel(n: number): number {
   const sumK = ((n - 1) * n) / 2;
   const sumK2 = ((n - 1) * n * (2 * n - 1)) / 6;
   return 25 * n + 10 * sumK + 5 * sumK2;
-}
-
-export function getXp(logCount: number): number {
-  return logCount * XP_PER_LOG;
 }
 
 /** Find the highest level whose cumulative XP ≤ given xp. */

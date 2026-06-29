@@ -1,5 +1,6 @@
 import type { BehaviorEntry, Category, LogEntry } from '../types/behavior';
 import { toDateString, yesterday } from './dateUtils';
+import { getLogEndTimestamp } from './logUtils';
 import { roundTo2 } from './numberUtils';
 import { Group } from './strings';
 
@@ -171,7 +172,7 @@ export function getAllDailyMetadataTotals(
 }
 
 export function groupLogsByRecency(logs: LogEntry[]): RecencySection<LogEntry>[] {
-  const sorted = [...logs].sort((a, b) => b.timestamp - a.timestamp);
+  const sorted = [...logs].sort((a, b) => getLogEndTimestamp(b) - getLogEndTimestamp(a));
   const groups = new Map<RecencyGroup, LogEntry[]>();
 
   for (const group of GROUP_ORDER) {
@@ -179,7 +180,7 @@ export function groupLogsByRecency(logs: LogEntry[]): RecencySection<LogEntry>[]
   }
 
   for (const log of sorted) {
-    const group = getRecencyGroup(log.timestamp);
+    const group = getRecencyGroup(getLogEndTimestamp(log));
     groups.get(group)!.push(log);
   }
 

@@ -21,6 +21,11 @@ interface TaskComposerProps {
   onAdd: () => void;
   onCancel: () => void;
   submitLabel?: string;
+  showTitleInput?: boolean;
+  showStarPicker?: boolean;
+  showCancelButton?: boolean;
+  showAllBehaviorsWhenSearchEmpty?: boolean;
+  canSubmit?: boolean;
 }
 
 export function TaskComposer({
@@ -36,52 +41,64 @@ export function TaskComposer({
   onAdd,
   onCancel,
   submitLabel = 'Add',
+  showTitleInput = true,
+  showStarPicker = true,
+  showCancelButton = true,
+  showAllBehaviorsWhenSearchEmpty = false,
+  canSubmit,
 }: TaskComposerProps) {
   const hasAttachedBehavior = selectedBehaviorId != null;
-  const canAdd = title.trim().length > 0 || hasAttachedBehavior;
+  const shouldShowStarPicker = showStarPicker && !hasAttachedBehavior;
+  const canAdd = canSubmit ?? (title.trim().length > 0 || hasAttachedBehavior);
+  const fullWidthSubmitButton = hasAttachedBehavior || (!showCancelButton && !shouldShowStarPicker);
 
   return (
     <View style={styles.composer}>
       <View style={styles.fields}>
-        <TextInput
-          style={styles.titleInput}
-          placeholder="Task name"
-          placeholderTextColor={Colors.text.faint}
-          value={title}
-          onChangeText={onTitleChange}
-          returnKeyType="done"
-          onSubmitEditing={onAdd}
-        />
+        {showTitleInput && (
+          <TextInput
+            style={styles.titleInput}
+            placeholder="Task name"
+            placeholderTextColor={Colors.text.faint}
+            value={title}
+            onChangeText={onTitleChange}
+            returnKeyType="done"
+            onSubmitEditing={onAdd}
+          />
+        )}
         <BehaviorSelector
           behaviors={behaviors}
           selectedBehaviorId={selectedBehaviorId}
           query={behaviorQuery}
+          showAllWhenEmpty={showAllBehaviorsWhenSearchEmpty}
           onQueryChange={onBehaviorQueryChange}
           onSelect={onBehaviorSelect}
         />
       </View>
 
       <View style={styles.composerFooter}>
-        {!hasAttachedBehavior && (
+        {shouldShowStarPicker && (
           <StarPicker
             value={stars}
             onChange={onStarsChange}
           />
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          onPress={onCancel}
-          style={styles.footerButton}
-        >
-          Cancel
-        </Button>
+        {showCancelButton && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={onCancel}
+            style={styles.footerButton}
+          >
+            Cancel
+          </Button>
+        )}
         <Button
           variant="primary"
           size="sm"
           onPress={onAdd}
           disabled={!canAdd}
-          style={[styles.footerButton, hasAttachedBehavior && styles.fullWidthAddButton]}
+          style={[styles.footerButton, fullWidthSubmitButton && styles.fullWidthAddButton]}
         >
           {submitLabel}
         </Button>

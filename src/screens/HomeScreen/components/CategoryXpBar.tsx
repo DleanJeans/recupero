@@ -4,7 +4,7 @@ import { Text } from '../../../components/Text';
 import { XpBar } from '../../../components/XpBar';
 import { useBehaviorStore } from '../../../store/behaviorStore';
 import { Colors } from '../../../utils/colors';
-import { getEffectiveLogCount } from '../../../utils/xpUtils';
+import { getEffectiveXp } from '../../../utils/xpUtils';
 
 interface Props {
   selectedCategoryId: string | null;
@@ -13,13 +13,13 @@ export function CategoryXpBar({ selectedCategoryId }: Props) {
   const behaviors = useBehaviorStore(s => s.behaviors);
   const categories = useBehaviorStore(s => s.categories);
 
-  const logCount = useMemo(() => {
+  const xp = useMemo(() => {
     if (selectedCategoryId === null) return 0;
     let total = 0;
     for (const behavior of behaviors) {
       if (behavior.categoryId !== selectedCategoryId || !behavior.xpEnabled) continue;
-      const effective = getEffectiveLogCount(behavior);
-      if (effective > 0) total += effective;
+      const effectiveXp = getEffectiveXp(behavior);
+      if (effectiveXp > 0) total += effectiveXp;
     }
     return total;
   }, [behaviors, selectedCategoryId]);
@@ -29,7 +29,7 @@ export function CategoryXpBar({ selectedCategoryId }: Props) {
   const category = categories.find(c => c.id === selectedCategoryId);
   if (!category) return null;
 
-  if (logCount === 0) return null;
+  if (xp === 0) return null;
 
   return (
     <View style={styles.section}>
@@ -37,7 +37,7 @@ export function CategoryXpBar({ selectedCategoryId }: Props) {
         <Text style={styles.emoji}>{category.emoji}</Text>
         <View style={styles.barContainer}>
           <XpBar
-            logCount={logCount}
+            xp={xp}
             color={Colors.type.category}
           />
         </View>

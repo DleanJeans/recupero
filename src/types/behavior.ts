@@ -18,6 +18,8 @@ export interface Category {
 export interface LogEntry {
   id: string;
   timestamp: number;
+  /** End of a timed session. Undefined for legacy/instant logs. */
+  endTimestamp?: number;
   metadata?: Record<string, string | number>;
 }
 
@@ -60,7 +62,7 @@ export interface BehaviorEntry {
    *  Undefined = feature off. */
   xpEnabled?: true;
   /** Opt-in XP decay: lose 1 log's worth (5 XP) every `every` days/weeks/months
-   *  since the last log. Undefined = feature off. Ignored at runtime when `xpEnabled` is off. */
+   *  since the last log/session end. Undefined = feature off. Ignored at runtime when `xpEnabled` is off. */
   xpDecay?: { every: number; unit: 'days' | 'weeks' | 'months' };
 }
 

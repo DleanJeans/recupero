@@ -25,12 +25,10 @@ export function BehaviorLogScreen() {
 
   const [mode, setMode] = useState<ScreenMode>(initialMode ?? 'details');
   const [editLogId, setEditLogId] = useState<string | undefined>(undefined);
-  const [editTimestamp, setEditTimestamp] = useState<number | undefined>(undefined);
-  const [editNotes, setEditNotes] = useState('');
   const [formKey, setFormKey] = useState(0);
 
   const isEditing = editLogId != null;
-  const titleOverride = isEditing ? 'Edit Time' : undefined;
+  const titleOverride = isEditing ? 'Edit Session' : undefined;
 
   const animate = (next: ScreenMode) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -40,17 +38,13 @@ export function BehaviorLogScreen() {
   /** Open the log form for a new entry. */
   const handleOpenLog = useCallback(() => {
     setEditLogId(undefined);
-    setEditTimestamp(undefined);
-    setEditNotes('');
     setFormKey(k => k + 1);
     animate('log');
   }, []);
 
   /** Open the log form pre-filled for editing an existing entry. */
-  const handleEditLog = useCallback((logId: string, timestamp: number, notes: string) => {
+  const handleEditLog = useCallback((logId: string) => {
     setEditLogId(logId);
-    setEditTimestamp(timestamp);
-    setEditNotes(notes);
     setFormKey(k => k + 1);
     animate('log');
   }, []);
@@ -111,8 +105,6 @@ export function BehaviorLogScreen() {
           behaviorId={behaviorId}
           behavior={behavior}
           editLogId={editLogId}
-          editTimestamp={editTimestamp}
-          editNotes={editNotes}
           onSaved={handleSaved}
         />
       )}

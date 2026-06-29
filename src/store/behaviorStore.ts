@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { BehaviorEntry, BehaviorType, Category, MetadataField, StarPeriod } from '../types/behavior';
 import type { AddTaskInput, TaskEntry } from '../types/task';
+import { getLogEndTimestamp } from '../utils/logUtils';
 import { getLoggableDefaultMetadata } from '../utils/metadataCalculationUtils';
 import { isTaskCompleteOnDate, timestampForTaskDate } from '../utils/taskUtils';
 
@@ -58,10 +59,21 @@ interface BehaviorStore {
       xpDecay?: { every: number; unit: 'days' | 'weeks' | 'months' } | undefined;
     },
   ) => void;
-  logBehavior: (id: string, timestamp?: number, metadata?: Record<string, string | number>) => void;
+  logBehavior: (
+    id: string,
+    timestamp?: number,
+    metadata?: Record<string, string | number>,
+    endTimestamp?: number,
+  ) => void;
   removeBehavior: (id: string) => void;
   removeLog: (behaviorId: string, logId: string) => void;
-  updateLog: (behaviorId: string, logId: string, timestamp: number, metadata?: Record<string, string | number>) => void;
+  updateLog: (
+    behaviorId: string,
+    logId: string,
+    timestamp: number,
+    metadata?: Record<string, string | number>,
+    endTimestamp?: number,
+  ) => void;
   getBehaviorLogs: (behaviorId: string) => BehaviorEntry['logs'];
   addCategory: (name: string, emoji: string, metadataFields?: MetadataField[]) => void;
   removeCategory: (id: string) => void;
@@ -125,14 +137,15 @@ export const useBehaviorStore = create<BehaviorStore>()(
             },
           ],
         })),
-      logBehavior: (id, timestamp, metadata = {}) =>
+      logBehavior: (id, timestamp, metadata = {}, endTimestamp) =>
         set(state => ({
           behaviors: state.behaviors.map(t => {
             if (t.id !== id) return t;
             const newTimestamp = timestamp ?? Date.now();
+            const logLastTimestamp = endTimestamp ?? newTimestamp;
             return {
               ...t,
-              lastTimestamp: t.lastTimestamp === null ? newTimestamp : Math.max(t.lastTimestamp, newTimestamp),
+              lastTimestamp: t.lastTimestamp === null ? logLastTimestamp : Math.max(t.lastTimestamp, logLastTimestamp),
               metadata: {
                 ...t.metadata,
                 ...metadata,
@@ -142,6 +155,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
                 {
                   id: uuidv4(),
                   timestamp: newTimestamp,
+                  endTimestamp,
                   metadata,
                 },
               ],
@@ -162,7 +176,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
                   logs: b.logs.filter(log => log.id !== logId),
                   lastTimestamp:
                     b.logs.filter(log => log.id !== logId).length > 0
-                      ? Math.max(...b.logs.filter(log => log.id !== logId).map(log => log.timestamp))
+                      ? Math.max(...b.logs.filter(log => log.id !== logId).map(log => getLogEndTimestamp(log)))
                       : null,
                 }
               : b,
@@ -300,7 +314,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
                     return {
                       ...b,
                       logs,
-                      lastTimestamp: logs.length > 0 ? Math.max(...logs.map(log => log.timestamp)) : null,
+                      lastTimestamp: logs.length > 0 ? Math.max(...logs.map(log => getLogEndTimestamp(log))) : null,
                     };
                   })
                 : state.behaviors;
@@ -311,7 +325,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
         set(state => ({
           tasks: (state.tasks ?? []).filter(task => task.id !== taskId),
         })),
-      updateLog: (behaviorId, logId, timestamp, metadata) =>
+      updateLog: (behaviorId, logId, timestamp, metadata, endTimestamp) =>
         set(state => ({
           behaviors: state.behaviors.map(b =>
             b.id === behaviorId
@@ -322,11 +336,14 @@ export const useBehaviorStore = create<BehaviorStore>()(
                       ? {
                           ...log,
                           timestamp,
+                          endTimestamp,
                           metadata: metadata ?? log.metadata,
                         }
                       : log,
                   ),
-                  lastTimestamp: Math.max(...b.logs.map(log => (log.id === logId ? timestamp : log.timestamp))),
+                  lastTimestamp: Math.max(
+                    ...b.logs.map(log => (log.id === logId ? (endTimestamp ?? timestamp) : getLogEndTimestamp(log))),
+                  ),
                 }
               : b,
           ),

@@ -3,14 +3,12 @@ import { StyleSheet } from 'react-native';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Text } from '../../../components/Text';
 import { Colors } from '../../../utils/colors';
-import { XP_PER_LOG } from '../../../utils/xpUtils';
 
 const XP_BURST_ANIMATION_MS = 850;
 const XP_BURST_DISTANCE = 54;
 const XP_BURST_HEIGHT = 28;
-const XP_BURST_WIDTH = 76;
 
-export type XpBurst = { id: number; x: number; y: number };
+export type XpBurst = { id: number; x: number; y: number; xp: number };
 
 interface Props {
   burst: XpBurst;
@@ -37,13 +35,13 @@ export function FloatingXpBurst({ burst, onDone }: Props) {
       style={[
         styles.xpBurst,
         {
-          left: burst.x - XP_BURST_WIDTH / 2,
+          left: burst.x - 52,
           top: burst.y - XP_BURST_HEIGHT / 2,
         },
         animatedStyle,
       ]}
     >
-      <Text style={styles.xpBurstText}>+{XP_PER_LOG} XP</Text>
+      <Text style={styles.xpBurstText}>+{burst.xp} XP</Text>
     </Animated.View>
   );
 }
@@ -51,8 +49,9 @@ export function FloatingXpBurst({ burst, onDone }: Props) {
 const styles = StyleSheet.create({
   xpBurst: {
     position: 'absolute',
-    width: XP_BURST_WIDTH,
+    minWidth: 104,
     height: XP_BURST_HEIGHT,
+    paddingHorizontal: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },

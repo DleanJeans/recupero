@@ -9,17 +9,16 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useAnimatedXpNumbers } from '../hooks/useAnimatedXpNumbers';
 import { Colors } from '../utils/colors';
-import { getLevel, getLevelProgress, getLevelXp, getXp, getXpToNextLevel } from '../utils/xpUtils';
+import { getLevel, getLevelProgress, getLevelXp, getXpToNextLevel } from '../utils/xpUtils';
 import { Text } from './Text';
 
 interface XpBarProps {
-  logCount: number;
+  xp: number;
   color?: string;
   animateNumbers?: boolean;
 }
 
-export function XpBar({ logCount, color = Colors.type.neutral, animateNumbers = false }: XpBarProps) {
-  const xp = getXp(logCount);
+export function XpBar({ xp, color = Colors.type.neutral, animateNumbers = false }: XpBarProps) {
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
   const currentXp = getLevelXp(xp);
@@ -32,7 +31,7 @@ export function XpBar({ logCount, color = Colors.type.neutral, animateNumbers = 
   const glowOpacity = useSharedValue(0);
   const { displayedCurrentXp, displayedLevelXp } = useAnimatedXpNumbers({
     animateNumbers,
-    logCount,
+    xp,
     level,
     currentXp,
     levelXp,
@@ -56,7 +55,7 @@ export function XpBar({ logCount, color = Colors.type.neutral, animateNumbers = 
       glowOpacity.value = withSequence(withTiming(0.6, { duration: 180 }), withTiming(0, { duration: 500 }));
     }
     prevLevel.current = level;
-  }, [logCount]);
+  }, [level, progress, xp, animatedProgress, glowOpacity]);
 
   const fillStyle = useAnimatedStyle(() => ({
     width: `${animatedProgress.value * 100}%`,

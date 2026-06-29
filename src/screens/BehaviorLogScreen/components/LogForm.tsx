@@ -7,6 +7,7 @@ import { useBehaviorStore } from '../../../store/behaviorStore';
 import type { BehaviorEntry, MetadataField } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 import { toDateString } from '../../../utils/dateUtils';
+import { getDayMaxTimestamp, getDefaultTimedLogStartTimestamp } from '../../../utils/logUtils';
 import {
   buildCalculatedMetadata,
   formatMetadataFieldLabel,
@@ -15,6 +16,8 @@ import {
   getManualMetadataFields,
   getSelectedAmountMetadataField,
 } from '../../../utils/metadataCalculationUtils';
+import { formatDuration, MS_PER_MINUTE } from '../../../utils/timeUtils';
+import { XP_PER_LOG } from '../../../utils/xpUtils';
 import { FloatingXpBurst, type XpBurst } from './FloatingXpBurst';
 import { MetadataInputRow, metadataInputRowStyles } from './MetadataInputRow';
 import { TimePicker } from './TimePicker';
@@ -23,12 +26,14 @@ interface LogFormProps {
   behaviorId: string;
   behavior: BehaviorEntry;
   editLogId?: string;
-  editTimestamp?: number;
-  editNotes: string;
   onSaved: () => void;
 }
 
-export function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNotes, onSaved }: LogFormProps) {
+export function LogForm({ behaviorId, behavior, editLogId, onSaved }: LogFormProps) {
+  const existingLog = useMemo(
+    () => (editLogId ? behavior.logs.find(log => log.id === editLogId) : undefined),
+    [behavior.logs, editLogId],
+  );
   const category = useBehaviorStore(
     useCallback(
       state => (behavior.categoryId ? state.categories.find(c => c.id === behavior.categoryId) : undefined),
@@ -41,16 +46,29 @@ export function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNo
   const nowRef = useRef(new Date());
   const todayStr = toDateString(nowRef.current);
 
-  const initialDate = editTimestamp ? toDateString(new Date(editTimestamp)) : todayStr;
-  const initialHour = editTimestamp ? new Date(editTimestamp).getHours() : nowRef.current.getHours();
-  const initialMinute = editTimestamp ? new Date(editTimestamp).getMinutes() : nowRef.current.getMinutes();
+  const initialDate = existingLog ? toDateString(new Date(existingLog.timestamp)) : todayStr;
+  const initialStartTimestamp = existingLog?.timestamp ?? getDefaultTimedLogStartTimestamp(nowRef.current);
+  const initialEndTimestamp = useMemo(() => {
+    if (existingLog?.endTimestamp != null) return existingLog.endTimestamp;
+    if (existingLog) {
+      return Math.min(
+        getDayMaxTimestamp(initialDate, nowRef.current),
+        existingLog.timestamp + XP_PER_LOG * MS_PER_MINUTE,
+      );
+    }
+    return nowRef.current.getTime();
+  }, [existingLog, initialDate]);
+  const initialStartMinutes =
+    new Date(initialStartTimestamp).getHours() * 60 + new Date(initialStartTimestamp).getMinutes();
+  const initialEndMinutes = new Date(initialEndTimestamp).getHours() * 60 + new Date(initialEndTimestamp).getMinutes();
 
   const [selectedDate, setSelectedDate] = useState(initialDate);
-  const [hour, setHour] = useState(initialHour);
-  const [minute, setMinute] = useState(initialMinute);
-  const [wheelKey, setWheelKey] = useState(0);
+  const [startMinutes, setStartMinutes] = useState(initialStartMinutes);
+  const [endMinutes, setEndMinutes] = useState(Math.max(initialStartMinutes, initialEndMinutes));
+  const [startWheelKey, setStartWheelKey] = useState(0);
+  const [endWheelKey, setEndWheelKey] = useState(0);
   const notesRef = useRef<import('react-native').TextInput>(null);
-  const [notes, setNotes] = useState(editNotes);
+  const [notes, setNotes] = useState(String(existingLog?.metadata?.notes ?? ''));
   const [notesFocused, setNotesFocused] = useState(false);
   const [metadataFocused, setMetadataFocused] = useState(false);
   const [xpBursts, setXpBursts] = useState<XpBurst[]>([]);
@@ -65,22 +83,19 @@ export function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNo
   const manualMetadataFields = useMemo(() => getManualMetadataFields(metadataFields), [metadataFields]);
   const calculatedMetadataFields = useMemo(() => getCalculatedMetadataFields(metadataFields), [metadataFields]);
   const [metadataValues, setMetadataValues] = useState<Record<string, string>>(() => {
-    const vals: Record<string, string> = {};
-    if (editLogId) {
-      const existingLog = behavior.logs.find(l => l.id === editLogId);
-      if (existingLog?.metadata) {
-        for (const field of metadataFields) {
-          const v = existingLog.metadata[field.key];
-          if (v != null) vals[field.key] = String(v);
-        }
+    const values: Record<string, string> = {};
+    if (existingLog?.metadata) {
+      for (const field of metadataFields) {
+        const value = existingLog.metadata[field.key];
+        if (value != null) values[field.key] = String(value);
       }
     } else if (behavior.defaultMetadata) {
       for (const field of manualMetadataFields) {
-        const v = behavior.defaultMetadata[field.key];
-        if (v != null) vals[field.key] = String(v);
+        const value = behavior.defaultMetadata[field.key];
+        if (value != null) values[field.key] = String(value);
       }
     }
-    return vals;
+    return values;
   });
   const calculatedMetadataValues = useMemo(() => {
     if (!amountField) return {};
@@ -89,26 +104,25 @@ export function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNo
     return buildCalculatedMetadata(metadataFields, behavior.defaultMetadata, Number(amountValue));
   }, [amountField, behavior.defaultMetadata, metadataFields, metadataValues]);
 
-  const isToday = selectedDate === todayStr;
-  const maxHour = isToday ? nowRef.current.getHours() : 23;
-  const maxMinute = isToday && hour === nowRef.current.getHours() ? nowRef.current.getMinutes() : 59;
+  const maxTimestampForDate = useMemo(() => getDayMaxTimestamp(selectedDate, nowRef.current), [selectedDate]);
+  const maxTimeMinutes = useMemo(() => {
+    const date = new Date(maxTimestampForDate);
+    return date.getHours() * 60 + date.getMinutes();
+  }, [maxTimestampForDate]);
 
   useEffect(() => {
-    if (hour > maxHour) setHour(maxHour);
-  }, [maxHour, hour]);
+    const clampedEndMinutes = Math.min(endMinutes, maxTimeMinutes);
+    if (clampedEndMinutes !== endMinutes) {
+      setEndMinutes(clampedEndMinutes);
+      setEndWheelKey(key => key + 1);
+    }
 
-  useEffect(() => {
-    if (minute > maxMinute) setMinute(maxMinute);
-  }, [maxMinute, minute]);
-
-  useEffect(() => {
-    const n = editTimestamp ? new Date(editTimestamp) : new Date();
-    nowRef.current = new Date();
-    setSelectedDate(toDateString(n));
-    setHour(n.getHours());
-    setMinute(n.getMinutes());
-    setWheelKey(k => k + 1);
-  }, [editTimestamp]);
+    const clampedStartMinutes = Math.min(startMinutes, clampedEndMinutes);
+    if (clampedStartMinutes !== startMinutes) {
+      setStartMinutes(clampedStartMinutes);
+      setStartWheelKey(key => key + 1);
+    }
+  }, [endMinutes, maxTimeMinutes, startMinutes]);
 
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pending, setPending] = useState(false);
@@ -133,19 +147,59 @@ export function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNo
   const handleNotesFocus = useCallback(() => setNotesFocused(true), []);
   const handleNotesBlur = useCallback(() => setNotesFocused(false), []);
 
+  const applyStartMinutes = useCallback(
+    (nextMinutes: number) => {
+      const clampedMinutes = Math.min(nextMinutes, maxTimeMinutes);
+      setStartMinutes(clampedMinutes);
+      if (clampedMinutes !== nextMinutes) {
+        setStartWheelKey(key => key + 1);
+      }
+      if (clampedMinutes > endMinutes) {
+        setEndMinutes(clampedMinutes);
+        setEndWheelKey(key => key + 1);
+      }
+    },
+    [endMinutes, maxTimeMinutes],
+  );
+
+  const applyEndMinutes = useCallback(
+    (nextMinutes: number) => {
+      const clampedMinutes = Math.min(nextMinutes, maxTimeMinutes);
+      setEndMinutes(clampedMinutes);
+      if (clampedMinutes !== nextMinutes) {
+        setEndWheelKey(key => key + 1);
+      }
+      if (clampedMinutes < startMinutes) {
+        setStartMinutes(clampedMinutes);
+        setStartWheelKey(key => key + 1);
+      }
+    },
+    [maxTimeMinutes, startMinutes],
+  );
+
+  const startHour = Math.floor(startMinutes / 60);
+  const startMinute = startMinutes % 60;
+  const endHour = Math.floor(endMinutes / 60);
+  const endMinute = endMinutes % 60;
+  const durationMinutes = Math.max(1, endMinutes - startMinutes);
+  const durationMs = durationMinutes * MS_PER_MINUTE;
+  const earnedXp = durationMinutes;
+
   const handleConfirm = useCallback(
     (event: GestureResponderEvent) => {
-      const [y, m, d] = selectedDate.split('-').map(Number);
-      const ts = new Date(y, m - 1, d, hour, minute, 0, 0).getTime();
+      const [year, month, day] = selectedDate.split('-').map(Number);
+      const startTimestamp = new Date(year, month - 1, day, startHour, startMinute, 0, 0).getTime();
+      const endTimestamp = new Date(year, month - 1, day, endHour, endMinute, 0, 0).getTime();
+
       const metadata: Record<string, string | number> = {};
       if (notes.trim()) metadata.notes = notes.trim();
       const metadataInputFields: MetadataField[] = amountField
         ? [amountField, ...manualMetadataFields]
         : metadataFields;
       for (const field of metadataInputFields) {
-        const val = metadataValues[field.key];
-        const parsed = Number(val);
-        if (val !== undefined && val !== '' && Number.isFinite(parsed)) {
+        const value = metadataValues[field.key];
+        const parsed = Number(value);
+        if (value !== undefined && value !== '' && Number.isFinite(parsed)) {
           metadata[field.key] = parsed;
         }
       }
@@ -153,9 +207,9 @@ export function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNo
         Object.assign(metadata, calculatedMetadataValues);
         for (const field of calculatedMetadataFields) {
           if (metadata[field.key] != null) continue;
-          const val = metadataValues[field.key];
-          const parsed = Number(val);
-          if (val !== undefined && val !== '' && Number.isFinite(parsed)) {
+          const value = metadataValues[field.key];
+          const parsed = Number(value);
+          if (value !== undefined && value !== '' && Number.isFinite(parsed)) {
             metadata[field.key] = parsed;
           }
         }
@@ -163,18 +217,18 @@ export function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNo
       const metadataOrUndefined = Object.keys(metadata).length > 0 ? metadata : undefined;
 
       if (editLogId) {
-        updateLog(behaviorId, editLogId, ts, metadataOrUndefined);
+        updateLog(behaviorId, editLogId, startTimestamp, metadataOrUndefined, endTimestamp);
         onSaved();
         return;
       }
 
-      logBehavior(behaviorId, ts, metadataOrUndefined);
+      logBehavior(behaviorId, startTimestamp, metadataOrUndefined, endTimestamp);
 
       if (behavior.xpEnabled) {
         const { locationX, locationY } = event.nativeEvent;
         const id = nextXpBurstId.current;
         nextXpBurstId.current += 1;
-        setXpBursts(prev => [...prev, { id, x: locationX, y: locationY }]);
+        setXpBursts(prev => [...prev, { id, x: locationX, y: locationY, xp: earnedXp }]);
       }
 
       const delay = behavior.xpEnabled ? 1500 : 0;
@@ -185,22 +239,25 @@ export function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNo
       }, delay);
     },
     [
-      selectedDate,
-      hour,
-      minute,
-      notes,
-      metadataValues,
-      metadataFields,
       amountField,
-      manualMetadataFields,
+      behavior.xpEnabled,
+      behaviorId,
       calculatedMetadataFields,
       calculatedMetadataValues,
       editLogId,
-      behaviorId,
-      behavior.xpEnabled,
+      earnedXp,
+      endHour,
+      endMinute,
       logBehavior,
-      updateLog,
+      manualMetadataFields,
+      metadataFields,
+      metadataValues,
+      notes,
       onSaved,
+      selectedDate,
+      startHour,
+      startMinute,
+      updateLog,
     ],
   );
 
@@ -219,17 +276,45 @@ export function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNo
           />
         </View>
 
-        <TimePicker
-          hour={hour}
-          minute={minute}
-          maxHour={maxHour}
-          maxMinute={maxMinute}
-          wheelKey={wheelKey}
-          collapsed={notesFocused || metadataFocused}
-          onHourChange={setHour}
-          onMinuteChange={setMinute}
-          onExpand={handleExpandTime}
-        />
+        <View style={styles.timePickerRow}>
+          <View style={styles.timePickerColumn}>
+            <TimePicker
+              label="Start"
+              hour={startHour}
+              minute={startMinute}
+              maxHour={Math.floor(maxTimeMinutes / 60)}
+              maxMinute={Math.floor(maxTimeMinutes / 60) === startHour ? maxTimeMinutes % 60 : 59}
+              wheelKey={startWheelKey}
+              collapsed={notesFocused || metadataFocused}
+              onHourChange={hour => applyStartMinutes(hour * 60 + startMinute)}
+              onMinuteChange={minute => applyStartMinutes(startHour * 60 + minute)}
+              onExpand={handleExpandTime}
+            />
+          </View>
+
+          <Text style={styles.timePickerSeparator}>-</Text>
+
+          <View style={styles.timePickerColumn}>
+            <TimePicker
+              label="End"
+              hour={endHour}
+              minute={endMinute}
+              maxHour={Math.floor(maxTimeMinutes / 60)}
+              maxMinute={Math.floor(maxTimeMinutes / 60) === endHour ? maxTimeMinutes % 60 : 59}
+              wheelKey={endWheelKey}
+              collapsed={notesFocused || metadataFocused}
+              onHourChange={hour => applyEndMinutes(hour * 60 + endMinute)}
+              onMinuteChange={minute => applyEndMinutes(endHour * 60 + minute)}
+              onExpand={handleExpandTime}
+            />
+          </View>
+        </View>
+
+        <View style={styles.durationCard}>
+          <Text style={styles.durationLabel}>Duration</Text>
+          <Text style={styles.durationValue}>{formatDuration(durationMs)}</Text>
+          {behavior.xpEnabled && <Text style={styles.durationHint}>+{earnedXp} XP</Text>}
+        </View>
       </View>
       <ScrollView
         style={styles.body}
@@ -318,16 +403,27 @@ export function LogForm({ behaviorId, behavior, editLogId, editTimestamp, editNo
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  body: { flex: 1 },
-  bodyContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 80,
-  },
   fixedTop: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
+    paddingTop: 6,
+    paddingHorizontal: 16,
   },
-  datePickerWrapper: { marginBottom: 20 },
+  datePickerWrapper: {
+    marginBottom: 20,
+  },
+  timePickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  timePickerColumn: {
+    flex: 1,
+    minWidth: 0,
+  },
+  timePickerSeparator: {
+    color: Colors.text.primary,
+    fontSize: 28,
+    marginTop: 8,
+  },
   sectionLabel: {
     color: Colors.text.light,
     fontSize: 12,
@@ -335,6 +431,51 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 10,
+  },
+  durationCard: {
+    alignItems: 'center',
+    backgroundColor: Colors.bg.card,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 18,
+    gap: 2,
+  },
+  durationLabel: {
+    color: Colors.text.faint,
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  durationValue: {
+    color: Colors.text.primary,
+    fontSize: 20,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  durationHint: {
+    color: Colors.type.desirable,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  body: {
+    flex: 1,
+  },
+  bodyContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 120,
+    gap: 10,
+  },
+  notesInput: {
+    minHeight: 120,
+    borderRadius: 12,
+    backgroundColor: Colors.bg.card,
+    color: Colors.text.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    lineHeight: 22,
   },
   metadataFieldRow: {
     ...metadataInputRowStyles.metadataFieldRow,
@@ -365,16 +506,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     textAlign: 'right',
   },
-  notesInput: {
-    backgroundColor: Colors.bg.input,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    color: Colors.text.primary,
-    fontSize: 16,
-    minHeight: 80,
-    marginBottom: 16,
-    lineHeight: 22,
+  logButton: {
+    bottom: 24,
   },
-  logButton: { bottom: 16 },
 });

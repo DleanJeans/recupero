@@ -1,5 +1,6 @@
 export type RootStackParamList = {
   Home: undefined;
+  Timer: undefined;
   Tasks: undefined;
   Day: undefined;
   BehaviorLog: {

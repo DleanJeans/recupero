@@ -5,12 +5,13 @@ import { StarRow } from '../../../components/StarRow';
 import { Text } from '../../../components/Text';
 import type { BehaviorEntry, Category, LogEntry } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
+import { getLogDurationMs, hasTimedLogRange } from '../../../utils/logUtils';
 import { formatMetadataValueUnit } from '../../../utils/metadataCalculationUtils';
 import { roundTo2 } from '../../../utils/numberUtils';
-import { formatDuration, formatTime, MS_PER_MINUTE } from '../../../utils/timeUtils';
+import { formatDuration, formatTime, formatTimeRange, MS_PER_MINUTE } from '../../../utils/timeUtils';
 
 interface DayLogEntry {
-  log: { id: string; timestamp: number; metadata?: Record<string, string | number> };
+  log: LogEntry;
   behavior: BehaviorEntry;
 }
 
@@ -121,6 +122,12 @@ export function LogList({ entries, selectedDate, categories }: LogListProps) {
                             style={{ marginTop: -12 }}
                           />
                         </View>
+                        {hasTimedLogRange(entry.log) && (
+                          <Text style={styles.sessionText}>
+                            {formatTimeRange(entry.log.timestamp, entry.log.endTimestamp)} ·{' '}
+                            {formatDuration(getLogDurationMs(entry.log))}
+                          </Text>
+                        )}
                         {formatEntryMetadata(entry.log.metadata, entry.behavior, categories)}
                       </View>
                     </React.Fragment>
@@ -140,6 +147,11 @@ const styles = StyleSheet.create({
     color: Colors.text.muted,
     fontSize: 12,
     fontWeight: '400',
+    marginTop: 1,
+  },
+  sessionText: {
+    color: Colors.text.faint,
+    fontSize: 12,
     marginTop: 1,
   },
   scrollView: {
