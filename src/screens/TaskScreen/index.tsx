@@ -26,10 +26,12 @@ export function TaskScreen() {
   const [stars, setStars] = useState<TaskStarValue>(1);
   const [selectedBehaviorId, setSelectedBehaviorId] = useState<string | undefined>();
   const [composerOpen, setComposerOpen] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState<string | undefined>();
 
   const behaviors = useBehaviorStore(s => s.behaviors);
   const tasks = useBehaviorStore(s => s.tasks);
   const addTask = useBehaviorStore(s => s.addTask);
+  const updateTask = useBehaviorStore(s => s.updateTask);
   const removeTask = useBehaviorStore(s => s.removeTask);
   const toggleTaskCompletion = useBehaviorStore(s => s.toggleTaskCompletion);
   const hidePrivate = useSettingsStore(s => s.hidePrivate);
@@ -41,7 +43,7 @@ export function TaskScreen() {
   }, [behaviors, composerOpen, hidePrivate]);
   const behaviorById = useMemo(() => new Map(behaviors.map(behavior => [behavior.id, behavior])), [behaviors]);
 
-  const selectedBehavior = availableBehaviors.find(behavior => behavior.id === selectedBehaviorId);
+  const selectedBehavior = selectedBehaviorId ? behaviorById.get(selectedBehaviorId) : undefined;
   const dayTasks = useMemo(() => getTasksForDate(tasks, selectedDate), [tasks, selectedDate]);
   const completedCount = useMemo(
     () => dayTasks.filter(task => isTaskCompleteOnDate(task, selectedDate)).length,
@@ -50,30 +52,58 @@ export function TaskScreen() {
   const taskStars = useMemo(() => getTaskStarsForDate(tasks, selectedDate), [tasks, selectedDate]);
   const dayLabel = describeDay(selectedDate);
 
-  const handleAddTask = () => {
-    const trimmedTitle = title.trim();
-    const taskTitle = trimmedTitle || selectedBehavior?.name.trim() || '';
-    if (!taskTitle) return;
-    const isBehaviorOnlyTask = !trimmedTitle && selectedBehavior != null;
-
-    addTask({
-      title: taskTitle,
-      scheduledDate: selectedDate,
-      stars: selectedBehavior ? 0 : stars,
-      source: isBehaviorOnlyTask ? 'behavior' : 'oneOff',
-      behaviorId: selectedBehavior?.id,
-    });
-    setTitle('');
-    setBehaviorQuery('');
-    setSelectedBehaviorId(undefined);
-    setComposerOpen(false);
-  };
-
   const resetComposer = () => {
     setTitle('');
     setBehaviorQuery('');
     setSelectedBehaviorId(undefined);
+    setEditingTaskId(undefined);
   };
+
+  const closeComposer = () => {
+    resetComposer();
+    setComposerOpen(false);
+  };
+
+  const handleSubmitTask = () => {
+    const trimmedTitle = title.trim();
+    const taskTitle = trimmedTitle || selectedBehavior?.name.trim() || '';
+    if (!taskTitle) return;
+    const isBehaviorOnlyTask = !trimmedTitle && selectedBehavior != null;
+    const nextStars: TaskStarValue = selectedBehavior ? 0 : stars === 0 ? 1 : stars;
+    const nextTask = {
+      title: taskTitle,
+      scheduledDate: selectedDate,
+      stars: nextStars,
+      source: isBehaviorOnlyTask ? ('behavior' as const) : ('oneOff' as const),
+      behaviorId: selectedBehavior?.id,
+    };
+
+    if (editingTaskId) {
+      updateTask(editingTaskId, nextTask);
+    } else {
+      addTask(nextTask);
+    }
+    closeComposer();
+  };
+
+  const openAddComposer = () => {
+    resetComposer();
+    setStars(1);
+    setComposerOpen(true);
+  };
+
+  const openEditComposer = useCallback(
+    (task: TaskEntry) => {
+      const behavior = task.behaviorId ? behaviorById.get(task.behaviorId) : undefined;
+      setTitle(task.source === 'behavior' ? '' : task.title);
+      setBehaviorQuery(behavior?.name ?? '');
+      setStars(task.stars);
+      setSelectedBehaviorId(task.behaviorId);
+      setEditingTaskId(task.id);
+      setComposerOpen(true);
+    },
+    [behaviorById],
+  );
 
   const goToPrevDay = () => {
     const d = new Date(`${selectedDate}T12:00:00`);
@@ -115,11 +145,12 @@ export function TaskScreen() {
           behavior={behavior}
           selectedDate={selectedDate}
           onToggle={() => handleToggleTask(task.id)}
+          onEdit={() => openEditComposer(task)}
           onRemove={() => confirmRemove(task)}
         />
       );
     },
-    [behaviorById, confirmRemove, handleToggleTask, selectedDate],
+    [behaviorById, confirmRemove, handleToggleTask, openEditComposer, selectedDate],
   );
 
   return (
@@ -208,11 +239,9 @@ export function TaskScreen() {
             onBehaviorQueryChange={setBehaviorQuery}
             onStarsChange={setStars}
             onBehaviorSelect={setSelectedBehaviorId}
-            onAdd={handleAddTask}
-            onCancel={() => {
-              resetComposer();
-              setComposerOpen(false);
-            }}
+            onAdd={handleSubmitTask}
+            onCancel={closeComposer}
+            submitLabel={editingTaskId ? 'Save' : 'Add'}
           />
         )}
 
@@ -238,7 +267,7 @@ export function TaskScreen() {
         <View style={styles.bottomAction}>
           <Button
             variant="primary"
-            onPress={() => setComposerOpen(true)}
+            onPress={openAddComposer}
             style={styles.openComposerButton}
           >
             + Add task

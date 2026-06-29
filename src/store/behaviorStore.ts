@@ -68,7 +68,10 @@ interface BehaviorStore {
   updateCategory: (id: string, updates: { name?: string; emoji?: string; metadataFields?: MetadataField[] }) => void;
   updateCategoryMetadataFields: (id: string, metadataFields: MetadataField[]) => void;
   addTask: (input: AddTaskInput) => void;
-  updateTask: (taskId: string, updates: Partial<Pick<TaskEntry, 'title' | 'stars' | 'scheduledDate'>>) => void;
+  updateTask: (
+    taskId: string,
+    updates: Partial<Pick<TaskEntry, 'title' | 'stars' | 'scheduledDate' | 'source' | 'behaviorId'>>,
+  ) => void;
   toggleTaskCompletion: (taskId: string, dateStr: string) => void;
   removeTask: (taskId: string) => void;
 }

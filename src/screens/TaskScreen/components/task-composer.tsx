@@ -20,6 +20,7 @@ interface TaskComposerProps {
   onBehaviorSelect: (behaviorId: string | undefined) => void;
   onAdd: () => void;
   onCancel: () => void;
+  submitLabel?: string;
 }
 
 export function TaskComposer({
@@ -34,6 +35,7 @@ export function TaskComposer({
   onBehaviorSelect,
   onAdd,
   onCancel,
+  submitLabel = 'Add',
 }: TaskComposerProps) {
   const hasAttachedBehavior = selectedBehaviorId != null;
   const canAdd = title.trim().length > 0 || hasAttachedBehavior;
@@ -81,7 +83,7 @@ export function TaskComposer({
           disabled={!canAdd}
           style={[styles.footerButton, hasAttachedBehavior && styles.fullWidthAddButton]}
         >
-          Add
+          {submitLabel}
         </Button>
       </View>
     </View>

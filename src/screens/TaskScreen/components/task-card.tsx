@@ -18,10 +18,11 @@ interface TaskCardProps {
   behavior: BehaviorEntry | undefined;
   selectedDate: string;
   onToggle: () => void;
+  onEdit: () => void;
   onRemove: () => void;
 }
 
-function TaskCardComponent({ task, behavior, selectedDate, onToggle, onRemove }: TaskCardProps) {
+function TaskCardComponent({ task, behavior, selectedDate, onToggle, onEdit, onRemove }: TaskCardProps) {
   const complete = isTaskCompleteOnDate(task, selectedDate);
   const isBehaviorTask = task.source === 'behavior' || (!task.source && task.behaviorId);
   const taskMeta = isBehaviorTask ? 'Behavior task' : behavior ? `One-off · ${behavior.name}` : 'One-off';
@@ -34,6 +35,7 @@ function TaskCardComponent({ task, behavior, selectedDate, onToggle, onRemove }:
       <Pressable
         style={styles.taskMain}
         onPress={onToggle}
+        onLongPress={onEdit}
       >
         <Ionicons
           name={complete ? 'checkmark-circle' : 'ellipse-outline'}
