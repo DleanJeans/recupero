@@ -11,3 +11,5 @@
 6. New branch naming: {feat|bug}/issue{number}-{issue title or feature/fix content}
 
 7. Minimize prop drilling. Save and read directly from stores if possible.
+
+8. Only include one React component per file. However, multiple Stateless, or Pure, Components are allowed per file.
