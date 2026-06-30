@@ -3,8 +3,10 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
 import Animated, {
   cancelAnimation,
+  Easing,
   useAnimatedStyle,
   useSharedValue,
+  withRepeat,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
@@ -26,10 +28,10 @@ interface Props {
 const STRIPE_COLOR = 'rgba(255, 255, 255, 0.28)';
 const STRIPE_GAP_COLOR = 'rgba(255, 255, 255, 0)';
 
-/** One stripe + one gap in pixels. The gradient repeats this period; the
- *  one-shot sweep moves by two periods so the pattern visibly advances. */
+/** One stripe + one gap in pixels. The gradient repeats this period; moving
+ *  by two periods keeps the reset invisible because the pattern tiles. */
 const STRIPE_PERIOD = 10;
-const STRIPE_SWEEP_DURATION_MS = 450;
+const STRIPE_LOOP_DURATION_MS = 900;
 
 /** Gradient is a square sized to the widest possible bar (screen width) plus
  *  one stripe period, rounded up to an integer number of periods so the
@@ -44,8 +46,8 @@ const N_PERIODS = GRADIENT_SIZE / STRIPE_PERIOD;
 const RATIO_SPRING = { damping: 18, stiffness: 120, mass: 0.8 } as const;
 
 /** Animated progress bar: solid fill clipped to `ratio` width, with a
- *  diagonally-striped overlay that briefly sweeps when progress changes. Used
- *  as the visual base for both DecayBar and CooldownBar. */
+ *  diagonally-striped overlay that scrolls while progress is active. Used as
+ *  the visual base for both DecayBar and CooldownBar. */
 export function StripedProgressBar({ ratio, color, direction = -1, height = 3 }: Props) {
   const safeRatio = Math.max(0, Math.min(1, ratio));
   // Stripes signal an ongoing process; skip the overlay once the bar is full
@@ -69,9 +71,8 @@ export function StripedProgressBar({ ratio, color, direction = -1, height = 3 }:
   const hasMounted = useRef(false);
 
   // Direction multiplier: 1 scrolls left-to-right, -1 right-to-left.
-  // Driving direction via the animation's toValue (not a `scaleX: -1`
-  // transform) keeps the wrapper transform single-axis, which the native
-  // driver animates most cleanly.
+  // Driving direction via the animation's toValue keeps the wrapper transform
+  // single-axis, which the native driver animates most cleanly.
   const movedWidth = direction * STRIPE_PERIOD * 2;
   const translateX = useSharedValue(direction > 0 ? -movedWidth : 0);
   const animateTo = direction > 0 ? 0 : movedWidth;
@@ -90,20 +91,24 @@ export function StripedProgressBar({ ratio, color, direction = -1, height = 3 }:
 
     previousRatio.current = safeRatio;
     animatedRatio.value = withSpring(safeRatio, RATIO_SPRING);
+  }, [safeRatio, animatedRatio]);
 
+  useEffect(() => {
     if (!showStripes) {
       cancelAnimation(translateX);
       translateX.value = direction > 0 ? -movedWidth : 0;
       return;
     }
 
-    // A short sweep makes new logs feel responsive without leaving every
-    // visible bar in a perpetual idle animation.
     cancelAnimation(translateX);
     translateX.value = direction > 0 ? -movedWidth : 0;
-    translateX.value = withTiming(animateTo, { duration: STRIPE_SWEEP_DURATION_MS });
+    translateX.value = withRepeat(
+      withTiming(animateTo, { duration: STRIPE_LOOP_DURATION_MS, easing: Easing.linear }),
+      -1,
+      false,
+    );
     return () => cancelAnimation(translateX);
-  }, [safeRatio, showStripes, animateTo, direction, movedWidth, animatedRatio, translateX]);
+  }, [showStripes, animateTo, direction, movedWidth, translateX]);
 
   const fillStyle = useAnimatedStyle(() => ({
     width: `${animatedRatio.value * 100}%`,
