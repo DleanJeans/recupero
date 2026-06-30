@@ -3,15 +3,13 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSettingsStore } from '../../store/settingsStore';
 import { Colors } from '../../utils/colors';
-import { Button } from '../Button';
+import { CategoryBarChip } from './CategoryBarChip';
 
 export function ToggleNamesButton() {
   const hideNames = useSettingsStore(s => s.hideCategoryNames);
   const setHideNames = useSettingsStore(s => s.setHideCategoryNames);
   return (
-    <Button
-      variant="ghost"
-      size="sm"
+    <CategoryBarChip
       onPress={() => setHideNames(!hideNames)}
       style={styles.button}
       accessibilityLabel={hideNames ? 'Show category names' : 'Hide category names'}
@@ -28,19 +26,13 @@ export function ToggleNamesButton() {
           </View>
         )}
       </View>
-    </Button>
+    </CategoryBarChip>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bg.card,
-    borderRadius: 8,
     paddingHorizontal: 8,
-    paddingVertical: 7,
-    gap: 4,
   },
   iconWrap: {
     width: 18,

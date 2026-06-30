@@ -6,6 +6,7 @@ import type { BehaviorEntry } from '../../../types/behavior';
 import type { TaskEntry } from '../../../types/task';
 import { groupBehaviorsByRecency } from '../../../utils/behaviorUtils';
 import { Colors } from '../../../utils/colors';
+import { COOLDOWN_FILTER_LABEL, isCooldownCategoryFilterId } from '../../../utils/cooldownFilter';
 import { toDateString, yesterday } from '../../../utils/dateUtils';
 import { Label } from '../../../utils/strings';
 import { BehaviorCard } from './BehaviorCard';
@@ -25,7 +26,16 @@ export const BehaviorList = React.memo(function BehaviorList({
   searchQuery,
 }: BehaviorListProps) {
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
-  const sections = useMemo(() => groupBehaviorsByRecency(behaviors, dayCutoffHour), [behaviors, dayCutoffHour]);
+  const cooldownSelected = isCooldownCategoryFilterId(selectedCategoryId);
+  const sections = useMemo(
+    () =>
+      cooldownSelected
+        ? behaviors.length > 0
+          ? [{ title: COOLDOWN_FILTER_LABEL, data: behaviors }]
+          : []
+        : groupBehaviorsByRecency(behaviors, dayCutoffHour),
+    [behaviors, cooldownSelected, dayCutoffHour],
+  );
   const todayStr = useMemo(() => toDateString(new Date(), dayCutoffHour), [dayCutoffHour]);
   const yesterdayStr = useMemo(() => toDateString(yesterday(new Date(), dayCutoffHour)), [dayCutoffHour]);
   const dateForSection = useCallback(
@@ -38,6 +48,7 @@ export const BehaviorList = React.memo(function BehaviorList({
   );
   const emptyMessage = (() => {
     if (searchQuery) return `No behaviors matching "${searchQuery}".`;
+    if (cooldownSelected) return 'No cooldown behaviors yet.\nLog a cooldown-enabled behavior to see it here.';
     if (selectedCategoryId !== null) return 'No behaviors in this category.\nTap + to add one.';
     return 'No behaviors yet.\nAdd your first one.';
   })();
@@ -50,11 +61,11 @@ export const BehaviorList = React.memo(function BehaviorList({
     ({ item, section }: { item: BehaviorEntry; section: { title: string } }) => (
       <BehaviorCard
         behavior={item}
-        showCategory={selectedCategoryId === null}
+        showCategory={selectedCategoryId === null || cooldownSelected}
         dateStr={dateForSection(section.title)}
       />
     ),
-    [dateForSection, selectedCategoryId],
+    [cooldownSelected, dateForSection, selectedCategoryId],
   );
   const renderSectionHeader = useCallback(
     ({ section }: { section: { title: string } }) => (

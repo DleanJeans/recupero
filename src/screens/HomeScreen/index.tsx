@@ -10,6 +10,7 @@ import { useBehaviorStore } from '../../store/behaviorStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
+import { getCooldownBehaviors, isCooldownCategoryFilterId } from '../../utils/cooldownFilter';
 import { BehaviorList } from './components/BehaviorList';
 import { CategoryXpBar } from './components/CategoryXpBar';
 import { HomeHeader } from './components/HomeHeader';
@@ -26,29 +27,42 @@ export function HomeScreen() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [cooldownSortTick, setCooldownSortTick] = useState(0);
+  const cooldownSelected = isCooldownCategoryFilterId(selectedCategoryId);
   const handleSelectCategory = useCallback((id: string | null) => {
     startTransition(() => setSelectedCategoryId(id));
   }, []);
 
   // Reset selection if the selected category no longer exists
   useEffect(() => {
-    if (selectedCategoryId !== null && !categories.some(c => c.id === selectedCategoryId)) {
+    if (selectedCategoryId !== null && !cooldownSelected && !categories.some(c => c.id === selectedCategoryId)) {
       setSelectedCategoryId(null);
     }
-  }, [categories, selectedCategoryId]);
+  }, [categories, cooldownSelected, selectedCategoryId]);
+
+  useEffect(() => {
+    if (!cooldownSelected) return;
+    const interval = setInterval(() => setCooldownSortTick(t => t + 1), 60_000);
+    return () => clearInterval(interval);
+  }, [cooldownSelected]);
 
   const filteredBehaviors = useMemo(() => {
     let result = behaviors;
     if (hidePrivate) result = result.filter(b => !b.private);
-    if (selectedCategoryId !== null) result = result.filter(b => b.categoryId === selectedCategoryId);
+    if (cooldownSelected) {
+      result = getCooldownBehaviors(result);
+    } else if (selectedCategoryId !== null) {
+      result = result.filter(b => b.categoryId === selectedCategoryId);
+    }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       result = result.filter(b => b.name.toLowerCase().includes(q));
     }
     return result;
-  }, [behaviors, selectedCategoryId, hidePrivate, searchQuery]);
+  }, [behaviors, cooldownSelected, cooldownSortTick, selectedCategoryId, hidePrivate, searchQuery]);
 
   const [showXp, setShowXp] = useState(true);
+  const addBehaviorDefaultCategoryId = cooldownSelected ? undefined : (selectedCategoryId ?? undefined);
 
   return (
     <SafeAreaView
@@ -99,7 +113,7 @@ export function HomeScreen() {
       <Button
         fab
         variant="primary"
-        onPress={() => navigation.navigate('BehaviorForm', { defaultCategoryId: selectedCategoryId ?? undefined })}
+        onPress={() => navigation.navigate('BehaviorForm', { defaultCategoryId: addBehaviorDefaultCategoryId })}
         style={styles.addButton}
       >
         + Add behavior

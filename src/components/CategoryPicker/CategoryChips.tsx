@@ -3,8 +3,8 @@ import { StyleSheet } from 'react-native';
 import { useSettingsStore } from '../../store/settingsStore';
 import type { Category } from '../../types/behavior';
 import { Colors } from '../../utils/colors';
-import { Button } from '../Button';
 import { Text } from '../Text';
+import { CategoryBarChip } from './CategoryBarChip';
 
 type CategoryId = string | undefined | null;
 
@@ -49,22 +49,20 @@ export function CategoryChips({
       {items.map(item => {
         const active = item.id === undefined ? selectedId == null : selectedId === item.id;
         const count = item.id == null ? allCount : behaviorCounts?.[item.id];
+        const showLabel = !hideNames || (showAll && item.id == null);
+        const onLongPressItem = item.id && onLongPress ? () => onLongPress(item as Category) : undefined;
         return (
-          <Button
+          <CategoryBarChip
             key={item.id ?? 'none'}
-            variant="ghost"
-            size="sm"
+            icon={item.emoji ?? ''}
+            label={item.name}
+            count={count}
+            showLabel={showLabel}
             active={active}
+            bar={bar}
             onPress={() => onChange(item.id)}
-            onLongPress={item.id && onLongPress ? () => onLongPress(item as Category) : undefined}
-            style={[bar ? styles.barChip : styles.chip, bar && styles.chipHorizontal]}
-          >
-            <Text style={[styles.chipEmoji, !active && styles.chipEmojiInactive]}>{item.emoji ?? ''}</Text>
-            {(!hideNames || (showAll && item.id == null)) && (
-              <Text style={[styles.chipText, active && styles.chipTextActive]}>{item.name}</Text>
-            )}
-            {count != null && bar && <Text style={[styles.chipCount, active && styles.chipCountActive]}>{count}</Text>}
-          </Button>
+            onLongPress={onLongPressItem}
+          />
         );
       })}
     </>
@@ -72,22 +70,5 @@ export function CategoryChips({
 }
 
 const styles = StyleSheet.create({
-  chip: { backgroundColor: 'transparent', paddingHorizontal: 10, paddingVertical: 6, gap: 4 },
-  barChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bg.card,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    gap: 4,
-  },
-  chipHorizontal: {},
-  chipEmoji: { fontSize: 16 },
-  chipEmojiInactive: { opacity: 0.4 },
-  chipText: { color: Colors.text.faint, fontSize: 13, fontWeight: '500' },
-  chipTextActive: { color: Colors.text.primary },
-  chipCount: { color: Colors.text.dim, fontSize: 11, fontWeight: '500', marginTop: 1 },
-  chipCountActive: { color: Colors.text.muted },
   emptyHint: { color: Colors.text.dim, fontSize: 12, fontStyle: 'italic', paddingVertical: 6 },
 });
