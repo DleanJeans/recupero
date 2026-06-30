@@ -35,6 +35,17 @@ export function getPeriodRange(period: StarPeriod, dateStr: string): { start: st
   return { start, end: toDateString(endDate) };
 }
 
+export function getStarPeriodLogCountLabel(period: StarPeriod, dateStr: string, todayStr: string): string {
+  if (period === 'day') return dateStr === todayStr ? 'Today' : 'That day';
+  if (period === 'week') return getWeekStart(dateStr) === getWeekStart(todayStr) ? 'Week' : 'That week';
+  return getMonthStart(dateStr) === getMonthStart(todayStr) ? 'This month' : 'That month';
+}
+
+export function getNextStarThreshold(logCount: number, thresholds: readonly (number | null)[]): number | undefined {
+  const configuredThresholds = thresholds.filter((threshold): threshold is number => threshold != null);
+  return configuredThresholds.find(threshold => logCount < threshold) ?? configuredThresholds.at(-1);
+}
+
 /** Number of stars earned (0..3) given a log count and the
  *  behavior's thresholds. A null at index 0 or 1 is a placeholder:
  *  it fills when the first non-null threshold to its right is met.

@@ -4,6 +4,14 @@ import { useSettingsStore } from '../store/settingsStore';
 import type { BehaviorEntry } from '../types/behavior';
 import { getBehaviorTypeColor } from '../utils/behaviorTypeUtils';
 import { Colors } from '../utils/colors';
+import { toDateString } from '../utils/dateUtils';
+import {
+  getLogsForPeriod,
+  getNextStarThreshold,
+  getStarPeriod,
+  getStarPeriodLogCountLabel,
+  getThresholds,
+} from '../utils/starUtils';
 import { getEffectiveXp } from '../utils/xpUtils';
 import { AutoFitHeaderTitle } from './AutoFitHeaderTitle';
 import { BehaviorIcon } from './BehaviorIcon';
@@ -53,6 +61,20 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
     [behavior, dayCutoffHour, tick],
   );
   const behaviorColor = useMemo(() => getBehaviorTypeColor(behavior.type), [behavior.type]);
+  const todayStr = useMemo(() => toDateString(new Date(), dayCutoffHour), [dayCutoffHour, tick]);
+  const starTargetDate = dateStr ?? todayStr;
+  const starLogCountSummary = useMemo(() => {
+    const thresholds = getThresholds(behavior);
+    if (!thresholds) return null;
+
+    const starPeriod = getStarPeriod(behavior);
+    const logCount = getLogsForPeriod(behavior, starPeriod, starTargetDate, dayCutoffHour).length;
+    const nextThreshold = getNextStarThreshold(logCount, thresholds);
+    if (nextThreshold == null) return null;
+
+    const periodLabel = getStarPeriodLogCountLabel(starPeriod, starTargetDate, todayStr);
+    return `${periodLabel}: ${logCount}/${nextThreshold}`;
+  }, [behavior, dayCutoffHour, starTargetDate, todayStr]);
 
   return (
     <View style={styles.body}>
@@ -63,9 +85,10 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
         />
         <StarRow
           behavior={behavior}
-          dateStr={dateStr}
+          dateStr={starTargetDate}
           size={11}
         />
+        {starLogCountSummary && <Text style={styles.starLogCount}>{starLogCountSummary}</Text>}
       </View>
       <View style={styles.info}>
         <BehaviorTitle
@@ -161,6 +184,13 @@ const styles = StyleSheet.create({
     color: Colors.text.muted,
     fontSize: 13,
     fontWeight: '600',
+  },
+  starLogCount: {
+    color: Colors.text.muted,
+    fontSize: 10,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '600',
+    textAlign: 'center',
   },
   elapsedRow: {
     flexDirection: 'row',
