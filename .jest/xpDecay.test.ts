@@ -42,6 +42,10 @@ function lastLog(daysAgo: number): number {
   return d.getTime();
 }
 
+function hoursAgo(hours: number): number {
+  return NOW_TS - hours * 60 * 60 * 1000;
+}
+
 /** Build a behavior with `n` logs ending `daysAgo` days before now, with optional XP decay enabled.
  *  Passing a `decay` config opts the behavior in to XP calculation too (decay is a sub-feature). */
 function behaviorWithLogs(daysAgo: number, n: number, decay?: BehaviorEntry['xpDecay']): BehaviorEntry {
@@ -63,6 +67,11 @@ afterAll(() => {
 });
 
 describe('decayEveryInDays', () => {
+  it('converts hours to fractional days', () => {
+    expect(decayEveryInDays(12, 'hours')).toBe(0.5);
+    expect(decayEveryInDays(6, 'hours')).toBe(0.25);
+  });
+
   it('returns the value unchanged for days', () => {
     expect(decayEveryInDays(1, 'days')).toBe(1);
     expect(decayEveryInDays(7, 'days')).toBe(7);
@@ -174,6 +183,55 @@ describe('getDecayLogCount', () => {
 
     it('61 days apart → 1 lost (final gap of 60 between wipes the sole era log)', () => {
       expect(getDecayLogCount(behaviorWithLogs(61, 1, decay), NOW_TS)).toBe(1);
+    });
+  });
+
+  describe('every=12 hours', () => {
+    const decay = { every: 12, unit: 'hours' as const };
+
+    it('returns 0 before a full hourly cycle elapses', () => {
+      const ts = hoursAgo(11);
+      const b = makeBehavior({
+        xpEnabled: true,
+        xpDecay: decay,
+        lastTimestamp: ts,
+        logs: [makeLog(ts)],
+      });
+      expect(getDecayLogCount(b, NOW_TS)).toBe(0);
+    });
+
+    it('loses 1 log after a full 12-hour cycle', () => {
+      const ts = hoursAgo(12);
+      const b = makeBehavior({
+        xpEnabled: true,
+        xpDecay: decay,
+        lastTimestamp: ts,
+        logs: [makeLog(ts)],
+      });
+      expect(getDecayLogCount(b, NOW_TS)).toBe(1);
+    });
+
+    it('counts multiple elapsed hourly cycles when enough logs exist', () => {
+      const ts = hoursAgo(25);
+      const b = makeBehavior({
+        xpEnabled: true,
+        xpDecay: decay,
+        lastTimestamp: ts,
+        logs: Array.from({ length: 5 }, (_, i) => makeLog(ts - i)),
+      });
+      expect(getDecayLogCount(b, NOW_TS)).toBe(2);
+    });
+
+    it('uses hourly gaps for era resets', () => {
+      const ts30 = hoursAgo(30);
+      const ts1 = hoursAgo(1);
+      const b = makeBehavior({
+        xpEnabled: true,
+        xpDecay: decay,
+        lastTimestamp: ts1,
+        logs: [makeLog(ts30), makeLog(ts1)],
+      });
+      expect(getDecayLogCount(b, NOW_TS)).toBe(1);
     });
   });
 
@@ -407,6 +465,13 @@ describe('getDecayForGap', () => {
     expect(getDecayForGap(lastLog(7), NOW_TS, d3)).toBe(2);
   });
 
+  it('honors hourly decay: 11h gap → 0 lost, 12h gap → 1 lost, 25h gap → 2 lost', () => {
+    const h12 = { every: 12, unit: 'hours' as const };
+    expect(getDecayForGap(hoursAgo(11), NOW_TS, h12)).toBe(0);
+    expect(getDecayForGap(hoursAgo(12), NOW_TS, h12)).toBe(1);
+    expect(getDecayForGap(hoursAgo(25), NOW_TS, h12)).toBe(2);
+  });
+
   it('treats later < earlier as no decay (defensive against clock skew)', () => {
     expect(getDecayForGap(NOW_TS, lastLog(5), decay)).toBe(0);
   });
@@ -455,6 +520,16 @@ describe('getTimeUntilNextDecay', () => {
     const b = makeBehavior({ xpEnabled: true, xpDecay: weekly, lastTimestamp: lastLog(3) });
     // 3 days elapsed (fractional), 3%7=3, daysLeft=4
     expect(getTimeUntilNextDecay(b, NOW_TS)).toEqual({ daysLeft: 4, everyDays: 7, every: 1, unit: 'weeks' });
+  });
+
+  it('returns partial cycle for 12-hour decay: 5 hours in = 7 hours left', () => {
+    const h12 = { every: 12, unit: 'hours' as const };
+    const b = makeBehavior({ xpEnabled: true, xpDecay: h12, lastTimestamp: hoursAgo(5) });
+    const result = getTimeUntilNextDecay(b, NOW_TS);
+    expect(result?.daysLeft).toBeCloseTo(7 / 24, 5);
+    expect(result?.everyDays).toBe(0.5);
+    expect(result?.every).toBe(12);
+    expect(result?.unit).toBe('hours');
   });
 
   it('returns full cycle when last log is on the same day boundary', () => {

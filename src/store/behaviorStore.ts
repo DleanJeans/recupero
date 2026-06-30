@@ -31,7 +31,7 @@ interface BehaviorStore {
     starThresholds?: [number, number | null, number | null],
     starPeriod?: StarPeriod,
     xpEnabled?: true,
-    xpDecay?: { every: number; unit: 'days' | 'weeks' | 'months' },
+    xpDecay?: BehaviorEntry['xpDecay'],
     cooldownEnabled?: boolean,
   ) => void;
   updateBehaviorCooldown: (behaviorId: string, cooldownMinutes: number) => void;
@@ -57,7 +57,7 @@ interface BehaviorStore {
       starThresholds?: [number, number | null, number | null] | undefined;
       starPeriod?: StarPeriod | undefined;
       xpEnabled?: true;
-      xpDecay?: { every: number; unit: 'days' | 'weeks' | 'months' } | undefined;
+      xpDecay?: BehaviorEntry['xpDecay'];
     },
   ) => void;
   logBehavior: (

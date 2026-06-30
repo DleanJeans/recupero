@@ -6,7 +6,7 @@ import { DurationInput } from '../../../components/DurationInput';
 import { Text } from '../../../components/Text';
 import { Colors } from '../../../utils/colors';
 
-const DECAY_UNITS: DurationUnit[] = ['days', 'weeks', 'months'];
+const DECAY_UNITS: DurationUnit[] = ['hours', 'days', 'weeks', 'months'];
 
 interface Props {
   enabled: boolean;

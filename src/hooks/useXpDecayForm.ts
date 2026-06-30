@@ -10,7 +10,7 @@ const UNIT_MINUTES: Record<DurationUnit, number> = {
   months: 43200,
 };
 
-const DECAY_UNITS: DurationUnit[] = ['days', 'weeks', 'months'];
+const DECAY_UNITS: DurationUnit[] = ['hours', 'days', 'weeks', 'months'];
 
 interface UseXpDecayFormResult {
   enabled: boolean;

@@ -61,12 +61,12 @@ export interface BehaviorEntry {
   /** Opt-in XP calculation (level, XP bar). Sub-feature `xpDecay` is gated on this.
    *  Undefined = feature off. */
   xpEnabled?: true;
-  /** Opt-in XP decay: lose 1 log's worth (5 XP) every `every` days/weeks/months
+  /** Opt-in XP decay: lose 1 log's worth (5 XP) every `every` hours/days/weeks/months
    *  since the last log/session end. Undefined = feature off. Ignored at runtime when `xpEnabled` is off. */
-  xpDecay?: { every: number; unit: 'days' | 'weeks' | 'months' };
+  xpDecay?: { every: number; unit: XpDecayUnit };
 }
 
-export type XpDecayUnit = 'days' | 'weeks' | 'months';
+export type XpDecayUnit = 'hours' | 'days' | 'weeks' | 'months';
 
 /** Period used to evaluate `BehaviorEntry.starThresholds`. */
 export type StarPeriod = 'day' | 'week' | 'month';

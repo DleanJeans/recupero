@@ -3,12 +3,19 @@ import { MS_PER_DAY, operationalDayDiff } from './dateUtils';
 import { getLogDurationMinutes, getLogEndTimestamp, getLogStartTimestamp, LEGACY_LOG_XP } from './logUtils';
 
 export const XP_PER_LOG = LEGACY_LOG_XP;
+const MS_PER_HOUR = 60 * 60 * 1000;
 
 /** Convert a `xpDecay.unit` + `every` to a day count. */
 export function decayEveryInDays(every: number, unit: XpDecayUnit): number {
+  if (unit === 'hours') return every / 24;
   if (unit === 'days') return every;
   if (unit === 'weeks') return every * 7;
   return every * 30; // months → 30-day approximation
+}
+
+function decayEveryInMs(every: number, unit: XpDecayUnit): number {
+  if (unit === 'hours') return every * MS_PER_HOUR;
+  return decayEveryInDays(every, unit) * MS_PER_DAY;
 }
 
 /** Number of "log equivalents" lost to XP decay across the behavior's lifetime,
@@ -19,17 +26,17 @@ export function decayEveryInDays(every: number, unit: XpDecayUnit): number {
  *  from the latest era count toward XP. This keeps abandoned behaviors from
  *  getting stuck at 0 XP: a long pause triggers a reset rather than permanent 0.
  *
- *  Each gap counts days *strictly between* its endpoints (excludes both), so a
- *  same-day or 1-day-apart pair never decays. Returns 0 when the feature is off,
- *  no logs exist, or no decay has accrued. */
+ *  For day/week/month settings, each gap counts days *strictly between* its
+ *  endpoints (excludes both), so a same-day or 1-day-apart pair never decays.
+ *  Hourly settings count full elapsed-hour cycles. Returns 0 when the feature
+ *  is off, no logs exist, or no decay has accrued. */
 export function getDecayLogCount(behavior: BehaviorEntry, now: number = Date.now(), dayCutoffHour = 0): number {
   const { xpDecay, logs } = behavior;
   if (!behavior.xpEnabled) return 0;
   if (!xpDecay) return 0;
   if (logs.length === 0) return 0;
 
-  const everyDays = decayEveryInDays(xpDecay.every, xpDecay.unit);
-  if (!Number.isFinite(everyDays) || everyDays <= 0) return 0;
+  if (!isValidDecay(xpDecay)) return 0;
 
   // Defensive: assume logs may arrive out of order. Cheaper than trusting call sites.
   const sorted = [...logs].sort((a, b) => getLogStartTimestamp(a) - getLogStartTimestamp(b));
@@ -42,7 +49,7 @@ export function getDecayLogCount(behavior: BehaviorEntry, now: number = Date.now
     const gapDecay = decayForGap(
       getLogEndTimestamp(sorted[i - 1]),
       getLogStartTimestamp(sorted[i]),
-      everyDays,
+      xpDecay,
       dayCutoffHour,
     );
     if (gapDecay >= i - eraStart) {
@@ -51,11 +58,27 @@ export function getDecayLogCount(behavior: BehaviorEntry, now: number = Date.now
   }
 
   // Final gap: most recent log → now. Caps at N since we can't cancel more logs than exist.
-  const finalDecay = decayForGap(getLogEndTimestamp(sorted[N - 1]), now, everyDays, dayCutoffHour);
+  const finalDecay = decayForGap(getLogEndTimestamp(sorted[N - 1]), now, xpDecay, dayCutoffHour);
   return Math.min(N, eraStart + finalDecay);
 }
 
-function decayForGap(earlierMs: number, laterMs: number, everyDays: number, dayCutoffHour = 0): number {
+function isValidDecay(decay: BehaviorEntry['xpDecay']): decay is NonNullable<BehaviorEntry['xpDecay']> {
+  return !!decay && Number.isFinite(decay.every) && decay.every > 0;
+}
+
+function decayForGap(
+  earlierMs: number,
+  laterMs: number,
+  decay: NonNullable<BehaviorEntry['xpDecay']>,
+  dayCutoffHour = 0,
+): number {
+  if (decay.unit === 'hours') {
+    const everyMs = decayEveryInMs(decay.every, decay.unit);
+    if (!Number.isFinite(everyMs) || everyMs <= 0) return 0;
+    return Math.floor(Math.max(0, laterMs - earlierMs) / everyMs);
+  }
+
+  const everyDays = decayEveryInDays(decay.every, decay.unit);
   const diff = operationalDayDiff(laterMs, earlierMs, dayCutoffHour);
   const between = Math.max(0, diff - 1);
   if (between === 0) return 0;
@@ -70,10 +93,8 @@ export function getDecayForGap(
   decay: BehaviorEntry['xpDecay'],
   dayCutoffHour = 0,
 ): number {
-  if (!decay) return 0;
-  const everyDays = decayEveryInDays(decay.every, decay.unit);
-  if (!Number.isFinite(everyDays) || everyDays <= 0) return 0;
-  return decayForGap(earlierMs, laterMs, everyDays, dayCutoffHour);
+  if (!isValidDecay(decay)) return 0;
+  return decayForGap(earlierMs, laterMs, decay, dayCutoffHour);
 }
 
 /** Effective log count for a behavior after applying XP decay. Floors at 0.
@@ -101,7 +122,8 @@ export function getEffectiveXp(behavior: BehaviorEntry, now: number = Date.now()
  *
  *  Uses fractional ms diff so the bar shows continuous progress (e.g. 16h after
  *  a 1-day cycle is 33% remaining, not 100%). Note: the actual decay tick uses
- *  calendar-day diff (see `getDecayLogCount`); this is a smoother visual approximation. */
+ *  calendar-day diff for day/week/month settings (see `getDecayLogCount`);
+ *  this is a smoother visual approximation. */
 export function getTimeUntilNextDecay(
   behavior: BehaviorEntry,
   now: number = Date.now(),
@@ -109,11 +131,11 @@ export function getTimeUntilNextDecay(
   daysLeft: number;
   everyDays: number;
   every: number;
-  unit: 'days' | 'weeks' | 'months';
+  unit: XpDecayUnit;
 } | null {
   if (behavior.xpEnabled !== true) return null;
   const decay = behavior.xpDecay;
-  if (!decay) return null;
+  if (!isValidDecay(decay)) return null;
   const everyDays = decayEveryInDays(decay.every, decay.unit);
   if (!Number.isFinite(everyDays) || everyDays <= 0) return null;
 
