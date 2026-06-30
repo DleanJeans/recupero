@@ -39,3 +39,7 @@ export function getCooldownBehaviors(behaviors: BehaviorEntry[], now = Date.now(
 export function countCooldownBehaviors(behaviors: BehaviorEntry[]): number {
   return behaviors.filter(hasFilterableCooldown).length;
 }
+
+export function countBehaviorsPastCooldown(behaviors: BehaviorEntry[], now = Date.now()): number {
+  return behaviors.filter(behavior => getCooldownProgress(behavior, now) >= 1).length;
+}

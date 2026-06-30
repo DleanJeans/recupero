@@ -9,6 +9,7 @@ import type { RootStackParamList } from '../types/navigation';
 import { Colors } from '../utils/colors';
 import { toDateString } from '../utils/dateUtils';
 import { getUncompletedTaskCountForDate } from '../utils/taskUtils';
+import { Badge } from './Badge';
 import { Text } from './Text';
 
 const ITEMS: Array<{
@@ -102,9 +103,10 @@ export function BottomNav({ activeRoute, onNavigate }: BottomNavProps) {
                   color={active ? Colors.text.primary : Colors.text.faint}
                 />
                 {showTaskBadge && (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{uncompletedTaskCount > 99 ? '99+' : uncompletedTaskCount}</Text>
-                  </View>
+                  <Badge
+                    count={uncompletedTaskCount}
+                    style={styles.badge}
+                  />
                 )}
               </View>
               <Text style={[styles.label, active && styles.labelActive]}>{item.label}</Text>
@@ -164,20 +166,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -5,
     right: -7,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    paddingHorizontal: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.cooldown.red,
-  },
-  badgeText: {
-    color: Colors.text.primary,
-    fontSize: 10,
-    fontWeight: '800',
-    lineHeight: 12,
-    fontVariant: ['tabular-nums'],
   },
   label: {
     color: Colors.text.faint,
