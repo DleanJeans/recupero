@@ -5,6 +5,7 @@ import { Button } from '../../components/Button';
 import { SafeAreaView } from '../../components/SafeAreaView';
 import { ScreenTitle } from '../../components/ScreenTitle';
 import { Text } from '../../components/Text';
+import { useDeferredComputation } from '../../hooks/useDeferredComputation';
 import { useBehaviorStore } from '../../store/behaviorStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import type { TaskEntry, TaskStarValue } from '../../types/task';
@@ -55,7 +56,7 @@ export function TaskScreen() {
     [dayTasks, selectedDate],
   );
   const taskStars = useMemo(() => getTaskStarsForDate(tasks, selectedDate), [tasks, selectedDate]);
-  const calendarDayMetrics = useMemo(() => getCalendarTaskCompletionMetrics(tasks), [tasks]);
+  const calendarDayMetrics = useDeferredComputation(() => getCalendarTaskCompletionMetrics(tasks), [tasks]);
   const summaryItems = useMemo(
     () => [
       { label: 'done', value: completedCount },

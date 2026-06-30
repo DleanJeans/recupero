@@ -81,6 +81,25 @@ export function getLogsForPeriod(
   });
 }
 
+export function getLogCountForPeriod(
+  behavior: BehaviorEntry,
+  period: StarPeriod,
+  dateStr: string,
+  dayCutoffHour = 0,
+): number {
+  const { start, end } = getPeriodRange(period, dateStr);
+  let count = 0;
+
+  for (const log of behavior.logs) {
+    const d = toDateString(new Date(log.timestamp), dayCutoffHour);
+    if (d >= start && d <= end) {
+      count += 1;
+    }
+  }
+
+  return count;
+}
+
 /** Sum of earned stars across all opted-in behaviors for a given date.
  *  Each behavior uses its own `starPeriod` (defaulting to `'day'`).
  *  Behaviors without `starThresholds` contribute 0. */
@@ -89,7 +108,7 @@ export function getTotalStarsForDate(behaviors: BehaviorEntry[], dateStr: string
   for (const behavior of behaviors) {
     const thresholds = getThresholds(behavior);
     if (!thresholds) continue;
-    const logCount = getLogsForPeriod(behavior, getStarPeriod(behavior), dateStr, dayCutoffHour).length;
+    const logCount = getLogCountForPeriod(behavior, getStarPeriod(behavior), dateStr, dayCutoffHour);
     total += getEarnedStars(logCount, thresholds);
   }
   return total;

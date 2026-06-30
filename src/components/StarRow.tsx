@@ -13,7 +13,7 @@ import { useSettingsStore } from '../store/settingsStore';
 import type { BehaviorEntry } from '../types/behavior';
 import { Colors } from '../utils/colors';
 import { toDateString } from '../utils/dateUtils';
-import { getEarnedStars, getLogsForPeriod, getStarPeriod, getThresholds } from '../utils/starUtils';
+import { getEarnedStars, getLogCountForPeriod, getStarPeriod, getThresholds } from '../utils/starUtils';
 import { Text } from './Text';
 
 interface Props {
@@ -47,7 +47,7 @@ export function StarRow({
   const targetDate = dateStr ?? todayStr;
   const earned = useMemo(() => {
     if (!thresholds) return 0;
-    const logCount = getLogsForPeriod(behavior, getStarPeriod(behavior), targetDate, dayCutoffHour).length;
+    const logCount = getLogCountForPeriod(behavior, getStarPeriod(behavior), targetDate, dayCutoffHour);
     return getEarnedStars(logCount, thresholds);
   }, [behavior, dayCutoffHour, thresholds, targetDate]);
 

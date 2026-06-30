@@ -129,28 +129,44 @@ export function getAllDailyMetadataTotals(
   dayCutoffHour = 0,
 ): DailyMetadataTotal[] {
   const result: DailyMetadataTotal[] = [];
+  const categoryById = new Map(categories.map(category => [category.id, category]));
+  const totalsByCategory = new Map<string, Map<string, number>>();
+
+  for (const behavior of behaviors) {
+    if (!behavior.categoryId) continue;
+
+    const category = categoryById.get(behavior.categoryId);
+    if (!category) continue;
+
+    const fields = category.metadataFields ?? [];
+    if (fields.length === 0) continue;
+
+    let categoryTotals = totalsByCategory.get(category.id);
+    if (!categoryTotals) {
+      categoryTotals = new Map<string, number>();
+      totalsByCategory.set(category.id, categoryTotals);
+    }
+
+    for (const log of behavior.logs) {
+      if (!log.metadata) continue;
+      const logDate = toDateString(new Date(log.timestamp), dayCutoffHour);
+      if (logDate !== dateStr) continue;
+      for (const field of fields) {
+        const val = log.metadata[field.key];
+        if (typeof val === 'number') {
+          const key = field.key;
+          categoryTotals.set(key, (categoryTotals.get(key) ?? 0) + val);
+        }
+      }
+    }
+  }
 
   for (const category of categories) {
     const fields = category.metadataFields ?? [];
     if (fields.length === 0) continue;
 
-    const categoryBehaviors = behaviors.filter(b => b.categoryId === category.id);
-    const categoryTotals = new Map<string, number>();
-
-    for (const behavior of categoryBehaviors) {
-      for (const log of behavior.logs) {
-        if (!log.metadata) continue;
-        const logDate = toDateString(new Date(log.timestamp), dayCutoffHour);
-        if (logDate !== dateStr) continue;
-        for (const field of fields) {
-          const val = log.metadata[field.key];
-          if (typeof val === 'number') {
-            const key = field.key;
-            categoryTotals.set(key, (categoryTotals.get(key) ?? 0) + val);
-          }
-        }
-      }
-    }
+    const categoryTotals = totalsByCategory.get(category.id);
+    if (!categoryTotals) continue;
 
     for (const field of fields) {
       const total = categoryTotals.get(field.key);

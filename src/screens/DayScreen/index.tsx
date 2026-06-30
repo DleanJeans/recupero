@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from '../../components/SafeAreaView';
 import { ScreenTitle } from '../../components/ScreenTitle';
 import { Text } from '../../components/Text';
+import { useDeferredComputation } from '../../hooks/useDeferredComputation';
 import { useBehaviorStore } from '../../store/behaviorStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { getAllDailyMetadataTotals } from '../../utils/behaviorUtils';
@@ -19,7 +20,9 @@ import { LogList } from './components/LogList';
 import { MetadataSummaryRow } from './components/MetadataSummaryRow';
 
 export function DayScreen() {
-  const { behaviors, categories, tasks } = useBehaviorStore();
+  const behaviors = useBehaviorStore(s => s.behaviors);
+  const categories = useBehaviorStore(s => s.categories);
+  const tasks = useBehaviorStore(s => s.tasks);
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
 
   const todayStr = toDateString(new Date(), dayCutoffHour);
@@ -65,7 +68,7 @@ export function DayScreen() {
   // Summary item renders when either source contributed stars.
   const hasOptedInLog = useMemo(() => dayLogs.some(entry => getThresholds(entry.behavior) !== undefined), [dayLogs]);
   const taskStars = useMemo(() => getTaskStarsForDate(tasks, selectedDate), [tasks, selectedDate]);
-  const calendarDayMetrics = useMemo(
+  const calendarDayMetrics = useDeferredComputation(
     () => getCalendarStarMetrics(behaviors, tasks, dayCutoffHour),
     [behaviors, dayCutoffHour, tasks],
   );

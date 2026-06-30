@@ -1,9 +1,11 @@
-import type { BehaviorEntry, XpDecayUnit } from '../types/behavior';
+import type { BehaviorEntry, LogEntry, XpDecayUnit } from '../types/behavior';
 import { MS_PER_DAY, operationalDayDiff } from './dateUtils';
 import { getLogDurationMinutes, getLogEndTimestamp, getLogStartTimestamp, LEGACY_LOG_XP } from './logUtils';
 
 export const XP_PER_LOG = LEGACY_LOG_XP;
 const MS_PER_HOUR = 60 * 60 * 1000;
+const behaviorXpCache = new WeakMap<LogEntry[], number>();
+const chronologicalLogsCache = new WeakMap<LogEntry[], LogEntry[]>();
 
 /** Convert a `xpDecay.unit` + `every` to a day count. */
 export function decayEveryInDays(every: number, unit: XpDecayUnit): number {
@@ -38,8 +40,7 @@ export function getDecayLogCount(behavior: BehaviorEntry, now: number = Date.now
 
   if (!isValidDecay(xpDecay)) return 0;
 
-  // Defensive: assume logs may arrive out of order. Cheaper than trusting call sites.
-  const sorted = [...logs].sort((a, b) => getLogStartTimestamp(a) - getLogStartTimestamp(b));
+  const sorted = getChronologicalLogs(logs);
   const N = sorted.length;
 
   // Walk inter-log gaps. Reset the era at any log whose incoming gap's decay
@@ -108,7 +109,33 @@ export function getLogXp(log: BehaviorEntry['logs'][number]): number {
 }
 
 export function getBehaviorXp(behavior: BehaviorEntry): number {
-  return behavior.logs.reduce((total, log) => total + getLogXp(log), 0);
+  const cached = behaviorXpCache.get(behavior.logs);
+  if (cached !== undefined) return cached;
+
+  const xp = behavior.logs.reduce((total, log) => total + getLogXp(log), 0);
+  behaviorXpCache.set(behavior.logs, xp);
+  return xp;
+}
+
+function getChronologicalLogs(logs: LogEntry[]): LogEntry[] {
+  if (logs.length < 2) return logs;
+
+  const cached = chronologicalLogsCache.get(logs);
+  if (cached) return cached;
+
+  let alreadySorted = true;
+  for (let i = 1; i < logs.length; i++) {
+    if (getLogStartTimestamp(logs[i - 1]) > getLogStartTimestamp(logs[i])) {
+      alreadySorted = false;
+      break;
+    }
+  }
+
+  const chronologicalLogs = alreadySorted
+    ? logs
+    : [...logs].sort((a, b) => getLogStartTimestamp(a) - getLogStartTimestamp(b));
+  chronologicalLogsCache.set(logs, chronologicalLogs);
+  return chronologicalLogs;
 }
 
 export function getEffectiveXp(behavior: BehaviorEntry, now: number = Date.now(), dayCutoffHour = 0): number {

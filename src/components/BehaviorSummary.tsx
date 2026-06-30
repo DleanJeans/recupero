@@ -6,7 +6,7 @@ import { getBehaviorTypeColor } from '../utils/behaviorTypeUtils';
 import { Colors } from '../utils/colors';
 import { toDateString } from '../utils/dateUtils';
 import {
-  getLogsForPeriod,
+  getLogCountForPeriod,
   getNextStarThreshold,
   getStarPeriod,
   getStarPeriodLogCountLabel,
@@ -68,7 +68,7 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
     if (!thresholds) return null;
 
     const starPeriod = getStarPeriod(behavior);
-    const logCount = getLogsForPeriod(behavior, starPeriod, starTargetDate, dayCutoffHour).length;
+    const logCount = getLogCountForPeriod(behavior, starPeriod, starTargetDate, dayCutoffHour);
     const nextThreshold = getNextStarThreshold(logCount, thresholds);
     if (nextThreshold == null) return null;
 
