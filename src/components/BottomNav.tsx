@@ -3,8 +3,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBehaviorStore } from '../store/behaviorStore';
+import { useSettingsStore } from '../store/settingsStore';
 import type { RootStackParamList } from '../types/navigation';
 import { Colors } from '../utils/colors';
+import { toDateString } from '../utils/dateUtils';
+import { getUncompletedTaskCountForDate } from '../utils/taskUtils';
 import { Text } from './Text';
 
 const ITEMS: Array<{
@@ -31,7 +35,11 @@ interface BottomNavProps {
 
 export function BottomNav({ activeRoute, onNavigate }: BottomNavProps) {
   const insets = useSafeAreaInsets();
+  const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
+  const tasks = useBehaviorStore(s => s.tasks);
   const [barWidth, setBarWidth] = useState(0);
+  const todayStr = toDateString(new Date(), dayCutoffHour);
+  const uncompletedTaskCount = getUncompletedTaskCountForDate(tasks, todayStr, dayCutoffHour);
   const activeIndex = Math.max(
     0,
     ITEMS.findIndex(item => item.route === activeRoute),
@@ -71,6 +79,7 @@ export function BottomNav({ activeRoute, onNavigate }: BottomNavProps) {
         {itemWidth > 0 && <Animated.View style={[styles.highlight, highlightStyle]} />}
         {ITEMS.map((item, index) => {
           const active = activeRoute === item.route;
+          const showTaskBadge = item.route === 'Tasks' && uncompletedTaskCount > 0;
           return (
             <Pressable
               key={item.route}
@@ -82,13 +91,22 @@ export function BottomNav({ activeRoute, onNavigate }: BottomNavProps) {
                 }
               }}
               accessibilityRole="button"
-              accessibilityLabel={item.label}
+              accessibilityLabel={
+                showTaskBadge ? `${item.label}, ${uncompletedTaskCount} uncompleted tasks` : item.label
+              }
             >
-              <Ionicons
-                name={active ? item.activeIcon : item.icon}
-                size={22}
-                color={active ? Colors.text.primary : Colors.text.faint}
-              />
+              <View style={styles.iconWrap}>
+                <Ionicons
+                  name={active ? item.activeIcon : item.icon}
+                  size={22}
+                  color={active ? Colors.text.primary : Colors.text.faint}
+                />
+                {showTaskBadge && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{uncompletedTaskCount > 99 ? '99+' : uncompletedTaskCount}</Text>
+                  </View>
+                )}
+              </View>
               <Text style={[styles.label, active && styles.labelActive]}>{item.label}</Text>
             </Pressable>
           );
@@ -134,6 +152,32 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.72,
+  },
+  iconWrap: {
+    position: 'relative',
+    width: 28,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badge: {
+    position: 'absolute',
+    top: -5,
+    right: -7,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.cooldown.red,
+  },
+  badgeText: {
+    color: Colors.text.primary,
+    fontSize: 10,
+    fontWeight: '800',
+    lineHeight: 12,
+    fontVariant: ['tabular-nums'],
   },
   label: {
     color: Colors.text.faint,

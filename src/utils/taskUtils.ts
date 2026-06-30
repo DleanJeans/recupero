@@ -31,6 +31,14 @@ export function getTaskStarsForDate(tasks: TaskEntry[] | undefined, dateStr: str
   }, 0);
 }
 
+export function getUncompletedTaskCountForDate(
+  tasks: TaskEntry[] | undefined,
+  dateStr: string,
+  dayCutoffHour = 0,
+): number {
+  return getTasksForDate(tasks, dateStr, dayCutoffHour).filter(task => !isTaskCompleteOnDate(task, dateStr)).length;
+}
+
 export function timestampForTaskDate(dateStr: string, dayCutoffHour = 0): number {
   const todayStr = toDateString(new Date(), dayCutoffHour);
   if (dateStr === todayStr) return Date.now();
