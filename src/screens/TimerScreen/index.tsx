@@ -137,14 +137,17 @@ export function TimerScreen() {
               canSubmit={selectedBehaviorId != null}
             />
 
-            {availableBehaviors.length === 0 && (
-              <Button
-                variant="secondary"
-                onPress={() => navigation.navigate('BehaviorForm', {})}
-              >
-                + Add new behavior
-              </Button>
-            )}
+            <Button
+              variant="secondary"
+              onPress={() =>
+                navigation.navigate('BehaviorForm', {
+                  defaultXpEnabled: true,
+                  defaultDurationXpEnabled: true,
+                })
+              }
+            >
+              + Add new timed behavior
+            </Button>
           </>
         )}
       </ScrollView>

@@ -16,6 +16,8 @@ export type RootStackParamList = {
   BehaviorForm: {
     behaviorId?: string;
     defaultCategoryId?: string;
+    defaultXpEnabled?: boolean;
+    defaultDurationXpEnabled?: boolean;
   };
   Settings: undefined;
 };

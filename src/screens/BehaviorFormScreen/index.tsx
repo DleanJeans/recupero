@@ -52,7 +52,7 @@ function iconForStore(raw: string): BehaviorEntry['icon'] | undefined {
 export function BehaviorFormScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'BehaviorForm'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { behaviorId, defaultCategoryId } = route.params;
+  const { behaviorId, defaultCategoryId, defaultXpEnabled, defaultDurationXpEnabled } = route.params;
 
   const behavior = useBehaviorStore(
     useCallback(state => (behaviorId ? state.behaviors.find(b => b.id === behaviorId) : undefined), [behaviorId]),
@@ -70,9 +70,13 @@ export function BehaviorFormScreen() {
   const handleCategoryChange = (id: string | undefined | null) => setCategoryId(id ?? undefined);
   const [emojiKeyboardOpen, setEmojiKeyboardOpen] = useState(false);
   const [isPrivate, setIsPrivate] = useState(() => behavior?.private ?? false);
-  // New behaviors default to XP-on; existing behaviors inherit their saved state.
-  const [xpEnabled, setXpEnabled] = useState(behavior?.xpEnabled === true);
-  const [durationXpEnabled, setDurationXpEnabled] = useState(behavior?.durationXpEnabled === true);
+  // Existing behaviors inherit their saved state; new behaviors can receive route-specific defaults.
+  const [xpEnabled, setXpEnabled] = useState(() =>
+    behavior ? behavior.xpEnabled === true : defaultXpEnabled === true,
+  );
+  const [durationXpEnabled, setDurationXpEnabled] = useState(() =>
+    behavior ? behavior.durationXpEnabled === true : defaultDurationXpEnabled === true,
+  );
   const [type, setType] = useState<BehaviorType>(behavior?.type ?? 'neutral');
   const [cooldownMinutes, setCooldownMinutes] = useState(() => behavior?.cooldownMinutes || 0);
   const [cooldownType, setCooldownType] = useState<'rest' | 'limit'>(() => behavior?.cooldownType || 'rest');
