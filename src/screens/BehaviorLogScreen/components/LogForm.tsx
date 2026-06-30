@@ -8,8 +8,8 @@ import { useBehaviorStore } from '../../../store/behaviorStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import type { BehaviorEntry, MetadataField } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
-import { timestampForDateTime, toDateString } from '../../../utils/dateUtils';
-import { getDayMaxTimestamp, getDefaultTimedLogStartTimestamp } from '../../../utils/logUtils';
+import { toDateString } from '../../../utils/dateUtils';
+import { getDayMaxTimestamp, getDefaultTimedLogStartTimestamp, getLogFormTimestamp } from '../../../utils/logUtils';
 import {
   buildCalculatedMetadata,
   formatMetadataFieldLabel,
@@ -128,8 +128,9 @@ export function LogForm({
   const maxTimeMinutes = useMemo(() => {
     if (selectedDate !== todayStr) return 23 * 60 + 59;
     const date = new Date(maxTimestampForDate);
+    if (dayCutoffHour > 0 && date.getHours() < dayCutoffHour) return 23 * 60 + 59;
     return date.getHours() * 60 + date.getMinutes();
-  }, [maxTimestampForDate, selectedDate, todayStr]);
+  }, [dayCutoffHour, maxTimestampForDate, selectedDate, todayStr]);
 
   useEffect(() => {
     const clampedEndMinutes = Math.min(endMinutes, maxTimeMinutes);
@@ -221,8 +222,14 @@ export function LogForm({
     (event: GestureResponderEvent) => {
       const logHour = showTimeRange ? startHour : endHour;
       const logMinute = showTimeRange ? startMinute : endMinute;
-      const rawStartTimestamp = timestampForDateTime(selectedDate, logHour, logMinute, dayCutoffHour);
-      const rawEndTimestamp = timestampForDateTime(selectedDate, endHour, endMinute, dayCutoffHour);
+      const rawStartTimestamp = getLogFormTimestamp(
+        selectedDate,
+        logHour,
+        logMinute,
+        dayCutoffHour,
+        maxTimestampForDate,
+      );
+      const rawEndTimestamp = getLogFormTimestamp(selectedDate, endHour, endMinute, dayCutoffHour, maxTimestampForDate);
       const endTimestamp = Math.min(rawEndTimestamp, maxTimestampForDate);
       const startTimestamp = Math.min(rawStartTimestamp, endTimestamp);
       const saveEndTimestamp = showTimeRange ? endTimestamp : undefined;

@@ -1,5 +1,5 @@
 import type { LogEntry } from '../types/behavior';
-import { getDayStartTimestamp, MS_PER_DAY, toDateString } from './dateUtils';
+import { getDayStartTimestamp, MS_PER_DAY, timestampForDateTime, toDateString } from './dateUtils';
 import { MS_PER_MINUTE } from './timeUtils';
 
 export const LEGACY_LOG_XP = 5;
@@ -46,4 +46,21 @@ export function getDayMaxTimestamp(dateStr: string, now: Date = new Date(), dayC
 export function getDefaultTimedLogStartTimestamp(now: Date = new Date(), dayCutoffHour = 0): number {
   const todayStart = getDayStartTimestamp(toDateString(now, dayCutoffHour), dayCutoffHour);
   return Math.max(todayStart, now.getTime() - LEGACY_LOG_XP * MS_PER_MINUTE);
+}
+
+export function getLogFormTimestamp(
+  dateStr: string,
+  hour: number,
+  minute: number,
+  dayCutoffHour = 0,
+  maxTimestamp = Date.now(),
+): number {
+  const timestamp = timestampForDateTime(dateStr, hour, minute, dayCutoffHour);
+  if (timestamp <= maxTimestamp || dayCutoffHour <= 0 || hour >= dayCutoffHour) return timestamp;
+
+  const maxDate = new Date(maxTimestamp);
+  if (dateStr !== toDateString(maxDate)) return timestamp;
+
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day, hour, minute, 0, 0).getTime();
 }
