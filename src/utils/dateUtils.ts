@@ -56,10 +56,7 @@ export function operationalDayDiff(
 
 function daysAgo(dateStr: string, dayCutoffHour = DEFAULT_DAY_CUTOFF_HOUR): number {
   const now = new Date();
-  const today = parseISO(toDateString(now, dayCutoffHour));
-  const date = parseISO(dateStr);
-  const diff = today.getTime() - date.getTime();
-  return Math.floor(diff / MS_PER_DAY);
+  return operationalDayDiff(now, timestampAtOperationalMidday(dateStr, dayCutoffHour), dayCutoffHour);
 }
 
 /** Returns a new Date set to one day before the given date (default: now). */
@@ -123,20 +120,23 @@ export function getMonthStart(dateStr: string): string {
 }
 
 /** Relative day label. Returns "Today", "Yesterday", weekday (this week),
- *  "Last {weekday}" (last week), or empty string for older dates.
- *  When empty, the date picker already shows the date — hide the label. */
+ *  "Last {weekday}" (last week), or "{n}d ago" for older dates. */
 export function describeDay(dateStr: string, dayCutoffHour = DEFAULT_DAY_CUTOFF_HOUR): string {
   const date = parseISO(dateStr);
   const today = new Date();
+  const todayStr = toDateString(today, dayCutoffHour);
+  const yesterdayStr = toDateString(yesterday(today, dayCutoffHour));
 
-  if (toDateString(date) === toDateString(today, dayCutoffHour)) return Label.TODAY;
-  if (toDateString(date) === toDateString(yesterday(today, dayCutoffHour))) return Label.YESTERDAY;
+  if (dateStr === todayStr) return Label.TODAY;
+  if (dateStr === yesterdayStr) return Label.YESTERDAY;
 
   const ago = daysAgo(dateStr, dayCutoffHour);
   const weekday = date.toLocaleDateString('en-US', { weekday: 'long' });
+  const thisWeekStart = getWeekStart(todayStr);
+  const lastWeekStart = addDaysToDateString(thisWeekStart, -7);
 
-  if (ago < 7) return weekday;
-  if (ago < 14) return `${Label.LAST_PREFIX}${weekday}`;
+  if (ago < 7 && dateStr >= thisWeekStart) return weekday;
+  if (dateStr >= lastWeekStart && dateStr < thisWeekStart) return `${Label.LAST_PREFIX} ${weekday}`;
 
-  return '';
+  return `${ago}d${Label.AGO}`;
 }

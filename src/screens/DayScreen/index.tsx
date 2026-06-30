@@ -7,7 +7,7 @@ import { useBehaviorStore } from '../../store/behaviorStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { getAllDailyMetadataTotals } from '../../utils/behaviorUtils';
 import { Colors } from '../../utils/colors';
-import { describeDay, toDateString } from '../../utils/dateUtils';
+import { toDateString } from '../../utils/dateUtils';
 import { getLogEndTimestamp } from '../../utils/logUtils';
 import { getThresholds, getTotalStarsForDate } from '../../utils/starUtils';
 import { getTaskStarsForDate } from '../../utils/taskUtils';
@@ -69,7 +69,6 @@ export function DayScreen() {
     return behaviorStars + taskStars;
   }, [behaviors, dayCutoffHour, selectedDate, hasOptedInLog, taskStars]);
   const hasStars = hasOptedInLog || taskStars > 0;
-  const dayLabel = describeDay(selectedDate, dayCutoffHour);
   const summaryItems = useMemo(
     () => [
       { label: 'entries', value: totalEntries },
@@ -84,9 +83,8 @@ export function DayScreen() {
           ]
         : []),
       ...(dayLogs.length > 1 && daySpan ? [{ label: 'span', value: formatDuration(daySpan.spanMs) }] : []),
-      ...(dayLabel !== '' ? [{ label: 'when', value: dayLabel }] : []),
     ],
-    [dayLabel, dayLogs.length, daySpan, hasStars, totalEntries, totalStars],
+    [dayLogs.length, daySpan, hasStars, totalEntries, totalStars],
   );
 
   // Navigate days

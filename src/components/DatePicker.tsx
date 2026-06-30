@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
+import { useSettingsStore } from '../store/settingsStore';
 import { Colors } from '../utils/colors';
-import { formatDateDisplay } from '../utils/dateUtils';
+import { describeDay, formatDateDisplay } from '../utils/dateUtils';
 import { Text } from './Text';
 
 interface DatePickerProps {
@@ -15,6 +16,8 @@ interface DatePickerProps {
 
 export function DatePicker({ selectedDate, maxDate, minDate, onSelect }: DatePickerProps) {
   const [open, setOpen] = useState(false);
+  const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
+  const dayDescription = describeDay(selectedDate, dayCutoffHour);
 
   return (
     <>
@@ -22,7 +25,10 @@ export function DatePicker({ selectedDate, maxDate, minDate, onSelect }: DatePic
         style={styles.dateField}
         onPress={() => setOpen(true)}
       >
-        <Text style={styles.dateFieldText}>{formatDateDisplay(selectedDate)}</Text>
+        <View style={styles.dateTextGroup}>
+          <Text style={styles.dateFieldText}>{formatDateDisplay(selectedDate)}</Text>
+          <Text style={styles.dateDescriptionText}>{dayDescription}</Text>
+        </View>
         <Ionicons
           name="calendar-outline"
           size={18}
@@ -85,7 +91,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
+  dateTextGroup: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   dateFieldText: { color: Colors.text.primary, fontSize: 16, fontWeight: '500' },
+  dateDescriptionText: { color: Colors.text.light, fontSize: 10, fontWeight: '600' },
   calendarOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',

@@ -9,7 +9,7 @@ import { useBehaviorStore } from '../../store/behaviorStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import type { TaskEntry, TaskStarValue } from '../../types/task';
 import { Colors } from '../../utils/colors';
-import { describeDay, toDateString } from '../../utils/dateUtils';
+import { toDateString } from '../../utils/dateUtils';
 import { getTaskStarsForDate, getTasksForDate, isTaskCompleteOnDate } from '../../utils/taskUtils';
 import { DateNavigationRow } from '../components/DateNavigationRow';
 import { SummaryRow } from '../components/SummaryRow';
@@ -54,7 +54,6 @@ export function TaskScreen() {
     [dayTasks, selectedDate],
   );
   const taskStars = useMemo(() => getTaskStarsForDate(tasks, selectedDate), [tasks, selectedDate]);
-  const dayLabel = describeDay(selectedDate, dayCutoffHour);
   const summaryItems = useMemo(
     () => [
       { label: 'done', value: completedCount },
@@ -65,9 +64,8 @@ export function TaskScreen() {
         icon: 'star' as const,
         accessibilityLabel: `${taskStars} task stars on this date`,
       },
-      ...(dayLabel !== '' ? [{ label: 'when', value: dayLabel }] : []),
     ],
-    [completedCount, dayLabel, dayTasks.length, taskStars],
+    [completedCount, dayTasks.length, taskStars],
   );
 
   const resetComposer = () => {

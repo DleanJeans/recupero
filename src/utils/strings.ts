@@ -1,7 +1,7 @@
 export const Label = {
   TODAY: 'Today',
   YESTERDAY: 'Yesterday',
-  LAST_PREFIX: 'Last ',
+  LAST_PREFIX: 'Last',
   LAST_WEEK: 'Last Week',
   LAST_MONTH: 'Last Month',
   LAST_YEAR: 'Last Year',
