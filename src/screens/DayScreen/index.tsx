@@ -6,6 +6,7 @@ import { Text } from '../../components/Text';
 import { useBehaviorStore } from '../../store/behaviorStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { getAllDailyMetadataTotals } from '../../utils/behaviorUtils';
+import { getCalendarStarMetrics } from '../../utils/calendarMetrics';
 import { Colors } from '../../utils/colors';
 import { toDateString } from '../../utils/dateUtils';
 import { getLogEndTimestamp } from '../../utils/logUtils';
@@ -64,6 +65,10 @@ export function DayScreen() {
   // Summary item renders when either source contributed stars.
   const hasOptedInLog = useMemo(() => dayLogs.some(entry => getThresholds(entry.behavior) !== undefined), [dayLogs]);
   const taskStars = useMemo(() => getTaskStarsForDate(tasks, selectedDate), [tasks, selectedDate]);
+  const calendarDayMetrics = useMemo(
+    () => getCalendarStarMetrics(behaviors, tasks, dayCutoffHour),
+    [behaviors, dayCutoffHour, tasks],
+  );
   const totalStars = useMemo(() => {
     const behaviorStars = hasOptedInLog ? getTotalStarsForDate(behaviors, selectedDate, dayCutoffHour) : 0;
     return behaviorStars + taskStars;
@@ -117,6 +122,8 @@ export function DayScreen() {
       <DateNavigationRow
         selectedDate={selectedDate}
         maxDate={todayStr}
+        dayMetrics={calendarDayMetrics}
+        dayMetricType="stars"
         nextDisabled={isToday}
         onSelect={setSelectedDate}
         onPrevious={goToPrevDay}

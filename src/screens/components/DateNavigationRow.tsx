@@ -2,11 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { DatePicker } from '../../components/DatePicker';
+import type { CalendarDayMetrics, CalendarDayMetricType } from '../../utils/calendarMetrics';
 import { Colors } from '../../utils/colors';
 
 interface DateNavigationRowProps {
   selectedDate: string;
   maxDate?: string;
+  dayMetrics?: CalendarDayMetrics;
+  dayMetricType?: CalendarDayMetricType;
   nextDisabled?: boolean;
   onSelect: (date: string) => void;
   onPrevious: () => void;
@@ -16,6 +19,8 @@ interface DateNavigationRowProps {
 export function DateNavigationRow({
   selectedDate,
   maxDate,
+  dayMetrics,
+  dayMetricType,
   nextDisabled = false,
   onSelect,
   onPrevious,
@@ -39,6 +44,8 @@ export function DateNavigationRow({
         <DatePicker
           selectedDate={selectedDate}
           maxDate={maxDate}
+          dayMetrics={dayMetrics}
+          dayMetricType={dayMetricType}
           onSelect={onSelect}
         />
       </View>

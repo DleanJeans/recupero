@@ -1,23 +1,40 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import type { CalendarProps } from 'react-native-calendars';
 import { Calendar } from 'react-native-calendars';
 import { useSettingsStore } from '../store/settingsStore';
+import type { CalendarDayMetrics, CalendarDayMetricType } from '../utils/calendarMetrics';
 import { Colors } from '../utils/colors';
 import { describeDay, formatDateDisplay } from '../utils/dateUtils';
+import { CalendarMetricDay } from './CalendarMetricDay';
 import { Text } from './Text';
 
 interface DatePickerProps {
   selectedDate: string;
   maxDate?: string;
   minDate?: string;
+  dayMetrics?: CalendarDayMetrics;
+  dayMetricType?: CalendarDayMetricType;
   onSelect: (dateStr: string) => void;
 }
 
-export function DatePicker({ selectedDate, maxDate, minDate, onSelect }: DatePickerProps) {
+type CalendarDayComponentProps = React.ComponentProps<NonNullable<CalendarProps['dayComponent']>>;
+
+export function DatePicker({ selectedDate, maxDate, minDate, dayMetrics, dayMetricType, onSelect }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const dayDescription = describeDay(selectedDate, dayCutoffHour);
+  const renderCalendarDay = useCallback(
+    (props: CalendarDayComponentProps) => (
+      <CalendarMetricDay
+        {...props}
+        metric={props.date ? dayMetrics?.[props.date.dateString] : undefined}
+        metricType={dayMetricType}
+      />
+    ),
+    [dayMetricType, dayMetrics],
+  );
 
   return (
     <>
@@ -63,6 +80,7 @@ export function DatePicker({ selectedDate, maxDate, minDate, onSelect }: DatePic
                   selectedTextColor: Colors.bg.black,
                 },
               }}
+              {...(dayMetrics ? { dayComponent: renderCalendarDay } : {})}
               theme={{
                 calendarBackground: Colors.bg.input,
                 dayTextColor: Colors.text.primary,

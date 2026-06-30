@@ -8,6 +8,7 @@ import { Text } from '../../components/Text';
 import { useBehaviorStore } from '../../store/behaviorStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import type { TaskEntry, TaskStarValue } from '../../types/task';
+import { getCalendarTaskCompletionMetrics } from '../../utils/calendarMetrics';
 import { Colors } from '../../utils/colors';
 import { toDateString } from '../../utils/dateUtils';
 import { getTaskStarsForDate, getTasksForDate, isTaskCompleteOnDate } from '../../utils/taskUtils';
@@ -54,6 +55,7 @@ export function TaskScreen() {
     [dayTasks, selectedDate],
   );
   const taskStars = useMemo(() => getTaskStarsForDate(tasks, selectedDate), [tasks, selectedDate]);
+  const calendarDayMetrics = useMemo(() => getCalendarTaskCompletionMetrics(tasks), [tasks]);
   const summaryItems = useMemo(
     () => [
       { label: 'done', value: completedCount },
@@ -180,6 +182,8 @@ export function TaskScreen() {
 
       <DateNavigationRow
         selectedDate={selectedDate}
+        dayMetrics={calendarDayMetrics}
+        dayMetricType="tasks"
         onSelect={setSelectedDate}
         onPrevious={goToPrevDay}
         onNext={goToNextDay}
