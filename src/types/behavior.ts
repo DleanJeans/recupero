@@ -61,6 +61,8 @@ export interface BehaviorEntry {
   /** Opt-in XP calculation (level, XP bar). Sub-feature `xpDecay` is gated on this.
    *  Undefined = feature off. */
   xpEnabled?: true;
+  /** Opt-in duration-based XP. Undefined = flat XP per log. */
+  durationXpEnabled?: true;
   /** Opt-in XP decay: lose 1 log's worth (5 XP) every `every` hours/days/weeks/months
    *  since the last log/session end. Undefined = feature off. Ignored at runtime when `xpEnabled` is off. */
   xpDecay?: { every: number; unit: XpDecayUnit };

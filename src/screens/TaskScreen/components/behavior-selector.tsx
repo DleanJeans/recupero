@@ -11,6 +11,7 @@ interface BehaviorSelectorProps {
   selectedBehaviorId: string | undefined;
   query: string;
   showAllWhenEmpty?: boolean;
+  emptyMessage?: string;
   onQueryChange: (query: string) => void;
   onSelect: (behaviorId: string | undefined) => void;
 }
@@ -20,6 +21,7 @@ export function BehaviorSelector({
   selectedBehaviorId,
   query,
   showAllWhenEmpty = false,
+  emptyMessage = 'No behaviors available.',
   onQueryChange,
   onSelect,
 }: BehaviorSelectorProps) {
@@ -38,7 +40,7 @@ export function BehaviorSelector({
   }, [onSelect, selectedBehaviorId, selectedIsVisible]);
 
   if (behaviors.length === 0) {
-    return <Text style={styles.emptyInline}>No behaviors available.</Text>;
+    return <Text style={styles.emptyInline}>{emptyMessage}</Text>;
   }
 
   return (

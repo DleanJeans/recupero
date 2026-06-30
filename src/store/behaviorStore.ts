@@ -33,6 +33,7 @@ interface BehaviorStore {
     xpEnabled?: true,
     xpDecay?: BehaviorEntry['xpDecay'],
     cooldownEnabled?: boolean,
+    durationXpEnabled?: true,
   ) => void;
   updateBehaviorCooldown: (behaviorId: string, cooldownMinutes: number) => void;
   updateBehavior: (
@@ -58,6 +59,7 @@ interface BehaviorStore {
       starPeriod?: StarPeriod | undefined;
       xpEnabled?: true;
       xpDecay?: BehaviorEntry['xpDecay'];
+      durationXpEnabled?: true;
     },
   ) => void;
   logBehavior: (
@@ -111,6 +113,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
         xpEnabled,
         xpDecay,
         cooldownEnabled,
+        durationXpEnabled,
       ) =>
         set(state => ({
           behaviors: [
@@ -135,6 +138,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               starPeriod,
               xpEnabled,
               xpDecay,
+              durationXpEnabled,
             },
           ],
         })),

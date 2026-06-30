@@ -28,7 +28,10 @@ export function TimerScreen() {
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   const availableBehaviors = useMemo(() => {
-    const visibleBehaviors = hidePrivate ? behaviors.filter(behavior => !behavior.private) : behaviors;
+    const timerBehaviors = behaviors.filter(
+      behavior => behavior.xpEnabled === true && behavior.durationXpEnabled === true,
+    );
+    const visibleBehaviors = hidePrivate ? timerBehaviors.filter(behavior => !behavior.private) : timerBehaviors;
     return [...visibleBehaviors].sort((a, b) => a.name.localeCompare(b.name));
   }, [behaviors, hidePrivate]);
   const behaviorById = useMemo(() => new Map(behaviors.map(behavior => [behavior.id, behavior])), [behaviors]);
@@ -127,6 +130,10 @@ export function TimerScreen() {
               showStarPicker={false}
               showCancelButton={false}
               showAllBehaviorsWhenSearchEmpty
+              emptyBehaviorMessage={
+                "No Timed behaviors available.\nTurn on Track XP and Track duration for XP\nin a behavior's settings to use it here."
+              }
+              showSubmitButton={availableBehaviors.length > 0}
               canSubmit={selectedBehaviorId != null}
             />
 
@@ -135,7 +142,7 @@ export function TimerScreen() {
                 variant="secondary"
                 onPress={() => navigation.navigate('BehaviorForm', {})}
               >
-                + Add behavior
+                + Add new behavior
               </Button>
             )}
           </>

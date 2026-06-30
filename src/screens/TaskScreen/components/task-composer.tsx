@@ -25,6 +25,8 @@ interface TaskComposerProps {
   showStarPicker?: boolean;
   showCancelButton?: boolean;
   showAllBehaviorsWhenSearchEmpty?: boolean;
+  emptyBehaviorMessage?: string;
+  showSubmitButton?: boolean;
   canSubmit?: boolean;
 }
 
@@ -45,6 +47,8 @@ export function TaskComposer({
   showStarPicker = true,
   showCancelButton = true,
   showAllBehaviorsWhenSearchEmpty = false,
+  emptyBehaviorMessage,
+  showSubmitButton = true,
   canSubmit,
 }: TaskComposerProps) {
   const hasAttachedBehavior = selectedBehaviorId != null;
@@ -53,7 +57,7 @@ export function TaskComposer({
   const fullWidthSubmitButton = hasAttachedBehavior || (!showCancelButton && !shouldShowStarPicker);
 
   return (
-    <View style={styles.composer}>
+    <View style={[styles.composer, showSubmitButton && { gap: 12 }]}>
       <View style={styles.fields}>
         {showTitleInput && (
           <TextInput
@@ -71,6 +75,7 @@ export function TaskComposer({
           selectedBehaviorId={selectedBehaviorId}
           query={behaviorQuery}
           showAllWhenEmpty={showAllBehaviorsWhenSearchEmpty}
+          emptyMessage={emptyBehaviorMessage}
           onQueryChange={onBehaviorQueryChange}
           onSelect={onBehaviorSelect}
         />
@@ -93,15 +98,17 @@ export function TaskComposer({
             Cancel
           </Button>
         )}
-        <Button
-          variant="primary"
-          size="sm"
-          onPress={onAdd}
-          disabled={!canAdd}
-          style={[styles.footerButton, fullWidthSubmitButton && styles.fullWidthAddButton]}
-        >
-          {submitLabel}
-        </Button>
+        {showSubmitButton && (
+          <Button
+            variant="primary"
+            size="sm"
+            onPress={onAdd}
+            disabled={!canAdd}
+            style={[styles.footerButton, fullWidthSubmitButton && styles.fullWidthAddButton]}
+          >
+            {submitLabel}
+          </Button>
+        )}
       </View>
     </View>
   );
@@ -112,7 +119,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg.card,
     borderRadius: 12,
     padding: 12,
-    gap: 12,
   },
   titleInput: {
     height: 44,

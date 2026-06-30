@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type GestureResponderEvent, Keyboard, KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
 import { Button } from '../../../components/Button';
-import { CheckboxRow } from '../../../components/CheckboxRow';
 import { DatePicker } from '../../../components/DatePicker';
 import { Text, TextInput } from '../../../components/Text';
 import { useBehaviorStore } from '../../../store/behaviorStore';
@@ -81,7 +80,8 @@ export function LogForm({
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [startMinutes, setStartMinutes] = useState(initialStartMinutes);
   const [endMinutes, setEndMinutes] = useState(Math.max(initialStartMinutes, initialEndMinutes));
-  const [showTimeRange, setShowTimeRange] = useState(hasTimerRange || existingLog?.endTimestamp != null);
+  const showTimeRange =
+    hasTimerRange || existingLog?.endTimestamp != null || (!existingLog && behavior.durationXpEnabled === true);
   const [startWheelKey, setStartWheelKey] = useState(0);
   const [endWheelKey, setEndWheelKey] = useState(0);
   const notesRef = useRef<import('react-native').TextInput>(null);
@@ -168,17 +168,6 @@ export function LogForm({
   const handleMetadataBlur = useCallback(() => setMetadataFocused(false), []);
   const handleNotesFocus = useCallback(() => setNotesFocused(true), []);
   const handleNotesBlur = useCallback(() => setNotesFocused(false), []);
-  const handleToggleTimeRange = useCallback(() => {
-    setShowTimeRange(current => {
-      const next = !current;
-      if (next && endMinutes <= startMinutes) {
-        setStartMinutes(Math.max(0, endMinutes - XP_PER_LOG));
-        setStartWheelKey(key => key + 1);
-      }
-      return next;
-    });
-  }, [endMinutes, startMinutes]);
-
   const applyStartMinutes = useCallback(
     (nextMinutes: number) => {
       const clampedMinutes = Math.min(nextMinutes, maxTimeMinutes);
@@ -321,16 +310,6 @@ export function LogForm({
             onSelect={setSelectedDate}
           />
         </View>
-
-        {!hasTimerRange && (
-          <CheckboxRow
-            label="Track duration for XP"
-            checked={showTimeRange}
-            onToggle={handleToggleTimeRange}
-            variant="row"
-            style={styles.timeRangeToggle}
-          />
-        )}
 
         {showTimeRange ? (
           <View style={styles.timePickerRow}>
@@ -484,9 +463,6 @@ const styles = StyleSheet.create({
   },
   datePickerWrapper: {
     marginBottom: 20,
-  },
-  timeRangeToggle: {
-    marginBottom: 8,
   },
   timePickerRow: {
     flexDirection: 'row',

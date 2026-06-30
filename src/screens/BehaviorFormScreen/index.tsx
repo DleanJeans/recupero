@@ -72,6 +72,7 @@ export function BehaviorFormScreen() {
   const [isPrivate, setIsPrivate] = useState(() => behavior?.private ?? false);
   // New behaviors default to XP-on; existing behaviors inherit their saved state.
   const [xpEnabled, setXpEnabled] = useState(behavior?.xpEnabled === true);
+  const [durationXpEnabled, setDurationXpEnabled] = useState(behavior?.durationXpEnabled === true);
   const [type, setType] = useState<BehaviorType>(behavior?.type ?? 'neutral');
   const [cooldownMinutes, setCooldownMinutes] = useState(() => behavior?.cooldownMinutes || 0);
   const [cooldownType, setCooldownType] = useState<'rest' | 'limit'>(() => behavior?.cooldownType || 'rest');
@@ -141,6 +142,7 @@ export function BehaviorFormScreen() {
     setCategoryId(behavior.categoryId);
     setIsPrivate(behavior.private ?? false);
     setXpEnabled(behavior.xpEnabled === true);
+    setDurationXpEnabled(behavior.durationXpEnabled === true);
     setCooldownMinutes(behavior.cooldownMinutes || 0);
     setCooldownType(behavior.cooldownType || 'rest');
     setCooldownUnit(behavior.cooldownUnit);
@@ -178,6 +180,7 @@ export function BehaviorFormScreen() {
       categoryId !== behavior.categoryId ||
       isPrivate !== (behavior.private ?? false) ||
       xpEnabled !== (behavior.xpEnabled === true) ||
+      durationXpEnabled !== (behavior.durationXpEnabled === true) ||
       cooldownEnabled !== (behavior.cooldownEnabled ?? !!behavior.cooldownMinutes) ||
       cooldownMinutes !== (behavior.cooldownMinutes || 0) ||
       cooldownType !== (behavior.cooldownType || 'rest') ||
@@ -241,6 +244,7 @@ export function BehaviorFormScreen() {
         // XP is opt-in. When off, preserve the existing xpDecay config (it's ignored at runtime).
         xpEnabled: xpEnabled ? true : undefined,
         xpDecay: xpEnabled ? (xpDecayEnabled ? xpDecaySerialized : undefined) : behavior?.xpDecay,
+        durationXpEnabled: xpEnabled && durationXpEnabled ? true : undefined,
       });
     } else {
       addBehavior(
@@ -259,6 +263,7 @@ export function BehaviorFormScreen() {
         xpEnabled ? true : undefined,
         xpDecayEnabled ? xpDecaySerialized : undefined,
         cooldownEnabled,
+        xpEnabled && durationXpEnabled ? true : undefined,
       );
     }
     savedRef.current = true;
@@ -366,14 +371,23 @@ export function BehaviorFormScreen() {
             onToggle={() => setXpEnabled(v => !v)}
           >
             {xpEnabled && (
-              <XpDecayInput
-                enabled={xpDecayEnabled}
-                everyMinutes={xpDecayEveryMinutes}
-                unit={xpDecayUnit}
-                onToggle={handleXpDecayToggle}
-                onChangeMinutes={handleXpDecayChangeMinutes}
-                onUnitChange={handleXpDecayUnitChange}
-              />
+              <View style={styles.xpOptions}>
+                <CheckboxRow
+                  label="Track duration for XP"
+                  hint="Use start and end time, awarding 1 XP per minute"
+                  checked={durationXpEnabled}
+                  onToggle={() => setDurationXpEnabled(v => !v)}
+                  variant="row"
+                />
+                <XpDecayInput
+                  enabled={xpDecayEnabled}
+                  everyMinutes={xpDecayEveryMinutes}
+                  unit={xpDecayUnit}
+                  onToggle={handleXpDecayToggle}
+                  onChangeMinutes={handleXpDecayChangeMinutes}
+                  onUnitChange={handleXpDecayUnitChange}
+                />
+              </View>
             )}
           </CheckboxRow>
 
@@ -600,6 +614,9 @@ const styles = StyleSheet.create({
     color: Colors.text.muted,
     fontSize: 13,
     fontWeight: '600',
+  },
+  xpOptions: {
+    gap: 10,
   },
   typeRow: {
     flexDirection: 'row',
