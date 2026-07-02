@@ -130,7 +130,7 @@ export function HomeScreen() {
             color={Colors.text.faint}
             size="small"
           />
-          <Text style={styles.listLoadingText}>Loading behaviors...</Text>
+          <Text style={styles.listLoadingText}>Loading</Text>
         </View>
       ) : (
         <BehaviorList
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    paddingBottom: 140,
+    paddingBottom: 100,
   },
   listLoadingText: {
     color: Colors.text.faint,

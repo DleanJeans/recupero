@@ -2,13 +2,15 @@ import { NavigationContainer, useNavigationContainerRef } from '@react-navigatio
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import 'expo-dev-client';
 import React, { useCallback, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context';
 import { BottomNav, type BottomNavRoute } from './src/components/BottomNav';
 import { ConfettiOverlay } from './src/components/ConfettiOverlay';
+import { Text } from './src/components/Text';
 import { useAppFonts } from './src/hooks/useAppFonts';
+import { useDeferredBottomNavNavigation } from './src/hooks/useDeferredBottomNavNavigation';
 
 import { BehaviorFormScreen } from './src/screens/BehaviorFormScreen';
 import { BehaviorLogScreen } from './src/screens/BehaviorLogScreen';
@@ -18,6 +20,7 @@ import { SettingsScreen } from './src/screens/SettingsScreen';
 import { TaskScreen } from './src/screens/TaskScreen';
 import { TimerScreen } from './src/screens/TimerScreen';
 import type { RootStackParamList } from './src/types/navigation';
+import { Colors } from './src/utils/colors';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const BOTTOM_NAV_ROUTES = new Set<string>(['Home', 'Timer', 'Day', 'Tasks']);
@@ -45,21 +48,24 @@ export default function App() {
   const fontsReady = useAppFonts();
   const navigationRef = useNavigationContainerRef<RootStackParamList>();
   const [activeRouteName, setActiveRouteName] = useState<string | undefined>();
+  const { pendingRouteName, deferNavigation, completeNavigation } = useDeferredBottomNavNavigation<BottomNavRoute>();
 
   const syncActiveRoute = useCallback(() => {
-    setActiveRouteName(navigationRef.getCurrentRoute()?.name);
-  }, [navigationRef]);
+    const routeName = navigationRef.getCurrentRoute()?.name;
+    setActiveRouteName(routeName);
+    completeNavigation(routeName);
+  }, [completeNavigation, navigationRef]);
 
   const handleBottomNavNavigate = useCallback(
     (routeName: BottomNavRoute) => {
       setActiveRouteName(routeName);
-      requestAnimationFrame(() => {
+      deferNavigation(routeName, () => {
         if (navigationRef.isReady()) {
           navigationRef.navigate(routeName);
         }
       });
     },
-    [navigationRef],
+    [deferNavigation, navigationRef],
   );
 
   if (!fontsReady) return null;
@@ -119,6 +125,15 @@ export default function App() {
                     component={SettingsScreen}
                   />
                 </Stack.Navigator>
+                {pendingRouteName != null && (
+                  <View style={styles.screenLoading}>
+                    <ActivityIndicator
+                      color={Colors.text.faint}
+                      size="small"
+                    />
+                    <Text style={styles.screenLoadingText}>Loading</Text>
+                  </View>
+                )}
               </View>
               {isBottomNavRoute(activeRouteName) && (
                 <BottomNav
@@ -141,5 +156,17 @@ const styles = StyleSheet.create({
   },
   navigator: {
     flex: 1,
+  },
+  screenLoading: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: Colors.bg.primary,
+  },
+  screenLoadingText: {
+    color: Colors.text.faint,
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
