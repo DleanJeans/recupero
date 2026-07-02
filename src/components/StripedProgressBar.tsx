@@ -22,6 +22,7 @@ interface Props {
   direction?: -1 | 1;
   /** Track height in pixels. */
   height?: number;
+  motionEnabled?: boolean;
 }
 
 /** Translucent stripe + transparent gap. */
@@ -48,8 +49,51 @@ const RATIO_SPRING = { damping: 18, stiffness: 120, mass: 0.8 } as const;
 /** Animated progress bar: solid fill clipped to `ratio` width, with a
  *  diagonally-striped overlay that scrolls while progress is active. Used as
  *  the visual base for both DecayBar and CooldownBar. */
-export function StripedProgressBar({ ratio, color, direction = -1, height = 3 }: Props) {
+export function StripedProgressBar({ ratio, color, direction = -1, height = 3, motionEnabled = true }: Props) {
   const safeRatio = Math.max(0, Math.min(1, ratio));
+
+  if (!motionEnabled) {
+    return (
+      <StaticStripedProgressBar
+        ratio={safeRatio}
+        color={color}
+        height={height}
+      />
+    );
+  }
+
+  return (
+    <AnimatedStripedProgressBar
+      ratio={safeRatio}
+      color={color}
+      direction={direction}
+      height={height}
+    />
+  );
+}
+
+interface StaticStripedProgressBarProps {
+  ratio: number;
+  color: string;
+  height: number;
+}
+
+function StaticStripedProgressBar({ ratio, color, height }: StaticStripedProgressBarProps) {
+  return (
+    <View style={[styles.track, { height }]}>
+      <View style={[styles.fill, { backgroundColor: color, width: `${ratio * 100}%` }]} />
+    </View>
+  );
+}
+
+interface AnimatedStripedProgressBarProps {
+  ratio: number;
+  color: string;
+  direction: -1 | 1;
+  height: number;
+}
+
+function AnimatedStripedProgressBar({ ratio: safeRatio, color, direction, height }: AnimatedStripedProgressBarProps) {
   // Stripes signal an ongoing process; skip the overlay once the bar is full
   // because the solid fill already says "done".
   const showStripes = safeRatio < 1;

@@ -31,6 +31,7 @@ interface Props {
   emptyColor?: string;
   /** Style for the outer container. */
   style?: StyleProp<ViewStyle>;
+  motionEnabled?: boolean;
 }
 
 export function StarRow({
@@ -40,6 +41,7 @@ export function StarRow({
   color = Colors.star.filled,
   emptyColor = Colors.star.empty,
   style,
+  motionEnabled = true,
 }: Props) {
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const thresholds = getThresholds(behavior);
@@ -60,6 +62,7 @@ export function StarRow({
     slots.push({ key: i, filled: slots.length < earned, threshold: t });
   }
   const earnedCount = slots.filter(s => s.filled).length;
+  const Slot = motionEnabled ? AnimatedStarSlot : StaticStarSlot;
 
   return (
     <View
@@ -68,7 +71,7 @@ export function StarRow({
       accessibilityLabel={`${earnedCount} of ${slots.length} stars earned`}
     >
       {slots.map(({ key, filled, threshold }) => (
-        <StarSlot
+        <Slot
           key={key}
           filled={filled}
           threshold={threshold}
@@ -89,9 +92,30 @@ interface StarSlotProps {
   emptyColor: string;
 }
 
+function StaticStarSlot({ filled, threshold, size, color, emptyColor }: StarSlotProps) {
+  return (
+    <View style={styles.slot}>
+      <Text
+        style={[styles.threshold, { color: filled ? color : Colors.text.muted }]}
+        accessibilityLabel={`${threshold} logs to earn`}
+      >
+        {threshold}
+      </Text>
+      <View style={[styles.iconWrap, { width: size, height: size }]}>
+        <Ionicons
+          name={filled ? 'star' : 'star-outline'}
+          size={size}
+          color={filled ? color : emptyColor}
+          accessibilityLabel={threshold == null ? 'star tier skipped' : filled ? 'star earned' : 'star not earned'}
+        />
+      </View>
+    </View>
+  );
+}
+
 /** Single star slot. Owns its own animation state so the pop + ring
  *  fire on a false→true transition without disturbing siblings. */
-function StarSlot({ filled, threshold, size, color, emptyColor }: StarSlotProps) {
+function AnimatedStarSlot({ filled, threshold, size, color, emptyColor }: StarSlotProps) {
   const scale = useSharedValue(1);
   const ringScale = useSharedValue(0.5);
   const ringOpacity = useSharedValue(0);

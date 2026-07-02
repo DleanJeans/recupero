@@ -9,8 +9,9 @@ import { getEffectiveXp } from '../../../utils/xpUtils';
 
 interface Props {
   selectedCategoryId: string | null;
+  motionEnabled?: boolean;
 }
-export function CategoryXpBar({ selectedCategoryId }: Props) {
+export function CategoryXpBar({ selectedCategoryId, motionEnabled = true }: Props) {
   const behaviors = useBehaviorStore(s => s.behaviors);
   const categories = useBehaviorStore(s => s.categories);
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
@@ -41,6 +42,7 @@ export function CategoryXpBar({ selectedCategoryId }: Props) {
           <XpBar
             xp={xp}
             color={Colors.type.category}
+            motionEnabled={motionEnabled}
           />
         </View>
       </View>

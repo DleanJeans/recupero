@@ -33,6 +33,8 @@ interface Props {
   /** 'card' (default) = 16px title (card variant).
    *  'header' = ScreenTitle-sized (28px bold) for screen headers. */
   titleSize?: 'card' | 'header';
+  motionEnabled?: boolean;
+  now?: number;
 }
 
 /** Body for the home card and the BehaviorDetails/BehaviorLog headers:
@@ -45,23 +47,30 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
   dateStr,
   titleOverride,
   titleSize = 'card',
+  motionEnabled = true,
+  now,
 }: Props) {
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const [tick, setTick] = useState(0);
+  const resolvedNow = now ?? Date.now();
 
   // Re-render every minute so "2h ago" / CooldownBar stay current.
   useEffect(() => {
+    if (now != null) return;
     const interval = setInterval(() => setTick(t => t + 1), 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [now]);
 
   const isHeader = titleSize === 'header';
   const effectiveXp = useMemo(
-    () => getEffectiveXp(behavior, Date.now(), dayCutoffHour),
-    [behavior, dayCutoffHour, tick],
+    () => getEffectiveXp(behavior, resolvedNow, dayCutoffHour),
+    [behavior, dayCutoffHour, resolvedNow, tick],
   );
   const behaviorColor = useMemo(() => getBehaviorTypeColor(behavior.type), [behavior.type]);
-  const todayStr = useMemo(() => toDateString(new Date(), dayCutoffHour), [dayCutoffHour, tick]);
+  const todayStr = useMemo(
+    () => toDateString(new Date(resolvedNow), dayCutoffHour),
+    [dayCutoffHour, resolvedNow, tick],
+  );
   const starTargetDate = dateStr ?? todayStr;
   const starLogCountSummary = useMemo(() => {
     const thresholds = getThresholds(behavior);
@@ -87,6 +96,7 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
           behavior={behavior}
           dateStr={starTargetDate}
           size={11}
+          motionEnabled={motionEnabled}
         />
         {starLogCountSummary && <Text style={styles.starLogCount}>{starLogCountSummary}</Text>}
       </View>
@@ -101,13 +111,24 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
           <XpBar
             xp={effectiveXp}
             color={behaviorColor}
-            animateNumbers
+            animateNumbers={motionEnabled}
+            motionEnabled={motionEnabled}
           />
         )}
         <View style={styles.elapsedRow}>
-          <CooldownBar behavior={behavior} />
+          <CooldownBar
+            behavior={behavior}
+            motionEnabled={motionEnabled}
+            now={resolvedNow}
+          />
         </View>
-        {behavior.xpEnabled && behavior.xpDecay && effectiveXp > 0 && <DecayBar behavior={behavior} />}
+        {behavior.xpEnabled && behavior.xpDecay && effectiveXp > 0 && (
+          <DecayBar
+            behavior={behavior}
+            motionEnabled={motionEnabled}
+            now={resolvedNow}
+          />
+        )}
       </View>
     </View>
   );

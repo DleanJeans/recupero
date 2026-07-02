@@ -7,12 +7,15 @@ import { formatElapsedNumeric } from '../utils/timeUtils';
 
 interface Props {
   behavior: BehaviorEntry;
+  now?: number;
 }
 
-export function BehaviorElapsed({ behavior }: Props) {
+export function BehaviorElapsed({ behavior, now }: Props) {
   const color = isCooldownActive(behavior) ? getCooldownColor(behavior) : undefined;
 
-  return <Text style={[styles.elapsed, color ? { color } : null]}>{formatElapsedNumeric(behavior.lastTimestamp)}</Text>;
+  return (
+    <Text style={[styles.elapsed, color ? { color } : null]}>{formatElapsedNumeric(behavior.lastTimestamp, now)}</Text>
+  );
 }
 
 const styles = StyleSheet.create({

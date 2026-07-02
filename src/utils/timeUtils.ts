@@ -43,10 +43,10 @@ interface ElapsedInfo {
   years: number;
 }
 
-function computeElapsed(timestamp: number): { now: Date } & ElapsedInfo {
-  const now = new Date();
+function computeElapsed(timestamp: number, nowMs = Date.now()): { now: Date } & ElapsedInfo {
+  const now = new Date(nowMs);
   const date = new Date(timestamp);
-  const elapsed = now.getTime() - timestamp;
+  const elapsed = nowMs - timestamp;
   const seconds = Math.floor(elapsed / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
@@ -102,10 +102,10 @@ export function formatElapsed(timestamp: number | null): string {
 }
 
 /** Compact relative time label for a timestamp (e.g. "2h ago", "3d ago"). */
-export function formatElapsedNumeric(timestamp: number | null): string {
+export function formatElapsedNumeric(timestamp: number | null, nowMs?: number): string {
   if (timestamp === null) return Label.NEVER;
 
-  const { seconds, minutes, hours, days, weeks, months, years } = computeElapsed(timestamp);
+  const { seconds, minutes, hours, days, weeks, months, years } = computeElapsed(timestamp, nowMs);
 
   if (seconds < 60) return Label.JUST_NOW;
   if (hours < 1) return `${minutes}${Unit.MIN}${Label.AGO}`;

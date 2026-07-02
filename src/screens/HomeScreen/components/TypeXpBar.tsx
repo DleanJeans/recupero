@@ -18,8 +18,9 @@ const TYPE_ORDER: BehaviorType[] = ['desirable', 'neutral', 'undesirable'];
 
 interface Props {
   selectedCategoryId: string | null;
+  motionEnabled?: boolean;
 }
-export function TypeXpBar({ selectedCategoryId }: Props) {
+export function TypeXpBar({ selectedCategoryId, motionEnabled = true }: Props) {
   const behaviors = useBehaviorStore(s => s.behaviors);
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
 
@@ -53,6 +54,7 @@ export function TypeXpBar({ selectedCategoryId }: Props) {
               <XpBar
                 xp={xp}
                 color={getBehaviorTypeColor(type)}
+                motionEnabled={motionEnabled}
               />
             </View>
           </View>

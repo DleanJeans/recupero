@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { SectionList, StyleSheet } from 'react-native';
 import { Text } from '../../../components/Text';
 import { useSettingsStore } from '../../../store/settingsStore';
@@ -17,6 +17,7 @@ interface BehaviorListProps {
   tasks: TaskEntry[];
   selectedCategoryId: string | null;
   searchQuery?: string;
+  motionEnabled?: boolean;
 }
 
 export const BehaviorList = React.memo(function BehaviorList({
@@ -24,9 +25,17 @@ export const BehaviorList = React.memo(function BehaviorList({
   tasks,
   selectedCategoryId,
   searchQuery,
+  motionEnabled = true,
 }: BehaviorListProps) {
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
+  const [now, setNow] = useState(() => Date.now());
   const cooldownSelected = isCooldownCategoryFilterId(selectedCategoryId);
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   const sections = useMemo(
     () =>
       cooldownSelected
@@ -63,9 +72,11 @@ export const BehaviorList = React.memo(function BehaviorList({
         behavior={item}
         showCategory={selectedCategoryId === null || cooldownSelected}
         dateStr={dateForSection(section.title)}
+        motionEnabled={motionEnabled}
+        now={now}
       />
     ),
-    [cooldownSelected, dateForSection, selectedCategoryId],
+    [cooldownSelected, dateForSection, motionEnabled, now, selectedCategoryId],
   );
   const renderSectionHeader = useCallback(
     ({ section }: { section: { title: string } }) => (

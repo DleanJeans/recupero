@@ -19,9 +19,17 @@ interface Props {
    *  When provided, the StarRow reflects earned stars for that date
    *  instead of today. Defaults to today. */
   dateStr?: string;
+  motionEnabled?: boolean;
+  now?: number;
 }
 
-export const BehaviorCard = React.memo(function BehaviorCard({ behavior, showCategory, dateStr }: Props) {
+export const BehaviorCard = React.memo(function BehaviorCard({
+  behavior,
+  showCategory,
+  dateStr,
+  motionEnabled = true,
+  now,
+}: Props) {
   const navigation = useNavigation<NavProp>();
   const removeBehavior = useBehaviorStore(s => s.removeBehavior);
   const swipeableRef = useRef<Swipeable>(null);
@@ -89,6 +97,8 @@ export const BehaviorCard = React.memo(function BehaviorCard({ behavior, showCat
             behavior={behavior}
             showCategory={showCategory}
             dateStr={dateStr}
+            motionEnabled={motionEnabled}
+            now={now}
           />
         </Pressable>
       </View>

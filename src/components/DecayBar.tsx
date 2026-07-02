@@ -11,6 +11,8 @@ import { Text } from './Text';
 
 interface Props {
   behavior: BehaviorEntry;
+  motionEnabled?: boolean;
+  now?: number;
 }
 
 /** Decay color reflects whether decay is "good" or "bad" for the behavior type:
@@ -22,8 +24,8 @@ const DECAY_COLOR: Record<BehaviorType, string> = {
   neutral: getBehaviorTypeColor('neutral'),
 };
 
-export function DecayBar({ behavior }: Props) {
-  const decay = getTimeUntilNextDecay(behavior);
+export function DecayBar({ behavior, motionEnabled = true, now = Date.now() }: Props) {
+  const decay = getTimeUntilNextDecay(behavior, now);
   if (!decay) return null;
   const { daysLeft, everyDays } = decay;
   const isUndesirable = behavior.type === 'undesirable';
@@ -43,6 +45,7 @@ export function DecayBar({ behavior }: Props) {
         ratio={ratio}
         color={color}
         direction={isUndesirable ? 1 : -1}
+        motionEnabled={motionEnabled}
       />
       <Text style={[styles.label, { color }]}>{formatDuration(daysLeft * MS_PER_DAY)}</Text>
     </View>

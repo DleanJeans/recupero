@@ -5,6 +5,7 @@ import { StyleSheet } from 'react-native';
 import { Button } from '../../components/Button';
 import { CategoryFilter } from '../../components/CategoryFilter';
 import { SafeAreaView } from '../../components/SafeAreaView';
+import { useAfterInteractionsFlag } from '../../hooks/useAfterInteractionsFlag';
 import { useBackGuard } from '../../hooks/useBackGuard';
 import { useBehaviorStore } from '../../store/behaviorStore';
 import { useSettingsStore } from '../../store/settingsStore';
@@ -63,6 +64,7 @@ export function HomeScreen() {
 
   const [showXp, setShowXp] = useState(true);
   const addBehaviorDefaultCategoryId = cooldownSelected ? undefined : (selectedCategoryId ?? undefined);
+  const motionEnabled = useAfterInteractionsFlag([behaviors, selectedCategoryId, isSearching, searchQuery, showXp]);
 
   return (
     <SafeAreaView
@@ -93,7 +95,12 @@ export function HomeScreen() {
           }}
         />
       ) : (
-        showXp && <TypeXpBar selectedCategoryId={selectedCategoryId} />
+        showXp && (
+          <TypeXpBar
+            selectedCategoryId={selectedCategoryId}
+            motionEnabled={motionEnabled}
+          />
+        )
       )}
 
       <CategoryFilter
@@ -101,13 +108,21 @@ export function HomeScreen() {
         onSelectCategory={handleSelectCategory}
       />
 
-      {isSearching ? null : showXp && <CategoryXpBar selectedCategoryId={selectedCategoryId} />}
+      {isSearching
+        ? null
+        : showXp && (
+            <CategoryXpBar
+              selectedCategoryId={selectedCategoryId}
+              motionEnabled={motionEnabled}
+            />
+          )}
 
       <BehaviorList
         behaviors={filteredBehaviors}
         tasks={tasks}
         selectedCategoryId={selectedCategoryId}
         searchQuery={isSearching ? searchQuery : undefined}
+        motionEnabled={motionEnabled}
       />
 
       <Button
