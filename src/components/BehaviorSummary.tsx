@@ -34,6 +34,7 @@ interface Props {
    *  'header' = ScreenTitle-sized (28px bold) for screen headers. */
   titleSize?: 'card' | 'header';
   motionEnabled?: boolean;
+  xpMotionEnabled?: boolean;
   starMotionEnabled?: boolean;
   now?: number;
 }
@@ -49,6 +50,7 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
   titleOverride,
   titleSize = 'card',
   motionEnabled = true,
+  xpMotionEnabled = false,
   starMotionEnabled = false,
   now,
 }: Props) {
@@ -113,8 +115,8 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
           <XpBar
             xp={effectiveXp}
             color={behaviorColor}
-            animateNumbers={motionEnabled}
-            motionEnabled={motionEnabled}
+            animateNumbers={xpMotionEnabled}
+            motionEnabled={xpMotionEnabled}
           />
         )}
         <View style={styles.elapsedRow}>

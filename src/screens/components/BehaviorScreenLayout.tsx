@@ -12,6 +12,7 @@ interface Props {
   titleOverride?: string;
   children: React.ReactNode;
   actions?: React.ReactNode;
+  summaryXpMotionEnabled?: boolean;
   summaryStarMotionEnabled?: boolean;
   /** Override back button press. When omitted, defaults to goBack(). */
   onBack?: () => void;
@@ -25,6 +26,7 @@ export function BehaviorScreenLayout({
   titleOverride,
   children,
   actions,
+  summaryXpMotionEnabled,
   summaryStarMotionEnabled,
   onBack,
 }: Props) {
@@ -37,6 +39,7 @@ export function BehaviorScreenLayout({
           showCategory
           titleSize="header"
           titleOverride={titleOverride}
+          xpMotionEnabled={summaryXpMotionEnabled}
           starMotionEnabled={summaryStarMotionEnabled}
         />
       </View>

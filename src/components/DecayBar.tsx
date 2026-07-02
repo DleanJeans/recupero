@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import type { BehaviorEntry, BehaviorType } from '../types/behavior';
 import { getBehaviorTypeColor } from '../utils/behaviorTypeUtils';
 import { Colors } from '../utils/colors';
-import { formatDuration, MS_PER_DAY } from '../utils/timeUtils';
+import { formatDuration, MS_PER_DAY, MS_PER_MINUTE } from '../utils/timeUtils';
 import { getTimeUntilNextDecay } from '../utils/xpUtils';
 import { StripedProgressBar } from './StripedProgressBar';
 import { Text } from './Text';
@@ -23,6 +23,7 @@ const DECAY_COLOR: Record<BehaviorType, string> = {
   undesirable: Colors.cooldown.green,
   neutral: getBehaviorTypeColor('neutral'),
 };
+const STRIPE_ANIMATION_MIN_DURATION_MS = 2 * 60 * MS_PER_MINUTE;
 
 export function DecayBar({ behavior, motionEnabled = true, now = Date.now() }: Props) {
   const decay = getTimeUntilNextDecay(behavior, now);
@@ -33,6 +34,8 @@ export function DecayBar({ behavior, motionEnabled = true, now = Date.now() }: P
   // For undesirable: decay is a reward, so invert — bar fills as we approach it.
   const ratio = isUndesirable ? 1 - daysLeft / everyDays : daysLeft / everyDays;
   const color = DECAY_COLOR[behavior.type ?? 'neutral'];
+  const timeUntilNextDecayMs = daysLeft * MS_PER_DAY;
+  const stripeMotionEnabled = motionEnabled && timeUntilNextDecayMs > STRIPE_ANIMATION_MIN_DURATION_MS;
 
   return (
     <View style={styles.row}>
@@ -45,7 +48,7 @@ export function DecayBar({ behavior, motionEnabled = true, now = Date.now() }: P
         ratio={ratio}
         color={color}
         direction={isUndesirable ? 1 : -1}
-        motionEnabled={motionEnabled}
+        motionEnabled={stripeMotionEnabled}
       />
       <Text style={[styles.label, { color }]}>{formatDuration(daysLeft * MS_PER_DAY)}</Text>
     </View>

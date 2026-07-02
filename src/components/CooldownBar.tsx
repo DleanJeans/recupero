@@ -8,6 +8,8 @@ import { formatCooldown, MS_PER_MINUTE } from '../utils/timeUtils';
 import { BehaviorElapsed } from './BehaviorElapsed';
 import { StripedProgressBar } from './StripedProgressBar';
 
+const STRIPE_ANIMATION_MIN_DURATION_MS = 2 * 60 * MS_PER_MINUTE;
+
 interface Props {
   behavior: BehaviorEntry;
   motionEnabled?: boolean;
@@ -28,6 +30,7 @@ export function CooldownBar({ behavior, motionEnabled = true, now = Date.now() }
   const elapsedMs = now - behavior.lastTimestamp;
   const cooldownMs = behavior.cooldownMinutes * MS_PER_MINUTE;
   const ratio = elapsedMs / cooldownMs;
+  const stripeMotionEnabled = motionEnabled && cooldownMs > STRIPE_ANIMATION_MIN_DURATION_MS && ratio < 1;
 
   return (
     <View style={styles.row}>
@@ -40,7 +43,7 @@ export function CooldownBar({ behavior, motionEnabled = true, now = Date.now() }
         ratio={ratio}
         color={color}
         direction={1}
-        motionEnabled={motionEnabled}
+        motionEnabled={stripeMotionEnabled}
       />
       <BehaviorElapsed
         behavior={behavior}

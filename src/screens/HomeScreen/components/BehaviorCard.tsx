@@ -98,6 +98,7 @@ export const BehaviorCard = React.memo(function BehaviorCard({
             showCategory={showCategory}
             dateStr={dateStr}
             motionEnabled={motionEnabled}
+            xpMotionEnabled={false}
             now={now}
           />
         </Pressable>
