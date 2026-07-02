@@ -1,12 +1,14 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { startTransition, useCallback, useEffect, useMemo, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Button } from '../../components/Button';
 import { CategoryFilter } from '../../components/CategoryFilter';
 import { SafeAreaView } from '../../components/SafeAreaView';
+import { Text } from '../../components/Text';
 import { useAfterInteractionsFlag } from '../../hooks/useAfterInteractionsFlag';
 import { useBackGuard } from '../../hooks/useBackGuard';
+import { useDeferredCategorySelection } from '../../hooks/useDeferredCategorySelection';
 import { useBehaviorStore } from '../../store/behaviorStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import type { RootStackParamList } from '../../types/navigation';
@@ -25,21 +27,26 @@ export function HomeScreen() {
   const categories = useBehaviorStore(s => s.categories);
   const tasks = useBehaviorStore(s => s.tasks);
   const hidePrivate = useSettingsStore(s => s.hidePrivate);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const {
+    selectedCategoryId,
+    listCategoryId,
+    renderedSummaryCategoryId,
+    categoryListPending,
+    selectCategory,
+    resetCategorySelection,
+  } = useDeferredCategorySelection();
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [cooldownSortTick, setCooldownSortTick] = useState(0);
   const cooldownSelected = isCooldownCategoryFilterId(selectedCategoryId);
-  const handleSelectCategory = useCallback((id: string | null) => {
-    startTransition(() => setSelectedCategoryId(id));
-  }, []);
+  const listCooldownSelected = isCooldownCategoryFilterId(listCategoryId);
 
   // Reset selection if the selected category no longer exists
   useEffect(() => {
     if (selectedCategoryId !== null && !cooldownSelected && !categories.some(c => c.id === selectedCategoryId)) {
-      setSelectedCategoryId(null);
+      resetCategorySelection();
     }
-  }, [categories, cooldownSelected, selectedCategoryId]);
+  }, [categories, cooldownSelected, resetCategorySelection, selectedCategoryId]);
 
   useEffect(() => {
     if (!cooldownSelected) return;
@@ -50,17 +57,17 @@ export function HomeScreen() {
   const filteredBehaviors = useMemo(() => {
     let result = behaviors;
     if (hidePrivate) result = result.filter(b => !b.private);
-    if (cooldownSelected) {
+    if (listCooldownSelected) {
       result = getCooldownBehaviors(result);
-    } else if (selectedCategoryId !== null) {
-      result = result.filter(b => b.categoryId === selectedCategoryId);
+    } else if (listCategoryId !== null) {
+      result = result.filter(b => b.categoryId === listCategoryId);
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       result = result.filter(b => b.name.toLowerCase().includes(q));
     }
     return result;
-  }, [behaviors, cooldownSelected, cooldownSortTick, selectedCategoryId, hidePrivate, searchQuery]);
+  }, [behaviors, listCooldownSelected, cooldownSortTick, listCategoryId, hidePrivate, searchQuery]);
 
   const [showXp, setShowXp] = useState(true);
   const addBehaviorDefaultCategoryId = cooldownSelected ? undefined : (selectedCategoryId ?? undefined);
@@ -97,7 +104,7 @@ export function HomeScreen() {
       ) : (
         showXp && (
           <TypeXpBar
-            selectedCategoryId={selectedCategoryId}
+            selectedCategoryId={renderedSummaryCategoryId}
             motionEnabled={motionEnabled}
           />
         )
@@ -105,25 +112,35 @@ export function HomeScreen() {
 
       <CategoryFilter
         selectedCategoryId={selectedCategoryId}
-        onSelectCategory={handleSelectCategory}
+        onSelectCategory={selectCategory}
       />
 
       {isSearching
         ? null
         : showXp && (
             <CategoryXpBar
-              selectedCategoryId={selectedCategoryId}
+              selectedCategoryId={renderedSummaryCategoryId}
               motionEnabled={motionEnabled}
             />
           )}
 
-      <BehaviorList
-        behaviors={filteredBehaviors}
-        tasks={tasks}
-        selectedCategoryId={selectedCategoryId}
-        searchQuery={isSearching ? searchQuery : undefined}
-        motionEnabled={motionEnabled}
-      />
+      {categoryListPending ? (
+        <View style={styles.listLoading}>
+          <ActivityIndicator
+            color={Colors.text.faint}
+            size="small"
+          />
+          <Text style={styles.listLoadingText}>Loading behaviors...</Text>
+        </View>
+      ) : (
+        <BehaviorList
+          behaviors={filteredBehaviors}
+          tasks={tasks}
+          selectedCategoryId={listCategoryId}
+          searchQuery={isSearching ? searchQuery : undefined}
+          motionEnabled={motionEnabled}
+        />
+      )}
 
       <Button
         fab
@@ -144,5 +161,17 @@ const styles = StyleSheet.create({
   },
   addButton: {
     bottom: 0,
+  },
+  listLoading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingBottom: 140,
+  },
+  listLoadingText: {
+    color: Colors.text.faint,
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
