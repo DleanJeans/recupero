@@ -12,6 +12,7 @@ interface Props {
   titleOverride?: string;
   children: React.ReactNode;
   actions?: React.ReactNode;
+  summaryStarMotionEnabled?: boolean;
   /** Override back button press. When omitted, defaults to goBack(). */
   onBack?: () => void;
 }
@@ -19,7 +20,14 @@ interface Props {
 /** Shared layout for behavior detail/log screens.
  *  Renders a back button + BehaviorSummary header, a scalable children area,
  *  and an optional bottom action bar. */
-export function BehaviorScreenLayout({ behavior, titleOverride, children, actions, onBack }: Props) {
+export function BehaviorScreenLayout({
+  behavior,
+  titleOverride,
+  children,
+  actions,
+  summaryStarMotionEnabled,
+  onBack,
+}: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -29,6 +37,7 @@ export function BehaviorScreenLayout({ behavior, titleOverride, children, action
           showCategory
           titleSize="header"
           titleOverride={titleOverride}
+          starMotionEnabled={summaryStarMotionEnabled}
         />
       </View>
 

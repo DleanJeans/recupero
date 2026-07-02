@@ -1,20 +1,12 @@
-import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useMemo } from 'react';
 import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
 import { useSettingsStore } from '../store/settingsStore';
 import type { BehaviorEntry } from '../types/behavior';
 import { Colors } from '../utils/colors';
 import { toDateString } from '../utils/dateUtils';
 import { getEarnedStars, getLogCountForPeriod, getStarPeriod, getThresholds } from '../utils/starUtils';
-import { Text } from './Text';
+import { AnimatedStarSlot } from './AnimatedStarSlot';
+import { StaticStarSlot } from './StaticStarSlot';
 
 interface Props {
   /** Behavior whose earned stars to render. Behaviors without
@@ -41,7 +33,7 @@ export function StarRow({
   color = Colors.star.filled,
   emptyColor = Colors.star.empty,
   style,
-  motionEnabled = true,
+  motionEnabled = false,
 }: Props) {
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const thresholds = getThresholds(behavior);
@@ -84,134 +76,10 @@ export function StarRow({
   );
 }
 
-interface StarSlotProps {
-  filled: boolean;
-  threshold: number | null;
-  size: number;
-  color: string;
-  emptyColor: string;
-}
-
-function StaticStarSlot({ filled, threshold, size, color, emptyColor }: StarSlotProps) {
-  return (
-    <View style={styles.slot}>
-      <Text
-        style={[styles.threshold, { color: filled ? color : Colors.text.muted }]}
-        accessibilityLabel={`${threshold} logs to earn`}
-      >
-        {threshold}
-      </Text>
-      <View style={[styles.iconWrap, { width: size, height: size }]}>
-        <Ionicons
-          name={filled ? 'star' : 'star-outline'}
-          size={size}
-          color={filled ? color : emptyColor}
-          accessibilityLabel={threshold == null ? 'star tier skipped' : filled ? 'star earned' : 'star not earned'}
-        />
-      </View>
-    </View>
-  );
-}
-
-/** Single star slot. Owns its own animation state so the pop + ring
- *  fire on a false→true transition without disturbing siblings. */
-function AnimatedStarSlot({ filled, threshold, size, color, emptyColor }: StarSlotProps) {
-  const scale = useSharedValue(1);
-  const ringScale = useSharedValue(0.5);
-  const ringOpacity = useSharedValue(0);
-  // null on first render so we can skip the pop on mount and only
-  // animate on actual false→true transitions.
-  const prevFilled = useRef<boolean | null>(null);
-
-  useEffect(() => {
-    if (prevFilled.current === null) {
-      // First mount: snap to final visible state, no animation.
-      scale.value = 1;
-      ringScale.value = 0.5;
-      ringOpacity.value = 0;
-    } else if (filled && !prevFilled.current) {
-      // Empty → filled: pop the icon in with a spring and emit a
-      // one-shot gold ring that expands and fades.
-      scale.value = 0;
-      scale.value = withSpring(1, {
-        damping: 8,
-        stiffness: 180,
-        mass: 0.6,
-      });
-      ringScale.value = 0.5;
-      ringScale.value = withTiming(2.0, {
-        duration: 500,
-        easing: Easing.out(Easing.cubic),
-      });
-      ringOpacity.value = withSequence(
-        withTiming(0.7, { duration: 100, easing: Easing.out(Easing.cubic) }),
-        withTiming(0, { duration: 400, easing: Easing.out(Easing.cubic) }),
-      );
-    } else if (!filled && prevFilled.current) {
-      // Filled → empty: instant reset so the next fill can re-animate.
-      scale.value = 1;
-      ringScale.value = 0.5;
-      ringOpacity.value = 0;
-    }
-    prevFilled.current = filled;
-  }, [filled, scale, ringScale, ringOpacity]);
-
-  const iconStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const ringStyle = useAnimatedStyle(() => ({
-    opacity: ringOpacity.value,
-    transform: [{ scale: ringScale.value }],
-  }));
-
-  return (
-    <View style={styles.slot}>
-      <Text
-        style={[styles.threshold, { color: filled ? color : Colors.text.muted }]}
-        accessibilityLabel={`${threshold} logs to earn`}
-      >
-        {threshold}
-      </Text>
-      <View style={[styles.iconWrap, { width: size, height: size }]}>
-        <Animated.View
-          pointerEvents="none"
-          style={[styles.ring, { width: size, height: size, borderRadius: size / 2, borderColor: color }, ringStyle]}
-        />
-        <Animated.View style={iconStyle}>
-          <Ionicons
-            name={filled ? 'star' : 'star-outline'}
-            size={size}
-            color={filled ? color : emptyColor}
-            accessibilityLabel={threshold == null ? 'star tier skipped' : filled ? 'star earned' : 'star not earned'}
-          />
-        </Animated.View>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-  },
-  threshold: {
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  slot: {
-    alignItems: 'center',
-    overflow: 'visible',
-  },
-  iconWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'visible',
-  },
-  ring: {
-    position: 'absolute',
-    borderWidth: 1,
   },
 });

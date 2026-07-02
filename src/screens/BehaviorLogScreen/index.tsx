@@ -84,6 +84,7 @@ export function BehaviorLogScreen() {
     <BehaviorScreenLayout
       behavior={behavior}
       titleOverride={titleOverride}
+      summaryStarMotionEnabled={mode === 'log'}
       onBack={handleBack}
       actions={
         mode === 'details' ? (

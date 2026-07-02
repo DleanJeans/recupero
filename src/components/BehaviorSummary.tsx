@@ -34,6 +34,7 @@ interface Props {
    *  'header' = ScreenTitle-sized (28px bold) for screen headers. */
   titleSize?: 'card' | 'header';
   motionEnabled?: boolean;
+  starMotionEnabled?: boolean;
   now?: number;
 }
 
@@ -48,6 +49,7 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
   titleOverride,
   titleSize = 'card',
   motionEnabled = true,
+  starMotionEnabled = false,
   now,
 }: Props) {
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
@@ -96,7 +98,7 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
           behavior={behavior}
           dateStr={starTargetDate}
           size={11}
-          motionEnabled={motionEnabled}
+          motionEnabled={starMotionEnabled}
         />
         {starLogCountSummary && <Text style={styles.starLogCount}>{starLogCountSummary}</Text>}
       </View>
