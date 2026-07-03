@@ -6,7 +6,11 @@ import { Text } from '../../components/Text';
 import { useDeferredComputation } from '../../hooks/useDeferredComputation';
 import { useBehaviorStore } from '../../store/behaviorStore';
 import { useSettingsStore } from '../../store/settingsStore';
-import { getAllDailyMetadataTotals } from '../../utils/behaviorUtils';
+import {
+  getAllDailyMetadataTotals,
+  getBehaviorLogsForDate,
+  getDailyMetadataContributions,
+} from '../../utils/behaviorUtils';
 import { getCalendarStarMetrics } from '../../utils/calendarMetrics';
 import { Colors } from '../../utils/colors';
 import { toDateString } from '../../utils/dateUtils';
@@ -16,6 +20,7 @@ import { getTaskStarsForDate } from '../../utils/taskUtils';
 import { formatDuration } from '../../utils/timeUtils';
 import { DateNavigationRow } from '../components/DateNavigationRow';
 import { SummaryRow } from '../components/SummaryRow';
+import { type DayTab, DayTabSelector } from './components/DayTabSelector';
 import { LogList } from './components/LogList';
 import { MetadataSummaryRow } from './components/MetadataSummaryRow';
 
@@ -27,25 +32,11 @@ export function DayScreen() {
 
   const todayStr = toDateString(new Date(), dayCutoffHour);
   const [selectedDate, setSelectedDate] = useState(todayStr);
+  const [selectedTab, setSelectedTab] = useState<DayTab>('metadata');
 
   // Logs for the selected date
   const dayLogs = useMemo(() => {
-    const entries: {
-      log: { id: string; timestamp: number; metadata?: Record<string, string | number> };
-      behavior: (typeof behaviors)[number];
-    }[] = [];
-
-    for (const behavior of behaviors) {
-      for (const log of behavior.logs) {
-        const logDate = toDateString(new Date(log.timestamp), dayCutoffHour);
-        if (logDate === selectedDate) {
-          entries.push({ log, behavior });
-        }
-      }
-    }
-
-    entries.sort((a, b) => b.log.timestamp - a.log.timestamp);
-    return entries;
+    return getBehaviorLogsForDate(behaviors, selectedDate, dayCutoffHour);
   }, [behaviors, dayCutoffHour, selectedDate]);
 
   // Total entry count
@@ -55,6 +46,9 @@ export function DayScreen() {
   const metadataTotals = useMemo(() => {
     return getAllDailyMetadataTotals(behaviors, categories, selectedDate, dayCutoffHour);
   }, [behaviors, categories, dayCutoffHour, selectedDate]);
+  const metadataContributions = useMemo(() => {
+    return getDailyMetadataContributions(dayLogs, categories);
+  }, [categories, dayLogs]);
 
   // Earliest and latest log for duration calculation
   const daySpan = useMemo(() => {
@@ -133,15 +127,26 @@ export function DayScreen() {
         onNext={goToNextDay}
       />
 
-      <SummaryRow items={summaryItems} />
-
-      <MetadataSummaryRow totals={metadataTotals} />
-
-      <LogList
-        entries={dayLogs}
-        selectedDate={selectedDate}
-        categories={categories}
+      <DayTabSelector
+        selectedTab={selectedTab}
+        onSelect={setSelectedTab}
       />
+
+      {selectedTab === 'metadata' ? (
+        <MetadataSummaryRow
+          totals={metadataTotals}
+          contributions={metadataContributions}
+        />
+      ) : (
+        <>
+          <SummaryRow items={summaryItems} />
+          <LogList
+            entries={dayLogs}
+            selectedDate={selectedDate}
+            categories={categories}
+          />
+        </>
+      )}
     </SafeAreaView>
   );
 }

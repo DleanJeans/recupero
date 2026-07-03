@@ -7,10 +7,25 @@ import { Group } from './strings';
 export interface DailyMetadataTotal {
   categoryId: string;
   categoryName: string;
+  fieldKey: string;
   label: string;
   value: number;
   unit?: string;
   goal?: number;
+}
+
+export interface DayLogEntry {
+  log: LogEntry;
+  behavior: BehaviorEntry;
+}
+
+export interface DailyMetadataContribution {
+  categoryId: string;
+  fieldKey: string;
+  log: LogEntry;
+  behavior: BehaviorEntry;
+  value: number;
+  unit?: string;
 }
 
 /**
@@ -118,10 +133,60 @@ export function getDailyMetadataTotals(
   return totals;
 }
 
+export function getBehaviorLogsForDate(behaviors: BehaviorEntry[], dateStr: string, dayCutoffHour = 0): DayLogEntry[] {
+  const entries: DayLogEntry[] = [];
+
+  for (const behavior of behaviors) {
+    for (const log of behavior.logs) {
+      const logDate = toDateString(new Date(log.timestamp), dayCutoffHour);
+      if (logDate === dateStr) {
+        entries.push({ log, behavior });
+      }
+    }
+  }
+
+  entries.sort((a, b) => b.log.timestamp - a.log.timestamp);
+  return entries;
+}
+
+export function getDailyMetadataContributions(
+  entries: DayLogEntry[],
+  categories: Category[],
+): DailyMetadataContribution[] {
+  const categoryById = new Map(categories.map(category => [category.id, category]));
+  const contributions: DailyMetadataContribution[] = [];
+
+  for (const entry of entries) {
+    if (!entry.log.metadata || !entry.behavior.categoryId) continue;
+
+    const category = categoryById.get(entry.behavior.categoryId);
+    if (!category) continue;
+
+    const fields = category.metadataFields ?? [];
+    if (fields.length === 0) continue;
+
+    for (const field of fields) {
+      const val = entry.log.metadata[field.key];
+      if (typeof val !== 'number') continue;
+
+      contributions.push({
+        categoryId: category.id,
+        fieldKey: field.key,
+        log: entry.log,
+        behavior: entry.behavior,
+        value: roundTo2(val),
+        unit: field.unit,
+      });
+    }
+  }
+
+  return contributions;
+}
+
 /** Combined metadata totals for ALL logs on a given date, across all categories.
  *  When the same field label exists in multiple categories, results are prefixed
  *  with the category name for disambiguation.
- *  Returns a list of { label, value } pairs sorted by category then field key. */
+ *  Returns totals sorted by category order then metadata field order. */
 export function getAllDailyMetadataTotals(
   behaviors: BehaviorEntry[],
   categories: Category[],
@@ -174,6 +239,7 @@ export function getAllDailyMetadataTotals(
       result.push({
         categoryId: category.id,
         categoryName: category.name,
+        fieldKey: field.key,
         label: field.label,
         value: roundTo2(total),
         unit: field.unit,

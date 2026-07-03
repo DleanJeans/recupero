@@ -1,14 +1,16 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/Text';
 import type { DailyMetadataTotal } from '../../../utils/behaviorUtils';
 import { Colors } from '../../../utils/colors';
 
 interface MetadataTotalItemProps {
   item: DailyMetadataTotal;
+  expanded?: boolean;
+  onPress?: () => void;
 }
 
-export function MetadataTotalItem({ item }: MetadataTotalItemProps) {
+export function MetadataTotalItem({ item, expanded, onPress }: MetadataTotalItemProps) {
   const hasGoal = item.goal != null && Number.isFinite(item.goal) && item.goal > 0;
   if (!hasGoal) {
     return (
@@ -24,13 +26,8 @@ export function MetadataTotalItem({ item }: MetadataTotalItemProps) {
 
   const progressRatio = Math.min(item.value / item.goal!, 1);
   const percent = Math.round(progressRatio * 100);
-
-  return (
-    <View
-      style={styles.metadataGoalRow}
-      accessible
-      accessibilityLabel={`${item.label}: ${item.value} of ${item.goal} daily goal`}
-    >
+  const content = (
+    <>
       <View style={styles.metadataGoalHeader}>
         <Text
           style={styles.metadataGoalLabel}
@@ -48,6 +45,31 @@ export function MetadataTotalItem({ item }: MetadataTotalItemProps) {
       <View style={styles.metadataProgressTrack}>
         <View style={[styles.metadataProgressFill, { width: `${percent}%` }]} />
       </View>
+    </>
+  );
+
+  if (onPress) {
+    return (
+      <Pressable
+        style={[styles.metadataGoalRow, expanded && styles.metadataGoalRowExpanded]}
+        accessible
+        accessibilityRole="button"
+        accessibilityState={{ expanded: !!expanded }}
+        accessibilityLabel={`${item.label}: ${item.value} of ${item.goal} daily goal`}
+        onPress={onPress}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+
+  return (
+    <View
+      style={styles.metadataGoalRow}
+      accessible
+      accessibilityLabel={`${item.label}: ${item.value} of ${item.goal} daily goal`}
+    >
+      {content}
     </View>
   );
 }
@@ -56,10 +78,15 @@ const styles = StyleSheet.create({
   metadataGoalRow: {
     width: '100%',
     backgroundColor: Colors.bg.card,
+    borderWidth: 1,
+    borderColor: 'transparent',
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 12,
     gap: 8,
+  },
+  metadataGoalRowExpanded: {
+    borderColor: Colors.border.light,
   },
   metadataGoalHeader: {
     flexDirection: 'row',
