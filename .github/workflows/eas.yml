@@ -2,7 +2,7 @@ name: EAS
 
 on:
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
     types: labeled
   workflow_dispatch:
