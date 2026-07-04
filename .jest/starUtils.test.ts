@@ -5,6 +5,7 @@ import {
   getLogsForPeriod,
   getPeriodRange,
   getStarPeriod,
+  getStarPeriodLogCountLabel,
   getThresholds,
   getTotalStarsForDate,
 } from '../src/utils/starUtils';
@@ -305,6 +306,29 @@ describe('getPeriodRange', () => {
   it('month range handles February (28 days) and 31-day months', () => {
     expect(getPeriodRange('month', '2026-02-15')).toEqual({ start: '2026-02-01', end: '2026-02-28' });
     expect(getPeriodRange('month', '2026-12-01')).toEqual({ start: '2026-12-01', end: '2026-12-31' });
+  });
+});
+
+describe('getStarPeriodLogCountLabel', () => {
+  const todayStr = '2026-06-20';
+
+  it('labels daily counts only when the last log is today', () => {
+    expect(getStarPeriodLogCountLabel('day', todayStr, todayStr)).toBe('Today');
+    expect(getStarPeriodLogCountLabel('day', '2026-06-19', todayStr)).toBeNull();
+    expect(getStarPeriodLogCountLabel('day', null, todayStr)).toBeNull();
+  });
+
+  it('labels weekly counts only when the last log is in the current week', () => {
+    expect(getStarPeriodLogCountLabel('week', '2026-06-14', todayStr)).toBe('This week');
+    expect(getStarPeriodLogCountLabel('week', '2026-06-20', todayStr)).toBe('This week');
+    expect(getStarPeriodLogCountLabel('week', '2026-06-13', todayStr)).toBeNull();
+    expect(getStarPeriodLogCountLabel('week', '2026-06-21', todayStr)).toBeNull();
+    expect(getStarPeriodLogCountLabel('week', null, todayStr)).toBeNull();
+  });
+
+  it('does not label monthly counts', () => {
+    expect(getStarPeriodLogCountLabel('month', todayStr, todayStr)).toBeNull();
+    expect(getStarPeriodLogCountLabel('month', '2026-05-20', todayStr)).toBeNull();
   });
 });
 

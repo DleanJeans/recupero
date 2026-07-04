@@ -35,10 +35,15 @@ export function getPeriodRange(period: StarPeriod, dateStr: string): { start: st
   return { start, end: toDateString(endDate) };
 }
 
-export function getStarPeriodLogCountLabel(period: StarPeriod, dateStr: string, todayStr: string): string {
-  if (period === 'day') return dateStr === todayStr ? 'Today' : 'That day';
-  if (period === 'week') return getWeekStart(dateStr) === getWeekStart(todayStr) ? 'Week' : 'That week';
-  return getMonthStart(dateStr) === getMonthStart(todayStr) ? 'This month' : 'That month';
+export function getStarPeriodLogCountLabel(
+  period: StarPeriod,
+  lastLogDateStr: string | null,
+  todayStr: string,
+): string | null {
+  if (!lastLogDateStr) return null;
+  if (period === 'day') return lastLogDateStr === todayStr ? 'Today' : null;
+  if (period === 'week') return getWeekStart(lastLogDateStr) === getWeekStart(todayStr) ? 'This week' : null;
+  return null;
 }
 
 export function getNextStarThreshold(logCount: number, thresholds: readonly (number | null)[]): number | undefined {

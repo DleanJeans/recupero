@@ -85,8 +85,11 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
     const nextThreshold = getNextStarThreshold(logCount, thresholds);
     if (nextThreshold == null) return null;
 
-    const periodLabel = getStarPeriodLogCountLabel(starPeriod, starTargetDate, todayStr);
-    return `${periodLabel}: ${logCount}/${nextThreshold}`;
+    const lastLogDateStr =
+      behavior.lastTimestamp == null ? null : toDateString(new Date(behavior.lastTimestamp), dayCutoffHour);
+    const periodLabel = getStarPeriodLogCountLabel(starPeriod, lastLogDateStr, todayStr);
+    const progressLabel = `${logCount}/${nextThreshold}`;
+    return periodLabel ? `${periodLabel}: ${progressLabel}` : progressLabel;
   }, [behavior, dayCutoffHour, starTargetDate, todayStr]);
 
   return (
