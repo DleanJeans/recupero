@@ -86,8 +86,7 @@ export function LogForm({
   const [endWheelKey, setEndWheelKey] = useState(0);
   const notesRef = useRef<import('react-native').TextInput>(null);
   const [notes, setNotes] = useState(String(existingLog?.metadata?.notes ?? ''));
-  const [notesFocused, setNotesFocused] = useState(false);
-  const [metadataFocused, setMetadataFocused] = useState(false);
+  const [timePickerCollapsed, setTimePickerCollapsed] = useState(true);
   const [xpBursts, setXPBursts] = useState<XPBurst[]>([]);
   const nextXPBurstId = useRef(0);
 
@@ -157,17 +156,15 @@ export function LogForm({
   const handleExpandTime = useCallback(() => {
     notesRef.current?.blur();
     Keyboard.dismiss();
-    setNotesFocused(false);
+    setTimePickerCollapsed(false);
   }, []);
 
   const removeXPBurst = useCallback((id: number) => {
     setXPBursts(prev => prev.filter(burst => burst.id !== id));
   }, []);
 
-  const handleMetadataFocus = useCallback(() => setMetadataFocused(true), []);
-  const handleMetadataBlur = useCallback(() => setMetadataFocused(false), []);
-  const handleNotesFocus = useCallback(() => setNotesFocused(true), []);
-  const handleNotesBlur = useCallback(() => setNotesFocused(false), []);
+  const handleCollapseTime = useCallback(() => setTimePickerCollapsed(true), []);
+  const handleInputBlur = useCallback(() => {}, []);
   const applyStartMinutes = useCallback(
     (nextMinutes: number) => {
       const clampedMinutes = Math.min(nextMinutes, maxTimeMinutes);
@@ -321,7 +318,7 @@ export function LogForm({
                 maxHour={Math.floor(maxTimeMinutes / 60)}
                 maxMinute={Math.floor(maxTimeMinutes / 60) === startHour ? maxTimeMinutes % 60 : 59}
                 wheelKey={startWheelKey}
-                collapsed={notesFocused || metadataFocused}
+                collapsed={timePickerCollapsed}
                 onHourChange={hour => applyStartMinutes(hour * 60 + startMinute)}
                 onMinuteChange={minute => applyStartMinutes(startHour * 60 + minute)}
                 onExpand={handleExpandTime}
@@ -338,7 +335,7 @@ export function LogForm({
                 maxHour={Math.floor(maxTimeMinutes / 60)}
                 maxMinute={Math.floor(maxTimeMinutes / 60) === endHour ? maxTimeMinutes % 60 : 59}
                 wheelKey={endWheelKey}
-                collapsed={notesFocused || metadataFocused}
+                collapsed={timePickerCollapsed}
                 onHourChange={hour => applyEndMinutes(hour * 60 + endMinute)}
                 onMinuteChange={minute => applyEndMinutes(endHour * 60 + minute)}
                 onExpand={handleExpandTime}
@@ -354,7 +351,7 @@ export function LogForm({
               maxHour={Math.floor(maxTimeMinutes / 60)}
               maxMinute={Math.floor(maxTimeMinutes / 60) === endHour ? maxTimeMinutes % 60 : 59}
               wheelKey={endWheelKey}
-              collapsed={notesFocused || metadataFocused}
+              collapsed={timePickerCollapsed}
               onHourChange={hour => applyEndMinutes(hour * 60 + endMinute)}
               onMinuteChange={minute => applyEndMinutes(endHour * 60 + minute)}
               onExpand={handleExpandTime}
@@ -385,8 +382,8 @@ export function LogForm({
             value={metadataValues[amountField.key] ?? ''}
             label={formatMetadataFieldLabel(amountField)}
             onChange={setMetadataValues}
-            onFocus={handleMetadataFocus}
-            onBlur={handleMetadataBlur}
+            onFocus={handleCollapseTime}
+            onBlur={handleInputBlur}
           />
         )}
         {manualMetadataFields.map(field => (
@@ -396,8 +393,8 @@ export function LogForm({
             value={metadataValues[field.key] ?? ''}
             label={formatMetadataFieldLabel(field)}
             onChange={setMetadataValues}
-            onFocus={handleMetadataFocus}
-            onBlur={handleMetadataBlur}
+            onFocus={handleCollapseTime}
+            onBlur={handleInputBlur}
           />
         ))}
         {calculatedMetadataFields.map(field => {
@@ -431,8 +428,7 @@ export function LogForm({
           multiline
           maxLength={500}
           textAlignVertical="top"
-          onFocus={handleNotesFocus}
-          onBlur={handleNotesBlur}
+          onFocus={handleCollapseTime}
         />
       </ScrollView>
       <Button
