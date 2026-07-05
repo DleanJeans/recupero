@@ -12,15 +12,15 @@ import { getDayMaxTimestamp, getDefaultTimedLogStartTimestamp, getLogFormTimesta
 import {
   buildCalculatedMetadata,
   formatMetadataFieldLabel,
-  formatMetadataRateUnit,
   getCalculatedMetadataFields,
   getManualMetadataFields,
   getSelectedAmountMetadataField,
 } from '../../../utils/metadataCalculationUtils';
 import { formatDuration, MS_PER_MINUTE } from '../../../utils/timeUtils';
 import { XP_PER_LOG } from '../../../utils/xpUtils';
+import { CalculatedMetadataFields } from './calculated-metadata-fields';
 import { FloatingXPBurst, type XPBurst } from './floating-xp-burst';
-import { MetadataInputRow, metadataInputRowStyles } from './MetadataInputRow';
+import { MetadataInputRow } from './MetadataInputRow';
 import { TimePicker } from './TimePicker';
 
 interface LogFormProps {
@@ -387,25 +387,13 @@ export function LogForm({
             onBlur={handleInputBlur}
           />
         ))}
-        {calculatedMetadataFields.map(field => {
-          const value = calculatedMetadataValues[field.key];
-          const existingValue = metadataValues[field.key];
-          const displayValue = value != null ? String(value) : (existingValue ?? '');
-          return (
-            <View
-              key={field.key}
-              style={[styles.metadataFieldRow, styles.metadataCalculatedRow]}
-            >
-              <Text style={styles.metadataFieldLabel}>{formatMetadataFieldLabel(field)}</Text>
-              <View style={styles.metadataCalculatedValueRow}>
-                <Text style={styles.metadataCalculatedValue}>{displayValue || '0'}</Text>
-                <Text style={styles.metadataCalculatedRate}>
-                  {behavior.defaultMetadata?.[field.key] ?? 0} {formatMetadataRateUnit(field, amountField)}
-                </Text>
-              </View>
-            </View>
-          );
-        })}
+        <CalculatedMetadataFields
+          amountField={amountField}
+          defaultMetadata={behavior.defaultMetadata}
+          fields={calculatedMetadataFields}
+          metadataValues={metadataValues}
+          calculatedMetadataValues={calculatedMetadataValues}
+        />
 
         <Text style={styles.sectionLabel}>Notes</Text>
         <TextInput
@@ -510,7 +498,6 @@ const styles = StyleSheet.create({
   bodyContent: {
     paddingHorizontal: 16,
     paddingBottom: 120,
-    gap: 10,
   },
   notesInput: {
     minHeight: 120,
@@ -521,35 +508,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
     lineHeight: 22,
-  },
-  metadataFieldRow: {
-    ...metadataInputRowStyles.metadataFieldRow,
-  },
-  metadataFieldLabel: {
-    ...metadataInputRowStyles.metadataFieldLabel,
-  },
-  metadataCalculatedRow: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: Colors.border.default,
-  },
-  metadataCalculatedValueRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  metadataCalculatedValue: {
-    color: Colors.text.primary,
-    fontSize: 18,
-    fontWeight: '700',
-    fontVariant: ['tabular-nums'],
-  },
-  metadataCalculatedRate: {
-    color: Colors.text.faint,
-    fontSize: 12,
-    fontWeight: '600',
-    flexShrink: 1,
-    textAlign: 'right',
   },
   logButton: {
     bottom: 24,

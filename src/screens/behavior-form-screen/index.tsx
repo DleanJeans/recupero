@@ -528,7 +528,7 @@ function MetadataEditor({
               field={field}
               value={defaults[field.key] ?? ''}
               label={field.label}
-              unitLabel={formatMetadataRateUnit(field, selectedAmountField, '\n')}
+              unitLabel={formatMetadataRateUnit({ field, amountField: selectedAmountField, separator: '\n' })}
               onChange={onChange}
             />
           ))}

@@ -73,8 +73,20 @@ export function formatMetadataAmountBasis(field?: MetadataField): string {
   return field.unit ? `100${field.unit}` : `100 ${field.label}`;
 }
 
-export function formatMetadataRateUnit(field: MetadataField, amountField?: MetadataField, separator: string = ''): string {
-  const unit = field.unit ? `${field.unit} ` : '';
+interface FormatMetadataRateUnitParams {
+  field: MetadataField;
+  amountField?: MetadataField;
+  separator?: string;
+  includeFieldUnit?: boolean;
+}
+
+export function formatMetadataRateUnit({
+  field,
+  amountField,
+  separator = '',
+  includeFieldUnit = true,
+}: FormatMetadataRateUnitParams): string {
+  const unit = includeFieldUnit && field.unit ? `${field.unit} ` : '';
   return `${unit}${separator}/ ${formatMetadataAmountBasis(amountField)}`;
 }
 
