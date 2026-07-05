@@ -4,21 +4,21 @@ import { animateInteger } from '../utils/animationUtils';
 const NUMBER_TWEEN_MS = 420;
 const LEVEL_UP_CURRENT_TWEEN_MS = 220;
 
-interface XpBarNumberState {
+interface XPBarNumberState {
   xp: number;
   level: number;
   currentXp: number;
   levelXp: number;
 }
 
-interface Options extends XpBarNumberState {
+interface Options extends XPBarNumberState {
   animateNumbers: boolean;
 }
 
-export function useAnimatedXpNumbers({ animateNumbers, xp, level, currentXp, levelXp }: Options) {
+export function useAnimatedXPNumbers({ animateNumbers, xp, level, currentXp, levelXp }: Options) {
   const [displayedCurrentXp, setDisplayedCurrentXp] = useState(currentXp);
   const [displayedLevelXp, setDisplayedLevelXp] = useState(levelXp);
-  const previousValues = useRef<XpBarNumberState>({ xp, level, currentXp, levelXp });
+  const previousValues = useRef<XPBarNumberState>({ xp, level, currentXp, levelXp });
   const hasMounted = useRef(false);
   const activeTweens = useRef<Array<() => void>>([]);
 

@@ -19,7 +19,7 @@ import {
 } from '../../../utils/metadataCalculationUtils';
 import { formatDuration, MS_PER_MINUTE } from '../../../utils/timeUtils';
 import { XP_PER_LOG } from '../../../utils/xpUtils';
-import { FloatingXpBurst, type XpBurst } from './FloatingXpBurst';
+import { FloatingXPBurst, type XPBurst } from './floating-xp-burst';
 import { MetadataInputRow, metadataInputRowStyles } from './MetadataInputRow';
 import { TimePicker } from './TimePicker';
 
@@ -88,8 +88,8 @@ export function LogForm({
   const [notes, setNotes] = useState(String(existingLog?.metadata?.notes ?? ''));
   const [notesFocused, setNotesFocused] = useState(false);
   const [metadataFocused, setMetadataFocused] = useState(false);
-  const [xpBursts, setXpBursts] = useState<XpBurst[]>([]);
-  const nextXpBurstId = useRef(0);
+  const [xpBursts, setXPBursts] = useState<XPBurst[]>([]);
+  const nextXPBurstId = useRef(0);
 
   const metadataFields = useMemo(() => category?.metadataFields ?? [], [category?.metadataFields]);
   const amountField = useMemo(
@@ -160,8 +160,8 @@ export function LogForm({
     setNotesFocused(false);
   }, []);
 
-  const removeXpBurst = useCallback((id: number) => {
-    setXpBursts(prev => prev.filter(burst => burst.id !== id));
+  const removeXPBurst = useCallback((id: number) => {
+    setXPBursts(prev => prev.filter(burst => burst.id !== id));
   }, []);
 
   const handleMetadataFocus = useCallback(() => setMetadataFocused(true), []);
@@ -258,9 +258,9 @@ export function LogForm({
 
       if (behavior.xpEnabled) {
         const { locationX, locationY } = event.nativeEvent;
-        const id = nextXpBurstId.current;
-        nextXpBurstId.current += 1;
-        setXpBursts(prev => [...prev, { id, x: locationX, y: locationY, xp: earnedXp }]);
+        const id = nextXPBurstId.current;
+        nextXPBurstId.current += 1;
+        setXPBursts(prev => [...prev, { id, x: locationX, y: locationY, xp: earnedXp }]);
       }
 
       const delay = behavior.xpEnabled ? 1500 : 0;
@@ -442,10 +442,10 @@ export function LogForm({
         onPress={handleConfirm}
         disabled={pending}
         overlay={xpBursts.map(burst => (
-          <FloatingXpBurst
+          <FloatingXPBurst
             key={burst.id}
             burst={burst}
-            onDone={removeXpBurst}
+            onDone={removeXPBurst}
           />
         ))}
       >

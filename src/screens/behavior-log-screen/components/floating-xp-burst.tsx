@@ -8,14 +8,14 @@ const XP_BURST_ANIMATION_MS = 850;
 const XP_BURST_DISTANCE = 54;
 const XP_BURST_HEIGHT = 28;
 
-export type XpBurst = { id: number; x: number; y: number; xp: number };
+export type XPBurst = { id: number; x: number; y: number; xp: number };
 
 interface Props {
-  burst: XpBurst;
+  burst: XPBurst;
   onDone: (id: number) => void;
 }
 
-export function FloatingXpBurst({ burst, onDone }: Props) {
+export function FloatingXPBurst({ burst, onDone }: Props) {
   const progress = useSharedValue(0);
 
   useEffect(() => {

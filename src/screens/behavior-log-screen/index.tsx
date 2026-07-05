@@ -12,7 +12,7 @@ import { Colors } from '../../utils/colors';
 import { BehaviorScreenLayout } from '../components/BehaviorScreenLayout';
 import { BehaviorLogList } from './components/BehaviorLogList';
 import { DetailsActions } from './components/DetailsActions';
-import { HabitXpBars } from './components/HabitXpBars';
+import { HabitXPBars } from './components/habit-xp-bars';
 import { LogForm } from './components/LogForm';
 
 type ScreenMode = 'details' | 'log';
@@ -100,7 +100,7 @@ export function BehaviorLogScreen() {
     >
       {mode === 'details' ? (
         <View style={styles.detailsBody}>
-          <HabitXpBars behavior={behavior} />
+          <HabitXPBars behavior={behavior} />
           <BehaviorLogList
             behavior={behavior}
             onEditLog={handleEditLog}

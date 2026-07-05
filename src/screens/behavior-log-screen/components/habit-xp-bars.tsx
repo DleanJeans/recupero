@@ -1,17 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { XpBar } from '../../../components/XpBar';
+import { XPBar } from '../../../components/xp-bar';
 import { useSettingsStore } from '../../../store/settingsStore';
 import type { BehaviorEntry } from '../../../types/behavior';
 import { getBehaviorTypeColor } from '../../../utils/behaviorTypeUtils';
 import { Colors } from '../../../utils/colors';
 import { getBehaviorXp, getHighestEffectiveXp } from '../../../utils/xpUtils';
 
-interface HabitXpBarsProps {
+interface HabitXPBarsProps {
   behavior: BehaviorEntry;
 }
 
-export function HabitXpBars({ behavior }: HabitXpBarsProps) {
+export function HabitXPBars({ behavior }: HabitXPBarsProps) {
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const [tick, setTick] = useState(0);
   const now = useMemo(() => Date.now(), [tick]);
@@ -32,13 +32,13 @@ export function HabitXpBars({ behavior }: HabitXpBarsProps) {
 
   return (
     <View style={styles.container}>
-      <XpBar
+      <XPBar
         xp={highestHabitXp}
         color={color}
         label="Highest Habit XP"
         motionEnabled={false}
       />
-      <XpBar
+      <XPBar
         xp={totalXp}
         color={color}
         label="Total XP"

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/Text';
-import { XpBar } from '../../../components/XpBar';
+import { XPBar } from '../../../components/xp-bar';
 import { useBehaviorStore } from '../../../store/behaviorStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import type { BehaviorType } from '../../../types/behavior';
@@ -20,7 +20,7 @@ interface Props {
   selectedCategoryId: string | null;
   motionEnabled?: boolean;
 }
-export function TypeXpBar({ selectedCategoryId, motionEnabled = true }: Props) {
+export function TypeXPBar({ selectedCategoryId, motionEnabled = true }: Props) {
   const behaviors = useBehaviorStore(s => s.behaviors);
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
 
@@ -51,7 +51,7 @@ export function TypeXpBar({ selectedCategoryId, motionEnabled = true }: Props) {
           >
             <Text style={[styles.label, { color: getBehaviorTypeColor(type) }]}>{TYPE_LABELS[type]}</Text>
             <View style={styles.barContainer}>
-              <XpBar
+              <XPBar
                 xp={xp}
                 color={getBehaviorTypeColor(type)}
                 motionEnabled={motionEnabled}

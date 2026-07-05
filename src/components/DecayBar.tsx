@@ -6,7 +6,7 @@ import { getBehaviorTypeColor } from '../utils/behaviorTypeUtils';
 import { Colors } from '../utils/colors';
 import { formatDuration, MS_PER_DAY, MS_PER_MINUTE } from '../utils/timeUtils';
 import { getTimeUntilNextDecay } from '../utils/xpUtils';
-import { StripedProgressBar } from './StripedProgressBar';
+import { StripedProgressBar } from './striped-progress-bar';
 import { Text } from './Text';
 
 interface Props {

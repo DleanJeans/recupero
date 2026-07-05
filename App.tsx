@@ -12,11 +12,11 @@ import { Text } from './src/components/Text';
 import { useAppFonts } from './src/hooks/useAppFonts';
 import { useDeferredBottomNavNavigation } from './src/hooks/useDeferredBottomNavNavigation';
 
-import { BehaviorFormScreen } from './src/screens/BehaviorFormScreen';
-import { BehaviorLogScreen } from './src/screens/BehaviorLogScreen';
+import { BehaviorFormScreen } from './src/screens/behavior-form-screen';
+import { BehaviorLogScreen } from './src/screens/behavior-log-screen';
 import { CategoryFormScreen } from './src/screens/CategoryFormScreen';
 import { DayScreen } from './src/screens/DayScreen';
-import { HomeScreen } from './src/screens/HomeScreen';
+import { HomeScreen } from './src/screens/home-screen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { TaskScreen } from './src/screens/TaskScreen';
 import { TimerScreen } from './src/screens/TimerScreen';

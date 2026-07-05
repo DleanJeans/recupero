@@ -19,7 +19,7 @@ import { CategoryEmoji } from './CategoryEmoji';
 import { CooldownBar } from './CooldownBar';
 import { DecayBar } from './DecayBar';
 import { StarRow } from './StarRow';
-import { XpBar } from './XpBar';
+import { XPBar } from './xp-bar';
 
 interface Props {
   behavior: BehaviorEntry;
@@ -41,7 +41,7 @@ interface Props {
 }
 
 /** Body for the home card and the BehaviorDetails/BehaviorLog headers:
- *  icon column + info section (name, XpBar, CooldownBar, DecayBar).
+ *  icon column + info section (name, XPBar, CooldownBar, DecayBar).
  *  Card and headers use the same body — the only difference is the title
  *  font size, controlled by `titleSize`. */
 export const BehaviorSummary = React.memo(function BehaviorSummary({
@@ -117,7 +117,7 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
           titleSize={isHeader ? 'header' : 'card'}
         />
         {behavior.xpEnabled && (
-          <XpBar
+          <XPBar
             xp={effectiveXp}
             color={behaviorColor}
             label={showCurrentHabitXpLabel && behavior.xpDecay ? 'Current Habit XP' : undefined}

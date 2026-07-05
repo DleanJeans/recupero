@@ -6,7 +6,7 @@ import { Colors } from '../utils/colors';
 import { getCooldownColor, isCooldownActive } from '../utils/cooldownUtils';
 import { formatCooldown, MS_PER_MINUTE } from '../utils/timeUtils';
 import { BehaviorElapsed } from './BehaviorElapsed';
-import { StripedProgressBar } from './StripedProgressBar';
+import { StripedProgressBar } from './striped-progress-bar';
 
 const STRIPE_ANIMATION_MIN_DURATION_MS = 2 * 60 * MS_PER_MINUTE;
 

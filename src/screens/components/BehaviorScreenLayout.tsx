@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { BackButton } from '../../components/BackButton';
-import { BehaviorSummary } from '../../components/BehaviorSummary';
+import { BehaviorSummary } from '../../components/behavior-summary';
 import { SafeAreaView } from '../../components/SafeAreaView';
 import type { BehaviorEntry } from '../../types/behavior';
 import { Colors } from '../../utils/colors';

@@ -3,7 +3,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useRef } from 'react';
 import { Alert, type GestureResponderEvent, type LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { BehaviorSummary } from '../../../components/BehaviorSummary';
+import { BehaviorSummary } from '../../../components/behavior-summary';
 import { SwipeDeleteButton, SwipeEditButton } from '../../../components/SwipeActionButton';
 import { useBehaviorStore } from '../../../store/behaviorStore';
 import type { BehaviorEntry } from '../../../types/behavior';

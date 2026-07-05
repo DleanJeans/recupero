@@ -17,7 +17,7 @@ interface Props {
   onUnitChange: (unit: DurationUnit) => void;
 }
 
-export function XpDecayInput({ enabled, everyMinutes, unit, onToggle, onChangeMinutes, onUnitChange }: Props) {
+export function XPDecayInput({ enabled, everyMinutes, unit, onToggle, onChangeMinutes, onUnitChange }: Props) {
   return (
     <View style={styles.section}>
       <CheckboxRow

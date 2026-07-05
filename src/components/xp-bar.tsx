@@ -7,12 +7,12 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { useAnimatedXpNumbers } from '../hooks/useAnimatedXpNumbers';
+import { useAnimatedXPNumbers } from '../hooks/use-animated-xp-numbers';
 import { Colors } from '../utils/colors';
 import { getLevel, getLevelProgress, getLevelXp, getXpToNextLevel } from '../utils/xpUtils';
 import { Text } from './Text';
 
-interface XpBarProps {
+interface XPBarProps {
   xp: number;
   color?: string;
   label?: string;
@@ -20,20 +20,20 @@ interface XpBarProps {
   motionEnabled?: boolean;
 }
 
-interface XpBarValues {
+interface XPBarValues {
   level: number;
   progress: number;
   currentXp: number;
   levelXp: number;
 }
 
-export function XpBar({
+export function XPBar({
   xp,
   color = Colors.type.neutral,
   label,
   animateNumbers = false,
   motionEnabled = true,
-}: XpBarProps) {
+}: XPBarProps) {
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
   const currentXp = getLevelXp(xp);
@@ -43,7 +43,7 @@ export function XpBar({
 
   if (!motionEnabled) {
     return (
-      <StaticXpBar
+      <StaticXPBar
         values={values}
         color={color}
         label={label}
@@ -52,7 +52,7 @@ export function XpBar({
   }
 
   return (
-    <AnimatedXpBar
+    <AnimatedXPBar
       xp={xp}
       values={values}
       color={color}
@@ -62,13 +62,13 @@ export function XpBar({
   );
 }
 
-interface StaticXpBarProps {
-  values: XpBarValues;
+interface StaticXPBarProps {
+  values: XPBarValues;
   color: string;
   label?: string;
 }
 
-function StaticXpBar({ values, color, label }: StaticXpBarProps) {
+function StaticXPBar({ values, color, label }: StaticXPBarProps) {
   return (
     <View style={styles.container}>
       {label && <Text style={styles.title}>{label}</Text>}
@@ -85,20 +85,20 @@ function StaticXpBar({ values, color, label }: StaticXpBarProps) {
   );
 }
 
-interface AnimatedXpBarProps {
+interface AnimatedXPBarProps {
   xp: number;
-  values: XpBarValues;
+  values: XPBarValues;
   color: string;
   label?: string;
   animateNumbers: boolean;
 }
 
-function AnimatedXpBar({ xp, values, color, label, animateNumbers }: AnimatedXpBarProps) {
+function AnimatedXPBar({ xp, values, color, label, animateNumbers }: AnimatedXPBarProps) {
   const animatedProgress = useSharedValue(values.progress);
   const prevLevel = useRef(values.level);
   const hasMounted = useRef(false);
   const glowOpacity = useSharedValue(0);
-  const { displayedCurrentXp, displayedLevelXp } = useAnimatedXpNumbers({
+  const { displayedCurrentXp, displayedLevelXp } = useAnimatedXPNumbers({
     animateNumbers,
     xp,
     level: values.level,

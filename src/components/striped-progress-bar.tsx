@@ -42,7 +42,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRADIENT_SIZE = Math.ceil((SCREEN_WIDTH + STRIPE_PERIOD) / STRIPE_PERIOD) * STRIPE_PERIOD;
 const N_PERIODS = GRADIENT_SIZE / STRIPE_PERIOD;
 
-/** Spring config for the ratio → width transition. Matches XpBar so all
+/** Spring config for the ratio → width transition. Matches XPBar so all
  *  animated bars in the summary feel consistent when they move together. */
 const RATIO_SPRING = { damping: 18, stiffness: 120, mass: 0.8 } as const;
 
@@ -109,7 +109,7 @@ function AnimatedStripedProgressBar({ ratio: safeRatio, color, direction, height
 
   // Smoothly transition width when the prop changes (e.g., a fresh log
   // resets cooldown ratio from ~1 down to a small value). Springs match
-  // XpBar so the summary feels coherent when several bars move together.
+  // XPBar so the summary feels coherent when several bars move together.
   const animatedRatio = useSharedValue(safeRatio);
   const previousRatio = useRef(safeRatio);
   const hasMounted = useRef(false);

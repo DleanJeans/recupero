@@ -12,7 +12,7 @@ const UNIT_MINUTES: Record<DurationUnit, number> = {
 
 const DECAY_UNITS: DurationUnit[] = ['hours', 'days', 'weeks', 'months'];
 
-interface UseXpDecayFormResult {
+interface UseXPDecayFormResult {
   enabled: boolean;
   everyMinutes: number;
   unit: DurationUnit;
@@ -26,7 +26,7 @@ interface UseXpDecayFormResult {
 
 /** Encapsulates the opt-in XP-decay sub-form for the Behavior form:
  *  toggle, `every` value + unit, dirty-check, and serialization. */
-export function useXpDecayForm(behavior: BehaviorEntry | undefined, isEdit: boolean): UseXpDecayFormResult {
+export function useXPDecayForm(behavior: BehaviorEntry | undefined, isEdit: boolean): UseXPDecayFormResult {
   const [enabled, setEnabled] = useState<boolean>(!!behavior?.xpDecay);
   const [everyMinutes, setEveryMinutes] = useState(() =>
     behavior?.xpDecay ? toMinutes(behavior.xpDecay.every, behavior.xpDecay.unit) : 1440,

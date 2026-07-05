@@ -15,8 +15,8 @@ import { SafeAreaView } from '../../components/SafeAreaView';
 import { ScreenTitle } from '../../components/ScreenTitle';
 import { SelectPill } from '../../components/SelectPill';
 import { Text, TextInput } from '../../components/Text';
+import { useXPDecayForm } from '../../hooks/use-xp-decay-form';
 import { useStarThresholdsForm } from '../../hooks/useStarThresholdsForm';
-import { useXpDecayForm } from '../../hooks/useXpDecayForm';
 import { useBehaviorStore } from '../../store/behaviorStore';
 import type { BehaviorEntry, BehaviorType, Category, MetadataField } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
@@ -36,7 +36,7 @@ import type { CooldownUnit } from './components/CooldownInput';
 import { CooldownInput } from './components/CooldownInput';
 import { CooldownTypeToggle } from './components/CooldownTypeToggle';
 import { StarThresholdsFormField } from './components/StarThresholdsFormField';
-import { XpDecayInput } from './components/XpDecayInput';
+import { XPDecayInput } from './components/xp-decay-input';
 
 function iconFromStore(icon: BehaviorEntry['icon']): string {
   if (!icon) return '';
@@ -126,7 +126,7 @@ export function BehaviorFormScreen() {
     handleChangeMinutes: handleXpDecayChangeMinutes,
     handleUnitChange: handleXpDecayUnitChange,
     serialized: xpDecaySerialized,
-  } = useXpDecayForm(behavior, isEdit);
+  } = useXPDecayForm(behavior, isEdit);
 
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', () => setIsKeyboardOpen(true));
@@ -395,7 +395,7 @@ export function BehaviorFormScreen() {
                   onToggle={() => setDurationXpEnabled(v => !v)}
                   variant="row"
                 />
-                <XpDecayInput
+                <XPDecayInput
                   enabled={xpDecayEnabled}
                   everyMinutes={xpDecayEveryMinutes}
                   unit={xpDecayUnit}

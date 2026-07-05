@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/Text';
-import { XpBar } from '../../../components/XpBar';
+import { XPBar } from '../../../components/xp-bar';
 import { useBehaviorStore } from '../../../store/behaviorStore';
 import { useSettingsStore } from '../../../store/settingsStore';
 import { Colors } from '../../../utils/colors';
@@ -11,7 +11,7 @@ interface Props {
   selectedCategoryId: string | null;
   motionEnabled?: boolean;
 }
-export function CategoryXpBar({ selectedCategoryId, motionEnabled = true }: Props) {
+export function CategoryXPBar({ selectedCategoryId, motionEnabled = true }: Props) {
   const behaviors = useBehaviorStore(s => s.behaviors);
   const categories = useBehaviorStore(s => s.categories);
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
@@ -39,7 +39,7 @@ export function CategoryXpBar({ selectedCategoryId, motionEnabled = true }: Prop
       <View style={styles.row}>
         <Text style={styles.emoji}>{category.emoji}</Text>
         <View style={styles.barContainer}>
-          <XpBar
+          <XPBar
             xp={xp}
             color={Colors.type.category}
             motionEnabled={motionEnabled}
