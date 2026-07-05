@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useBehaviorStore } from '../../store/behaviorStore';
@@ -6,6 +5,7 @@ import { useSettingsStore } from '../../store/settingsStore';
 import { Colors } from '../../utils/colors';
 import { COOLDOWN_FILTER_LABEL, countBehaviorsPastCooldown, countCooldownBehaviors } from '../../utils/cooldownFilter';
 import { Badge } from '../Badge';
+import { CooldownIcon } from '../CooldownIcon';
 import { CategoryBarChip } from './CategoryBarChip';
 
 interface CooldownChipProps {
@@ -25,8 +25,7 @@ export function CooldownChip({ active, onPress }: CooldownChipProps) {
       active={active}
       icon={
         <View style={styles.iconWrap}>
-          <Ionicons
-            name="timer-outline"
+          <CooldownIcon
             size={13}
             color={active ? Colors.text.primary : Colors.text.faint}
           />

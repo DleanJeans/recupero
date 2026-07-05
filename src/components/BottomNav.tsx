@@ -12,16 +12,16 @@ import { getUncompletedTaskCountForDate } from '../utils/taskUtils';
 import { Badge } from './Badge';
 import { Text } from './Text';
 
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 const ITEMS: Array<{
   route: keyof Pick<RootStackParamList, 'Home' | 'Timer' | 'Day' | 'Tasks'>;
   label: string;
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  activeIcon: React.ComponentProps<typeof Ionicons>['name'];
+  icon: IoniconName;
 }> = [
-  { route: 'Home', label: 'Home', icon: 'home-outline', activeIcon: 'home' },
-  { route: 'Timer', label: 'Timer', icon: 'timer-outline', activeIcon: 'timer' },
-  { route: 'Day', label: 'Day', icon: 'calendar-outline', activeIcon: 'calendar' },
-  { route: 'Tasks', label: 'Tasks', icon: 'checkmark-circle-outline', activeIcon: 'checkmark-circle' },
+  { route: 'Home', label: 'Home', icon: 'home' },
+  { route: 'Timer', label: 'Timer', icon: 'stopwatch' },
+  { route: 'Day', label: 'Day', icon: 'calendar' },
+  { route: 'Tasks', label: 'Tasks', icon: 'checkmark-circle' },
 ];
 export type BottomNavRoute = (typeof ITEMS)[number]['route'];
 
@@ -98,7 +98,7 @@ export function BottomNav({ activeRoute, onNavigate }: BottomNavProps) {
             >
               <View style={styles.iconWrap}>
                 <Ionicons
-                  name={active ? item.activeIcon : item.icon}
+                  name={active ? item.icon : getOutlineIcon(item.icon)}
                   size={22}
                   color={active ? Colors.text.primary : Colors.text.faint}
                 />
@@ -117,6 +117,8 @@ export function BottomNav({ activeRoute, onNavigate }: BottomNavProps) {
     </View>
   );
 }
+
+const getOutlineIcon = (name: IoniconName) => (name + '-outline') as IoniconName;
 
 const styles = StyleSheet.create({
   wrap: {

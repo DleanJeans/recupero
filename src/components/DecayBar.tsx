@@ -40,7 +40,7 @@ export function DecayBar({ behavior, motionEnabled = true, now = Date.now() }: P
   return (
     <View style={styles.row}>
       <Ionicons
-        name="hourglass-outline"
+        name="trending-down"
         size={12}
         color={color}
       />

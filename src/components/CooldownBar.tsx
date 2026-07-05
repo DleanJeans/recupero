@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { BehaviorEntry } from '../types/behavior';
@@ -6,6 +5,7 @@ import { Colors } from '../utils/colors';
 import { getCooldownColor, isCooldownActive } from '../utils/cooldownUtils';
 import { formatCooldown, MS_PER_MINUTE } from '../utils/timeUtils';
 import { BehaviorElapsed } from './BehaviorElapsed';
+import { CooldownIcon } from './CooldownIcon';
 import { StripedProgressBar } from './striped-progress-bar';
 
 const STRIPE_ANIMATION_MIN_DURATION_MS = 2 * 60 * MS_PER_MINUTE;
@@ -34,8 +34,7 @@ export function CooldownBar({ behavior, motionEnabled = true, now = Date.now() }
 
   return (
     <View style={styles.row}>
-      <Ionicons
-        name="timer-outline"
+      <CooldownIcon
         size={12}
         color={color}
       />

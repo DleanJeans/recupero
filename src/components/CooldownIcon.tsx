@@ -10,7 +10,7 @@ interface Props {
 export function CooldownIcon({ size = 14, color = Colors.text.muted }: Props) {
   return (
     <Ionicons
-      name="timer-outline"
+      name="battery-charging"
       size={size}
       color={color}
     />
