@@ -108,6 +108,7 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
 
   return (
     <SectionList
+      style={styles.list}
       sections={sections}
       keyExtractor={item => item.id}
       renderItem={renderItem}
@@ -120,6 +121,9 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
 }
 
 const styles = StyleSheet.create({
+  list: {
+    flex: 1,
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',

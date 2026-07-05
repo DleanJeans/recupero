@@ -143,6 +143,32 @@ export function getEffectiveXp(behavior: BehaviorEntry, now: number = Date.now()
   return Math.max(0, getBehaviorXp(behavior) - decayXp);
 }
 
+export function getHighestEffectiveXp(behavior: BehaviorEntry, now: number = Date.now(), dayCutoffHour = 0): number {
+  if (!behavior.xpEnabled || !behavior.xpDecay || behavior.logs.length === 0) {
+    return getBehaviorXp(behavior);
+  }
+
+  const sorted = getChronologicalLogs(behavior.logs);
+  let highestXp = getEffectiveXp(behavior, now, dayCutoffHour);
+
+  for (let i = 0; i < sorted.length; i++) {
+    const logs = sorted.slice(0, i + 1);
+    const latestLog = sorted[i];
+    const xpAtLog = getEffectiveXp(
+      {
+        ...behavior,
+        logs,
+        lastTimestamp: getLogEndTimestamp(latestLog),
+      },
+      getLogEndTimestamp(latestLog),
+      dayCutoffHour,
+    );
+    highestXp = Math.max(highestXp, xpAtLog);
+  }
+
+  return highestXp;
+}
+
 /** Time remaining in the current decay cycle (until the next decay event).
  *  Returns null when XP is off, no decay config, or invalid config.
  *  When the behavior has no logs yet, returns a full cycle (no decay has accrued).

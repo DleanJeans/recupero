@@ -12,6 +12,7 @@ import { Colors } from '../../utils/colors';
 import { BehaviorScreenLayout } from '../components/BehaviorScreenLayout';
 import { BehaviorLogList } from './components/BehaviorLogList';
 import { DetailsActions } from './components/DetailsActions';
+import { HabitXpBars } from './components/HabitXpBars';
 import { LogForm } from './components/LogForm';
 
 type ScreenMode = 'details' | 'log';
@@ -85,6 +86,7 @@ export function BehaviorLogScreen() {
       behavior={behavior}
       titleOverride={titleOverride}
       summaryXpMotionEnabled={mode === 'log'}
+      showCurrentHabitXpLabel
       summaryStarMotionEnabled={mode === 'log'}
       onBack={handleBack}
       actions={
@@ -97,10 +99,13 @@ export function BehaviorLogScreen() {
       }
     >
       {mode === 'details' ? (
-        <BehaviorLogList
-          behavior={behavior}
-          onEditLog={handleEditLog}
-        />
+        <View style={styles.detailsBody}>
+          <HabitXpBars behavior={behavior} />
+          <BehaviorLogList
+            behavior={behavior}
+            onEditLog={handleEditLog}
+          />
+        </View>
       ) : (
         <LogForm
           key={formKey}
@@ -117,6 +122,9 @@ export function BehaviorLogScreen() {
 }
 
 const styles = StyleSheet.create({
+  detailsBody: {
+    flex: 1,
+  },
   title: {
     color: Colors.text.primary,
     fontSize: 20,

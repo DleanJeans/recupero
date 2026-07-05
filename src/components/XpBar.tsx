@@ -15,6 +15,7 @@ import { Text } from './Text';
 interface XpBarProps {
   xp: number;
   color?: string;
+  label?: string;
   animateNumbers?: boolean;
   motionEnabled?: boolean;
 }
@@ -26,7 +27,13 @@ interface XpBarValues {
   levelXp: number;
 }
 
-export function XpBar({ xp, color = Colors.type.neutral, animateNumbers = false, motionEnabled = true }: XpBarProps) {
+export function XpBar({
+  xp,
+  color = Colors.type.neutral,
+  label,
+  animateNumbers = false,
+  motionEnabled = true,
+}: XpBarProps) {
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
   const currentXp = getLevelXp(xp);
@@ -39,6 +46,7 @@ export function XpBar({ xp, color = Colors.type.neutral, animateNumbers = false,
       <StaticXpBar
         values={values}
         color={color}
+        label={label}
       />
     );
   }
@@ -48,6 +56,7 @@ export function XpBar({ xp, color = Colors.type.neutral, animateNumbers = false,
       xp={xp}
       values={values}
       color={color}
+      label={label}
       animateNumbers={animateNumbers}
     />
   );
@@ -56,18 +65,22 @@ export function XpBar({ xp, color = Colors.type.neutral, animateNumbers = false,
 interface StaticXpBarProps {
   values: XpBarValues;
   color: string;
+  label?: string;
 }
 
-function StaticXpBar({ values, color }: StaticXpBarProps) {
+function StaticXpBar({ values, color, label }: StaticXpBarProps) {
   return (
-    <View style={styles.row}>
-      <Text style={styles.label}>Lv{values.level}</Text>
-      <View style={styles.track}>
-        <View style={[styles.fill, { backgroundColor: color, width: `${values.progress * 100}%` }]} />
+    <View style={styles.container}>
+      {label && <Text style={styles.title}>{label}</Text>}
+      <View style={styles.row}>
+        <Text style={styles.level}>Lv{values.level}</Text>
+        <View style={styles.track}>
+          <View style={[styles.fill, { backgroundColor: color, width: `${values.progress * 100}%` }]} />
+        </View>
+        <Text style={styles.value}>
+          {values.currentXp}/{values.levelXp}
+        </Text>
       </View>
-      <Text style={styles.value}>
-        {values.currentXp}/{values.levelXp}
-      </Text>
     </View>
   );
 }
@@ -76,10 +89,11 @@ interface AnimatedXpBarProps {
   xp: number;
   values: XpBarValues;
   color: string;
+  label?: string;
   animateNumbers: boolean;
 }
 
-function AnimatedXpBar({ xp, values, color, animateNumbers }: AnimatedXpBarProps) {
+function AnimatedXpBar({ xp, values, color, label, animateNumbers }: AnimatedXpBarProps) {
   const animatedProgress = useSharedValue(values.progress);
   const prevLevel = useRef(values.level);
   const hasMounted = useRef(false);
@@ -122,26 +136,38 @@ function AnimatedXpBar({ xp, values, color, animateNumbers }: AnimatedXpBarProps
   }));
 
   return (
-    <View style={styles.row}>
-      <Text style={styles.label}>Lv{values.level}</Text>
-      <View style={styles.track}>
-        <Animated.View style={[styles.fill, { backgroundColor: color }, fillStyle]} />
-        <Animated.View style={[styles.glow, { backgroundColor: color }, glowStyle]} />
+    <View style={styles.container}>
+      {label && <Text style={styles.title}>{label}</Text>}
+      <View style={styles.row}>
+        <Text style={styles.level}>Lv{values.level}</Text>
+        <View style={styles.track}>
+          <Animated.View style={[styles.fill, { backgroundColor: color }, fillStyle]} />
+          <Animated.View style={[styles.glow, { backgroundColor: color }, glowStyle]} />
+        </View>
+        <Text style={styles.value}>
+          {displayedCurrentXp}/{displayedLevelXp}
+        </Text>
       </View>
-      <Text style={styles.value}>
-        {displayedCurrentXp}/{displayedLevelXp}
-      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    marginTop: 4,
+  },
+  title: {
+    color: Colors.text.faint,
+    fontSize: 10,
+    fontWeight: '600',
+    marginBottom: 2,
+    textTransform: 'uppercase',
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
   },
-  label: {
+  level: {
     color: Colors.text.muted,
     fontSize: 11,
     fontWeight: '600',

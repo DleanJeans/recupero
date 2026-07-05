@@ -35,6 +35,7 @@ interface Props {
   titleSize?: 'card' | 'header';
   motionEnabled?: boolean;
   xpMotionEnabled?: boolean;
+  showCurrentHabitXpLabel?: boolean;
   starMotionEnabled?: boolean;
   now?: number;
 }
@@ -51,6 +52,7 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
   titleSize = 'card',
   motionEnabled = true,
   xpMotionEnabled = false,
+  showCurrentHabitXpLabel = false,
   starMotionEnabled = false,
   now,
 }: Props) {
@@ -118,6 +120,7 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
           <XpBar
             xp={effectiveXp}
             color={behaviorColor}
+            label={showCurrentHabitXpLabel && behavior.xpDecay ? 'Current Habit XP' : undefined}
             animateNumbers={xpMotionEnabled}
             motionEnabled={xpMotionEnabled}
           />

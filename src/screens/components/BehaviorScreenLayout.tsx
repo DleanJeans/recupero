@@ -12,6 +12,7 @@ interface Props {
   children: React.ReactNode;
   actions?: React.ReactNode;
   summaryXpMotionEnabled?: boolean;
+  showCurrentHabitXpLabel?: boolean;
   summaryStarMotionEnabled?: boolean;
   /** Override back button press. When omitted, defaults to goBack(). */
   onBack?: () => void;
@@ -26,6 +27,7 @@ export function BehaviorScreenLayout({
   children,
   actions,
   summaryXpMotionEnabled,
+  showCurrentHabitXpLabel,
   summaryStarMotionEnabled,
   onBack,
 }: Props) {
@@ -39,6 +41,7 @@ export function BehaviorScreenLayout({
           titleSize="header"
           titleOverride={titleOverride}
           xpMotionEnabled={summaryXpMotionEnabled}
+          showCurrentHabitXpLabel={showCurrentHabitXpLabel}
           starMotionEnabled={summaryStarMotionEnabled}
         />
       </View>
