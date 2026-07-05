@@ -10,14 +10,14 @@ import { useBehaviorStore } from '../../store/behavior-store';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import { BehaviorScreenLayout } from '../components/behavior-screen-layout';
+import { BehaviorLogForm } from './components/behavior-log-form';
 import { BehaviorLogList } from './components/behavior-log-list';
 import { DetailsActions } from './components/details-actions';
 import { HabitXPBars } from './components/habit-xp-bars';
-import { LogForm } from './components/log-form';
 
 type ScreenMode = 'details' | 'log';
 
-export function BehaviorLogScreen() {
+export function BehaviorScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'BehaviorLog'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { behaviorId, initialMode, timerStartTimestamp, timerEndTimestamp } = route.params;
@@ -107,7 +107,7 @@ export function BehaviorLogScreen() {
           />
         </View>
       ) : (
-        <LogForm
+        <BehaviorLogForm
           key={formKey}
           behaviorId={behaviorId}
           behavior={behavior}

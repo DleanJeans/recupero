@@ -23,7 +23,7 @@ import { FloatingXPBurst, type XPBurst } from './floating-xp-burst';
 import { MetadataInputRow } from './metadata-input-row';
 import { TimePicker } from './time-picker';
 
-interface LogFormProps {
+interface BehaviorLogFormProps {
   behaviorId: string;
   behavior: BehaviorEntry;
   editLogId?: string;
@@ -32,14 +32,14 @@ interface LogFormProps {
   onSaved: () => void;
 }
 
-export function LogForm({
+export function BehaviorLogForm({
   behaviorId,
   behavior,
   editLogId,
   timerStartTimestamp,
   timerEndTimestamp,
   onSaved,
-}: LogFormProps) {
+}: BehaviorLogFormProps) {
   const existingLog = useMemo(
     () => (editLogId ? behavior.logs.find(log => log.id === editLogId) : undefined),
     [behavior.logs, editLogId],

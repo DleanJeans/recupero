@@ -13,7 +13,7 @@ import { useAppFonts } from './src/hooks/use-app-fonts';
 import { useDeferredBottomNavNavigation } from './src/hooks/use-deferred-bottom-nav-navigation';
 
 import { BehaviorFormScreen } from './src/screens/behavior-form-screen';
-import { BehaviorLogScreen } from './src/screens/behavior-log-screen';
+import { BehaviorScreen } from './src/screens/behavior-screen';
 import { CategoryFormScreen } from './src/screens/category-form-screen';
 import { DayScreen } from './src/screens/day-screen';
 import { HomeScreen } from './src/screens/home-screen';
@@ -116,7 +116,7 @@ export default function App() {
 
                   <Stack.Screen
                     name="BehaviorLog"
-                    component={BehaviorLogScreen}
+                    component={BehaviorScreen}
                   />
                   <Stack.Screen
                     name="BehaviorForm"
