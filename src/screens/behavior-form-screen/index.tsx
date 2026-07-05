@@ -528,7 +528,7 @@ function MetadataEditor({
               field={field}
               value={defaults[field.key] ?? ''}
               label={field.label}
-              unitLabel={formatMetadataRateUnit(field, selectedAmountField)}
+              unitLabel={formatMetadataRateUnit(field, selectedAmountField, '\n')}
               onChange={onChange}
             />
           ))}
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    marginBottom: 4,
+    marginTop: 8,
   },
   defaultMetaRow: {
     flexDirection: 'row',
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
     color: Colors.text.faint,
     fontSize: 12,
     fontWeight: '600',
-    minWidth: 48,
+    width: 40,
   },
   quantityUnitRow: {
     flexDirection: 'row',

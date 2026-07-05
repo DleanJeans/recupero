@@ -73,9 +73,9 @@ export function formatMetadataAmountBasis(field?: MetadataField): string {
   return field.unit ? `100${field.unit}` : `100 ${field.label}`;
 }
 
-export function formatMetadataRateUnit(field: MetadataField, amountField?: MetadataField): string {
+export function formatMetadataRateUnit(field: MetadataField, amountField?: MetadataField, separator: string = ''): string {
   const unit = field.unit ? `${field.unit} ` : '';
-  return `${unit}/ ${formatMetadataAmountBasis(amountField)}`;
+  return `${unit}${separator}/ ${formatMetadataAmountBasis(amountField)}`;
 }
 
 export function getLoggableDefaultMetadata(
