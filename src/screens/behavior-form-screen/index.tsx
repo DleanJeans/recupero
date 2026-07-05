@@ -5,19 +5,19 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { TextInput as RNTextInput } from 'react-native';
 import { Alert, Keyboard, ScrollView, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import { BackButton } from '../../components/BackButton';
-import { Button } from '../../components/Button';
-import { CategoryPicker } from '../../components/CategoryPicker';
-import { CheckboxRow } from '../../components/CheckboxRow';
-import { CooldownIcon } from '../../components/CooldownIcon';
-import { EmojiPicker } from '../../components/EmojiPicker';
-import { SafeAreaView } from '../../components/SafeAreaView';
-import { ScreenTitle } from '../../components/ScreenTitle';
-import { SelectPill } from '../../components/SelectPill';
-import { Text, TextInput } from '../../components/Text';
+import { BackButton } from '../../components/back-button';
+import { Button } from '../../components/button';
+import { CategoryPicker } from '../../components/category-picker';
+import { CheckboxRow } from '../../components/checkbox-row';
+import { CooldownIcon } from '../../components/cooldown-icon';
+import { EmojiPicker } from '../../components/emoji-picker';
+import { SafeAreaView } from '../../components/safe-area-view';
+import { ScreenTitle } from '../../components/screen-title';
+import { SelectPill } from '../../components/select-pill';
+import { Text, TextInput } from '../../components/text';
 import { useXPDecayForm } from '../../hooks/use-xp-decay-form';
-import { useStarThresholdsForm } from '../../hooks/useStarThresholdsForm';
-import { useBehaviorStore } from '../../store/behaviorStore';
+import { useStarThresholdsForm } from '../../hooks/use-star-thresholds-form';
+import { useBehaviorStore } from '../../store/behavior-store';
 import type { BehaviorEntry, BehaviorType, Category, MetadataField } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
@@ -30,12 +30,12 @@ import {
   getManualMetadataFields,
   getSelectedAmountMetadataField,
   sanitizeDecimalInput,
-} from '../../utils/metadataCalculationUtils';
-import { BehaviorTypePicker } from './components/BehaviorTypePicker';
-import type { CooldownUnit } from './components/CooldownInput';
-import { CooldownInput } from './components/CooldownInput';
-import { CooldownTypeToggle } from './components/CooldownTypeToggle';
-import { StarThresholdsFormField } from './components/StarThresholdsFormField';
+} from '../../utils/metadata-calculation-utils';
+import { BehaviorTypePicker } from './components/behavior-type-picker';
+import type { CooldownUnit } from './components/cooldown-input';
+import { CooldownInput } from './components/cooldown-input';
+import { CooldownTypeToggle } from './components/cooldown-type-toggle';
+import { StarThresholdsFormField } from './components/star-thresholds-form-field';
 import { XPDecayInput } from './components/xp-decay-input';
 
 function iconFromStore(icon: BehaviorEntry['icon']): string {

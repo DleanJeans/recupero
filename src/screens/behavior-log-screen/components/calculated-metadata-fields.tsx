@@ -1,10 +1,10 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text } from '../../../components/Text';
+import { Text } from '../../../components/text';
 import type { MetadataField } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
-import { formatMetadataFieldLabel, formatMetadataRateUnit } from '../../../utils/metadataCalculationUtils';
-import { metadataInputRowStyles } from './MetadataInputRow';
+import { formatMetadataFieldLabel, formatMetadataRateUnit } from '../../../utils/metadata-calculation-utils';
+import { metadataInputRowStyles } from './metadata-input-row';
 
 interface CalculatedMetadataFieldsProps {
   amountField?: MetadataField;

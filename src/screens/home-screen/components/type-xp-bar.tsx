@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text } from '../../../components/Text';
+import { Text } from '../../../components/text';
 import { XPBar } from '../../../components/xp-bar';
-import { useBehaviorStore } from '../../../store/behaviorStore';
-import { useSettingsStore } from '../../../store/settingsStore';
+import { useBehaviorStore } from '../../../store/behavior-store';
+import { useSettingsStore } from '../../../store/settings-store';
 import type { BehaviorType } from '../../../types/behavior';
-import { getBehaviorTypeColor } from '../../../utils/behaviorTypeUtils';
-import { getEffectiveXp } from '../../../utils/xpUtils';
+import { getBehaviorTypeColor } from '../../../utils/behavior-type-utils';
+import { getEffectiveXp } from '../../../utils/xp-utils';
 
 const TYPE_LABELS: Record<BehaviorType, string> = {
   desirable: 'Desirable',

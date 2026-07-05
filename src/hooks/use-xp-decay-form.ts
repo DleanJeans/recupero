@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { DurationUnit } from '../components/DurationInput';
+import type { DurationUnit } from '../components/duration-input';
 import type { BehaviorEntry, XpDecayUnit } from '../types/behavior';
 
 const UNIT_MINUTES: Record<DurationUnit, number> = {

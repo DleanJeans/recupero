@@ -3,17 +3,17 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useState } from 'react';
 import { LayoutAnimation, StyleSheet, View } from 'react-native';
-import { BackButton } from '../../components/BackButton';
-import { SafeAreaView } from '../../components/SafeAreaView';
-import { Text } from '../../components/Text';
-import { useBehaviorStore } from '../../store/behaviorStore';
+import { BackButton } from '../../components/back-button';
+import { SafeAreaView } from '../../components/safe-area-view';
+import { Text } from '../../components/text';
+import { useBehaviorStore } from '../../store/behavior-store';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
-import { BehaviorScreenLayout } from '../components/BehaviorScreenLayout';
-import { BehaviorLogList } from './components/BehaviorLogList';
-import { DetailsActions } from './components/DetailsActions';
+import { BehaviorScreenLayout } from '../components/behavior-screen-layout';
+import { BehaviorLogList } from './components/behavior-log-list';
+import { DetailsActions } from './components/details-actions';
 import { HabitXPBars } from './components/habit-xp-bars';
-import { LogForm } from './components/LogForm';
+import { LogForm } from './components/log-form';
 
 type ScreenMode = 'details' | 'log';
 

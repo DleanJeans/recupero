@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { animateInteger } from '../utils/animationUtils';
+import { animateInteger } from '../utils/animation-utils';
 
 const NUMBER_TWEEN_MS = 420;
 const LEVEL_UP_CURRENT_TWEEN_MS = 220;

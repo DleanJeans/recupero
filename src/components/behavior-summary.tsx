@@ -1,24 +1,24 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { useSettingsStore } from '../store/settingsStore';
+import { useSettingsStore } from '../store/settings-store';
 import type { BehaviorEntry } from '../types/behavior';
-import { getBehaviorTypeColor } from '../utils/behaviorTypeUtils';
+import { getBehaviorTypeColor } from '../utils/behavior-type-utils';
 import { Colors } from '../utils/colors';
-import { toDateString } from '../utils/dateUtils';
+import { toDateString } from '../utils/date-utils';
 import {
   getLogCountForPeriod,
   getNextStarThreshold,
   getStarPeriod,
   getStarPeriodLogCountLabel,
   getThresholds,
-} from '../utils/starUtils';
-import { getEffectiveXp } from '../utils/xpUtils';
-import { AutoFitHeaderTitle } from './AutoFitHeaderTitle';
-import { BehaviorIcon } from './BehaviorIcon';
-import { CategoryEmoji } from './CategoryEmoji';
-import { CooldownBar } from './CooldownBar';
-import { DecayBar } from './DecayBar';
-import { StarRow } from './StarRow';
+} from '../utils/star-utils';
+import { getEffectiveXp } from '../utils/xp-utils';
+import { AutoFitHeaderTitle } from './auto-fit-header-title';
+import { BehaviorIcon } from './behavior-icon';
+import { CategoryEmoji } from './category-emoji';
+import { CooldownBar } from './cooldown-bar';
+import { DecayBar } from './decay-bar';
+import { StarRow } from './star-row';
 import { XPBar } from './xp-bar';
 
 interface Props {

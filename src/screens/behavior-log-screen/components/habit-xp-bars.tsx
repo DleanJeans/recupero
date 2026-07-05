@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { XPBar } from '../../../components/xp-bar';
-import { useSettingsStore } from '../../../store/settingsStore';
+import { useSettingsStore } from '../../../store/settings-store';
 import type { BehaviorEntry } from '../../../types/behavior';
-import { getBehaviorTypeColor } from '../../../utils/behaviorTypeUtils';
+import { getBehaviorTypeColor } from '../../../utils/behavior-type-utils';
 import { Colors } from '../../../utils/colors';
-import { getBehaviorXp, getHighestEffectiveXp } from '../../../utils/xpUtils';
+import { getBehaviorXp, getHighestEffectiveXp } from '../../../utils/xp-utils';
 
 interface HabitXPBarsProps {
   behavior: BehaviorEntry;

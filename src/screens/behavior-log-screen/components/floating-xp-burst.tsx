@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { Text } from '../../../components/Text';
+import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 
 const XP_BURST_ANIMATION_MS = 850;

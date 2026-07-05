@@ -1,0 +1,57 @@
+import React, { useCallback, useMemo } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { useBehaviorStore } from '../store/behavior-store';
+import { COOLDOWN_CATEGORY_FILTER_ID, isCooldownCategoryFilterId } from '../utils/cooldown-filter';
+import { CategoryPicker } from './category-picker';
+import { CooldownChip } from './category-picker/cooldown-chip';
+import { ToggleNamesButton } from './category-picker/toggle-names-button';
+
+interface CategoryFilterProps {
+  selectedCategoryId: string | null;
+  onSelectCategory: (id: string | null) => void;
+}
+
+export const CategoryFilter = React.memo(function CategoryFilter({
+  selectedCategoryId,
+  onSelectCategory,
+}: CategoryFilterProps) {
+  const categories = useBehaviorStore(s => s.categories);
+  const behaviors = useBehaviorStore(s => s.behaviors);
+  const handleChange = useCallback((id: string | undefined | null) => onSelectCategory(id ?? null), [onSelectCategory]);
+  const cooldownSelected = isCooldownCategoryFilterId(selectedCategoryId);
+  const handleCooldownPress = useCallback(
+    () => onSelectCategory(cooldownSelected ? null : COOLDOWN_CATEGORY_FILTER_ID),
+    [cooldownSelected, onSelectCategory],
+  );
+  const leadingAccessory = useMemo(
+    () => [
+      <ToggleNamesButton key="toggle-names" />,
+      <CooldownChip
+        key="cooldown"
+        active={cooldownSelected}
+        onPress={handleCooldownPress}
+      />,
+    ],
+    [cooldownSelected, handleCooldownPress],
+  );
+
+  return (
+    <View style={styles.container}>
+      <CategoryPicker
+        categories={categories}
+        selectedId={selectedCategoryId}
+        onChange={handleChange}
+        bar
+        showAll
+        behaviors={behaviors}
+        leadingAccessory={leadingAccessory}
+      />
+    </View>
+  );
+});
+
+const styles = StyleSheet.create({
+  container: {
+    marginBottom: 8,
+  },
+});

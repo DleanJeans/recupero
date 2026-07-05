@@ -9,8 +9,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useAnimatedXPNumbers } from '../hooks/use-animated-xp-numbers';
 import { Colors } from '../utils/colors';
-import { getLevel, getLevelProgress, getLevelXp, getXpToNextLevel } from '../utils/xpUtils';
-import { Text } from './Text';
+import { getLevel, getLevelProgress, getLevelXp, getXpToNextLevel } from '../utils/xp-utils';
+import { Text } from './text';
 
 interface XPBarProps {
   xp: number;

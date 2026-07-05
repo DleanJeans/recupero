@@ -11,7 +11,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Colors } from '../utils/colors';
-import { buildStripePattern } from '../utils/stripeProgressUtils';
+import { buildStripePattern } from '../utils/stripe-progress-utils';
 
 interface Props {
   /** 0 to 1. Clamped before rendering. */

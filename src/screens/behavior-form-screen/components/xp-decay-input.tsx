@@ -1,9 +1,9 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { CheckboxRow } from '../../../components/CheckboxRow';
-import type { DurationUnit } from '../../../components/DurationInput';
-import { DurationInput } from '../../../components/DurationInput';
-import { Text } from '../../../components/Text';
+import { CheckboxRow } from '../../../components/checkbox-row';
+import type { DurationUnit } from '../../../components/duration-input';
+import { DurationInput } from '../../../components/duration-input';
+import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 
 const DECAY_UNITS: DurationUnit[] = ['hours', 'days', 'weeks', 'months'];
