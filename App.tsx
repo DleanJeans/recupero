@@ -14,6 +14,7 @@ import { useDeferredBottomNavNavigation } from './src/hooks/useDeferredBottomNav
 
 import { BehaviorFormScreen } from './src/screens/BehaviorFormScreen';
 import { BehaviorLogScreen } from './src/screens/BehaviorLogScreen';
+import { CategoryFormScreen } from './src/screens/CategoryFormScreen';
 import { DayScreen } from './src/screens/DayScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
@@ -36,6 +37,7 @@ const linking = {
       BehaviorDetails: 'behavior/:behaviorId',
       BehaviorLog: 'behavior-log/:behaviorId',
       BehaviorForm: 'behavior-form',
+      CategoryForm: 'category-form',
     },
   },
 };
@@ -119,6 +121,10 @@ export default function App() {
                   <Stack.Screen
                     name="BehaviorForm"
                     component={BehaviorFormScreen}
+                  />
+                  <Stack.Screen
+                    name="CategoryForm"
+                    component={CategoryFormScreen}
                   />
                   <Stack.Screen
                     name="Settings"

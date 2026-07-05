@@ -1,36 +1,37 @@
 import React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Colors } from '../../../utils/colors';
-import { Text } from '../../Text';
+import { SelectPill } from '../../SelectPill';
 
 interface CalculationPillProps {
   label: string;
   active: boolean;
   onPress: () => void;
+  flex?: number;
 }
 
-export function CalculationPill({ label, active, onPress }: CalculationPillProps) {
+export function CalculationPill({ label, active, onPress, flex = 1 }: CalculationPillProps) {
   return (
-    <Pressable
+    <SelectPill
+      label={label}
+      active={active}
+      activeBtnStyle={styles.calculationPillActive}
+      textStyle={styles.calculationPillText}
+      activeTextStyle={styles.calculationPillTextActive}
       onPress={onPress}
-      style={[styles.calculationPill, active && styles.calculationPillActive]}
-    >
-      <Text style={[styles.calculationPillText, active && styles.calculationPillTextActive]}>{label}</Text>
-    </Pressable>
+      style={[styles.calculationPill, { flex }]}
+    />
   );
 }
 
 const styles = StyleSheet.create({
   calculationPill: {
-    borderRadius: 6,
-    paddingHorizontal: 8,
     paddingVertical: 5,
   },
   calculationPillActive: {
     backgroundColor: Colors.text.light,
   },
   calculationPillText: {
-    color: Colors.text.faint,
     fontSize: 11,
     fontWeight: '600',
   },

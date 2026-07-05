@@ -3,9 +3,9 @@ import React, { useCallback, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { MetadataField, MetadataFieldCalculation } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
-import { sanitizeDecimalInput } from '../../../utils/metadataCalculationUtils';
+import { sanitizeDecimalInput, sortMetadataFieldsByCalculation } from '../../../utils/metadataCalculationUtils';
 import { Text } from '../../Text';
-import { MetadataFieldRow } from './MetadataFieldRow';
+import { MetadataFieldColumnFlex, MetadataFieldRow } from './MetadataFieldRow';
 
 interface Props {
   fields: MetadataField[];
@@ -14,7 +14,7 @@ interface Props {
 
 function MetadataFieldsSection({ fields, onChange }: Props) {
   // Local copy so keystrokes don't trigger parent re-render → no focus loss
-  const [localFields, setLocalFields] = useState<MetadataField[]>(fields);
+  const [localFields, setLocalFields] = useState<MetadataField[]>(() => sortMetadataFieldsByCalculation(fields));
   const latestRef = useRef(localFields);
   latestRef.current = localFields;
   // No useEffect to sync from parent — use key prop on parent side to remount on category change
@@ -76,13 +76,15 @@ function MetadataFieldsSection({ fields, onChange }: Props) {
 
   const handleCalculationChange = useCallback(
     (index: number, calculation: MetadataFieldCalculation) => {
-      const next = latestRef.current.map((field, i) => {
-        if (i !== index) return field;
-        return {
-          ...field,
-          calculation: calculation === 'manual' ? undefined : calculation,
-        };
-      });
+      const next = sortMetadataFieldsByCalculation(
+        latestRef.current.map((field, i) => {
+          if (i !== index) return field;
+          return {
+            ...field,
+            calculation: calculation === 'manual' ? undefined : calculation,
+          };
+        }),
+      );
       latestRef.current = next;
       setLocalFields(next);
       onChange(next);
@@ -106,6 +108,17 @@ function MetadataFieldsSection({ fields, onChange }: Props) {
           <Text style={styles.addLabel}>Add field</Text>
         </Pressable>
       </View>
+
+      {localFields.length > 0 && (
+        <View style={styles.fieldsHeaderRow}>
+          <View style={styles.fieldsHeaderLabels}>
+            <Text style={[styles.fieldHeaderLabel, styles.nameHeaderLabel]}>Name</Text>
+            <Text style={[styles.fieldHeaderLabel, styles.dailyGoalHeaderLabel]}>Daily Goal</Text>
+            <Text style={[styles.fieldHeaderLabel, styles.unitHeaderLabel]}>Unit</Text>
+          </View>
+          <View style={styles.removeHeaderSpacer} />
+        </View>
+      )}
 
       {localFields.map((field, index) => (
         <MetadataFieldRow
@@ -150,5 +163,33 @@ const styles = StyleSheet.create({
     color: Colors.text.light,
     fontSize: 12,
     fontWeight: '600',
+  },
+  fieldsHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: -3,
+  },
+  fieldsHeaderLabels: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 6,
+  },
+  fieldHeaderLabel: {
+    color: Colors.text.faint,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  nameHeaderLabel: {
+    flex: MetadataFieldColumnFlex.label,
+    textAlign: 'center',
+  },
+  dailyGoalHeaderLabel: {
+    flex: MetadataFieldColumnFlex.dailyGoal,
+  },
+  unitHeaderLabel: {
+    flex: MetadataFieldColumnFlex.unit,
+  },
+  removeHeaderSpacer: {
+    width: 26,
   },
 });

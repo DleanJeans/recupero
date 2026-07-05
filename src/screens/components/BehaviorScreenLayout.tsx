@@ -2,7 +2,6 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { BackButton } from '../../components/BackButton';
 import { BehaviorSummary } from '../../components/BehaviorSummary';
-import { fabStyles } from '../../components/Button';
 import { SafeAreaView } from '../../components/SafeAreaView';
 import type { BehaviorEntry } from '../../types/behavior';
 import { Colors } from '../../utils/colors';
@@ -46,7 +45,7 @@ export function BehaviorScreenLayout({
 
       <View style={styles.body}>{children}</View>
 
-      {actions && <View style={[fabStyles.fab, { paddingVertical: 0 }]}>{actions}</View>}
+      {actions}
     </SafeAreaView>
   );
 }

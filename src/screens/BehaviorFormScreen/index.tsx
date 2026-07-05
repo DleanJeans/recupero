@@ -3,7 +3,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { TextInput as RNTextInput } from 'react-native';
-import { Alert, Keyboard, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Keyboard, ScrollView, StyleSheet, View } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { BackButton } from '../../components/BackButton';
 import { Button } from '../../components/Button';
@@ -13,6 +13,7 @@ import { CooldownIcon } from '../../components/CooldownIcon';
 import { EmojiPicker } from '../../components/EmojiPicker';
 import { SafeAreaView } from '../../components/SafeAreaView';
 import { ScreenTitle } from '../../components/ScreenTitle';
+import { SelectPill } from '../../components/SelectPill';
 import { Text, TextInput } from '../../components/Text';
 import { useStarThresholdsForm } from '../../hooks/useStarThresholdsForm';
 import { useXpDecayForm } from '../../hooks/useXpDecayForm';
@@ -52,7 +53,8 @@ function iconForStore(raw: string): BehaviorEntry['icon'] | undefined {
 export function BehaviorFormScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'BehaviorForm'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { behaviorId, defaultCategoryId, defaultXpEnabled, defaultDurationXpEnabled } = route.params;
+  const { behaviorId, defaultCategoryId, defaultXpEnabled, defaultDurationXpEnabled, selectedCategoryId } =
+    route.params;
 
   const behavior = useBehaviorStore(
     useCallback(state => (behaviorId ? state.behaviors.find(b => b.id === behaviorId) : undefined), [behaviorId]),
@@ -63,6 +65,7 @@ export function BehaviorFormScreen() {
   const nameRef = useRef<RNTextInput>(null);
   const savedRef = useRef<boolean>(false);
   const skipInitialHydration = useRef(behavior != null);
+  const appliedSelectedCategoryIdRef = useRef<string | undefined>(undefined);
 
   const [name, setName] = useState(() => behavior?.name ?? '');
   const [icon, setIcon] = useState(() => iconFromStore(behavior?.icon));
@@ -156,6 +159,19 @@ export function BehaviorFormScreen() {
     );
     setMetadataAmountFieldKey(behavior.metadataAmountFieldKey);
   }, [behavior]);
+
+  useEffect(() => {
+    if (!selectedCategoryId || appliedSelectedCategoryIdRef.current === selectedCategoryId) return;
+    if (!categories.some(c => c.id === selectedCategoryId)) return;
+    appliedSelectedCategoryIdRef.current = selectedCategoryId;
+    setCategoryId(selectedCategoryId);
+    navigation.setParams({ selectedCategoryId: undefined });
+  }, [categories, navigation, selectedCategoryId]);
+
+  useEffect(() => {
+    if (!categoryId || categories.some(c => c.id === categoryId)) return;
+    setCategoryId(undefined);
+  }, [categories, categoryId]);
 
   useEffect(() => {
     const amountFields = getAmountMetadataFields(metadataFields);
@@ -314,12 +330,8 @@ export function BehaviorFormScreen() {
             categories={categories}
             selectedId={categoryId}
             onChange={handleCategoryChange}
-            dark
             forceShowNames
-            onCategoryCreated={setCategoryId}
-            onCategoryDeleted={id => {
-              if (categoryId === id) setCategoryId(undefined);
-            }}
+            selectCreatedCategoryOnSave
           />
 
           <MetadataEditor
@@ -477,23 +489,16 @@ function MetadataEditor({
           <Text style={styles.defaultMetaLabel}>Amount unit</Text>
           <View style={styles.quantityUnitRow}>
             {amountFields.map(field => (
-              <Pressable
+              <SelectPill
                 key={field.key}
+                label={formatMetadataFieldLabel(field)}
+                active={selectedAmountField?.key === field.key}
+                activeBtnStyle={styles.quantityUnitOptionActive}
+                textStyle={styles.quantityUnitOptionText}
+                activeTextStyle={styles.quantityUnitOptionTextActive}
                 onPress={() => onAmountFieldChange(field.key)}
-                style={[
-                  styles.quantityUnitOption,
-                  selectedAmountField?.key === field.key && styles.quantityUnitOptionActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.quantityUnitOptionText,
-                    selectedAmountField?.key === field.key && styles.quantityUnitOptionTextActive,
-                  ]}
-                >
-                  {formatMetadataFieldLabel(field)}
-                </Text>
-              </Pressable>
+                style={styles.quantityUnitOption}
+              />
             ))}
           </View>
         </>
@@ -697,7 +702,6 @@ const styles = StyleSheet.create({
   },
   quantityUnitOption: {
     flex: 1,
-    alignItems: 'center',
     paddingVertical: 9,
     backgroundColor: Colors.bg.card,
   },
@@ -711,5 +715,6 @@ const styles = StyleSheet.create({
   },
   quantityUnitOptionTextActive: {
     color: Colors.bg.primary,
+    fontWeight: '600',
   },
 });

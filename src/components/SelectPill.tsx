@@ -1,23 +1,32 @@
 import React from 'react';
-import { Pressable, StyleSheet, type ViewStyle } from 'react-native';
+import { Pressable, type StyleProp, StyleSheet, type TextStyle, type ViewStyle } from 'react-native';
 import { Colors } from '../utils/colors';
 import { Text } from './Text';
 
 interface SelectPillProps {
   label: string;
   active: boolean;
-  activeBtnStyle?: ViewStyle;
-  activeTextStyle?: object;
+  activeBtnStyle?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
+  activeTextStyle?: StyleProp<TextStyle>;
   onPress: () => void;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
-export function SelectPill({ label, active, activeBtnStyle, activeTextStyle, onPress, style }: SelectPillProps) {
+export function SelectPill({
+  label,
+  active,
+  activeBtnStyle,
+  textStyle,
+  activeTextStyle,
+  onPress,
+  style,
+}: SelectPillProps) {
   return (
     <Pressable
       style={({ pressed }) => [styles.btn, style, active && activeBtnStyle, pressed && { opacity: 0.7 }]}
       onPress={onPress}
     >
-      <Text style={[styles.text, active && activeTextStyle]}>{label}</Text>
+      <Text style={[styles.text, textStyle, active && activeTextStyle]}>{label}</Text>
     </Pressable>
   );
 }

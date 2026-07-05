@@ -1,10 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 import type { MetadataField, MetadataFieldCalculation } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 import { TextInput } from '../../Text';
 import { CalculationPill } from './CalculationPill';
+
+const METADATA_FIELD_ROW_LAYOUT = LinearTransition.duration(220);
+
+export const MetadataFieldColumnFlex = {
+  label: 4,
+  dailyGoal: 2,
+  unit: 1,
+} as const;
 
 interface MetadataFieldRowProps {
   field: MetadataField;
@@ -26,7 +35,10 @@ export function MetadataFieldRow({
   onRemove,
 }: MetadataFieldRowProps) {
   return (
-    <View style={styles.fieldRow}>
+    <Animated.View
+      layout={METADATA_FIELD_ROW_LAYOUT}
+      style={styles.fieldRow}
+    >
       <View style={styles.fieldInputs}>
         <View style={styles.inputRow}>
           <TextInput
@@ -37,7 +49,7 @@ export function MetadataFieldRow({
             onChangeText={v => onLabelChange(index, v)}
           />
           <TextInput
-            style={[styles.fieldInput, styles.labelInput]}
+            style={[styles.fieldInput, styles.dailyGoalInput]}
             placeholder="Daily goal"
             placeholderTextColor={Colors.text.faint}
             value={field.dailyGoal != null ? String(field.dailyGoal) : ''}
@@ -46,7 +58,7 @@ export function MetadataFieldRow({
             returnKeyType="done"
           />
           <TextInput
-            style={[styles.fieldInput, styles.smallInput]}
+            style={[styles.fieldInput, styles.unitInput]}
             placeholder="Unit"
             placeholderTextColor={Colors.text.faint}
             value={field.unit ?? ''}
@@ -69,6 +81,7 @@ export function MetadataFieldRow({
               label="Per 100 Amount"
               active={field.calculation === 'per100'}
               onPress={() => onCalculationChange(index, 'per100')}
+              flex={1.8}
             />
           </View>
         </View>
@@ -83,7 +96,7 @@ export function MetadataFieldRow({
           color={Colors.text.faint}
         />
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -110,22 +123,27 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   labelInput: {
-    flex: 1,
+    flex: MetadataFieldColumnFlex.label,
   },
-  smallInput: {
-    flex: 0.5,
+  dailyGoalInput: {
+    flex: MetadataFieldColumnFlex.dailyGoal,
+  },
+  unitInput: {
+    flex: MetadataFieldColumnFlex.unit,
   },
   controlsRow: {
     flexDirection: 'row',
     gap: 6,
   },
   removeBtn: {
-    padding: 2,
-    paddingTop: 6,
+    padding: 3,
   },
   calculationRow: {
     flex: 1,
     flexDirection: 'row',
-    gap: 6,
+    borderRadius: 6,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.border.default,
   },
 });

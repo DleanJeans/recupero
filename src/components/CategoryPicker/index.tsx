@@ -1,16 +1,18 @@
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ReactNode } from 'react';
-import React, { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
-import { useBehaviorStore } from '../../store/behaviorStore';
-import type { BehaviorEntry, Category, MetadataField } from '../../types/behavior';
+import React, { useMemo } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import type { BehaviorEntry, Category } from '../../types/behavior';
+import type { RootStackParamList } from '../../types/navigation';
 import { computeBehaviorCounts } from '../../utils/behaviorCounts';
 import { Colors } from '../../utils/colors';
 import { Text } from '../Text';
 import { AddCategoryButton } from './AddCategoryButton';
 import { CategoryChips } from './CategoryChips';
-import { CategoryForm } from './CategoryForm';
 
 type CategoryId = string | undefined | null;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface CategoryPickerProps {
   categories: Category[];
@@ -28,12 +30,8 @@ interface CategoryPickerProps {
   forceShowNames?: boolean;
   /** Optional leading element rendered at the start of the horizontal filter bar. */
   leadingAccessory?: ReactNode;
-  /** Use darker background for nested contexts (e.g. inside a form) */
-  dark?: boolean;
-  /** Called after a new category is created. Receives the new category id. */
-  onCategoryCreated?: (id: string) => void;
-  /** Called after a category is deleted. Receives the deleted category id. */
-  onCategoryDeleted?: (id: string) => void;
+  /** Select a newly created category after returning to the source screen. */
+  selectCreatedCategoryOnSave?: boolean;
 }
 
 const EMPTY_BEHAVIORS: BehaviorEntry[] = [];
@@ -47,102 +45,29 @@ export function CategoryPicker({
   onLongPress,
   behaviors = EMPTY_BEHAVIORS,
   leadingAccessory,
-  dark = false,
-  onCategoryCreated,
-  onCategoryDeleted,
+  selectCreatedCategoryOnSave = false,
   forceShowNames,
 }: CategoryPickerProps) {
-  const addCategory = useBehaviorStore(s => s.addCategory);
-  const removeCategory = useBehaviorStore(s => s.removeCategory);
-  const updateCategory = useBehaviorStore(s => s.updateCategory);
-
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [emoji, setEmoji] = useState('');
-  const [name, setName] = useState('');
-  const [metadataFields, setMetadataFields] = useState<MetadataField[]>([]);
-
-  const isEditing = editingId != null;
-  const isFormOpen = showForm || isEditing;
-  const editingCategory = editingId ? categories.find(c => c.id === editingId) : undefined;
-
-  const resetForm = () => {
-    setShowForm(false);
-    setEditingId(null);
-    setEmoji('');
-    setName('');
-    setMetadataFields([]);
-  };
+  const navigation = useNavigation<NavigationProp>();
 
   const handleLongPress = (category: Category) => {
-    setEditingId(category.id);
-    setEmoji(category.emoji);
-    setName(category.name);
-    setMetadataFields(category.metadataFields ?? []);
     onLongPress?.(category);
+    navigation.navigate('CategoryForm', {
+      categoryId: category.id,
+      selectOnSave: selectCreatedCategoryOnSave,
+    });
   };
 
-  const toggleForm = () => {
-    if (isFormOpen) {
-      resetForm();
-    } else {
-      setShowForm(true);
-    }
-  };
-
-  const handleSave = () => {
-    const trimmedName = name.trim();
-    const trimmedEmoji = emoji.trim();
-    if (!trimmedEmoji || !trimmedName) return;
-    const mf = metadataFields.length > 0 ? metadataFields : undefined;
-    if (editingId) {
-      updateCategory(editingId, { name: trimmedName, emoji: trimmedEmoji, metadataFields: mf });
-      resetForm();
-    } else {
-      const beforeCount = useBehaviorStore.getState().categories.length;
-      addCategory(trimmedName, trimmedEmoji, mf);
-      const newCat = useBehaviorStore.getState().categories[beforeCount];
-      resetForm();
-      if (newCat) onCategoryCreated?.(newCat.id);
-    }
-  };
-
-  const handleDelete = () => {
-    if (!editingId || !editingCategory) return;
-    const id = editingId;
-    const cat = editingCategory;
-    resetForm();
-    Alert.alert(`Delete "${cat.name}"?`, 'Behaviors in this category will lose their category assignment.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          removeCategory(id);
-          onCategoryDeleted?.(id);
-        },
-      },
-    ]);
+  const handleAddPress = () => {
+    navigation.navigate('CategoryForm', {
+      selectOnSave: selectCreatedCategoryOnSave,
+    });
   };
 
   const { behaviorCounts, allCount } = useMemo(
     () => (bar ? computeBehaviorCounts(behaviors) : { behaviorCounts: undefined, allCount: undefined }),
     [bar, behaviors],
   );
-
-  const formProps = {
-    emoji,
-    name,
-    isEditing,
-    onEmojiChange: setEmoji,
-    onNameChange: setName,
-    metadataFields,
-    onMetadataFieldsChange: setMetadataFields,
-    onSave: handleSave,
-    onCancel: resetForm,
-    onDelete: handleDelete,
-    dark,
-  };
 
   const chipsProps = {
     categories,
@@ -156,8 +81,8 @@ export function CategoryPicker({
   };
 
   const addButtonProps = {
-    isOpen: isFormOpen,
-    onPress: toggleForm,
+    isOpen: false,
+    onPress: handleAddPress,
     style: styles.barChip,
   };
 
@@ -176,11 +101,6 @@ export function CategoryPicker({
           />
           <AddCategoryButton {...addButtonProps} />
         </ScrollView>
-        {isFormOpen && (
-          <View style={{ marginHorizontal: 16 }}>
-            <CategoryForm {...formProps} />
-          </View>
-        )}
       </>
     );
   }
@@ -195,7 +115,6 @@ export function CategoryPicker({
         <CategoryChips {...chipsProps} />
         <AddCategoryButton {...addButtonProps} />
       </View>
-      {isFormOpen && <CategoryForm {...formProps} />}
     </View>
   );
 }

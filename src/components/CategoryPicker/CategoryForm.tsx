@@ -2,7 +2,6 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { MetadataField } from '../../types/behavior';
 import { Colors } from '../../utils/colors';
-import { Button } from '../Button';
 import { EmojiPicker } from '../EmojiPicker';
 import { TextInput } from '../Text';
 import MetadataFieldsSection from './MetadataFieldsSection';
@@ -14,12 +13,10 @@ export interface CategoryFormProps {
   onEmojiChange: (v: string) => void;
   onNameChange: (v: string) => void;
   onSave: () => void;
-  onCancel: () => void;
-  onDelete: () => void;
-  /** Use darker background for nested contexts */
-  dark?: boolean;
   /** Metadata fields for this category */
   metadataFields?: MetadataField[];
+  /** Forces the metadata field editor to reset its local draft state. */
+  metadataResetNonce?: number;
   /** Called when the metadata fields array changes */
   onMetadataFieldsChange?: (fields: MetadataField[]) => void;
 }
@@ -31,16 +28,17 @@ export function CategoryForm({
   onEmojiChange,
   onNameChange,
   onSave,
-  onCancel,
-  onDelete,
-  dark,
   metadataFields = [],
+  metadataResetNonce = 0,
   onMetadataFieldsChange,
 }: CategoryFormProps) {
-  const canSave = emoji.trim() && name.trim();
+  const metadataFieldsKey = `${metadataResetNonce}:${metadataFields
+    .map(field => field.key)
+    .sort()
+    .join(',')}`;
 
   return (
-    <View style={[styles.form, dark && styles.formDark]}>
+    <View style={styles.form}>
       <View style={styles.formRow}>
         <EmojiPicker
           value={emoji}
@@ -60,59 +58,22 @@ export function CategoryForm({
 
       {onMetadataFieldsChange && (
         <MetadataFieldsSection
-          key={metadataFields.map(f => f.key).join(',')}
+          key={metadataFieldsKey}
           fields={metadataFields}
           onChange={onMetadataFieldsChange}
         />
       )}
-
-      <View style={styles.formActions}>
-        {isEditing && (
-          <Button
-            variant="danger"
-            size="sm"
-            onPress={onDelete}
-            style={styles.formDeleteBtn}
-          >
-            Delete
-          </Button>
-        )}
-        <Button
-          variant="secondary"
-          size="sm"
-          onPress={onCancel}
-          style={styles.formCancelBtn}
-        >
-          Cancel
-        </Button>
-        <Button
-          variant="primary"
-          size="sm"
-          onPress={onSave}
-          disabled={!canSave}
-          style={styles.formAddBtn}
-        >
-          {isEditing ? 'Save' : 'Add'}
-        </Button>
-      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   form: {
-    backgroundColor: Colors.bg.card,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 8,
-    gap: 10,
-  },
-  formDark: {
-    backgroundColor: Colors.bg.darker,
+    gap: 20,
   },
   formRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   nameInput: {
     flex: 1,
@@ -122,21 +83,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 14,
-  },
-  formActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  formDeleteBtn: {
-    backgroundColor: Colors.status.error,
-    borderRadius: 6,
-  },
-  formCancelBtn: {
-    flex: 1,
-    borderRadius: 6,
-  },
-  formAddBtn: {
-    flex: 1,
-    borderRadius: 6,
   },
 });

@@ -1,5 +1,11 @@
-import type { MetadataField } from '../types/behavior';
+import type { MetadataField, MetadataFieldCalculation } from '../types/behavior';
 import { roundTo2 } from './numberUtils';
+
+const MetadataFieldCalculationOrder: Record<MetadataFieldCalculation, number> = {
+  manual: 0,
+  amount: 1,
+  per100: 2,
+};
 
 export function sanitizeDecimalInput(value: string): string {
   const sanitized = value.replace(/[^0-9.]/g, '');
@@ -7,8 +13,20 @@ export function sanitizeDecimalInput(value: string): string {
   return rest.length > 0 ? `${first}.${rest.join('')}` : sanitized;
 }
 
-export function getMetadataFieldCalculation(field: MetadataField) {
+export function getMetadataFieldCalculation(field: MetadataField): MetadataFieldCalculation {
   return field.calculation ?? 'manual';
+}
+
+export function sortMetadataFieldsByCalculation(fields: MetadataField[]): MetadataField[] {
+  return fields
+    .map((field, index) => ({ field, index }))
+    .sort((a, b) => {
+      const rankDiff =
+        MetadataFieldCalculationOrder[getMetadataFieldCalculation(a.field)] -
+        MetadataFieldCalculationOrder[getMetadataFieldCalculation(b.field)];
+      return rankDiff || a.index - b.index;
+    })
+    .map(({ field }) => field);
 }
 
 export function getAmountMetadataFields(fields: MetadataField[]): MetadataField[] {

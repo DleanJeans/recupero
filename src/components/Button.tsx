@@ -57,7 +57,7 @@ export function Button({
         commonStyles.base,
         baseStyles[variant],
         variant !== 'icon' && !fab && sizeStyles[size],
-        fab && fabStyles.fab,
+        fab && buttonStyles.fab,
         active && activeStyles[variant],
         pressed && pressedStyle(variant),
         disabled && { opacity: 0.4 },
@@ -126,7 +126,7 @@ const textActiveStyles = StyleSheet.create({
   icon: {},
 });
 
-export const fabStyles = StyleSheet.create({
+export const buttonStyles = StyleSheet.create({
   fab: {
     position: 'absolute',
     bottom: 30,

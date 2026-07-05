@@ -18,6 +18,11 @@ export type RootStackParamList = {
     defaultCategoryId?: string;
     defaultXpEnabled?: boolean;
     defaultDurationXpEnabled?: boolean;
+    selectedCategoryId?: string;
+  };
+  CategoryForm: {
+    categoryId?: string;
+    selectOnSave?: boolean;
   };
   Settings: undefined;
 };
