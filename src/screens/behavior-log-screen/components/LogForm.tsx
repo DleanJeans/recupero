@@ -203,6 +203,11 @@ export function LogForm({
   const durationMs = durationMinutes * MS_PER_MINUTE;
   const earnedXp = showTimeRange ? durationMinutes : XP_PER_LOG;
   const logButtonLabel = editLogId ? 'Save' : !showTimeRange && behavior.xpEnabled ? `Log +${XP_PER_LOG} XP` : 'Log';
+  const maxTimeHour = Math.floor(maxTimeMinutes / 60);
+  const getMaxMinuteForHour = useCallback(
+    (hour: number) => (maxTimeHour === hour ? maxTimeMinutes % 60 : 59),
+    [maxTimeHour, maxTimeMinutes],
+  );
 
   const handleConfirm = useCallback(
     (event: GestureResponderEvent) => {
@@ -293,6 +298,24 @@ export function LogForm({
     ],
   );
 
+  const renderTimePicker = useCallback(
+    (label: string, hour: number, minute: number, wheelKey: number, applyMinutes: (nextMinutes: number) => void) => (
+      <TimePicker
+        label={label}
+        hour={hour}
+        minute={minute}
+        maxHour={maxTimeHour}
+        maxMinute={getMaxMinuteForHour(hour)}
+        wheelKey={wheelKey}
+        collapsed={timePickerCollapsed}
+        onHourChange={nextHour => applyMinutes(nextHour * 60 + minute)}
+        onMinuteChange={nextMinute => applyMinutes(hour * 60 + nextMinute)}
+        onExpand={handleExpandTime}
+      />
+    ),
+    [getMaxMinuteForHour, handleExpandTime, maxTimeHour, timePickerCollapsed],
+  );
+
   return (
     <KeyboardAvoidingView
       behavior="padding"
@@ -311,51 +334,18 @@ export function LogForm({
         {showTimeRange ? (
           <View style={styles.timePickerRow}>
             <View style={styles.timePickerColumn}>
-              <TimePicker
-                label="Start"
-                hour={startHour}
-                minute={startMinute}
-                maxHour={Math.floor(maxTimeMinutes / 60)}
-                maxMinute={Math.floor(maxTimeMinutes / 60) === startHour ? maxTimeMinutes % 60 : 59}
-                wheelKey={startWheelKey}
-                collapsed={timePickerCollapsed}
-                onHourChange={hour => applyStartMinutes(hour * 60 + startMinute)}
-                onMinuteChange={minute => applyStartMinutes(startHour * 60 + minute)}
-                onExpand={handleExpandTime}
-              />
+              {renderTimePicker('Start', startHour, startMinute, startWheelKey, applyStartMinutes)}
             </View>
 
             <Text style={styles.timePickerSeparator}>-</Text>
 
             <View style={styles.timePickerColumn}>
-              <TimePicker
-                label="End"
-                hour={endHour}
-                minute={endMinute}
-                maxHour={Math.floor(maxTimeMinutes / 60)}
-                maxMinute={Math.floor(maxTimeMinutes / 60) === endHour ? maxTimeMinutes % 60 : 59}
-                wheelKey={endWheelKey}
-                collapsed={timePickerCollapsed}
-                onHourChange={hour => applyEndMinutes(hour * 60 + endMinute)}
-                onMinuteChange={minute => applyEndMinutes(endHour * 60 + minute)}
-                onExpand={handleExpandTime}
-              />
+              {renderTimePicker('End', endHour, endMinute, endWheelKey, applyEndMinutes)}
             </View>
           </View>
         ) : (
           <View style={styles.singleTimePicker}>
-            <TimePicker
-              label="Time"
-              hour={endHour}
-              minute={endMinute}
-              maxHour={Math.floor(maxTimeMinutes / 60)}
-              maxMinute={Math.floor(maxTimeMinutes / 60) === endHour ? maxTimeMinutes % 60 : 59}
-              wheelKey={endWheelKey}
-              collapsed={timePickerCollapsed}
-              onHourChange={hour => applyEndMinutes(hour * 60 + endMinute)}
-              onMinuteChange={minute => applyEndMinutes(endHour * 60 + minute)}
-              onExpand={handleExpandTime}
-            />
+            {renderTimePicker('Time', endHour, endMinute, endWheelKey, applyEndMinutes)}
           </View>
         )}
 
