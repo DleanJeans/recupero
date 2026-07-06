@@ -1,11 +1,8 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useRef } from 'react';
-import { Alert, type GestureResponderEvent, type LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
-import { Swipeable } from 'react-native-gesture-handler';
+import { type GestureResponderEvent, type LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
 import { BehaviorSummary } from '../../../components/behavior-summary';
-import { SwipeDeleteButton, SwipeEditButton } from '../../../components/swipe-action-button';
-import { useBehaviorStore } from '../../../store/behavior-store';
 import type { BehaviorEntry } from '../../../types/behavior';
 import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
@@ -31,21 +28,7 @@ export const BehaviorCard = React.memo(function BehaviorCard({
   now,
 }: Props) {
   const navigation = useNavigation<NavProp>();
-  const removeBehavior = useBehaviorStore(s => s.removeBehavior);
-  const swipeableRef = useRef<Swipeable>(null);
   const contentWidth = useRef(0);
-
-  const handleRemove = useCallback(() => {
-    swipeableRef.current?.close();
-    Alert.alert('Remove Behavior', `Remove "${behavior.name}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () => removeBehavior(behavior.id),
-      },
-    ]);
-  }, [behavior.id, behavior.name, removeBehavior]);
 
   const handlePress = useCallback(
     (e: GestureResponderEvent) => {
@@ -59,15 +42,6 @@ export const BehaviorCard = React.memo(function BehaviorCard({
     contentWidth.current = e.nativeEvent.layout.width;
   }, []);
 
-  const handleEdit = useCallback(() => {
-    swipeableRef.current?.close();
-    navigation.navigate('BehaviorForm', { behaviorId: behavior.id });
-  }, [behavior.id, navigation]);
-
-  const renderLeftActions = useCallback(() => <SwipeDeleteButton onPress={handleRemove} />, [handleRemove]);
-
-  const renderRightActions = useCallback(() => <SwipeEditButton onPress={handleEdit} />, [handleEdit]);
-
   const handlePressFallback = useCallback(
     (e: GestureResponderEvent) => {
       if (contentWidth.current === 0) {
@@ -80,30 +54,22 @@ export const BehaviorCard = React.memo(function BehaviorCard({
   );
 
   return (
-    <Swipeable
-      ref={swipeableRef}
-      renderLeftActions={renderLeftActions}
-      renderRightActions={renderRightActions}
-      overshootLeft={false}
-      overshootRight={false}
-    >
-      <View style={styles.card}>
-        <Pressable
-          style={styles.content}
-          onPress={handlePressFallback}
-          onLayout={handleLayout}
-        >
-          <BehaviorSummary
-            behavior={behavior}
-            showCategory={showCategory}
-            dateStr={dateStr}
-            motionEnabled={motionEnabled}
-            xpMotionEnabled={false}
-            now={now}
-          />
-        </Pressable>
-      </View>
-    </Swipeable>
+    <View style={styles.card}>
+      <Pressable
+        style={styles.content}
+        onPress={handlePressFallback}
+        onLayout={handleLayout}
+      >
+        <BehaviorSummary
+          behavior={behavior}
+          showCategory={showCategory}
+          dateStr={dateStr}
+          motionEnabled={motionEnabled}
+          xpMotionEnabled={false}
+          now={now}
+        />
+      </Pressable>
+    </View>
   );
 });
 

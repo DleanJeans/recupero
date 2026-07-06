@@ -2,7 +2,7 @@ import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useState } from 'react';
-import { LayoutAnimation, StyleSheet, View } from 'react-native';
+import { Alert, LayoutAnimation, StyleSheet, View } from 'react-native';
 import { BackButton } from '../../components/back-button';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text } from '../../components/text';
@@ -10,9 +10,9 @@ import { useBehaviorStore } from '../../store/behavior-store';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import { BehaviorScreenLayout } from '../components/behavior-screen-layout';
+import { BehaviorActions } from './components/behavior-actions';
 import { BehaviorLogForm } from './components/behavior-log-form';
 import { BehaviorLogList } from './components/behavior-log-list';
-import { DetailsActions } from './components/details-actions';
 import { HabitXPBars } from './components/habit-xp-bars';
 
 type ScreenMode = 'details' | 'log';
@@ -30,6 +30,7 @@ export function BehaviorScreen() {
 
   const isEditing = editLogId != null;
   const titleOverride = isEditing ? 'Edit Session' : undefined;
+  const removeBehavior = useBehaviorStore(s => s.removeBehavior);
 
   const animate = (next: ScreenMode) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -70,6 +71,22 @@ export function BehaviorScreen() {
     }
   }, [initialMode, navigation]);
 
+  const handleDeleteBehavior = useCallback(() => {
+    if (!behavior) return;
+
+    Alert.alert('Remove Behavior', `Remove "${behavior.name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () => {
+          removeBehavior(behavior.id);
+          navigation.goBack();
+        },
+      },
+    ]);
+  }, [behavior, navigation, removeBehavior]);
+
   if (!behavior) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: Colors.bg.primary }}>
@@ -91,7 +108,8 @@ export function BehaviorScreen() {
       onBack={handleBack}
       actions={
         mode === 'details' ? (
-          <DetailsActions
+          <BehaviorActions
+            onDelete={handleDeleteBehavior}
             onEdit={() => navigation.navigate('BehaviorForm', { behaviorId: behavior.id })}
             onLog={handleOpenLog}
           />

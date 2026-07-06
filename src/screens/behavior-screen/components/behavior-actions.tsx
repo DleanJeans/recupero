@@ -6,14 +6,27 @@ import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 import { FabButtonRow } from '../../components/fab-button-row';
 
-interface DetailsActionsProps {
+interface BehaviorActionsProps {
+  onDelete: () => void;
   onEdit: () => void;
   onLog: () => void;
 }
 
-export function DetailsActions({ onEdit, onLog }: DetailsActionsProps) {
+export function BehaviorActions({ onDelete, onEdit, onLog }: BehaviorActionsProps) {
   return (
     <FabButtonRow>
+      <Button
+        variant="danger"
+        style={styles.deleteButton}
+        onPress={onDelete}
+        accessibilityLabel="Delete behavior"
+      >
+        <Ionicons
+          name="trash-outline"
+          size={20}
+          color={Colors.text.primary}
+        />
+      </Button>
       <Button
         variant="secondary"
         style={styles.detailAction}
@@ -41,6 +54,13 @@ export function DetailsActions({ onEdit, onLog }: DetailsActionsProps) {
 
 const styles = StyleSheet.create({
   detailAction: { flex: 1, position: 'relative', bottom: 0, left: 0, right: 0 },
+  deleteButton: {
+    width: 52,
+    height: 52,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
+  },
   actionIconRow: {
     flexDirection: 'row',
     alignItems: 'center',
