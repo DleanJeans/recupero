@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { BehaviorIcon } from '../../components/behavior-icon';
 import { Button } from '../../components/button';
@@ -25,9 +25,12 @@ export function TimerScreen() {
   const lockedBehaviorId = useTimerStore(state => state.lockedBehaviorId);
   const startTimestamp = useTimerStore(state => state.startTimestamp);
   const stopTimestamp = useTimerStore(state => state.stopTimestamp);
+  const pendingLogBehaviorLogCount = useTimerStore(state => state.pendingLogBehaviorLogCount);
   const setLockedBehavior = useTimerStore(state => state.setLockedBehavior);
   const setStart = useTimerStore(state => state.setStart);
   const setStop = useTimerStore(state => state.setStop);
+  const markLogPending = useTimerStore(state => state.markLogPending);
+  const clearPendingLog = useTimerStore(state => state.clearPendingLog);
   const resetTimer = useTimerStore(state => state.reset);
   const [behaviorQuery, setBehaviorQuery] = useState('');
   const [selectedBehaviorId, setSelectedBehaviorId] = useState<string | undefined>();
@@ -60,6 +63,24 @@ export function TimerScreen() {
     }
   }, [behaviorById, lockedBehaviorId, resetTimer]);
 
+  // When the screen regains focus after the user was on the log form, check
+  // whether the pending session was actually saved by comparing the locked
+  // behavior's current log count against the snapshot taken at Stop time.
+  // If a log was added, the save succeeded and the timer should reset (back
+  // to the picker, no Stop button). If not, the user just backed out — the
+  // stopped timer stays so they can hit Relog/Log again.
+  useFocusEffect(
+    useCallback(() => {
+      if (pendingLogBehaviorLogCount == null || lockedBehaviorId == null) return;
+      const locked = useBehaviorStore.getState().behaviors.find(b => b.id === lockedBehaviorId);
+      if (locked && locked.logs.length > pendingLogBehaviorLogCount) {
+        resetTimer();
+      } else {
+        clearPendingLog();
+      }
+    }, [pendingLogBehaviorLogCount, lockedBehaviorId, resetTimer, clearPendingLog]),
+  );
+
   const handleContinue = () => {
     if (!selectedBehaviorId) return;
     setLockedBehavior(selectedBehaviorId);
@@ -88,6 +109,7 @@ export function TimerScreen() {
     if (stopTimestamp == null) {
       setStop(stoppedAt);
       setNowTick(stoppedAt);
+      markLogPending(lockedBehavior.logs.length);
     }
     navigation.navigate('BehaviorLog', {
       behaviorId: lockedBehavior.id,
