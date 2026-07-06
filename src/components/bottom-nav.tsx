@@ -5,9 +5,11 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useSettingsStore } from '../store/settings-store';
+import { useTimerStore } from '../store/timer-store';
 import type { RootStackParamList } from '../types/navigation';
 import { Colors } from '../utils/colors';
 import { toDateString } from '../utils/date-utils';
+import { formatStopwatchDuration } from '../utils/stopwatch-utils';
 import { getUncompletedTaskCountForDate } from '../utils/task-utils';
 import { Badge } from './badge';
 import { Text } from './text';
@@ -38,6 +40,10 @@ export function BottomNav({ activeRoute, onNavigate }: BottomNavProps) {
   const insets = useSafeAreaInsets();
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const tasks = useBehaviorStore(s => s.tasks);
+  const startTimestamp = useTimerStore(s => s.startTimestamp);
+  const stopTimestamp = useTimerStore(s => s.stopTimestamp);
+  const isTimerRunning = startTimestamp != null && stopTimestamp == null;
+  const [nowTick, setNowTick] = useState(() => Date.now());
   const [barWidth, setBarWidth] = useState(0);
   const todayStr = toDateString(new Date(), dayCutoffHour);
   const uncompletedTaskCount = getUncompletedTaskCountForDate(tasks, todayStr, dayCutoffHour);
@@ -50,6 +56,12 @@ export function BottomNav({ activeRoute, onNavigate }: BottomNavProps) {
   const highlightPositioned = useRef(false);
 
   useEffect(() => {
+    if (!isTimerRunning) return;
+    const interval = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [isTimerRunning]);
+
+  useEffect(() => {
     if (itemWidth <= 0) return;
     const nextX = activeIndex * itemWidth;
     if (!highlightPositioned.current) {
@@ -59,6 +71,9 @@ export function BottomNav({ activeRoute, onNavigate }: BottomNavProps) {
     }
     highlightX.value = withTiming(nextX, { duration: HIGHLIGHT_DURATION_MS });
   }, [activeIndex, highlightX, itemWidth]);
+
+  const timerElapsedMs = startTimestamp == null ? 0 : Math.max(0, (stopTimestamp ?? nowTick) - startTimestamp);
+  const timerLabel = startTimestamp == null ? 'Timer' : formatStopwatchDuration(timerElapsedMs);
 
   const highlightStyle = useAnimatedStyle(() => ({
     width: itemWidth,
@@ -81,6 +96,7 @@ export function BottomNav({ activeRoute, onNavigate }: BottomNavProps) {
         {ITEMS.map((item, index) => {
           const active = activeRoute === item.route;
           const showTaskBadge = item.route === 'Tasks' && uncompletedTaskCount > 0;
+          const label = item.route === 'Timer' ? timerLabel : item.label;
           return (
             <Pressable
               key={item.route}
@@ -109,7 +125,7 @@ export function BottomNav({ activeRoute, onNavigate }: BottomNavProps) {
                   />
                 )}
               </View>
-              <Text style={[styles.label, active && styles.labelActive]}>{item.label}</Text>
+              <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
             </Pressable>
           );
         })}
