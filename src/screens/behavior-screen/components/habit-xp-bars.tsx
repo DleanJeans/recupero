@@ -38,12 +38,14 @@ export function HabitXPBars({ behavior }: HabitXPBarsProps) {
         label="Highest Habit XP"
         motionEnabled={false}
       />
-      <XPBar
-        xp={totalXp}
-        color={color}
-        label="Total XP"
-        motionEnabled={false}
-      />
+      {!behavior.hideTotalXp && (
+        <XPBar
+          xp={totalXp}
+          color={color}
+          label="Total XP"
+          motionEnabled={false}
+        />
+      )}
     </View>
   );
 }

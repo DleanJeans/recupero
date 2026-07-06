@@ -15,8 +15,8 @@ import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { SelectPill } from '../../components/select-pill';
 import { Text, TextInput } from '../../components/text';
-import { useXPDecayForm } from '../../hooks/use-xp-decay-form';
 import { useStarThresholdsForm } from '../../hooks/use-star-thresholds-form';
+import { useXPDecayForm } from '../../hooks/use-xp-decay-form';
 import { useBehaviorStore } from '../../store/behavior-store';
 import type { BehaviorEntry, BehaviorType, Category, MetadataField } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
@@ -80,6 +80,7 @@ export function BehaviorFormScreen() {
   const [durationXpEnabled, setDurationXpEnabled] = useState(() =>
     behavior ? behavior.durationXpEnabled === true : defaultDurationXpEnabled === true,
   );
+  const [hideTotalXp, setHideTotalXp] = useState(() => behavior?.hideTotalXp === true);
   const [type, setType] = useState<BehaviorType>(behavior?.type ?? 'neutral');
   const [cooldownMinutes, setCooldownMinutes] = useState(() => behavior?.cooldownMinutes || 0);
   const [cooldownType, setCooldownType] = useState<'rest' | 'limit'>(() => behavior?.cooldownType || 'rest');
@@ -150,6 +151,7 @@ export function BehaviorFormScreen() {
     setIsPrivate(behavior.private ?? false);
     setXpEnabled(behavior.xpEnabled === true);
     setDurationXpEnabled(behavior.durationXpEnabled === true);
+    setHideTotalXp(behavior.hideTotalXp === true);
     setCooldownMinutes(behavior.cooldownMinutes || 0);
     setCooldownType(behavior.cooldownType || 'rest');
     setCooldownUnit(behavior.cooldownUnit);
@@ -201,6 +203,7 @@ export function BehaviorFormScreen() {
       isPrivate !== (behavior.private ?? false) ||
       xpEnabled !== (behavior.xpEnabled === true) ||
       durationXpEnabled !== (behavior.durationXpEnabled === true) ||
+      hideTotalXp !== (behavior.hideTotalXp === true) ||
       cooldownEnabled !== (behavior.cooldownEnabled ?? !!behavior.cooldownMinutes) ||
       cooldownMinutes !== (behavior.cooldownMinutes || 0) ||
       cooldownType !== (behavior.cooldownType || 'rest') ||
@@ -265,6 +268,7 @@ export function BehaviorFormScreen() {
         xpEnabled: xpEnabled ? true : undefined,
         xpDecay: xpEnabled ? (xpDecayEnabled ? xpDecaySerialized : undefined) : behavior?.xpDecay,
         durationXpEnabled: xpEnabled && durationXpEnabled ? true : undefined,
+        hideTotalXp: xpEnabled && hideTotalXp ? true : undefined,
       });
     } else {
       addBehavior(
@@ -284,6 +288,7 @@ export function BehaviorFormScreen() {
         xpDecayEnabled ? xpDecaySerialized : undefined,
         cooldownEnabled,
         xpEnabled && durationXpEnabled ? true : undefined,
+        xpEnabled && hideTotalXp ? true : undefined,
       );
     }
     savedRef.current = true;
@@ -388,6 +393,13 @@ export function BehaviorFormScreen() {
           >
             {xpEnabled && (
               <View style={styles.xpOptions}>
+                <CheckboxRow
+                  label="Hide Total XP"
+                  hint="Hide lifetime XP in habit details"
+                  checked={hideTotalXp}
+                  onToggle={() => setHideTotalXp(v => !v)}
+                  variant="row"
+                />
                 <CheckboxRow
                   label="Track duration for XP"
                   hint="Use start and end time, awarding 1 XP per minute"
