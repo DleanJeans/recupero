@@ -81,9 +81,14 @@ export function TimerScreen() {
 
   const handleStop = () => {
     if (!lockedBehavior || startTimestamp == null) return;
-    const stoppedAt = Date.now();
-    setStop(stoppedAt);
-    setNowTick(stoppedAt);
+    // If we already have a stop timestamp, the user is re-opening the log
+    // form after coming back from it (an accidental back-out). Keep the
+    // original end timestamp so the same session is logged.
+    const stoppedAt = stopTimestamp ?? Date.now();
+    if (stopTimestamp == null) {
+      setStop(stoppedAt);
+      setNowTick(stoppedAt);
+    }
     navigation.navigate('BehaviorLog', {
       behaviorId: lockedBehavior.id,
       initialMode: 'log',
@@ -108,6 +113,7 @@ export function TimerScreen() {
             elapsedMs={elapsedMs}
             isRunning={isRunning}
             hasStarted={startTimestamp != null}
+            hasStopped={stopTimestamp != null}
             startTimestamp={startTimestamp}
             onBack={handleBackToPicker}
             onStart={handleStart}
@@ -169,6 +175,7 @@ interface TimerPanelProps {
   elapsedMs: number;
   isRunning: boolean;
   hasStarted: boolean;
+  hasStopped: boolean;
   startTimestamp: number | undefined;
   onBack: () => void;
   onStart: () => void;
@@ -180,6 +187,7 @@ function TimerPanel({
   elapsedMs,
   isRunning,
   hasStarted,
+  hasStopped,
   startTimestamp,
   onBack,
   onStart,
@@ -235,10 +243,10 @@ function TimerPanel({
           <Button
             variant="primary"
             onPress={onStop}
-            disabled={!isRunning}
+            disabled={!hasStarted}
             style={styles.timerActionButton}
           >
-            Stop
+            {hasStopped ? 'Log' : 'Stop'}
           </Button>
         </View>
       </View>
