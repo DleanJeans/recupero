@@ -31,6 +31,7 @@ export function TimerScreen() {
   const setStop = useTimerStore(state => state.setStop);
   const markLogPending = useTimerStore(state => state.markLogPending);
   const clearPendingLog = useTimerStore(state => state.clearPendingLog);
+  const resumeTimer = useTimerStore(state => state.resume);
   const resetTimer = useTimerStore(state => state.reset);
   const [behaviorQuery, setBehaviorQuery] = useState('');
   const [selectedBehaviorId, setSelectedBehaviorId] = useState<string | undefined>();
@@ -100,6 +101,11 @@ export function TimerScreen() {
     setNowTick(startedAt);
   };
 
+  const handleResume = () => {
+    resumeTimer();
+    setNowTick(Date.now());
+  };
+
   const handleStop = () => {
     if (!lockedBehavior || startTimestamp == null) return;
     // If we already have a stop timestamp, the user is re-opening the log
@@ -140,6 +146,7 @@ export function TimerScreen() {
             onBack={handleBackToPicker}
             onStart={handleStart}
             onStop={handleStop}
+            onResume={handleResume}
           />
         ) : (
           <>
@@ -202,6 +209,7 @@ interface TimerPanelProps {
   onBack: () => void;
   onStart: () => void;
   onStop: () => void;
+  onResume: () => void;
 }
 
 function TimerPanel({
@@ -214,6 +222,7 @@ function TimerPanel({
   onBack,
   onStart,
   onStop,
+  onResume,
 }: TimerPanelProps) {
   return (
     <>
@@ -254,22 +263,60 @@ function TimerPanel({
           <Text style={styles.stopwatchCaption}>{`Started at ${formatTime(startTimestamp)}`}</Text>
         )}
         <View style={styles.timerActions}>
-          <Button
-            variant="secondary"
-            onPress={onStart}
-            disabled={isRunning}
-            style={styles.timerActionButton}
-          >
-            {hasStarted ? 'Restart' : 'Start'}
-          </Button>
-          <Button
-            variant="primary"
-            onPress={onStop}
-            disabled={!hasStarted}
-            style={styles.timerActionButton}
-          >
-            {hasStopped ? 'Log' : 'Stop'}
-          </Button>
+          {hasStopped ? (
+            <>
+              <Button
+                variant="secondary"
+                onPress={onStart}
+                accessibilityLabel="Restart"
+                style={styles.timerActionButton}
+              >
+                <Ionicons
+                  name="refresh"
+                  size={22}
+                  color={Colors.text.light}
+                />
+              </Button>
+              <Button
+                variant="secondary"
+                onPress={onResume}
+                accessibilityLabel="Resume"
+                style={styles.timerActionButton}
+              >
+                <Ionicons
+                  name="play"
+                  size={22}
+                  color={Colors.text.light}
+                />
+              </Button>
+              <Button
+                variant="primary"
+                onPress={onStop}
+                style={styles.timerActionButton}
+              >
+                Log
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="secondary"
+                onPress={onStart}
+                disabled={isRunning}
+                style={styles.timerActionButton}
+              >
+                {hasStarted ? 'Restart' : 'Start'}
+              </Button>
+              <Button
+                variant="primary"
+                onPress={onStop}
+                disabled={!hasStarted}
+                style={styles.timerActionButton}
+              >
+                Stop
+              </Button>
+            </>
+          )}
         </View>
       </View>
     </>

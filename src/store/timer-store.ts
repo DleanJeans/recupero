@@ -18,6 +18,10 @@ interface TimerStore {
   setLockedBehavior: (behaviorId: string) => void;
   setStart: (timestamp: number) => void;
   setStop: (timestamp: number) => void;
+  /** Clear the stop timestamp so the timer resumes from the original start
+   *  instant. Also clears any pending-log snapshot since the user is
+   *  abandoning the previous log attempt. */
+  resume: () => void;
   markLogPending: (logCount: number) => void;
   clearPendingLog: () => void;
   reset: () => void;
@@ -33,6 +37,7 @@ export const useTimerStore = create<TimerStore>()(
       setLockedBehavior: behaviorId => set({ lockedBehaviorId: behaviorId }),
       setStart: timestamp => set({ startTimestamp: timestamp, stopTimestamp: undefined }),
       setStop: timestamp => set({ stopTimestamp: timestamp }),
+      resume: () => set({ stopTimestamp: undefined, pendingLogBehaviorLogCount: undefined }),
       markLogPending: logCount => set({ pendingLogBehaviorLogCount: logCount }),
       clearPendingLog: () => set({ pendingLogBehaviorLogCount: undefined }),
       reset: () =>
