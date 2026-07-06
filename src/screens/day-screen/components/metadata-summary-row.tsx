@@ -74,6 +74,19 @@ export function MetadataSummaryRow({ totals, contributions }: MetadataSummaryRow
                 style={styles.metadataGroup}
               >
                 <Text style={styles.metadataGroupTitle}>{group.categoryName}</Text>
+                {metadata.length > 0 && (
+                  <Animated.View
+                    layout={GOAL_EXPAND_LAYOUT}
+                    style={styles.metadataGroupItems}
+                  >
+                    {metadata.map(item => (
+                      <MetadataTotalItem
+                        key={getTotalKey(item)}
+                        item={item}
+                      />
+                    ))}
+                  </Animated.View>
+                )}
                 {goals.length > 0 && (
                   <Animated.View
                     layout={GOAL_EXPAND_LAYOUT}
@@ -104,19 +117,6 @@ export function MetadataSummaryRow({ totals, contributions }: MetadataSummaryRow
                         </Animated.View>
                       );
                     })}
-                  </Animated.View>
-                )}
-                {metadata.length > 0 && (
-                  <Animated.View
-                    layout={GOAL_EXPAND_LAYOUT}
-                    style={styles.metadataGroupItems}
-                  >
-                    {metadata.map(item => (
-                      <MetadataTotalItem
-                        key={getTotalKey(item)}
-                        item={item}
-                      />
-                    ))}
                   </Animated.View>
                 )}
               </Animated.View>
