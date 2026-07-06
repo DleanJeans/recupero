@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { BehaviorIcon } from '../../components/behavior-icon';
 import { Button } from '../../components/button';
@@ -10,6 +10,7 @@ import { ScreenTitle } from '../../components/screen-title';
 import { Text } from '../../components/text';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useSettingsStore } from '../../store/settings-store';
+import { useTimerStore } from '../../store/timer-store';
 import type { BehaviorEntry } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
@@ -20,11 +21,15 @@ export function TimerScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const behaviors = useBehaviorStore(state => state.behaviors);
   const hidePrivate = useSettingsStore(state => state.hidePrivate);
+  const lockedBehaviorId = useTimerStore(state => state.lockedBehaviorId);
+  const startTimestamp = useTimerStore(state => state.startTimestamp);
+  const stopTimestamp = useTimerStore(state => state.stopTimestamp);
+  const setLockedBehavior = useTimerStore(state => state.setLockedBehavior);
+  const setStart = useTimerStore(state => state.setStart);
+  const setStop = useTimerStore(state => state.setStop);
+  const resetTimer = useTimerStore(state => state.reset);
   const [behaviorQuery, setBehaviorQuery] = useState('');
   const [selectedBehaviorId, setSelectedBehaviorId] = useState<string | undefined>();
-  const [lockedBehaviorId, setLockedBehaviorId] = useState<string | undefined>();
-  const [startTimestamp, setStartTimestamp] = useState<number | undefined>();
-  const [stopTimestamp, setStopTimestamp] = useState<number | undefined>();
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   const availableBehaviors = useMemo(() => {
@@ -45,36 +50,38 @@ export function TimerScreen() {
     return () => clearInterval(interval);
   }, [isRunning]);
 
-  const resetTimer = useCallback(() => {
-    setStartTimestamp(undefined);
-    setStopTimestamp(undefined);
-    setNowTick(Date.now());
-  }, []);
+  // If the persisted timer references a behavior that no longer exists
+  // (e.g. user deleted it while the app was closed), drop the stale state
+  // so we render the picker instead of a dead session.
+  useEffect(() => {
+    if (lockedBehaviorId != null && behaviorById.get(lockedBehaviorId) == null) {
+      resetTimer();
+    }
+  }, [behaviorById, lockedBehaviorId, resetTimer]);
 
   const handleContinue = () => {
     if (!selectedBehaviorId) return;
-    setLockedBehaviorId(selectedBehaviorId);
-    resetTimer();
+    setLockedBehavior(selectedBehaviorId);
+    setStart(Date.now());
+    setNowTick(Date.now());
   };
 
   const handleBackToPicker = () => {
-    setLockedBehaviorId(undefined);
+    resetTimer();
     setSelectedBehaviorId(undefined);
     setBehaviorQuery('');
-    resetTimer();
   };
 
   const handleStart = () => {
     const startedAt = Date.now();
-    setStartTimestamp(startedAt);
-    setStopTimestamp(undefined);
+    setStart(startedAt);
     setNowTick(startedAt);
   };
 
   const handleStop = () => {
     if (!lockedBehavior || startTimestamp == null) return;
     const stoppedAt = Date.now();
-    setStopTimestamp(stoppedAt);
+    setStop(stoppedAt);
     setNowTick(stoppedAt);
     navigation.navigate('BehaviorLog', {
       behaviorId: lockedBehavior.id,
