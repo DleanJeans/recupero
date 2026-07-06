@@ -15,6 +15,7 @@ import type { BehaviorEntry } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import { formatStopwatchDuration } from '../../utils/stopwatch-utils';
+import { formatTime } from '../../utils/time-utils';
 import { TaskComposer } from '../task-screen/components/task-composer';
 
 export function TimerScreen() {
@@ -107,6 +108,7 @@ export function TimerScreen() {
             elapsedMs={elapsedMs}
             isRunning={isRunning}
             hasStarted={startTimestamp != null}
+            startTimestamp={startTimestamp}
             onBack={handleBackToPicker}
             onStart={handleStart}
             onStop={handleStop}
@@ -167,12 +169,22 @@ interface TimerPanelProps {
   elapsedMs: number;
   isRunning: boolean;
   hasStarted: boolean;
+  startTimestamp: number | undefined;
   onBack: () => void;
   onStart: () => void;
   onStop: () => void;
 }
 
-function TimerPanel({ behavior, elapsedMs, isRunning, hasStarted, onBack, onStart, onStop }: TimerPanelProps) {
+function TimerPanel({
+  behavior,
+  elapsedMs,
+  isRunning,
+  hasStarted,
+  startTimestamp,
+  onBack,
+  onStart,
+  onStop,
+}: TimerPanelProps) {
   return (
     <>
       <View style={styles.timerHeader}>
@@ -208,6 +220,9 @@ function TimerPanel({ behavior, elapsedMs, isRunning, hasStarted, onBack, onStar
 
       <View style={styles.stopwatchPanel}>
         <Text style={styles.stopwatchValue}>{formatStopwatchDuration(elapsedMs)}</Text>
+        {startTimestamp != null && (
+          <Text style={styles.stopwatchCaption}>{`Started at ${formatTime(startTimestamp)}`}</Text>
+        )}
         <View style={styles.timerActions}>
           <Button
             variant="secondary"
@@ -284,6 +299,13 @@ const styles = StyleSheet.create({
     fontSize: 48,
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
+  },
+  stopwatchCaption: {
+    color: Colors.text.muted,
+    fontSize: 13,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+    marginTop: -10,
   },
   timerActions: {
     flexDirection: 'row',
