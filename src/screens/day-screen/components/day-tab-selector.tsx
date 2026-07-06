@@ -3,23 +3,25 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 
-export type DayTab = 'metadata' | 'logs';
+export type DayTab = 'logs' | 'metadata';
 
 interface DayTabSelectorProps {
   selectedTab: DayTab;
   onSelect: (tab: DayTab) => void;
+  counts?: Partial<Record<DayTab, number>>;
 }
 
 const TABS: { key: DayTab; label: string }[] = [
-  { key: 'metadata', label: 'Metadata' },
   { key: 'logs', label: 'Logs' },
+  { key: 'metadata', label: 'Metadata' },
 ];
 
-export function DayTabSelector({ selectedTab, onSelect }: DayTabSelectorProps) {
+export function DayTabSelector({ selectedTab, onSelect, counts }: DayTabSelectorProps) {
   return (
     <View style={styles.tabs}>
       {TABS.map(tab => {
         const selected = tab.key === selectedTab;
+        const count = counts?.[tab.key] ?? 0;
         return (
           <Pressable
             key={tab.key}
@@ -28,7 +30,15 @@ export function DayTabSelector({ selectedTab, onSelect }: DayTabSelectorProps) {
             accessibilityState={{ selected }}
             onPress={() => onSelect(tab.key)}
           >
-            <Text style={[styles.tabText, selected && styles.selectedTabText]}>{tab.label}</Text>
+            <View style={styles.tabContent}>
+              <Text style={[styles.tabText, selected && styles.selectedTabText]}>{tab.label}</Text>
+              <Text
+                style={[styles.tabCount, selected && styles.selectedTabCount]}
+                accessibilityLabel={`${count} ${tab.label.toLowerCase()}`}
+              >
+                {count}
+              </Text>
+            </View>
           </Pressable>
         );
       })}
@@ -57,6 +67,11 @@ const styles = StyleSheet.create({
   selectedTab: {
     backgroundColor: Colors.bg.card,
   },
+  tabContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   tabText: {
     color: Colors.text.faint,
     fontSize: 13,
@@ -64,5 +79,16 @@ const styles = StyleSheet.create({
   },
   selectedTabText: {
     color: Colors.text.primary,
+  },
+  tabCount: {
+    color: Colors.text.faint,
+    fontSize: 11,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+    minWidth: 10,
+    textAlign: 'left',
+  },
+  selectedTabCount: {
+    color: Colors.text.muted,
   },
 });

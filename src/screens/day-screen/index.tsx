@@ -32,7 +32,7 @@ export function DayScreen() {
 
   const todayStr = toDateString(new Date(), dayCutoffHour);
   const [selectedDate, setSelectedDate] = useState(todayStr);
-  const [selectedTab, setSelectedTab] = useState<DayTab>('metadata');
+  const [selectedTab, setSelectedTab] = useState<DayTab>('logs');
 
   // Logs for the selected date
   const dayLogs = useMemo(() => {
@@ -130,6 +130,7 @@ export function DayScreen() {
       <DayTabSelector
         selectedTab={selectedTab}
         onSelect={setSelectedTab}
+        counts={{ logs: totalEntries, metadata: metadataTotals.length }}
       />
 
       {selectedTab === 'metadata' ? (
