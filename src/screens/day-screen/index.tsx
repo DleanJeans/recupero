@@ -1,12 +1,14 @@
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
-import { Text } from '../../components/text';
 import { useDeferredComputation } from '../../hooks/use-deferred-computation';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
+import type { RootStackParamList } from '../../types/navigation';
 import {
   getAllDailyMetadataTotals,
   getBehaviorLogsForDate,
@@ -26,6 +28,7 @@ import { LogList } from './components/log-list';
 import { MetadataSummaryRow } from './components/metadata-summary-row';
 
 export function DayScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const behaviors = useBehaviorStore(s => s.behaviors);
   const categories = useBehaviorStore(s => s.categories);
   const tasks = useBehaviorStore(s => s.tasks);
@@ -121,6 +124,13 @@ export function DayScreen() {
   };
 
   const isToday = selectedDate === todayStr;
+  const handleEditLog = (behaviorId: string, logId: string) => {
+    navigation.navigate('BehaviorLog', {
+      behaviorId,
+      initialMode: 'log',
+      logId,
+    });
+  };
 
   return (
     <SafeAreaView
@@ -160,6 +170,7 @@ export function DayScreen() {
             entries={dayLogs}
             selectedDate={selectedDate}
             categories={categories}
+            onEditLog={handleEditLog}
           />
         </>
       )}
