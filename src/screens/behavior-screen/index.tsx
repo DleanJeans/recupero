@@ -20,12 +20,12 @@ type ScreenMode = 'details' | 'log';
 export function BehaviorScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'BehaviorLog'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { behaviorId, initialMode, timerStartTimestamp, timerEndTimestamp } = route.params;
+  const { behaviorId, initialMode, logId, timerStartTimestamp, timerEndTimestamp } = route.params;
 
   const behavior = useBehaviorStore(useCallback(state => state.behaviors.find(b => b.id === behaviorId), [behaviorId]));
 
-  const [mode, setMode] = useState<ScreenMode>(initialMode ?? 'details');
-  const [editLogId, setEditLogId] = useState<string | undefined>(undefined);
+  const [mode, setMode] = useState<ScreenMode>(logId ? 'log' : (initialMode ?? 'details'));
+  const [editLogId, setEditLogId] = useState<string | undefined>(logId);
   const [formKey, setFormKey] = useState(0);
 
   const isEditing = editLogId != null;

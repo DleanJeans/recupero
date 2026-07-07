@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { BehaviorIcon } from '../../../components/behavior-icon';
 import { StarRow } from '../../../components/star-row';
 import { Text } from '../../../components/text';
@@ -19,6 +19,7 @@ interface LogListProps {
   entries: DayLogEntry[];
   selectedDate: string;
   categories: Category[];
+  onEditLog: (behaviorId: string, logId: string) => void;
 }
 
 function formatEntryMetadata(
@@ -55,7 +56,7 @@ function formatEntryMetadata(
   ) : null;
 }
 
-export function LogList({ entries, selectedDate, categories }: LogListProps) {
+export function LogList({ entries, selectedDate, categories, onEditLog }: LogListProps) {
   const minuteGroups = React.useMemo(() => {
     const groups: { minuteTimestamp: number; entries: DayLogEntry[] }[] = [];
     for (const entry of entries) {
@@ -103,7 +104,11 @@ export function LogList({ entries, selectedDate, categories }: LogListProps) {
                   {group.entries.map((entry, ei) => (
                     <React.Fragment key={entry.log.id}>
                       {ei > 0 && <View style={styles.entrySep} />}
-                      <View style={styles.entryRow}>
+                      <Pressable
+                        style={({ pressed }) => [styles.entryRow, pressed && styles.entryRowPressed]}
+                        onLongPress={() => onEditLog(entry.behavior.id, entry.log.id)}
+                        delayLongPress={150}
+                      >
                         <View style={styles.entryInlineRow}>
                           <BehaviorIcon
                             behavior={entry.behavior}
@@ -129,7 +134,7 @@ export function LogList({ entries, selectedDate, categories }: LogListProps) {
                           </Text>
                         )}
                         {formatEntryMetadata(entry.log.metadata, entry.behavior, categories)}
-                      </View>
+                      </Pressable>
                     </React.Fragment>
                   ))}
                 </View>
@@ -180,6 +185,13 @@ const styles = StyleSheet.create({
   entryRow: {
     flexDirection: 'column',
     gap: 2,
+    borderRadius: 8,
+    marginHorizontal: -8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  entryRowPressed: {
+    backgroundColor: Colors.bg.card,
   },
   entrySep: {
     height: 6,

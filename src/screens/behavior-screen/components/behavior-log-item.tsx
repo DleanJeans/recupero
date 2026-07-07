@@ -62,7 +62,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
       <Pressable
         style={styles.logItem}
         onLongPress={onEdit}
-        delayLongPress={300}
+        delayLongPress={150}
       >
         <View style={styles.timeContent}>
           <Text style={styles.dateText}>{timeText}</Text>
