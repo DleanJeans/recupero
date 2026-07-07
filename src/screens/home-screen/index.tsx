@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Button } from '../../components/button';
 import { CategoryFilter } from '../../components/category-filter';
@@ -10,6 +10,7 @@ import { useAfterInteractionsFlag } from '../../hooks/use-after-interactions-fla
 import { useBackGuard } from '../../hooks/use-back-guard';
 import { useDeferredCategorySelection } from '../../hooks/use-deferred-category-selection';
 import { useBehaviorStore } from '../../store/behavior-store';
+import { useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
@@ -27,6 +28,8 @@ export function HomeScreen() {
   const categories = useBehaviorStore(s => s.categories);
   const tasks = useBehaviorStore(s => s.tasks);
   const hidePrivate = useSettingsStore(s => s.hidePrivate);
+  const homeSelectedCategoryId = useScreenUiStore(s => s.homeSelectedCategoryId);
+  const setHomeSelectedCategoryId = useScreenUiStore(s => s.setHomeSelectedCategoryId);
   const {
     selectedCategoryId,
     listCategoryId,
@@ -34,19 +37,27 @@ export function HomeScreen() {
     categoryListPending,
     selectCategory,
     resetCategorySelection,
-  } = useDeferredCategorySelection();
+  } = useDeferredCategorySelection(homeSelectedCategoryId);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [cooldownSortTick, setCooldownSortTick] = useState(0);
   const cooldownSelected = isCooldownCategoryFilterId(selectedCategoryId);
   const listCooldownSelected = isCooldownCategoryFilterId(listCategoryId);
+  const handleSelectCategory = useCallback(
+    (id: string | null) => {
+      selectCategory(id);
+      setHomeSelectedCategoryId(id);
+    },
+    [selectCategory, setHomeSelectedCategoryId],
+  );
 
   // Reset selection if the selected category no longer exists
   useEffect(() => {
     if (selectedCategoryId !== null && !cooldownSelected && !categories.some(c => c.id === selectedCategoryId)) {
+      setHomeSelectedCategoryId(null);
       resetCategorySelection();
     }
-  }, [categories, cooldownSelected, resetCategorySelection, selectedCategoryId]);
+  }, [categories, cooldownSelected, resetCategorySelection, selectedCategoryId, setHomeSelectedCategoryId]);
 
   useEffect(() => {
     if (!cooldownSelected) return;
@@ -112,7 +123,7 @@ export function HomeScreen() {
 
       <CategoryFilter
         selectedCategoryId={selectedCategoryId}
-        onSelectCategory={selectCategory}
+        onSelectCategory={handleSelectCategory}
       />
 
       {isSearching

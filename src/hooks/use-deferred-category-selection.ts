@@ -6,6 +6,7 @@ export function useDeferredCategorySelection(initialCategoryId: CategoryId = nul
   const [selectedCategoryId, setSelectedCategoryId] = useState<CategoryId>(initialCategoryId);
   const [listCategoryId, setListCategoryId] = useState<CategoryId>(initialCategoryId);
   const [categoryListPending, setCategoryListPending] = useState(false);
+  const initialCategoryIdRef = useRef(initialCategoryId);
   const pendingCategoryFrame = useRef<ReturnType<typeof requestAnimationFrame> | null>(null);
   const pendingCategoryTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -56,6 +57,19 @@ export function useDeferredCategorySelection(initialCategoryId: CategoryId = nul
   useEffect(() => {
     return cancelPendingCategorySwitch;
   }, [cancelPendingCategorySwitch]);
+
+  useEffect(() => {
+    const previousInitialCategoryId = initialCategoryIdRef.current;
+    if (previousInitialCategoryId === initialCategoryId) return;
+
+    initialCategoryIdRef.current = initialCategoryId;
+    if (selectedCategoryId !== previousInitialCategoryId || listCategoryId !== previousInitialCategoryId) return;
+
+    cancelPendingCategorySwitch();
+    setSelectedCategoryId(initialCategoryId);
+    setListCategoryId(initialCategoryId);
+    setCategoryListPending(false);
+  }, [cancelPendingCategorySwitch, initialCategoryId, listCategoryId, selectedCategoryId]);
 
   return {
     selectedCategoryId,

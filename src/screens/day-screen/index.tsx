@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { Text } from '../../components/text';
 import { useDeferredComputation } from '../../hooks/use-deferred-computation';
 import { useBehaviorStore } from '../../store/behavior-store';
+import { useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
 import {
   getAllDailyMetadataTotals,
@@ -29,10 +30,24 @@ export function DayScreen() {
   const categories = useBehaviorStore(s => s.categories);
   const tasks = useBehaviorStore(s => s.tasks);
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
+  const dayScreenSelectedDate = useScreenUiStore(s => s.dayScreenSelectedDate);
+  const setDayScreenSelectedDate = useScreenUiStore(s => s.setDayScreenSelectedDate);
 
   const todayStr = toDateString(new Date(), dayCutoffHour);
-  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const selectedDate = dayScreenSelectedDate ?? todayStr;
+  const setSelectedDate = useCallback(
+    (date: string) => {
+      setDayScreenSelectedDate(date);
+    },
+    [setDayScreenSelectedDate],
+  );
   const [selectedTab, setSelectedTab] = useState<DayTab>('logs');
+
+  useEffect(() => {
+    if (selectedDate > todayStr) {
+      setSelectedDate(todayStr);
+    }
+  }, [selectedDate, setSelectedDate, todayStr]);
 
   // Logs for the selected date
   const dayLogs = useMemo(() => {

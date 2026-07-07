@@ -7,6 +7,7 @@ import { ScreenTitle } from '../../components/screen-title';
 import { Text } from '../../components/text';
 import { useDeferredComputation } from '../../hooks/use-deferred-computation';
 import { useBehaviorStore } from '../../store/behavior-store';
+import { useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
 import type { TaskEntry, TaskStarValue } from '../../types/task';
 import { getCalendarTaskCompletionMetrics } from '../../utils/calendar-metrics';
@@ -23,7 +24,15 @@ const TASK_LIST_LAYOUT = LinearTransition.duration(240);
 export function TaskScreen() {
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const todayStr = useMemo(() => toDateString(new Date(), dayCutoffHour), [dayCutoffHour]);
-  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const taskScreenSelectedDate = useScreenUiStore(s => s.taskScreenSelectedDate);
+  const setTaskScreenSelectedDate = useScreenUiStore(s => s.setTaskScreenSelectedDate);
+  const selectedDate = taskScreenSelectedDate ?? todayStr;
+  const setSelectedDate = useCallback(
+    (date: string) => {
+      setTaskScreenSelectedDate(date);
+    },
+    [setTaskScreenSelectedDate],
+  );
   const [title, setTitle] = useState('');
   const [behaviorQuery, setBehaviorQuery] = useState('');
   const [stars, setStars] = useState<TaskStarValue>(1);
