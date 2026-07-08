@@ -1,6 +1,7 @@
 import React from 'react';
-import { Image, Text } from 'react-native';
+import { Image } from 'react-native';
 import type { BehaviorEntry } from '../types/behavior';
+import { Text } from './text';
 
 interface Props {
   behavior: BehaviorEntry;

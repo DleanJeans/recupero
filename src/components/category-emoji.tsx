@@ -1,7 +1,7 @@
 import React from 'react';
-import { Text } from 'react-native';
 import { useBehaviorStore } from '../store/behavior-store';
 import type { BehaviorEntry } from '../types/behavior';
+import { Text } from './text';
 
 interface Props {
   behavior: BehaviorEntry;

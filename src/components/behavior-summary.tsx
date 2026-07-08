@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useSettingsStore } from '../store/settings-store';
 import type { BehaviorEntry } from '../types/behavior';
 import { getBehaviorTypeColor } from '../utils/behavior-type-utils';
@@ -21,6 +21,7 @@ import { CategoryEmoji } from './category-emoji';
 import { CooldownBar } from './cooldown-bar';
 import { DecayBar } from './decay-bar';
 import { StarRow } from './star-row';
+import { Text } from './text';
 import { XPBar } from './xp-bar';
 
 interface Props {

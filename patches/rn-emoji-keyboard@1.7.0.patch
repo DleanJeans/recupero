@@ -1,5 +1,46 @@
+diff --git a/src/components/SearchBar.tsx b/src/components/SearchBar.tsx
+index 4a62562d9d957a1725f92f49b01624ecebd3f82b..c1f55ae817b6cff903d17b6bc8a35ebd6ce7b6bc 100644
+--- a/src/components/SearchBar.tsx
++++ b/src/components/SearchBar.tsx
+@@ -3,6 +3,14 @@ import { View, StyleSheet, TextInput, TouchableOpacity } from 'react-native'
+ import { KeyboardContext } from '../contexts/KeyboardContext'
+ import { Icon } from './Icon'
+ 
++/**
++ * Patch: hardcode the search input to NotoColorEmoji so emoji are rendered
++ * with proper ZWJ ligatures. NotoColorEmoji (CBDT bitmap) has no Latin
++ * letters, so typed Latin text shows as missing-glyph boxes — accepted
++ * trade-off since the search query is short-lived and the user can still
++ * see the placeholder and clear button.
++ */
++
+ type SearchBarProps = {
+   scrollEmojiCategoryListToIndex: (index: number) => void
+ }
+@@ -62,7 +70,7 @@ export const SearchBar = ({ scrollEmojiCategoryListToIndex }: SearchBarProps) =>
+       ]}
+     >
+       <TextInput
+-        style={[styles.input, themeStyles.searchBar.text, { color: theme.search.text }]}
++        style={[styles.input, themeStyles.searchBar.text, { color: theme.search.text, fontFamily: 'NotoColorEmoji' }]}
+         value={searchPhrase}
+         onChangeText={handleSearch}
+         placeholder={translation.search}
+diff --git a/src/components/SingleEmoji.tsx b/src/components/SingleEmoji.tsx
+index c878fc2888642edbc2bb07906a8c53f4775c1d14..310b2ca6775916c1f9a90a9d501bfdfcc97e6c5a 100644
+--- a/src/components/SingleEmoji.tsx
++++ b/src/components/SingleEmoji.tsx
+@@ -37,7 +37,7 @@ export const SingleEmoji = React.memo(
+         style={styles.container}
+       >
+         <View pointerEvents={'none'} style={[styles.emojiWrapper, p.selectedEmojiStyle]}>
+-          <Text style={[styles.emoji, { fontSize: p.emojiSize }]}>{p.item.emoji}</Text>
++          <Text style={[styles.emoji, { fontSize: p.emojiSize, fontFamily: 'NotoColorEmoji' }]}>{p.item.emoji}</Text>
+         </View>
+       </TouchableOpacity>
+     )
 diff --git a/src/hooks/useKeyboard.ts b/src/hooks/useKeyboard.ts
-index d4ff949d67c44c3630345b2b41dc4d950a17779b..a99e9e4683b38fb62be7e8aa7bdb6e9b4f5e5ee9 100644
+index d4ff949d67c44c3630345b2b41dc4d950a17779b..a99e9e478f3d7d4d249da4d4cd44e58ef7ddba9e 100644
 --- a/src/hooks/useKeyboard.ts
 +++ b/src/hooks/useKeyboard.ts
 @@ -1,11 +1,11 @@

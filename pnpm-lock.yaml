@@ -6,7 +6,7 @@ settings:
 
 patchedDependencies:
   rn-emoji-keyboard@1.7.0:
-    hash: c39960100f20af8d8b0875110119024297093047d70633d8693e10c16a3ebddb
+    hash: 33a3212a2480b2a5d1fee975408b6dac3936fd736b1a39376c3226068bad00ef
     path: patches/rn-emoji-keyboard@1.7.0.patch
 
 importers:
@@ -31,6 +31,9 @@ importers:
       date-fns:
         specifier: ^4.4.0
         version: 4.4.0
+      emojibase-data:
+        specifier: ^17.0.0
+        version: 17.0.0(emojibase@17.0.0)
       expo:
         specifier: ~55.0.19
         version: 55.0.26(@babel/core@7.29.7)(@expo/dom-webview@55.0.6)(@expo/metro-runtime@55.0.11)(react-native-worklets@0.7.4(@babel/core@7.29.7)(react-native@0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0))(react-native@0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)(typescript@5.9.3)
@@ -102,10 +105,7 @@ importers:
         version: 0.7.4(@babel/core@7.29.7)(react-native@0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
       rn-emoji-keyboard:
         specifier: ^1.7.0
-        version: 1.7.0(patch_hash=c39960100f20af8d8b0875110119024297093047d70633d8693e10c16a3ebddb)(react-native@0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
-      unicode-emoji-json:
-        specifier: ^0.9.0
-        version: 0.9.0
+        version: 1.7.0(patch_hash=33a3212a2480b2a5d1fee975408b6dac3936fd736b1a39376c3226068bad00ef)(react-native@0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
       uuid:
         specifier: ^13.0.0
         version: 13.0.2
@@ -2203,6 +2203,15 @@ packages:
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
+
+  emojibase-data@17.0.0:
+    resolution: {integrity: sha512-Yvgb5AWoHViHV/gq1qr5ZAarcBip+B27/ZLRsUJkbgAEaLlZ/fof9g882LTpmEpyhBNEC0m2SEmItljHsTygjA==}
+    peerDependencies:
+      emojibase: '*'
+
+  emojibase@17.0.0:
+    resolution: {integrity: sha512-bXdpf4HPY3p41zK5swVKZdC/VynsMZ4LoLxdYDE+GucqkFwzcM1GVc4ODfYAlwoKaf2U2oNNUoOO78N96ovpBA==}
+    engines: {node: '>=18.12.0'}
 
   encodeurl@1.0.2:
     resolution: {integrity: sha512-TPJXq8JqFaVYm2CWmPvnP2Iyo4ZSM7/QKcSmuMLDObfpH5fi7RUGmd/rTDf+rut/saiDiQEeVTNgAmJEdAOx0w==}
@@ -4660,9 +4669,6 @@ packages:
   unicode-canonical-property-names-ecmascript@2.0.1:
     resolution: {integrity: sha512-dA8WbNeb2a6oQzAQ55YlT5vQAWGV9WXOsi3SskE3bcCdM0P4SDd+24zS/OCacdRq5BkdsRj9q3Pg6YyQoxIGqg==}
     engines: {node: '>=4'}
-
-  unicode-emoji-json@0.9.0:
-    resolution: {integrity: sha512-HdrQW/7SdbXUsTd8uTATv7LvQJkCSgbAgRCDCtOhQ6xn3EAx+xZHQtRniOXWJK3ywIqPegkNhP4U4EbuFsiQng==}
 
   unicode-match-property-ecmascript@2.0.0:
     resolution: {integrity: sha512-5kaZCrbp5mmbz5ulBkDkbY0SsPOjKqVS35VpL9ulMPfSl0J0Xsm+9Evphv9CoIZFwre7aJoa94AY6seMKGVN5Q==}
@@ -7691,6 +7697,12 @@ snapshots:
 
   emoji-regex@8.0.0: {}
 
+  emojibase-data@17.0.0(emojibase@17.0.0):
+    dependencies:
+      emojibase: 17.0.0
+
+  emojibase@17.0.0: {}
+
   encodeurl@1.0.2: {}
 
   encodeurl@2.0.0: {}
@@ -10413,7 +10425,7 @@ snapshots:
     dependencies:
       glob: 7.2.3
 
-  rn-emoji-keyboard@1.7.0(patch_hash=c39960100f20af8d8b0875110119024297093047d70633d8693e10c16a3ebddb)(react-native@0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0):
+  rn-emoji-keyboard@1.7.0(patch_hash=33a3212a2480b2a5d1fee975408b6dac3936fd736b1a39376c3226068bad00ef)(react-native@0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.15)(react@19.2.0))(react@19.2.0):
     dependencies:
       react: 19.2.0
       react-native: 0.83.6(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.15)(react@19.2.0)
@@ -10889,8 +10901,6 @@ snapshots:
   undici-types@7.24.6: {}
 
   unicode-canonical-property-names-ecmascript@2.0.1: {}
-
-  unicode-emoji-json@0.9.0: {}
 
   unicode-match-property-ecmascript@2.0.0:
     dependencies:
