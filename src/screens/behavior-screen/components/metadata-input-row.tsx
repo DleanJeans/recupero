@@ -1,8 +1,10 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { DailyGoalProgressBar } from '../../../components/daily-goal-progress-bar';
 import { Text, TextInput } from '../../../components/text';
 import type { MetadataField } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
+import type { DailyGoalProgress } from '../../../utils/metadata-calculation-utils';
 import { sanitizeDecimalInput } from '../../../utils/metadata-calculation-utils';
 
 interface MetadataInputRowProps {
@@ -12,9 +14,12 @@ interface MetadataInputRowProps {
   onChange: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   onFocus: () => void;
   onBlur: () => void;
+  /** When set and the field has a `dailyGoal`, render a small progress bar
+   *  under the input showing today's progress and the after-log delta. */
+  progress?: DailyGoalProgress | null;
 }
 
-export function MetadataInputRow({ field, value, label, onChange, onFocus, onBlur }: MetadataInputRowProps) {
+export function MetadataInputRow({ field, value, label, onChange, onFocus, onBlur, progress }: MetadataInputRowProps) {
   return (
     <View
       key={field.key}
@@ -33,6 +38,22 @@ export function MetadataInputRow({ field, value, label, onChange, onFocus, onBlu
         returnKeyType="done"
         maxLength={8}
       />
+      {progress && <ProgressIndicator progress={progress} />}
+    </View>
+  );
+}
+
+function ProgressIndicator({ progress }: { progress: DailyGoalProgress }) {
+  return (
+    <View style={styles.progressRow}>
+      <View style={styles.progressBar}>
+        <DailyGoalProgressBar
+          current={progress.current}
+          after={progress.after}
+          goal={progress.goal}
+        />
+      </View>
+      <Text style={styles.progressDelta}>+{progress.deltaPercent}%</Text>
     </View>
   );
 }
@@ -61,5 +82,20 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     color: Colors.text.primary,
     fontSize: 16,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 2,
+  },
+  progressBar: {
+    flex: 1,
+  },
+  progressDelta: {
+    color: Colors.type.desirable,
+    fontSize: 12,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
 });

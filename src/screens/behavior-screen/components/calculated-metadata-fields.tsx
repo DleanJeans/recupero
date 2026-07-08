@@ -1,9 +1,14 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { DailyGoalProgressBar } from '../../../components/daily-goal-progress-bar';
 import { Text } from '../../../components/text';
 import type { MetadataField } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
-import { formatMetadataFieldLabel, formatMetadataRateUnit } from '../../../utils/metadata-calculation-utils';
+import {
+  type DailyGoalProgress,
+  formatMetadataFieldLabel,
+  formatMetadataRateUnit,
+} from '../../../utils/metadata-calculation-utils';
 import { metadataInputRowStyles } from './metadata-input-row';
 
 interface CalculatedMetadataFieldsProps {
@@ -12,6 +17,9 @@ interface CalculatedMetadataFieldsProps {
   fields: MetadataField[];
   metadataValues: Record<string, string>;
   calculatedMetadataValues: Record<string, number>;
+  /** Per-field progress for fields that have a `dailyGoal`. Rows whose key
+   *  is missing or whose entry is `null` won't show a bar. */
+  progressByField?: Record<string, DailyGoalProgress | null>;
 }
 
 export function CalculatedMetadataFields({
@@ -20,6 +28,7 @@ export function CalculatedMetadataFields({
   fields,
   metadataValues,
   calculatedMetadataValues,
+  progressByField,
 }: CalculatedMetadataFieldsProps) {
   if (fields.length === 0) return null;
 
@@ -29,6 +38,7 @@ export function CalculatedMetadataFields({
         const value = calculatedMetadataValues[field.key];
         const existingValue = metadataValues[field.key];
         const displayValue = value != null ? String(value) : (existingValue ?? '');
+        const progress = progressByField?.[field.key];
 
         return (
           <View
@@ -43,9 +53,25 @@ export function CalculatedMetadataFields({
                 {formatMetadataRateUnit({ field, amountField, includeFieldUnit: false })}
               </Text>
             </View>
+            {progress && <ProgressIndicator progress={progress} />}
           </View>
         );
       })}
+    </View>
+  );
+}
+
+function ProgressIndicator({ progress }: { progress: DailyGoalProgress }) {
+  return (
+    <View style={styles.progressRow}>
+      <View style={styles.progressBar}>
+        <DailyGoalProgressBar
+          current={progress.current}
+          after={progress.after}
+          goal={progress.goal}
+        />
+      </View>
+      <Text style={styles.progressDelta}>+{progress.deltaPercent}%</Text>
     </View>
   );
 }
@@ -88,5 +114,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flexShrink: 1,
     textAlign: 'right',
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 2,
+  },
+  progressBar: {
+    flex: 1,
+  },
+  progressDelta: {
+    color: Colors.type.desirable,
+    fontSize: 12,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
 });

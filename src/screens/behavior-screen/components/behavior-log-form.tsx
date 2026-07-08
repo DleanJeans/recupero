@@ -20,8 +20,10 @@ import { toDateString } from '../../../utils/date-utils';
 import { getDayMaxTimestamp, getDefaultTimedLogStartTimestamp, getLogFormTimestamp } from '../../../utils/log-utils';
 import {
   buildCalculatedMetadata,
+  type DailyGoalProgress,
   formatMetadataFieldLabel,
   getCalculatedMetadataFields,
+  getDailyGoalProgress,
   getManualMetadataFields,
   getSelectedAmountMetadataField,
 } from '../../../utils/metadata-calculation-utils';
@@ -130,6 +132,29 @@ export function BehaviorLogForm({
     if (amountValue === undefined || amountValue === '') return {};
     return buildCalculatedMetadata(metadataFields, behavior.defaultMetadata, Number(amountValue));
   }, [amountField, behavior.defaultMetadata, metadataFields, metadataValues]);
+
+  const progressByField = useMemo<Record<string, DailyGoalProgress | null>>(() => {
+    const map: Record<string, DailyGoalProgress | null> = {};
+    for (const field of metadataFields) {
+      let newValue: number | undefined;
+      if (field.calculation === 'per100') {
+        newValue = calculatedMetadataValues[field.key];
+      } else {
+        const raw = metadataValues[field.key];
+        const parsed = raw === undefined || raw === '' ? NaN : Number(raw);
+        newValue = Number.isFinite(parsed) ? parsed : undefined;
+      }
+      map[field.key] = getDailyGoalProgress({
+        behavior,
+        dateStr: selectedDate,
+        field,
+        newValue,
+        dayCutoffHour,
+        editLogId,
+      });
+    }
+    return map;
+  }, [behavior, calculatedMetadataValues, dayCutoffHour, editLogId, metadataFields, metadataValues, selectedDate]);
 
   const maxTimestampForDate = useMemo(
     () => getDayMaxTimestamp(selectedDate, nowRef.current, dayCutoffHour),
@@ -401,6 +426,7 @@ export function BehaviorLogForm({
               onChange={setMetadataValues}
               onFocus={handleCollapseTime}
               onBlur={handleInputBlur}
+              progress={progressByField[amountField.key]}
             />
           )}
           {manualMetadataFields.map(field => (
@@ -412,6 +438,7 @@ export function BehaviorLogForm({
               onChange={setMetadataValues}
               onFocus={handleCollapseTime}
               onBlur={handleInputBlur}
+              progress={progressByField[field.key]}
             />
           ))}
           <CalculatedMetadataFields
@@ -420,6 +447,7 @@ export function BehaviorLogForm({
             fields={calculatedMetadataFields}
             metadataValues={metadataValues}
             calculatedMetadataValues={calculatedMetadataValues}
+            progressByField={progressByField}
           />
 
           <Text style={styles.sectionLabel}>Notes</Text>
