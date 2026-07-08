@@ -21,11 +21,13 @@ export function BehaviorActions({ onDelete, onEdit, onLog }: BehaviorActionsProp
         onPress={onDelete}
         accessibilityLabel="Delete behavior"
       >
-        <Ionicons
-          name="trash-outline"
-          size={20}
-          color={Colors.text.primary}
-        />
+        <View style={styles.deleteIconWrapper}>
+          <Ionicons
+            name="trash-outline"
+            size={20}
+            color={Colors.text.primary}
+          />
+        </View>
       </Button>
       <Button
         variant="secondary"
@@ -55,11 +57,18 @@ export function BehaviorActions({ onDelete, onEdit, onLog }: BehaviorActionsProp
 const styles = StyleSheet.create({
   detailAction: { flex: 1, position: 'relative', bottom: 0, left: 0, right: 0 },
   deleteButton: {
-    width: 52,
-    height: 52,
+    width: 48,
+    height: 48,
+    padding: 0,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 12,
+  },
+  deleteIconWrapper: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   actionIconRow: {
     flexDirection: 'row',
