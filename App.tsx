@@ -15,6 +15,7 @@ import { useDeferredBottomNavNavigation } from './src/hooks/use-deferred-bottom-
 import { BehaviorFormScreen } from './src/screens/behavior-form-screen';
 import { BehaviorScreen } from './src/screens/behavior-screen';
 import { CategoryFormScreen } from './src/screens/category-form-screen';
+import { CueScreen } from './src/screens/cue-screen';
 import { DayScreen } from './src/screens/day-screen';
 import { HomeScreen } from './src/screens/home-screen';
 import { MoneyLogScreen } from './src/screens/money-log-screen';
@@ -26,13 +27,14 @@ import type { RootStackParamList } from './src/types/navigation';
 import { Colors } from './src/utils/colors';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-const BOTTOM_NAV_ROUTES = new Set<string>(['Home', 'Timer', 'Day', 'Tasks']);
+const BOTTOM_NAV_ROUTES = new Set<string>(['Home', 'Cues', 'Timer', 'Day', 'Tasks']);
 
 const linking = {
   prefixes: ['exp+recupero://'],
   config: {
     screens: {
       Home: 'home',
+      Cues: 'cues',
       Timer: 'timer',
       Day: 'day',
       Tasks: 'tasks',
@@ -101,6 +103,11 @@ export default function App() {
                     name="Home"
                     component={HomeScreen}
                     options={{ animation: 'ios_from_left' }}
+                  />
+                  <Stack.Screen
+                    name="Cues"
+                    component={CueScreen}
+                    options={{ animation: 'fade_from_bottom' }}
                   />
                   <Stack.Screen
                     name="Timer"

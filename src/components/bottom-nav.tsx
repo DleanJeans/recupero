@@ -16,11 +16,12 @@ import { Text } from './text';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 const ITEMS: Array<{
-  route: keyof Pick<RootStackParamList, 'Home' | 'Timer' | 'Day' | 'Tasks'>;
+  route: keyof Pick<RootStackParamList, 'Home' | 'Cues' | 'Timer' | 'Day' | 'Tasks'>;
   label: string;
   icon: IoniconName;
 }> = [
   { route: 'Home', label: 'Home', icon: 'home' },
+  { route: 'Cues', label: 'Cues', icon: 'radio' },
   { route: 'Timer', label: 'Timer', icon: 'stopwatch' },
   { route: 'Day', label: 'Day', icon: 'calendar' },
   { route: 'Tasks', label: 'Tasks', icon: 'checkmark-circle' },
