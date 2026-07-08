@@ -1,9 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
-import { Swipeable } from 'react-native-gesture-handler';
-import { SwipeDeleteButton, SwipeEditButton } from '../../../components/swipe-action-button';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
-import { useBehaviorStore } from '../../../store/behavior-store';
 import { useSettingsStore } from '../../../store/settings-store';
 import type { LogEntry, MetadataField } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
@@ -13,7 +10,6 @@ import { formatDuration, formatElapsedNumeric, formatTimeRange } from '../../../
 
 interface Props {
   log: LogEntry;
-  behaviorId: string;
   onEdit: () => void;
   metadataFields?: MetadataField[];
   elapsedTick: number;
@@ -22,13 +18,11 @@ interface Props {
 
 export const BehaviorLogItem = React.memo(function BehaviorLogItem({
   log,
-  behaviorId,
   onEdit,
   metadataFields,
   elapsedTick,
   isDecayed = false,
 }: Props) {
-  const removeLog = useBehaviorStore(state => state.removeLog);
   const timeFormat = useSettingsStore(state => state.timeFormat);
   const timeText = useMemo(
     () => formatTimeRange(log.timestamp, log.endTimestamp, timeFormat === '12h'),
@@ -41,32 +35,13 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
     [log, isRange],
   );
 
-  const handleRemove = useCallback(() => {
-    Alert.alert('Remove Log', 'Remove this log entry?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () => removeLog(behaviorId, log.id),
-      },
-    ]);
-  }, [behaviorId, log.id, removeLog]);
-
-  const renderLeftActions = useCallback(() => <SwipeDeleteButton onPress={handleRemove} />, [handleRemove]);
-  const renderRightActions = useCallback(() => <SwipeEditButton onPress={onEdit} />, [onEdit]);
+  const handlePress = useCallback(() => onEdit(), [onEdit]);
 
   return (
-    <Swipeable
-      renderLeftActions={renderLeftActions}
-      renderRightActions={renderRightActions}
-      overshootLeft={false}
-      overshootRight={false}
+    <Pressable
+      style={[styles.logItem, isRange && styles.logItemRange, isDecayed && styles.decayedLogItem]}
+      onPress={handlePress}
     >
-      <Pressable
-        style={[styles.logItem, isRange && styles.logItemRange, isDecayed && styles.decayedLogItem]}
-        onLongPress={onEdit}
-        delayLongPress={150}
-      >
         <View style={[styles.timeContent, isRange && styles.timeContentRange]}>
           <Text style={[styles.dateText, isDecayed && styles.decayedText]}>
             {timeText}
@@ -102,8 +77,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
             </View>
           ) : null}
         </View>
-      </Pressable>
-    </Swipeable>
+    </Pressable>
   );
 });
 

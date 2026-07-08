@@ -1,5 +1,14 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { type GestureResponderEvent, Keyboard, KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  Alert,
+  type GestureResponderEvent,
+  Keyboard,
+  KeyboardAvoidingView,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { Button } from '../../../components/button';
 import { DatePicker } from '../../../components/date-picker';
 import { Text, TextInput } from '../../../components/text';
@@ -18,6 +27,7 @@ import {
 } from '../../../utils/metadata-calculation-utils';
 import { formatDuration, MS_PER_MINUTE } from '../../../utils/time-utils';
 import { XP_PER_LOG } from '../../../utils/xp-utils';
+import { FabButtonRow } from '../../components/fab-button-row';
 import { CalculatedMetadataFields } from './calculated-metadata-fields';
 import { FloatingXPBurst, type XPBurst } from './floating-xp-burst';
 import { MetadataInputRow } from './metadata-input-row';
@@ -53,6 +63,7 @@ export function BehaviorLogForm({
   );
   const logBehavior = useBehaviorStore(state => state.logBehavior);
   const updateLog = useBehaviorStore(state => state.updateLog);
+  const removeLog = useBehaviorStore(state => state.removeLog);
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
 
   const nowRef = useRef(new Date());
@@ -298,6 +309,21 @@ export function BehaviorLogForm({
     ],
   );
 
+  const handleDelete = useCallback(() => {
+    if (!editLogId) return;
+    Alert.alert('Remove Log', 'Remove this log entry?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () => {
+          removeLog(behaviorId, editLogId);
+          onSaved();
+        },
+      },
+    ]);
+  }, [behaviorId, editLogId, onSaved, removeLog]);
+
   const renderTimePicker = useCallback(
     (label: string, hour: number, minute: number, wheelKey: number, applyMinutes: (nextMinutes: number) => void) => (
       <TimePicker
@@ -317,115 +343,134 @@ export function BehaviorLogForm({
   );
 
   return (
-    <KeyboardAvoidingView
-      behavior="padding"
-      style={styles.flex}
-    >
-      <View style={styles.fixedTop}>
-        <Text style={styles.sectionLabel}>Date</Text>
-        <View style={styles.datePickerWrapper}>
-          <DatePicker
-            selectedDate={selectedDate}
-            maxDate={todayStr}
-            onSelect={setSelectedDate}
-          />
+    <View style={styles.flex}>
+      <KeyboardAvoidingView
+        behavior="padding"
+        style={styles.flex}
+      >
+        <View style={styles.fixedTop}>
+          <Text style={styles.sectionLabel}>Date</Text>
+          <View style={styles.datePickerWrapper}>
+            <DatePicker
+              selectedDate={selectedDate}
+              maxDate={todayStr}
+              onSelect={setSelectedDate}
+            />
+          </View>
+
+          {showTimeRange ? (
+            <View style={styles.timePickerRow}>
+              <View style={styles.timePickerColumn}>
+                {renderTimePicker('Start', startHour, startMinute, startWheelKey, applyStartMinutes)}
+              </View>
+
+              <Text style={styles.timePickerSeparator}>-</Text>
+
+              <View style={styles.timePickerColumn}>
+                {renderTimePicker('End', endHour, endMinute, endWheelKey, applyEndMinutes)}
+              </View>
+            </View>
+          ) : (
+            <View style={styles.singleTimePicker}>
+              {renderTimePicker('Time', endHour, endMinute, endWheelKey, applyEndMinutes)}
+            </View>
+          )}
+
+          {showTimeRange && (
+            <View style={styles.durationCard}>
+              <Text style={styles.durationLabel}>Duration</Text>
+              <Text style={styles.durationValue}>{formatDuration(durationMs)}</Text>
+              {behavior.xpEnabled && <Text style={styles.durationHint}>+{earnedXp} XP</Text>}
+            </View>
+          )}
         </View>
+        <ScrollView
+          style={styles.body}
+          contentContainerStyle={styles.bodyContent}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          showsVerticalScrollIndicator={false}
+          removeClippedSubviews
+        >
+          {metadataFields.length > 0 && <Text style={styles.sectionLabel}>Metadata</Text>}
+          {amountField && (
+            <MetadataInputRow
+              field={amountField}
+              value={metadataValues[amountField.key] ?? ''}
+              label={formatMetadataFieldLabel(amountField)}
+              onChange={setMetadataValues}
+              onFocus={handleCollapseTime}
+              onBlur={handleInputBlur}
+            />
+          )}
+          {manualMetadataFields.map(field => (
+            <MetadataInputRow
+              key={field.key}
+              field={field}
+              value={metadataValues[field.key] ?? ''}
+              label={formatMetadataFieldLabel(field)}
+              onChange={setMetadataValues}
+              onFocus={handleCollapseTime}
+              onBlur={handleInputBlur}
+            />
+          ))}
+          <CalculatedMetadataFields
+            amountField={amountField}
+            defaultMetadata={behavior.defaultMetadata}
+            fields={calculatedMetadataFields}
+            metadataValues={metadataValues}
+            calculatedMetadataValues={calculatedMetadataValues}
+          />
 
-        {showTimeRange ? (
-          <View style={styles.timePickerRow}>
-            <View style={styles.timePickerColumn}>
-              {renderTimePicker('Start', startHour, startMinute, startWheelKey, applyStartMinutes)}
-            </View>
-
-            <Text style={styles.timePickerSeparator}>-</Text>
-
-            <View style={styles.timePickerColumn}>
-              {renderTimePicker('End', endHour, endMinute, endWheelKey, applyEndMinutes)}
-            </View>
-          </View>
-        ) : (
-          <View style={styles.singleTimePicker}>
-            {renderTimePicker('Time', endHour, endMinute, endWheelKey, applyEndMinutes)}
-          </View>
-        )}
-
-        {showTimeRange && (
-          <View style={styles.durationCard}>
-            <Text style={styles.durationLabel}>Duration</Text>
-            <Text style={styles.durationValue}>{formatDuration(durationMs)}</Text>
-            {behavior.xpEnabled && <Text style={styles.durationHint}>+{earnedXp} XP</Text>}
-          </View>
-        )}
-      </View>
-      <ScrollView
-        style={styles.body}
-        contentContainerStyle={styles.bodyContent}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
-        showsVerticalScrollIndicator={false}
-        removeClippedSubviews
-      >
-        {metadataFields.length > 0 && <Text style={styles.sectionLabel}>Metadata</Text>}
-        {amountField && (
-          <MetadataInputRow
-            field={amountField}
-            value={metadataValues[amountField.key] ?? ''}
-            label={formatMetadataFieldLabel(amountField)}
-            onChange={setMetadataValues}
+          <Text style={styles.sectionLabel}>Notes</Text>
+          <TextInput
+            ref={notesRef}
+            style={styles.notesInput}
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="Optional notes..."
+            placeholderTextColor={Colors.text.dim}
+            multiline
+            maxLength={500}
+            textAlignVertical="top"
             onFocus={handleCollapseTime}
-            onBlur={handleInputBlur}
           />
-        )}
-        {manualMetadataFields.map(field => (
-          <MetadataInputRow
-            key={field.key}
-            field={field}
-            value={metadataValues[field.key] ?? ''}
-            label={formatMetadataFieldLabel(field)}
-            onChange={setMetadataValues}
-            onFocus={handleCollapseTime}
-            onBlur={handleInputBlur}
-          />
-        ))}
-        <CalculatedMetadataFields
-          amountField={amountField}
-          defaultMetadata={behavior.defaultMetadata}
-          fields={calculatedMetadataFields}
-          metadataValues={metadataValues}
-          calculatedMetadataValues={calculatedMetadataValues}
-        />
-
-        <Text style={styles.sectionLabel}>Notes</Text>
-        <TextInput
-          ref={notesRef}
-          style={styles.notesInput}
-          value={notes}
-          onChangeText={setNotes}
-          placeholder="Optional notes..."
-          placeholderTextColor={Colors.text.dim}
-          multiline
-          maxLength={500}
-          textAlignVertical="top"
-          onFocus={handleCollapseTime}
-        />
-      </ScrollView>
-      <Button
-        variant="primary"
-        fab
-        style={styles.logButton}
-        onPress={handleConfirm}
-        disabled={pending}
-        overlay={xpBursts.map(burst => (
-          <FloatingXPBurst
-            key={burst.id}
-            burst={burst}
-            onDone={removeXPBurst}
-          />
-        ))}
-      >
-        {logButtonLabel}
-      </Button>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+      <FabButtonRow>
+        {editLogId ? (
+          <Button
+            variant="danger"
+            style={styles.deleteButton}
+            onPress={handleDelete}
+            accessibilityLabel="Delete log"
+          >
+            <View style={styles.deleteIconWrapper}>
+              <Ionicons
+                name="trash-outline"
+                size={20}
+                color={Colors.text.primary}
+              />
+            </View>
+          </Button>
+        ) : null}
+        <Button
+          variant="primary"
+          style={styles.logButton}
+          onPress={handleConfirm}
+          disabled={pending}
+          overlay={xpBursts.map(burst => (
+            <FloatingXPBurst
+              key={burst.id}
+              burst={burst}
+              onDone={removeXPBurst}
+            />
+          ))}
+        >
+          {logButtonLabel}
+        </Button>
+      </FabButtonRow>
+    </View>
   );
 }
 
@@ -510,6 +555,20 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   logButton: {
-    bottom: 24,
+    flex: 1,
+  },
+  deleteButton: {
+    width: 48,
+    height: 48,
+    padding: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
+  },
+  deleteIconWrapper: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
