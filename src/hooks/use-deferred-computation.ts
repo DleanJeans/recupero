@@ -1,5 +1,5 @@
 import { type DependencyList, useEffect, useState } from 'react';
-import { InteractionManager } from 'react-native';
+import { scheduleIdleCallback } from '../utils/idle-callback-utils';
 
 export function useDeferredComputation<T>(compute: () => T, deps: DependencyList): T | undefined {
   const [value, setValue] = useState<T>();
@@ -8,7 +8,7 @@ export function useDeferredComputation<T>(compute: () => T, deps: DependencyList
     let cancelled = false;
     setValue(undefined);
 
-    const task = InteractionManager.runAfterInteractions(() => {
+    const cancelIdleCallback = scheduleIdleCallback(() => {
       if (!cancelled) {
         setValue(compute());
       }
@@ -16,7 +16,7 @@ export function useDeferredComputation<T>(compute: () => T, deps: DependencyList
 
     return () => {
       cancelled = true;
-      task.cancel?.();
+      cancelIdleCallback();
     };
   }, deps);
 

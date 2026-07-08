@@ -1,5 +1,5 @@
 import { type DependencyList, useEffect, useState } from 'react';
-import { InteractionManager } from 'react-native';
+import { scheduleIdleCallback } from '../utils/idle-callback-utils';
 
 export function useAfterInteractionsFlag(deps: DependencyList): boolean {
   const [ready, setReady] = useState(false);
@@ -8,7 +8,7 @@ export function useAfterInteractionsFlag(deps: DependencyList): boolean {
     let cancelled = false;
     setReady(false);
 
-    const task = InteractionManager.runAfterInteractions(() => {
+    const cancelIdleCallback = scheduleIdleCallback(() => {
       if (!cancelled) {
         setReady(true);
       }
@@ -16,7 +16,7 @@ export function useAfterInteractionsFlag(deps: DependencyList): boolean {
 
     return () => {
       cancelled = true;
-      task.cancel?.();
+      cancelIdleCallback();
     };
   }, deps);
 
