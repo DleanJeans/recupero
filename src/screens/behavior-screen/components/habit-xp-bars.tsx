@@ -4,7 +4,6 @@ import { XPBar } from '../../../components/xp-bar';
 import { useSettingsStore } from '../../../store/settings-store';
 import type { BehaviorEntry } from '../../../types/behavior';
 import { getBehaviorTypeColor } from '../../../utils/behavior-type-utils';
-import { Colors } from '../../../utils/colors';
 import { getBehaviorXp, getHighestEffectiveXp } from '../../../utils/xp-utils';
 
 interface HabitXPBarsProps {
@@ -52,8 +51,6 @@ export function HabitXPBars({ behavior }: HabitXPBarsProps) {
 
 const styles = StyleSheet.create({
   container: {
-    borderBottomColor: Colors.border.default,
-    borderBottomWidth: StyleSheet.hairlineWidth,
     gap: 8,
     paddingBottom: 12,
     paddingHorizontal: 16,

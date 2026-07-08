@@ -35,23 +35,19 @@ export function DecayedXPSummary({ behavior, now }: Props) {
 
 const styles = StyleSheet.create({
   summary: {
-    marginHorizontal: 16,
-    marginTop: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: Colors.status.error,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    borderBottomColor: Colors.border.default,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   label: {
     color: Colors.status.dangerLight,
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 10,
     textTransform: 'uppercase',
   },
   value: {
     color: Colors.status.dangerLight,
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 11,
     marginTop: 2,
   },
 });
