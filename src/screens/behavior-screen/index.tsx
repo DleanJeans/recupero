@@ -13,7 +13,6 @@ import { BehaviorScreenLayout } from '../components/behavior-screen-layout';
 import { BehaviorActions } from './components/behavior-actions';
 import { BehaviorLogForm } from './components/behavior-log-form';
 import { BehaviorLogList } from './components/behavior-log-list';
-import { HabitXPBars } from './components/habit-xp-bars';
 
 type ScreenMode = 'details' | 'log';
 
@@ -118,7 +117,6 @@ export function BehaviorScreen() {
     >
       {mode === 'details' ? (
         <View style={styles.detailsBody}>
-          <HabitXPBars behavior={behavior} />
           <BehaviorLogList
             behavior={behavior}
             onEditLog={handleEditLog}

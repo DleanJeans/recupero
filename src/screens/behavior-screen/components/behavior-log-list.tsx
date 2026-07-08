@@ -7,7 +7,10 @@ import type { BehaviorEntry } from '../../../types/behavior';
 import { groupLogsByRecency } from '../../../utils/behavior-utils';
 import { Colors } from '../../../utils/colors';
 import { getLogGapBounds } from '../../../utils/log-utils';
+import { getDecayedLogs } from '../../../utils/xp-utils';
 import { BehaviorLogItem } from './behavior-log-item';
+import { DecayedXPSummary } from './decayed-xp-summary';
+import { HabitXPBars } from './habit-xp-bars';
 import { LogGap } from './log-gap';
 
 interface BehaviorLogListProps {
@@ -26,7 +29,12 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
   const [elapsedTick, setElapsedTick] = useState(0);
 
   const logs = behavior.logs ?? [];
+  const now = useMemo(() => Date.now(), [elapsedTick]);
   const sections = useMemo(() => groupLogsByRecency(logs, dayCutoffHour), [dayCutoffHour, logs]);
+  const decayedLogIds = useMemo(
+    () => new Set(getDecayedLogs(behavior, now, dayCutoffHour).map(log => log.id)),
+    [behavior, dayCutoffHour, now],
+  );
   const metadataFields = category?.metadataFields;
 
   useEffect(() => {
@@ -62,11 +70,12 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
           behaviorId={behavior.id}
           metadataFields={metadataFields}
           elapsedTick={elapsedTick}
+          isDecayed={decayedLogIds.has(item.id)}
           onEdit={() => onEditLog(item.id)}
         />
       </>
     ),
-    [behavior.id, behavior.xpDecay, dayCutoffHour, elapsedTick, metadataFields, onEditLog],
+    [behavior.id, behavior.xpDecay, dayCutoffHour, decayedLogIds, elapsedTick, metadataFields, onEditLog],
   );
 
   const renderSectionHeader = useCallback(
@@ -101,8 +110,20 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
     () => <Text style={styles.empty}>No logs yet.{'\n'}Press Log below to record this behavior.</Text>,
     [],
   );
+  const listHeaderComponent = useMemo(
+    () => (
+      <View style={styles.listHeader}>
+        <HabitXPBars behavior={behavior} />
+        <DecayedXPSummary
+          behavior={behavior}
+          now={now}
+        />
+      </View>
+    ),
+    [behavior, now],
+  );
   const contentContainerStyle = useMemo(
-    () => [logs.length === 0 && styles.emptyContainer, { paddingBottom: 80 }],
+    () => [styles.listContent, logs.length === 0 && styles.emptyContainer],
     [logs.length],
   );
 
@@ -113,6 +134,7 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
       keyExtractor={item => item.id}
       renderItem={renderItem}
       renderSectionHeader={renderSectionHeader}
+      ListHeaderComponent={listHeaderComponent}
       ListEmptyComponent={listEmptyComponent}
       contentContainerStyle={contentContainerStyle}
       contentInsetAdjustmentBehavior="automatic"
@@ -123,6 +145,12 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
 const styles = StyleSheet.create({
   list: {
     flex: 1,
+  },
+  listContent: {
+    paddingBottom: 80,
+  },
+  listHeader: {
+    paddingBottom: 4,
   },
   emptyContainer: {
     flex: 1,

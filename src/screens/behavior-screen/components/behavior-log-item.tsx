@@ -17,6 +17,7 @@ interface Props {
   onEdit: () => void;
   metadataFields?: MetadataField[];
   elapsedTick: number;
+  isDecayed?: boolean;
 }
 
 export const BehaviorLogItem = React.memo(function BehaviorLogItem({
@@ -25,6 +26,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
   onEdit,
   metadataFields,
   elapsedTick,
+  isDecayed = false,
 }: Props) {
   const removeLog = useBehaviorStore(state => state.removeLog);
   const timeFormat = useSettingsStore(state => state.timeFormat);
@@ -60,14 +62,14 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
       overshootRight={false}
     >
       <Pressable
-        style={styles.logItem}
+        style={[styles.logItem, isDecayed && styles.decayedLogItem]}
         onLongPress={onEdit}
         delayLongPress={150}
       >
         <View style={styles.timeContent}>
-          <Text style={styles.dateText}>{timeText}</Text>
-          {durationText ? <Text style={styles.timeText}>{durationText}</Text> : null}
-          <Text style={styles.elapsedText}>{elapsedText}</Text>
+          <Text style={[styles.dateText, isDecayed && styles.decayedText]}>{timeText}</Text>
+          {durationText ? <Text style={[styles.timeText, isDecayed && styles.decayedText]}>{durationText}</Text> : null}
+          <Text style={[styles.elapsedText, isDecayed && styles.decayedText]}>{elapsedText}</Text>
         </View>
         <View style={log.metadata ? styles.contentArea : undefined}>
           {metadataFields?.map(field => {
@@ -110,6 +112,9 @@ const styles = StyleSheet.create({
     marginVertical: 6,
     marginHorizontal: 16,
     overflow: 'hidden',
+  },
+  decayedLogItem: {
+    backgroundColor: Colors.status.error,
   },
   timeContent: {
     flex: 2,
@@ -157,5 +162,8 @@ const styles = StyleSheet.create({
   elapsedText: {
     color: Colors.text.muted,
     fontSize: 13,
+  },
+  decayedText: {
+    color: Colors.status.dangerLight,
   },
 });

@@ -104,6 +104,12 @@ export function getEffectiveLogCount(behavior: BehaviorEntry, now: number = Date
   return Math.max(0, behavior.logs.length - getDecayLogCount(behavior, now, dayCutoffHour));
 }
 
+export function getDecayedLogs(behavior: BehaviorEntry, now: number = Date.now(), dayCutoffHour = 0): LogEntry[] {
+  const decayLogCount = getDecayLogCount(behavior, now, dayCutoffHour);
+  if (decayLogCount <= 0) return [];
+  return getChronologicalLogs(behavior.logs).slice(0, decayLogCount);
+}
+
 export function getLogXp(log: BehaviorEntry['logs'][number]): number {
   return getLogDurationMinutes(log);
 }
@@ -139,7 +145,9 @@ function getChronologicalLogs(logs: LogEntry[]): LogEntry[] {
 }
 
 export function getEffectiveXp(behavior: BehaviorEntry, now: number = Date.now(), dayCutoffHour = 0): number {
-  const decayXp = behavior.xpEnabled ? getDecayLogCount(behavior, now, dayCutoffHour) * XP_PER_LOG : 0;
+  const decayXp = behavior.xpEnabled
+    ? getDecayedLogs(behavior, now, dayCutoffHour).reduce((total, log) => total + getLogXp(log), 0)
+    : 0;
   return Math.max(0, getBehaviorXp(behavior) - decayXp);
 }
 
