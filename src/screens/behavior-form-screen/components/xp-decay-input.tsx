@@ -29,7 +29,7 @@ export function XPDecayInput({ enabled, everyMinutes, unit, onToggle, onChangeMi
       />
       {enabled && (
         <View style={styles.inputsSection}>
-          <Text style={styles.inputsLabel}>Lose 1 log (5 XP) every:</Text>
+          <Text style={styles.inputsLabel}>Lose 1 log every:</Text>
           <DurationInput
             totalMinutes={everyMinutes}
             onChange={onChangeMinutes}
