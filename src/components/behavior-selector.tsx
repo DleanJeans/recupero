@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { BehaviorIcon } from '../../../components/behavior-icon';
-import { Text, TextInput } from '../../../components/text';
-import type { BehaviorEntry } from '../../../types/behavior';
-import { Colors } from '../../../utils/colors';
+import type { BehaviorEntry } from '../types/behavior';
+import { Colors } from '../utils/colors';
+import { BehaviorIcon } from './behavior-icon';
+import { Text, TextInput } from './text';
 
 interface BehaviorSelectorProps {
   behaviors: BehaviorEntry[];

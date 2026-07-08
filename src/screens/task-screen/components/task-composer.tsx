@@ -1,11 +1,11 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { BehaviorSelector } from '../../../components/behavior-selector';
 import { Button } from '../../../components/button';
 import { TextInput } from '../../../components/text';
 import type { BehaviorEntry } from '../../../types/behavior';
 import type { TaskStarValue } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
-import { BehaviorSelector } from './behavior-selector';
 import { StarPicker } from './star-picker';
 
 interface TaskComposerProps {
