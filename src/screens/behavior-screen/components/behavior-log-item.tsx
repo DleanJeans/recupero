@@ -34,10 +34,11 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
     () => formatTimeRange(log.timestamp, log.endTimestamp, timeFormat === '12h'),
     [log.endTimestamp, log.timestamp, timeFormat],
   );
+  const isRange = hasTimedLogRange(log);
   const elapsedText = useMemo(() => formatElapsedNumeric(getLogEndTimestamp(log)), [elapsedTick, log]);
   const durationText = useMemo(
-    () => (hasTimedLogRange(log) ? formatDuration(getLogDurationMs(log)) : undefined),
-    [log],
+    () => (isRange ? formatDuration(getLogDurationMs(log)) : undefined),
+    [log, isRange],
   );
 
   const handleRemove = useCallback(() => {
@@ -62,15 +63,18 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
       overshootRight={false}
     >
       <Pressable
-        style={[styles.logItem, isDecayed && styles.decayedLogItem]}
+        style={[styles.logItem, isRange && styles.logItemRange, isDecayed && styles.decayedLogItem]}
         onLongPress={onEdit}
         delayLongPress={150}
       >
-        <View style={styles.timeContent}>
-          <Text style={[styles.dateText, isDecayed && styles.decayedText]}>{timeText}</Text>
-          {durationText ? <Text style={[styles.timeText, isDecayed && styles.decayedText]}>{durationText}</Text> : null}
+        <View style={[styles.timeContent, isRange && styles.timeContentRange]}>
+          <Text style={[styles.dateText, isDecayed && styles.decayedText]}>
+            {timeText}
+            {durationText ? <Text style={[styles.timeText, isDecayed && styles.decayedText]}> ({durationText})</Text> : null}
+          </Text>
           <Text style={[styles.elapsedText, isDecayed && styles.decayedText]}>{elapsedText}</Text>
         </View>
+        {log.metadata ? <View style={[styles.separator, isRange && styles.separatorRange]} /> : null}
         <View style={log.metadata ? styles.contentArea : undefined}>
           {metadataFields?.map(field => {
             const val = log.metadata?.[field.key];
@@ -106,12 +110,14 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
 const styles = StyleSheet.create({
   logItem: {
     flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: Colors.bg.card,
     borderRadius: 12,
     marginVertical: 6,
     marginHorizontal: 16,
     overflow: 'hidden',
+  },
+  logItemRange: {
+    flexDirection: 'column',
   },
   decayedLogItem: {
     backgroundColor: Colors.status.error,
@@ -119,6 +125,20 @@ const styles = StyleSheet.create({
   timeContent: {
     flex: 2,
     padding: 16,
+    justifyContent: 'center',
+  },
+  timeContentRange: {
+    justifyContent: 'flex-start',
+  },
+  separator: {
+    width: StyleSheet.hairlineWidth,
+    alignSelf: 'center',
+    height: '50%',
+    backgroundColor: Colors.text.faint,
+  },
+  separatorRange: {
+    width: '50%',
+    height: StyleSheet.hairlineWidth,
   },
   contentArea: {
     flex: 4,
@@ -126,8 +146,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     padding: 12,
     gap: 6,
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    borderLeftColor: Colors.text.faint,
   },
   metaChip: {
     backgroundColor: Colors.bg.darker,
