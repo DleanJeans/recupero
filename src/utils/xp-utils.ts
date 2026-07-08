@@ -23,13 +23,12 @@ function decayEveryInMs(every: number, unit: XpDecayUnit): number {
 /** Number of "log equivalents" lost to XP decay across the behavior's lifetime,
  *  computed on read.
  *
- *  **Era-reset behavior:** when a single inter-log gap's decay would cancel all
- *  logs accumulated since the last reset, that log starts a new era — only logs
- *  from the latest era count toward XP. This keeps abandoned behaviors from
- *  getting stuck at 0 XP: a long pause triggers a reset rather than permanent 0.
- *
- *  For day/week/month settings, each gap counts days *strictly between* its
- *  endpoints (excludes both), so a same-day or 1-day-apart pair never decays.
+ *  For day/week/month settings, inter-log gaps count days *strictly between*
+ *  their endpoints so logging on adjacent days does not decay itself. The final
+ *  gap from the latest log to now includes the current boundary, so a 3-day
+ *  decay period loses one log once 3 operational days have elapsed.
+ *  The newest active streak is exempt from decay: if the latest log has not
+ *  decayed yet, decay can only consume logs before the newest zero-decay chain.
  *  Hourly settings count full elapsed-hour cycles. Returns 0 when the feature
  *  is off, no logs exist, or no decay has accrued. */
 export function getDecayLogCount(behavior: BehaviorEntry, now: number = Date.now(), dayCutoffHour = 0): number {
@@ -43,24 +42,22 @@ export function getDecayLogCount(behavior: BehaviorEntry, now: number = Date.now
   const sorted = getChronologicalLogs(logs);
   const N = sorted.length;
 
-  // Walk inter-log gaps. Reset the era at any log whose incoming gap's decay
-  // is >= the number of logs in the current era — that gap wipes them out.
-  let eraStart = 0;
+  let decayLogCount = 0;
   for (let i = 1; i < N; i++) {
-    const gapDecay = decayForGap(
+    decayLogCount += decayForGap(
       getLogEndTimestamp(sorted[i - 1]),
       getLogStartTimestamp(sorted[i]),
       xpDecay,
       dayCutoffHour,
     );
-    if (gapDecay >= i - eraStart) {
-      eraStart = i;
-    }
   }
 
   // Final gap: most recent log → now. Caps at N since we can't cancel more logs than exist.
-  const finalDecay = decayForGap(getLogEndTimestamp(sorted[N - 1]), now, xpDecay, dayCutoffHour);
-  return Math.min(N, eraStart + finalDecay);
+  const finalDecay = decayForGap(getLogEndTimestamp(sorted[N - 1]), now, xpDecay, dayCutoffHour, true);
+  return Math.min(
+    N - getProtectedLatestLogCount(sorted, xpDecay, finalDecay, dayCutoffHour),
+    decayLogCount + finalDecay,
+  );
 }
 
 function isValidDecay(decay: BehaviorEntry['xpDecay']): decay is NonNullable<BehaviorEntry['xpDecay']> {
@@ -72,6 +69,7 @@ function decayForGap(
   laterMs: number,
   decay: NonNullable<BehaviorEntry['xpDecay']>,
   dayCutoffHour = 0,
+  includeLaterDay = false,
 ): number {
   if (decay.unit === 'hours') {
     const everyMs = decayEveryInMs(decay.every, decay.unit);
@@ -81,9 +79,9 @@ function decayForGap(
 
   const everyDays = decayEveryInDays(decay.every, decay.unit);
   const diff = operationalDayDiff(laterMs, earlierMs, dayCutoffHour);
-  const between = Math.max(0, diff - 1);
-  if (between === 0) return 0;
-  return Math.floor(between / everyDays);
+  const elapsedDays = includeLaterDay ? diff : diff - 1;
+  if (elapsedDays <= 0) return 0;
+  return Math.floor(elapsedDays / everyDays);
 }
 
 /** XP decay accrued within a single gap (earlier → later), given a behavior's decay config.
@@ -96,6 +94,28 @@ export function getDecayForGap(
 ): number {
   if (!isValidDecay(decay)) return 0;
   return decayForGap(earlierMs, laterMs, decay, dayCutoffHour);
+}
+
+function getProtectedLatestLogCount(
+  sorted: LogEntry[],
+  decay: NonNullable<BehaviorEntry['xpDecay']>,
+  finalDecay: number,
+  dayCutoffHour: number,
+): number {
+  if (finalDecay > 0) return 0;
+
+  let count = 1;
+  for (let i = sorted.length - 1; i > 0; i--) {
+    const gapDecay = decayForGap(
+      getLogEndTimestamp(sorted[i - 1]),
+      getLogStartTimestamp(sorted[i]),
+      decay,
+      dayCutoffHour,
+    );
+    if (gapDecay > 0) break;
+    count += 1;
+  }
+  return count;
 }
 
 /** Effective log count for a behavior after applying XP decay. Floors at 0.
@@ -158,20 +178,24 @@ export function getHighestEffectiveXp(behavior: BehaviorEntry, now: number = Dat
 
   const sorted = getChronologicalLogs(behavior.logs);
   let highestXp = getEffectiveXp(behavior, now, dayCutoffHour);
+  let decayLogCount = 0;
+  let protectedLatestLogCount = 1;
+  const prefixXp = [0];
 
   for (let i = 0; i < sorted.length; i++) {
-    const logs = sorted.slice(0, i + 1);
-    const latestLog = sorted[i];
-    const xpAtLog = getEffectiveXp(
-      {
-        ...behavior,
-        logs,
-        lastTimestamp: getLogEndTimestamp(latestLog),
-      },
-      getLogEndTimestamp(latestLog),
-      dayCutoffHour,
-    );
-    highestXp = Math.max(highestXp, xpAtLog);
+    if (i > 0) {
+      const gapDecay = decayForGap(
+        getLogEndTimestamp(sorted[i - 1]),
+        getLogStartTimestamp(sorted[i]),
+        behavior.xpDecay,
+        dayCutoffHour,
+      );
+      decayLogCount += gapDecay;
+      protectedLatestLogCount = gapDecay > 0 ? 1 : protectedLatestLogCount + 1;
+    }
+    prefixXp.push(prefixXp[i] + getLogXp(sorted[i]));
+    const cappedDecayLogCount = Math.min(decayLogCount, i + 1 - protectedLatestLogCount);
+    highestXp = Math.max(highestXp, prefixXp[i + 1] - prefixXp[cappedDecayLogCount]);
   }
 
   return highestXp;
