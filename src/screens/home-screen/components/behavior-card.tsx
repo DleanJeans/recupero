@@ -67,6 +67,7 @@ export const BehaviorCard = React.memo(function BehaviorCard({
           motionEnabled={motionEnabled}
           xpMotionEnabled={false}
           now={now}
+          inlineElapsedWhenNoCooldown
         />
       </Pressable>
     </View>

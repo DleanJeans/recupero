@@ -4,6 +4,7 @@ import { useSettingsStore } from '../store/settings-store';
 import type { BehaviorEntry } from '../types/behavior';
 import { getBehaviorTypeColor } from '../utils/behavior-type-utils';
 import { Colors } from '../utils/colors';
+import { isCooldownActive } from '../utils/cooldown-utils';
 import { toDateString } from '../utils/date-utils';
 import {
   getLogCountForPeriod,
@@ -14,6 +15,7 @@ import {
 } from '../utils/star-utils';
 import { getEffectiveXp } from '../utils/xp-utils';
 import { AutoFitHeaderTitle } from './auto-fit-header-title';
+import { BehaviorElapsed } from './behavior-elapsed';
 import { BehaviorIcon } from './behavior-icon';
 import { CategoryEmoji } from './category-emoji';
 import { CooldownBar } from './cooldown-bar';
@@ -38,6 +40,7 @@ interface Props {
   showCurrentHabitXpLabel?: boolean;
   starMotionEnabled?: boolean;
   now?: number;
+  inlineElapsedWhenNoCooldown?: boolean;
 }
 
 /** Body for the home card and the BehaviorDetails/BehaviorLog headers:
@@ -55,6 +58,7 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
   showCurrentHabitXpLabel = false,
   starMotionEnabled = false,
   now,
+  inlineElapsedWhenNoCooldown = false,
 }: Props) {
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const [tick, setTick] = useState(0);
@@ -94,6 +98,8 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
     return periodLabel ? `${periodLabel}: ${progressLabel}` : progressLabel;
   }, [behavior, dayCutoffHour, starTargetDate, todayStr]);
 
+  const elapsedOnly = inlineElapsedWhenNoCooldown && !isCooldownActive(behavior);
+
   return (
     <View style={styles.body}>
       <View style={styles.iconColumn}>
@@ -115,6 +121,16 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
           showCategory={showCategory}
           titleOverride={titleOverride}
           titleSize={isHeader ? 'header' : 'card'}
+          inlineElapsed={
+            elapsedOnly ? (
+              <View style={styles.inlineElapsed}>
+                <BehaviorElapsed
+                  behavior={behavior}
+                  now={resolvedNow}
+                />
+              </View>
+            ) : undefined
+          }
         />
         {behavior.xpEnabled && (
           <XPBar
@@ -125,13 +141,15 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
             motionEnabled={xpMotionEnabled}
           />
         )}
-        <View style={styles.elapsedRow}>
-          <CooldownBar
-            behavior={behavior}
-            motionEnabled={motionEnabled}
-            now={resolvedNow}
-          />
-        </View>
+        {!elapsedOnly && (
+          <View style={styles.elapsedRow}>
+            <CooldownBar
+              behavior={behavior}
+              motionEnabled={motionEnabled}
+              now={resolvedNow}
+            />
+          </View>
+        )}
         {behavior.xpEnabled && behavior.xpDecay && effectiveXp > 0 && (
           <DecayBar
             behavior={behavior}
@@ -149,9 +167,11 @@ interface BehaviorTitleProps {
   showCategory?: boolean;
   titleOverride?: string;
   titleSize?: 'card' | 'header';
+  /** When provided, rendered on the same line as the card-variant name. */
+  inlineElapsed?: React.ReactNode;
 }
 
-function BehaviorTitle({ behavior, showCategory, titleOverride, titleSize = 'card' }: BehaviorTitleProps) {
+function BehaviorTitle({ behavior, showCategory, titleOverride, titleSize = 'card', inlineElapsed }: BehaviorTitleProps) {
   const name = titleOverride ?? behavior.name;
   if (titleSize === 'header') {
     return (
@@ -175,6 +195,7 @@ function BehaviorTitle({ behavior, showCategory, titleOverride, titleSize = 'car
       <Text style={styles.name}>{name}</Text>
       {showCategory && <CategoryEmoji behavior={behavior} />}
       {!behavior.xpEnabled && <Text style={styles.logCount}>×{behavior.logs.length}</Text>}
+      {inlineElapsed}
     </View>
   );
 }
@@ -215,6 +236,11 @@ const styles = StyleSheet.create({
     color: Colors.text.muted,
     fontSize: 13,
     fontWeight: '600',
+  },
+  inlineElapsed: {
+    color: Colors.text.muted,
+    fontSize: 10,
+    marginLeft: 'auto',
   },
   starLogCount: {
     color: Colors.text.muted,
