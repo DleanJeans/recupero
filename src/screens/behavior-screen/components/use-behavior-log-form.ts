@@ -19,7 +19,7 @@ import {
 import { getMoneyRewardForLog } from '../../../utils/money-utils';
 import { formatDuration, MS_PER_MINUTE } from '../../../utils/time-utils';
 import { XP_PER_LOG } from '../../../utils/xp-utils';
-import { TimePicker } from './time-picker';
+import { TimePicker } from '../../../components/time-picker';
 
 export interface BehaviorLogFormProps {
   behaviorId: string;

@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button } from '../../components/button';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { Text, TextInput } from '../../components/text';
+import { TimePicker } from '../../components/time-picker';
 import { useCueStore } from '../../store/cue-store';
 import type { EnergyLevel, LocationCue, MoodCue } from '../../types/cue';
 import type { RootStackParamList } from '../../types/navigation';
@@ -31,6 +32,7 @@ const MOOD_OPTIONS = [
 
 export function CueScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [expandedTimePicker, setExpandedTimePicker] = useState<'bedtime' | 'wakeUp' | null>(null);
   const energyLevel = useCueStore(s => s.energyLevel);
   const mood = useCueStore(s => s.mood);
   const location = useCueStore(s => s.location);
@@ -44,6 +46,8 @@ export function CueScreen() {
   const setHomeName = useCueStore(s => s.setHomeName);
   const setBedtime = useCueStore(s => s.setBedtime);
   const setWakeUpTime = useCueStore(s => s.setWakeUpTime);
+  const bedtimeParts = parseTimeParts(bedtime);
+  const wakeUpParts = parseTimeParts(wakeUpTime);
 
   const locationOptions = useMemo(
     () =>
@@ -103,23 +107,27 @@ export function CueScreen() {
         <CueSection title="Time">
           <View style={styles.timeRow}>
             <View style={styles.timeField}>
-              <Text style={styles.fieldLabel}>Bedtime</Text>
-              <TextInput
-                style={styles.input}
-                value={bedtime}
-                onChangeText={setBedtime}
-                placeholder="22:30"
-                placeholderTextColor={Colors.text.faint}
+              <TimePicker
+                label="Bedtime"
+                hour={bedtimeParts.hour}
+                minute={bedtimeParts.minute}
+                maxHour={23}
+                maxMinute={59}
+                collapsed={expandedTimePicker !== 'bedtime'}
+                onMinuteChange={minuteOffset => setBedtime(formatPickerTime(bedtimeParts.hour, minuteOffset))}
+                onExpand={() => setExpandedTimePicker('bedtime')}
               />
             </View>
             <View style={styles.timeField}>
-              <Text style={styles.fieldLabel}>Wake up</Text>
-              <TextInput
-                style={styles.input}
-                value={wakeUpTime}
-                onChangeText={setWakeUpTime}
-                placeholder="07:00"
-                placeholderTextColor={Colors.text.faint}
+              <TimePicker
+                label="Wake up"
+                hour={wakeUpParts.hour}
+                minute={wakeUpParts.minute}
+                maxHour={23}
+                maxMinute={59}
+                collapsed={expandedTimePicker !== 'wakeUp'}
+                onMinuteChange={minuteOffset => setWakeUpTime(formatPickerTime(wakeUpParts.hour, minuteOffset))}
+                onExpand={() => setExpandedTimePicker('wakeUp')}
               />
             </View>
           </View>
@@ -138,6 +146,28 @@ export function CueScreen() {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function parseTimeParts(value: string) {
+  const [rawHour, rawMinute] = value.split(':');
+  return {
+    hour: clampTimePart(Number(rawHour), 23),
+    minute: clampTimePart(Number(rawMinute), 59),
+  };
+}
+
+function clampTimePart(value: number, max: number) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(max, Math.trunc(value)));
+}
+
+function formatPickerTime(currentHour: number, minuteOffset: number) {
+  const totalMinutes = currentHour * 60 + minuteOffset;
+  return formatTime(Math.floor(totalMinutes / 60), totalMinutes % 60);
+}
+
+function formatTime(hour: number, minute: number) {
+  return `${String(clampTimePart(hour, 23)).padStart(2, '0')}:${String(clampTimePart(minute, 59)).padStart(2, '0')}`;
 }
 
 const styles = StyleSheet.create({

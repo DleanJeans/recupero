@@ -4,8 +4,8 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 import React, { memo, useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Text } from '../../../components/text';
-import { Colors } from '../../../utils/colors';
+import { Colors } from '../utils/colors';
+import { Text } from './text';
 
 const IS_ANDROID = process.env.EXPO_OS === 'android';
 
