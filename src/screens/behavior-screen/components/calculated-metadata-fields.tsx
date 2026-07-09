@@ -9,6 +9,7 @@ import {
   formatMetadataFieldLabel,
   formatMetadataRateUnit,
 } from '../../../utils/metadata-calculation-utils';
+import { roundTo2 } from '../../../utils/number-utils';
 import { metadataInputRowStyles } from './metadata-input-row';
 
 interface CalculatedMetadataFieldsProps {
@@ -53,7 +54,12 @@ export function CalculatedMetadataFields({
                 {formatMetadataRateUnit({ field, amountField, includeFieldUnit: false })}
               </Text>
             </View>
-            {progress && <ProgressIndicator progress={progress} />}
+            {progress && (
+              <ProgressIndicator
+                progress={progress}
+                unit={field.unit}
+              />
+            )}
           </View>
         );
       })}
@@ -61,17 +67,25 @@ export function CalculatedMetadataFields({
   );
 }
 
-function ProgressIndicator({ progress }: { progress: DailyGoalProgress }) {
+function ProgressIndicator({ progress, unit }: { progress: DailyGoalProgress; unit?: string }) {
   return (
-    <View style={styles.progressRow}>
-      <View style={styles.progressBar}>
-        <DailyGoalProgressBar
-          current={progress.current}
-          after={progress.after}
-          goal={progress.goal}
-        />
+    <View>
+      <View style={styles.progressRow}>
+        <View style={styles.progressBar}>
+          <DailyGoalProgressBar
+            current={progress.current}
+            after={progress.after}
+            goal={progress.goal}
+          />
+        </View>
+        <Text style={styles.progressDelta}>+{progress.deltaPercent}%</Text>
       </View>
-      <Text style={styles.progressDelta}>+{progress.deltaPercent}%</Text>
+      <Text style={styles.progressValue}>
+        {roundTo2(progress.current)}{' '}
+        <Text style={styles.progressValueAfter}>→ {roundTo2(progress.after)}</Text> /{' '}
+        {roundTo2(progress.goal)}
+        {unit ? ` ${unit}` : ''}
+      </Text>
     </View>
   );
 }
@@ -129,5 +143,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
+  },
+  progressValue: {
+    color: Colors.text.faint,
+    fontSize: 9,
+    fontVariant: ['tabular-nums'],
+    marginTop: 2,
+  },
+  progressValueAfter: {
+    color: Colors.type.desirable,
+    fontWeight: '700',
+    fontSize: 8.5,
   },
 });
