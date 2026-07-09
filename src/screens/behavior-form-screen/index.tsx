@@ -120,11 +120,11 @@ export function BehaviorFormScreen() {
 
   const {
     enabled: xpDecayEnabled,
-    everyMinutes: xpDecayEveryMinutes,
+    every: xpDecayEvery,
     unit: xpDecayUnit,
     xpDecayChanged,
     handleToggle: handleXpDecayToggle,
-    handleChangeMinutes: handleXpDecayChangeMinutes,
+    handleChangeEvery: handleXpDecayChangeEvery,
     handleUnitChange: handleXpDecayUnitChange,
     serialized: xpDecaySerialized,
   } = useXPDecayForm(behavior, isEdit);
@@ -409,10 +409,10 @@ export function BehaviorFormScreen() {
                 />
                 <XPDecayInput
                   enabled={xpDecayEnabled}
-                  everyMinutes={xpDecayEveryMinutes}
+                  every={xpDecayEvery}
                   unit={xpDecayUnit}
                   onToggle={handleXpDecayToggle}
-                  onChangeMinutes={handleXpDecayChangeMinutes}
+                  onChangeEvery={handleXpDecayChangeEvery}
                   onUnitChange={handleXpDecayUnitChange}
                 />
               </View>

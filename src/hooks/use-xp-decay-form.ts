@@ -2,23 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import type { DurationUnit } from '../components/duration-input';
 import type { BehaviorEntry, XpDecayUnit } from '../types/behavior';
 
-const UNIT_MINUTES: Record<DurationUnit, number> = {
-  minutes: 1,
-  hours: 60,
-  days: 1440,
-  weeks: 10080,
-  months: 43200,
-};
-
 const DECAY_UNITS: DurationUnit[] = ['hours', 'days', 'weeks', 'months'];
 
 interface UseXPDecayFormResult {
   enabled: boolean;
-  everyMinutes: number;
+  every: number;
   unit: DurationUnit;
   xpDecayChanged: boolean;
   handleToggle: () => void;
-  handleChangeMinutes: (minutes: number) => void;
+  handleChangeEvery: (every: number) => void;
   handleUnitChange: (unit: DurationUnit) => void;
   /** Serialized form value to pass to addBehavior / updateBehavior. */
   serialized: BehaviorEntry['xpDecay'];
@@ -28,9 +20,7 @@ interface UseXPDecayFormResult {
  *  toggle, `every` value + unit, dirty-check, and serialization. */
 export function useXPDecayForm(behavior: BehaviorEntry | undefined, isEdit: boolean): UseXPDecayFormResult {
   const [enabled, setEnabled] = useState<boolean>(!!behavior?.xpDecay);
-  const [everyMinutes, setEveryMinutes] = useState(() =>
-    behavior?.xpDecay ? toMinutes(behavior.xpDecay.every, behavior.xpDecay.unit) : 1440,
-  );
+  const [every, setEvery] = useState(() => behavior?.xpDecay?.every ?? 1);
   const [unit, setUnit] = useState<DurationUnit>(() => behavior?.xpDecay?.unit ?? 'days');
   const skipInitialHydration = useRef(behavior != null);
 
@@ -43,21 +33,21 @@ export function useXPDecayForm(behavior: BehaviorEntry | undefined, isEdit: bool
     }
     if (!behavior.xpDecay) {
       setEnabled(false);
-      setEveryMinutes(1440);
+      setEvery(1);
       setUnit('days');
       return;
     }
     setEnabled(true);
     setUnit(behavior.xpDecay.unit);
-    setEveryMinutes(toMinutes(behavior.xpDecay.every, behavior.xpDecay.unit));
+    setEvery(behavior.xpDecay.every);
   }, [behavior]);
 
   const handleToggle = () => {
     setEnabled(prev => {
       const next = !prev;
-      if (next && everyMinutes === 0) {
+      if (next && every === 0) {
         // Reasonable default the first time the user enables decay.
-        setEveryMinutes(1440);
+        setEvery(1);
         setUnit('days');
       }
       return next;
@@ -66,17 +56,15 @@ export function useXPDecayForm(behavior: BehaviorEntry | undefined, isEdit: bool
 
   const handleUnitChange = (newUnit: DurationUnit) => {
     if (!DECAY_UNITS.includes(newUnit)) return;
-    const currentEvery = Math.max(1, Math.round(everyMinutes / UNIT_MINUTES[unit]));
     setUnit(newUnit);
-    setEveryMinutes(currentEvery * UNIT_MINUTES[newUnit]);
   };
 
-  const handleChangeMinutes = (minutes: number) => {
-    setEveryMinutes(Math.max(0, minutes));
+  const handleChangeEvery = (value: number) => {
+    setEvery(Math.max(0, value));
   };
 
   const serialized: BehaviorEntry['xpDecay'] = enabled
-    ? { every: Math.max(1, Math.round(everyMinutes / UNIT_MINUTES[unit])), unit: unit as XpDecayUnit }
+    ? { every: Math.max(1, Math.round(every)), unit: unit as XpDecayUnit }
     : undefined;
 
   const xpDecayChanged =
@@ -84,16 +72,12 @@ export function useXPDecayForm(behavior: BehaviorEntry | undefined, isEdit: bool
 
   return {
     enabled,
-    everyMinutes,
+    every,
     unit,
     xpDecayChanged,
     handleToggle,
-    handleChangeMinutes,
+    handleChangeEvery,
     handleUnitChange,
     serialized,
   };
-}
-
-function toMinutes(every: number, unit: XpDecayUnit): number {
-  return every * UNIT_MINUTES[unit];
 }

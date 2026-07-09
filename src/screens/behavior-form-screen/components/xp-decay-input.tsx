@@ -2,41 +2,63 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { CheckboxRow } from '../../../components/checkbox-row';
 import type { DurationUnit } from '../../../components/duration-input';
-import { DurationInput } from '../../../components/duration-input';
-import { Text } from '../../../components/text';
+import { Text, TextInput } from '../../../components/text';
+import { UnitDropdown } from '../../../components/unit-dropdown';
 import { Colors } from '../../../utils/colors';
 
 const DECAY_UNITS: DurationUnit[] = ['hours', 'days', 'weeks', 'months'];
 
 interface Props {
   enabled: boolean;
-  everyMinutes: number;
+  every: number;
   unit: DurationUnit;
   onToggle: () => void;
-  onChangeMinutes: (minutes: number) => void;
+  onChangeEvery: (every: number) => void;
   onUnitChange: (unit: DurationUnit) => void;
 }
 
-export function XPDecayInput({ enabled, everyMinutes, unit, onToggle, onChangeMinutes, onUnitChange }: Props) {
+export function XPDecayInput({ enabled, every, unit, onToggle, onChangeEvery, onUnitChange }: Props) {
   return (
-    <View style={styles.section}>
+    <View>
       <CheckboxRow
         label="Decay XP over time"
-        hint="Lose 1 log per period without logging"
+        hint={unit === 'hours' ? 'Lose 1 log after elapsed time' : 'Lose 1 log when a period misses the target'}
         checked={enabled}
         onToggle={onToggle}
         variant="row"
       />
       {enabled && (
         <View style={styles.inputsSection}>
-          <Text style={styles.inputsLabel}>Lose 1 log every:</Text>
-          <DurationInput
-            totalMinutes={everyMinutes}
-            onChange={onChangeMinutes}
-            units={DECAY_UNITS}
-            preferredUnit={unit}
-            onUnitChange={onUnitChange}
-          />
+          <Text style={styles.inputsLabel}>{unit === 'hours' ? 'Lose 1 log every:' : 'Decay if under:'}</Text>
+          <View style={styles.inputRow}>
+            <View style={styles.numberInputWrap}>
+              <TextInput
+                style={[styles.numberInput, unit !== 'hours' && styles.numberInputWithSuffix]}
+                keyboardType="numeric"
+                value={every === 0 ? '' : String(every)}
+                onChangeText={text => {
+                  const num = Number(text);
+                  if (!Number.isNaN(num) && num >= 0) onChangeEvery(num);
+                }}
+                placeholder="0"
+                placeholderTextColor={Colors.text.faint}
+                selectTextOnFocus
+              />
+              {unit !== 'hours' && (
+                <View
+                  pointerEvents="none"
+                  style={styles.inputSuffixWrap}
+                >
+                  <Text style={styles.inputSuffix}>times per</Text>
+                </View>
+              )}
+            </View>
+            <UnitDropdown
+              value={unit}
+              options={DECAY_UNITS}
+              onChange={onUnitChange}
+            />
+          </View>
         </View>
       )}
     </View>
@@ -44,9 +66,6 @@ export function XPDecayInput({ enabled, everyMinutes, unit, onToggle, onChangeMi
 }
 
 const styles = StyleSheet.create({
-  section: {
-    gap: 10,
-  },
   inputsSection: {
     gap: 8,
   },
@@ -54,5 +73,36 @@ const styles = StyleSheet.create({
     color: Colors.text.muted,
     fontSize: 12,
     fontWeight: '600',
+  },
+  inputRow: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+  },
+  numberInputWrap: {
+    flex: 1,
+    position: 'relative',
+  },
+  numberInput: {
+    backgroundColor: Colors.bg.elevated,
+    color: Colors.text.primary,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+  },
+  numberInputWithSuffix: {
+    paddingRight: 82,
+  },
+  inputSuffixWrap: {
+    position: 'absolute',
+    right: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+  },
+  inputSuffix: {
+    color: Colors.text.muted,
+    fontSize: 14,
   },
 });

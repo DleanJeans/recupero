@@ -116,57 +116,57 @@ describe('getDecayLogCount', () => {
     });
   });
 
-  describe('every=1 day', () => {
+  describe('1 log per day', () => {
     const decay = { every: 1, unit: 'days' as const };
 
-    it('1 day apart → 1 log lost', () => {
-      expect(getDecayLogCount(behaviorWithLogs(1, 5, decay), NOW_TS)).toBe(1);
+    it('yesterday met the target → 0 logs lost', () => {
+      expect(getDecayLogCount(behaviorWithLogs(1, 5, decay), NOW_TS)).toBe(0);
     });
 
-    it('3 days apart → 3 logs lost', () => {
-      expect(getDecayLogCount(behaviorWithLogs(3, 5, decay), NOW_TS)).toBe(3);
+    it('3 days apart → 2 missed completed days', () => {
+      expect(getDecayLogCount(behaviorWithLogs(3, 5, decay), NOW_TS)).toBe(2);
     });
 
-    it('7 days apart → 7 logs lost', () => {
-      expect(getDecayLogCount(behaviorWithLogs(7, 20, decay), NOW_TS)).toBe(7);
+    it('7 days apart → 6 missed completed days', () => {
+      expect(getDecayLogCount(behaviorWithLogs(7, 20, decay), NOW_TS)).toBe(6);
     });
   });
 
-  describe('every=3 days', () => {
+  describe('3 logs per day', () => {
     const decay = { every: 3, unit: 'days' as const };
 
-    it('1 day apart → 0 lost', () => {
-      expect(getDecayLogCount(behaviorWithLogs(1, 1, decay), NOW_TS)).toBe(0);
+    it('yesterday below target → 1 lost', () => {
+      expect(getDecayLogCount(behaviorWithLogs(1, 1, decay), NOW_TS)).toBe(1);
     });
 
-    it('2 days apart → 0 lost', () => {
-      expect(getDecayLogCount(behaviorWithLogs(2, 1, decay), NOW_TS)).toBe(0);
+    it('2 days apart with one log → 1 lost', () => {
+      expect(getDecayLogCount(behaviorWithLogs(2, 1, decay), NOW_TS)).toBe(1);
     });
 
-    it('3 days apart → 1 lost', () => {
+    it('3 days apart with one log → 1 lost', () => {
       expect(getDecayLogCount(behaviorWithLogs(3, 1, decay), NOW_TS)).toBe(1);
     });
 
-    it('7 days apart → 1 lost (final gap has 2 cycles but only one log exists)', () => {
+    it('7 days apart → 1 lost (misses are capped by the one existing log)', () => {
       expect(getDecayLogCount(behaviorWithLogs(7, 1, decay), NOW_TS)).toBe(1);
     });
 
-    it('10 days apart → 1 lost (final gap has 3 cycles but only one log exists)', () => {
+    it('10 days apart → 1 lost (misses are capped by the one existing log)', () => {
       expect(getDecayLogCount(behaviorWithLogs(10, 1, decay), NOW_TS)).toBe(1);
     });
   });
 
-  describe('every=3 days effective XP', () => {
+  describe('3 logs per day effective XP', () => {
     const decay = { every: 3, unit: 'days' as const };
 
-    it('subtracts decayed legacy-log XP after one 3-day period', () => {
+    it('subtracts decayed legacy-log XP for missed daily targets', () => {
       const b = behaviorWithLogs(3, 5, decay);
 
-      expect(getDecayLogCount(b, NOW_TS)).toBe(1);
-      expect(getEffectiveXp(b, NOW_TS)).toBe(20);
+      expect(getDecayLogCount(b, NOW_TS)).toBe(2);
+      expect(getEffectiveXp(b, NOW_TS)).toBe(15);
     });
 
-    it('subtracts the whole XP of the oldest timed log after one 3-day period', () => {
+    it('subtracts the whole XP of each decayed timed log', () => {
       const oldest = lastLog(4);
       const latest = lastLog(3);
       const b = makeBehavior({
@@ -176,12 +176,12 @@ describe('getDecayLogCount', () => {
         logs: [makeTimedLog(oldest, 30), makeTimedLog(latest, 5)],
       });
 
-      expect(getDecayLogCount(b, NOW_TS)).toBe(1);
-      expect(getDecayedLogs(b, NOW_TS).map(log => log.id)).toEqual([`timed-${oldest}-30`]);
-      expect(getEffectiveXp(b, NOW_TS)).toBe(5);
+      expect(getDecayLogCount(b, NOW_TS)).toBe(2);
+      expect(getDecayedLogs(b, NOW_TS).map(log => log.id)).toEqual([`timed-${oldest}-30`, `timed-${latest}-5`]);
+      expect(getEffectiveXp(b, NOW_TS)).toBe(0);
     });
 
-    it('decays two PMO fixture logs when checked on the latest log day', () => {
+    it('keeps the latest PMO fixture log when checked on its log day', () => {
       const latestLogTimestamp = PMO_LOG_TIMESTAMPS.at(-1)!;
       const b = makeBehavior({
         name: 'PMO',
@@ -191,13 +191,13 @@ describe('getDecayLogCount', () => {
         logs: PMO_LOG_TIMESTAMPS.map(makeLog),
       });
 
-      expect(getDecayLogCount(b, latestLogTimestamp)).toBe(2);
-      expect(getDecayedLogs(b, latestLogTimestamp).map(log => log.timestamp)).toEqual(PMO_LOG_TIMESTAMPS.slice(0, 2));
-      expect(getEffectiveXp(b, latestLogTimestamp)).toBe(75);
-      expect(getHighestEffectiveXp(b, latestLogTimestamp)).toBe(75);
+      expect(getDecayLogCount(b, latestLogTimestamp)).toBe(16);
+      expect(getDecayedLogs(b, latestLogTimestamp).map(log => log.timestamp)).toEqual(PMO_LOG_TIMESTAMPS.slice(0, 16));
+      expect(getEffectiveXp(b, latestLogTimestamp)).toBe(5);
+      expect(getHighestEffectiveXp(b, latestLogTimestamp)).toBeGreaterThan(0);
     });
 
-    it('decays another PMO fixture log three operational days after the latest log', () => {
+    it('can decay the latest PMO fixture log after its period is no longer recent', () => {
       const latestLogTimestamp = PMO_LOG_TIMESTAMPS.at(-1)!;
       const now = latestLogTimestamp + 3 * 86_400_000;
       const b = makeBehavior({
@@ -208,10 +208,27 @@ describe('getDecayLogCount', () => {
         logs: PMO_LOG_TIMESTAMPS.map(makeLog),
       });
 
-      expect(getDecayLogCount(b, now)).toBe(3);
-      expect(getDecayedLogs(b, now).map(log => log.timestamp)).toEqual(PMO_LOG_TIMESTAMPS.slice(0, 3));
-      expect(getEffectiveXp(b, now)).toBe(70);
-      expect(getHighestEffectiveXp(b, now)).toBe(75);
+      expect(getDecayLogCount(b, now)).toBe(17);
+      expect(getDecayedLogs(b, now).map(log => log.timestamp)).toEqual(PMO_LOG_TIMESTAMPS);
+      expect(getEffectiveXp(b, now)).toBe(0);
+      expect(getHighestEffectiveXp(b, now)).toBeGreaterThan(0);
+    });
+
+    it('keeps latest logs that are part of a completed target streak', () => {
+      const ts5 = lastLog(5);
+      const ts4 = lastLog(4);
+      const ts2 = lastLog(2);
+      const ts1 = lastLog(1);
+      const b = makeBehavior({
+        xpEnabled: true,
+        xpDecay: { every: 2, unit: 'days' },
+        lastTimestamp: ts1,
+        logs: [makeLog(ts5), makeLog(ts4), makeLog(ts2), makeLog(ts2 + 1), makeLog(ts1), makeLog(ts1 + 1)],
+      });
+
+      expect(getDecayLogCount(b, NOW_TS)).toBe(2);
+      expect(getDecayedLogs(b, NOW_TS).map(log => log.timestamp)).toEqual([ts5, ts4]);
+      expect(getEffectiveLogCount(b, NOW_TS)).toBe(4);
     });
   });
 
@@ -222,8 +239,8 @@ describe('getDecayLogCount', () => {
       expect(getDecayLogCount(behaviorWithLogs(6, 1, decay), NOW_TS)).toBe(0);
     });
 
-    it('7 days apart → 1 lost', () => {
-      expect(getDecayLogCount(behaviorWithLogs(7, 1, decay), NOW_TS)).toBe(1);
+    it('7 days apart → 0 lost because the completed week met the target', () => {
+      expect(getDecayLogCount(behaviorWithLogs(7, 1, decay), NOW_TS)).toBe(0);
     });
 
     it('15 days apart → 1 lost (final gap has 2 cycles but only one log exists)', () => {
@@ -238,8 +255,8 @@ describe('getDecayLogCount', () => {
       expect(getDecayLogCount(behaviorWithLogs(29, 1, decay), NOW_TS)).toBe(0);
     });
 
-    it('30 days apart → 1 lost', () => {
-      expect(getDecayLogCount(behaviorWithLogs(30, 1, decay), NOW_TS)).toBe(1);
+    it('30 days apart → 0 lost because the completed month met the target', () => {
+      expect(getDecayLogCount(behaviorWithLogs(30, 1, decay), NOW_TS)).toBe(0);
     });
 
     it('61 days apart → 1 lost (final gap has 2 cycles but only one log exists)', () => {
@@ -357,7 +374,7 @@ describe('getDecayLogCount', () => {
       expect(getDecayLogCount(b, NOW_TS)).toBe(2);
     });
 
-    it('accumulates decay across historical gaps before the latest streak', () => {
+    it('keeps the current log while counting older completed days that miss the target', () => {
       const ts0 = lastLog(0);
       const ts5 = lastLog(5);
       const ts10 = lastLog(10);
@@ -370,7 +387,7 @@ describe('getDecayLogCount', () => {
       expect(getDecayLogCount(b, NOW_TS)).toBe(2);
     });
 
-    it('large mid-history gaps still protect the latest streak', () => {
+    it('keeps the latest current streak after large mid-history misses', () => {
       const ts0 = lastLog(0);
       const ts1 = lastLog(1);
       const ts50 = lastLog(50);
@@ -383,7 +400,7 @@ describe('getDecayLogCount', () => {
       expect(getDecayLogCount(b, NOW_TS)).toBe(1);
     });
 
-    it('small gaps do not decay, but a later large gap still accumulates', () => {
+    it('keeps recent consecutive logs after older missed targets', () => {
       const ts0 = lastLog(0);
       const ts1 = lastLog(1);
       const ts2 = lastLog(2);
@@ -424,7 +441,7 @@ describe('getEffectiveLogCount', () => {
   });
 
   it('subtracts decay from raw log count', () => {
-    expect(getEffectiveLogCount(behaviorWithLogs(3, 10, { every: 1, unit: 'days' }), NOW_TS)).toBe(7);
+    expect(getEffectiveLogCount(behaviorWithLogs(3, 10, { every: 1, unit: 'days' }), NOW_TS)).toBe(8);
   });
 
   it('floors at 0 when decay exceeds logs', () => {
@@ -499,8 +516,8 @@ describe('getHighestEffectiveXp', () => {
       logs: [makeTimedLog(lastLog(10), 30), makeTimedLog(lastLog(9), 10), makeTimedLog(lastLog(2), 5)],
     });
 
-    expect(getEffectiveXp(b, NOW_TS)).toBe(5);
-    expect(getHighestEffectiveXp(b, NOW_TS)).toBe(40);
+    expect(getEffectiveXp(b, NOW_TS)).toBe(0);
+    expect(getHighestEffectiveXp(b, NOW_TS)).toBe(30);
   });
 });
 
@@ -531,10 +548,10 @@ describe('getDecayForGap', () => {
     expect(getDecayForGap(lastLog(10), NOW_TS, { every: 0, unit: 'days' })).toBe(0);
   });
 
-  it('honors every=3 days: 4-day gap → 1 lost, 7-day gap → 2 lost', () => {
+  it('honors 3 logs per day: 4-day gap → 3 missed days, 7-day gap → 6 missed days', () => {
     const d3 = { every: 3, unit: 'days' as const };
-    expect(getDecayForGap(lastLog(4), NOW_TS, d3)).toBe(1);
-    expect(getDecayForGap(lastLog(7), NOW_TS, d3)).toBe(2);
+    expect(getDecayForGap(lastLog(4), NOW_TS, d3)).toBe(3);
+    expect(getDecayForGap(lastLog(7), NOW_TS, d3)).toBe(6);
   });
 
   it('honors hourly decay: 11h gap → 0 lost, 12h gap → 1 lost, 25h gap → 2 lost', () => {
@@ -604,10 +621,9 @@ describe('getTimeUntilNextDecay', () => {
     expect(result?.unit).toBe('hours');
   });
 
-  it('returns full cycle when last log is on the same day boundary', () => {
-    // 7 days elapsed, 7%7=0, daysLeft=7 (next cycle just started)
+  it('uses one day as the period when daily target count is 7', () => {
     const b = makeBehavior({ xpEnabled: true, xpDecay: { every: 7, unit: 'days' }, lastTimestamp: lastLog(7) });
-    expect(getTimeUntilNextDecay(b, NOW_TS)).toEqual({ daysLeft: 7, everyDays: 7, every: 7, unit: 'days' });
+    expect(getTimeUntilNextDecay(b, NOW_TS)).toEqual({ daysLeft: 1, everyDays: 1, every: 7, unit: 'days' });
   });
 
   it('returns null for invalid everyDays (every=0)', () => {

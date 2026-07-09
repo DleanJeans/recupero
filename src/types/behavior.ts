@@ -65,8 +65,9 @@ export interface BehaviorEntry {
   durationXpEnabled?: true;
   /** Hide the lifetime Total XP bar. Undefined = show total XP when XP bars are visible. */
   hideTotalXp?: true;
-  /** Opt-in XP decay: lose 1 log's worth (5 XP) every `every` hours/days/weeks/months
-   *  since the last log/session end. Undefined = feature off. Ignored at runtime when `xpEnabled` is off. */
+  /** Opt-in XP decay. For days/weeks/months, lose 1 log for each completed period
+   *  with fewer than `every` logs. For hours, lose 1 log every `every` elapsed hours.
+   *  Undefined = feature off. Ignored at runtime when `xpEnabled` is off. */
   xpDecay?: { every: number; unit: XpDecayUnit };
 }
 

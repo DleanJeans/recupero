@@ -23,14 +23,10 @@ function decayEveryInMs(every: number, unit: XpDecayUnit): number {
 /** Number of "log equivalents" lost to XP decay across the behavior's lifetime,
  *  computed on read.
  *
- *  For day/week/month settings, inter-log gaps count days *strictly between*
- *  their endpoints so logging on adjacent days does not decay itself. The final
- *  gap from the latest log to now includes the current boundary, so a 3-day
- *  decay period loses one log once 3 operational days have elapsed.
- *  The newest active streak is exempt from decay: if the latest log has not
- *  decayed yet, decay can only consume logs before the newest zero-decay chain.
- *  Hourly settings count full elapsed-hour cycles. Returns 0 when the feature
- *  is off, no logs exist, or no decay has accrued. */
+ *  Day/week/month settings require `every` logs in each completed period and
+ *  lose one log for each period that misses that threshold. Hourly settings
+ *  keep the old elapsed-cycle behavior. Returns 0 when the feature is off, no
+ *  logs exist, or no decay has accrued. */
 export function getDecayLogCount(behavior: BehaviorEntry, now: number = Date.now(), dayCutoffHour = 0): number {
   const { xpDecay, logs } = behavior;
   if (!behavior.xpEnabled) return 0;
@@ -41,6 +37,14 @@ export function getDecayLogCount(behavior: BehaviorEntry, now: number = Date.now
 
   const sorted = getChronologicalLogs(logs);
   const N = sorted.length;
+
+  if (xpDecay.unit !== 'hours') {
+    const everyDays = decayEveryInDays(1, xpDecay.unit);
+    return Math.min(
+      N - getProtectedLatestPeriodLogCount(sorted, now, xpDecay, everyDays, dayCutoffHour),
+      decayForCompletedPeriods(sorted, now, xpDecay, everyDays, dayCutoffHour),
+    );
+  }
 
   let decayLogCount = 0;
   for (let i = 1; i < N; i++) {
@@ -77,11 +81,10 @@ function decayForGap(
     return Math.floor(Math.max(0, laterMs - earlierMs) / everyMs);
   }
 
-  const everyDays = decayEveryInDays(decay.every, decay.unit);
+  const everyDays = decayEveryInDays(1, decay.unit);
   const diff = operationalDayDiff(laterMs, earlierMs, dayCutoffHour);
-  const elapsedDays = includeLaterDay ? diff : diff - 1;
-  if (elapsedDays <= 0) return 0;
-  return Math.floor(elapsedDays / everyDays);
+  const elapsedPeriods = Math.floor(diff / everyDays) - (includeLaterDay ? 0 : 1);
+  return Math.max(0, elapsedPeriods);
 }
 
 /** XP decay accrued within a single gap (earlier → later), given a behavior's decay config.
@@ -177,6 +180,17 @@ export function getHighestEffectiveXp(behavior: BehaviorEntry, now: number = Dat
   }
 
   const sorted = getChronologicalLogs(behavior.logs);
+  if (behavior.xpDecay.unit !== 'hours') {
+    let highestXp = getEffectiveXp(behavior, now, dayCutoffHour);
+    for (let i = 0; i < sorted.length; i++) {
+      highestXp = Math.max(
+        highestXp,
+        getEffectiveXp({ ...behavior, logs: sorted.slice(0, i + 1) }, getLogEndTimestamp(sorted[i]), dayCutoffHour),
+      );
+    }
+    return highestXp;
+  }
+
   let highestXp = getEffectiveXp(behavior, now, dayCutoffHour);
   let decayLogCount = 0;
   let protectedLatestLogCount = 1;
@@ -201,6 +215,64 @@ export function getHighestEffectiveXp(behavior: BehaviorEntry, now: number = Dat
   return highestXp;
 }
 
+function decayForCompletedPeriods(
+  sorted: LogEntry[],
+  now: number,
+  decay: NonNullable<BehaviorEntry['xpDecay']>,
+  everyDays: number,
+  dayCutoffHour: number,
+): number {
+  const firstPeriod = decayPeriodIndex(getLogStartTimestamp(sorted[0]), everyDays, dayCutoffHour);
+  const currentPeriod = decayPeriodIndex(now, everyDays, dayCutoffHour);
+  if (currentPeriod <= firstPeriod) return 0;
+
+  const counts = new Map<number, number>();
+  for (const log of sorted) {
+    const period = decayPeriodIndex(getLogStartTimestamp(log), everyDays, dayCutoffHour);
+    if (period < firstPeriod || period >= currentPeriod) continue;
+    counts.set(period, (counts.get(period) ?? 0) + 1);
+  }
+
+  let failedPeriods = 0;
+  for (let period = firstPeriod; period < currentPeriod; period++) {
+    if ((counts.get(period) ?? 0) < decay.every) failedPeriods++;
+  }
+  return failedPeriods;
+}
+
+function getProtectedLatestPeriodLogCount(
+  sorted: LogEntry[],
+  now: number,
+  decay: NonNullable<BehaviorEntry['xpDecay']>,
+  everyDays: number,
+  dayCutoffHour: number,
+): number {
+  const counts = new Map<number, number>();
+  for (const log of sorted) {
+    const period = decayPeriodIndex(getLogStartTimestamp(log), everyDays, dayCutoffHour);
+    counts.set(period, (counts.get(period) ?? 0) + 1);
+  }
+
+  const currentPeriod = decayPeriodIndex(now, everyDays, dayCutoffHour);
+  let period = decayPeriodIndex(getLogStartTimestamp(sorted[sorted.length - 1]), everyDays, dayCutoffHour);
+  let protectedCount = 0;
+  if (period < currentPeriod - 1) return 0;
+
+  while (period <= currentPeriod) {
+    const count = counts.get(period) ?? 0;
+    if (count === 0) break;
+    if (period !== currentPeriod && count < decay.every) break;
+    protectedCount += count;
+    period -= 1;
+  }
+
+  return protectedCount;
+}
+
+function decayPeriodIndex(timestamp: number, everyDays: number, dayCutoffHour: number): number {
+  return Math.floor(operationalDayDiff(timestamp, 0, dayCutoffHour) / everyDays);
+}
+
 /** Time remaining in the current decay cycle (until the next decay event).
  *  Returns null when XP is off, no decay config, or invalid config.
  *  When the behavior has no logs yet, returns a full cycle (no decay has accrued).
@@ -221,7 +293,8 @@ export function getTimeUntilNextDecay(
   if (behavior.xpEnabled !== true) return null;
   const decay = behavior.xpDecay;
   if (!isValidDecay(decay)) return null;
-  const everyDays = decayEveryInDays(decay.every, decay.unit);
+  const everyDays =
+    decay.unit === 'hours' ? decayEveryInDays(decay.every, decay.unit) : decayEveryInDays(1, decay.unit);
   if (!Number.isFinite(everyDays) || everyDays <= 0) return null;
 
   const lastTimestamp = behavior.lastTimestamp;
