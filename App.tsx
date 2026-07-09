@@ -16,6 +16,7 @@ import { BehaviorFormScreen } from './src/screens/behavior-form-screen';
 import { BehaviorScreen } from './src/screens/behavior-screen';
 import { CategoryFormScreen } from './src/screens/category-form-screen';
 import { CueScreen } from './src/screens/cue-screen';
+import { CueTriggerScreen } from './src/screens/cue-trigger-screen';
 import { DayScreen } from './src/screens/day-screen';
 import { HomeScreen } from './src/screens/home-screen';
 import { MoneyLogScreen } from './src/screens/money-log-screen';
@@ -35,6 +36,7 @@ const linking = {
     screens: {
       Home: 'home',
       Cues: 'cues',
+      CueTriggers: 'cue-triggers',
       Timer: 'timer',
       Day: 'day',
       Tasks: 'tasks',
@@ -108,6 +110,10 @@ export default function App() {
                     name="Cues"
                     component={CueScreen}
                     options={{ animation: 'fade_from_bottom' }}
+                  />
+                  <Stack.Screen
+                    name="CueTriggers"
+                    component={CueTriggerScreen}
                   />
                   <Stack.Screen
                     name="Timer"

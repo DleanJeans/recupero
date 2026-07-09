@@ -1,19 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import { Button } from '../../components/button';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { Text, TextInput } from '../../components/text';
-import { useBehaviorStore } from '../../store/behavior-store';
 import { useCueStore } from '../../store/cue-store';
-import { useSettingsStore } from '../../store/settings-store';
 import type { EnergyLevel, LocationCue, MoodCue } from '../../types/cue';
+import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import { CueChipGroup } from './components/cue-chip-group';
 import { CueLogList } from './components/cue-log-list';
 import { CueSection } from './components/cue-section';
-import { CueTriggerComposer } from './components/cue-trigger-composer';
-import { CueTriggerRuleCard } from './components/cue-trigger-rule-card';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -30,8 +30,7 @@ const MOOD_OPTIONS = [
 ] satisfies Array<{ label: string; value: MoodCue; icon: IoniconName }>;
 
 export function CueScreen() {
-  const behaviors = useBehaviorStore(s => s.behaviors);
-  const hidePrivate = useSettingsStore(s => s.hidePrivate);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const energyLevel = useCueStore(s => s.energyLevel);
   const mood = useCueStore(s => s.mood);
   const location = useCueStore(s => s.location);
@@ -39,21 +38,13 @@ export function CueScreen() {
   const bedtime = useCueStore(s => s.bedtime);
   const wakeUpTime = useCueStore(s => s.wakeUpTime);
   const cueLogs = useCueStore(s => s.cueLogs);
-  const triggerRules = useCueStore(s => s.triggerRules);
   const setEnergyLevel = useCueStore(s => s.setEnergyLevel);
   const setMood = useCueStore(s => s.setMood);
   const setLocation = useCueStore(s => s.setLocation);
   const setHomeName = useCueStore(s => s.setHomeName);
   const setBedtime = useCueStore(s => s.setBedtime);
   const setWakeUpTime = useCueStore(s => s.setWakeUpTime);
-  const addTriggerRule = useCueStore(s => s.addTriggerRule);
-  const toggleTriggerRule = useCueStore(s => s.toggleTriggerRule);
-  const removeTriggerRule = useCueStore(s => s.removeTriggerRule);
 
-  const visibleBehaviors = useMemo(() => {
-    const filtered = hidePrivate ? behaviors.filter(behavior => !behavior.private) : behaviors;
-    return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
-  }, [behaviors, hidePrivate]);
   const locationOptions = useMemo(
     () =>
       [
@@ -64,11 +55,6 @@ export function CueScreen() {
       ] satisfies Array<{ label: string; value: LocationCue; icon: IoniconName }>,
     [homeName],
   );
-  const visibleBehaviorNameById = useMemo(
-    () => new Map(visibleBehaviors.map(behavior => [behavior.id, behavior.name])),
-    [visibleBehaviors],
-  );
-
   return (
     <SafeAreaView
       style={styles.container}
@@ -140,28 +126,12 @@ export function CueScreen() {
         </CueSection>
 
         <CueSection title="Behavior triggers">
-          <CueTriggerComposer
-            behaviors={visibleBehaviors}
-            onAdd={(sourceBehaviorId, targetBehaviorId, delayMinutes) =>
-              addTriggerRule({ sourceBehaviorId, targetBehaviorId, delayMinutes })
-            }
-          />
-          <View style={styles.rules}>
-            {triggerRules.length === 0 ? (
-              <Text style={styles.empty}>No triggers saved.</Text>
-            ) : (
-              triggerRules.map(rule => (
-                <CueTriggerRuleCard
-                  key={rule.id}
-                  rule={rule}
-                  sourceName={visibleBehaviorNameById.get(rule.sourceBehaviorId) ?? 'Hidden behavior'}
-                  targetName={visibleBehaviorNameById.get(rule.targetBehaviorId) ?? 'Hidden behavior'}
-                  onToggle={() => toggleTriggerRule(rule.id)}
-                  onRemove={() => removeTriggerRule(rule.id)}
-                />
-              ))
-            )}
-          </View>
+          <Button
+            variant="secondary"
+            onPress={() => navigation.navigate('CueTriggers')}
+          >
+            Manage triggers
+          </Button>
         </CueSection>
 
         <CueLogList logs={cueLogs} />
@@ -213,13 +183,5 @@ const styles = StyleSheet.create({
   timeField: {
     flex: 1,
     gap: 8,
-  },
-  rules: {
-    gap: 8,
-  },
-  empty: {
-    color: Colors.text.faint,
-    fontSize: 13,
-    paddingVertical: 2,
   },
 });
