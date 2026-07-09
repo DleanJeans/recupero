@@ -79,6 +79,7 @@ export function BehaviorSelector({
       <ScrollView
         style={styles.behaviorList}
         contentContainerStyle={styles.behaviorListContent}
+        nestedScrollEnabled
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={filteredBehaviors.length > 4}
       >
