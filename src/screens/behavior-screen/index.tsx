@@ -28,7 +28,7 @@ export function BehaviorScreen() {
   const [formKey, setFormKey] = useState(0);
 
   const isEditing = editLogId != null;
-  const titleOverride = isEditing ? 'Edit Session' : undefined;
+  const titleOverride = isEditing && behavior ? `Edit: ${behavior.name}` : undefined;
   const removeBehavior = useBehaviorStore(s => s.removeBehavior);
 
   const animate = (next: ScreenMode) => {
