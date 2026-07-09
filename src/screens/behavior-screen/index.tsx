@@ -1,8 +1,8 @@
 import type { RouteProp } from '@react-navigation/native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useState } from 'react';
-import { Alert, LayoutAnimation, StyleSheet, View } from 'react-native';
+import { Alert, BackHandler, LayoutAnimation, StyleSheet, View } from 'react-native';
 import { BackButton } from '../../components/back-button';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text } from '../../components/text';
@@ -52,7 +52,10 @@ export function BehaviorScreen() {
 
   const handleBack = useCallback(() => {
     if (mode === 'log') {
-      if (initialMode === 'details') {
+      // When editing an existing log, always go back to the details list so
+      // the user can see the log in context. When creating a new log, fall
+      // back to the entry point.
+      if (isEditing || initialMode === 'details') {
         animate('details');
       } else {
         navigation.goBack();
@@ -60,7 +63,27 @@ export function BehaviorScreen() {
     } else {
       navigation.goBack();
     }
-  }, [mode, initialMode, navigation]);
+  }, [mode, isEditing, initialMode, navigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (mode !== 'log' || !isEditing) return undefined;
+      const onBack = () => {
+        animate('details');
+        return true;
+      };
+      const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+      const unsubscribe = navigation.addListener('beforeRemove', e => {
+        if (e.data.action.type !== 'GO_BACK') return;
+        e.preventDefault();
+        animate('details');
+      });
+      return () => {
+        sub.remove();
+        unsubscribe();
+      };
+    }, [mode, isEditing, navigation]),
+  );
 
   const handleSaved = useCallback(() => {
     if (initialMode === 'details') {
