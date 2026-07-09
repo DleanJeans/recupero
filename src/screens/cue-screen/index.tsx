@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { Button } from '../../components/button';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
@@ -12,6 +12,7 @@ import { useCueStore } from '../../store/cue-store';
 import type { EnergyLevel, LocationCue, MoodCue } from '../../types/cue';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
+import { sendTestNotification } from '../../utils/notification-utils';
 import { CueChipGroup } from './components/cue-chip-group';
 import { CueLogList } from './components/cue-log-list';
 import { CueSection } from './components/cue-section';
@@ -33,6 +34,7 @@ const MOOD_OPTIONS = [
 export function CueScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [expandedTimePicker, setExpandedTimePicker] = useState<'bedtime' | 'wakeUp' | null>(null);
+  const [sendingTestNotification, setSendingTestNotification] = useState(false);
   const energyLevel = useCueStore(s => s.energyLevel);
   const mood = useCueStore(s => s.mood);
   const location = useCueStore(s => s.location);
@@ -59,6 +61,17 @@ export function CueScreen() {
       ] satisfies Array<{ label: string; value: LocationCue; icon: IoniconName }>,
     [homeName],
   );
+  const handleSendTestNotification = async () => {
+    setSendingTestNotification(true);
+    try {
+      await sendTestNotification();
+    } catch (error) {
+      Alert.alert('Notification failed', error instanceof Error ? error.message : 'Unable to send notification.');
+    } finally {
+      setSendingTestNotification(false);
+    }
+  };
+
   return (
     <SafeAreaView
       style={styles.container}
@@ -139,6 +152,16 @@ export function CueScreen() {
             onPress={() => navigation.navigate('CueTriggers')}
           >
             Manage triggers
+          </Button>
+        </CueSection>
+
+        <CueSection title="Notifications">
+          <Button
+            variant="secondary"
+            onPress={handleSendTestNotification}
+            disabled={sendingTestNotification}
+          >
+            {sendingTestNotification ? 'Sending...' : 'Send test notification'}
           </Button>
         </CueSection>
 
