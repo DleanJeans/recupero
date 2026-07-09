@@ -8,6 +8,7 @@ import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
+type Mode = 'details' | 'log';
 
 interface Props {
   behavior: BehaviorEntry;
@@ -28,37 +29,61 @@ export const BehaviorCard = React.memo(function BehaviorCard({
   now,
 }: Props) {
   const navigation = useNavigation<NavProp>();
-  const contentWidth = useRef(0);
+  const pressableRef = useRef<View>(null);
+  /** Window-space bounds of the Pressable, refreshed on every layout change
+   *  and at the start of every press. We can't rely on `locationX` from the
+   *  press event because it's relative to the touched child view (the XPBar
+   *  track, a bar value Text, etc.), not to the Pressable itself. */
+  const bounds = useRef<{ windowX: number; width: number } | null>(null);
 
-  const handlePress = useCallback(
-    (e: GestureResponderEvent) => {
-      const mode = e.nativeEvent.locationX < contentWidth.current / 2 ? 'details' : 'log';
+  const refreshBounds = useCallback(() => {
+    pressableRef.current?.measureInWindow((x, _y, width) => {
+      bounds.current = { windowX: x, width };
+    });
+  }, []);
+
+  const goToMode = useCallback(
+    (mode: Mode) => {
       navigation.navigate('BehaviorLog', { behaviorId: behavior.id, initialMode: mode });
     },
     [behavior.id, navigation],
   );
 
-  const handleLayout = useCallback((e: LayoutChangeEvent) => {
-    contentWidth.current = e.nativeEvent.layout.width;
-  }, []);
-
-  const handlePressFallback = useCallback(
+  const handlePress = useCallback(
     (e: GestureResponderEvent) => {
-      if (contentWidth.current === 0) {
-        navigation.navigate('BehaviorLog', { behaviorId: behavior.id, initialMode: 'log' });
-        return;
+      // Refresh in case the card has moved (e.g. list reordering) since the
+      // last layout. If the cached bounds are still valid, this re-runs the
+      // same measurement — cheap and avoids stale coordinates.
+      refreshBounds();
+      const cached = bounds.current;
+      if (cached && cached.width > 0) {
+        // pageX is the touch's X in window coordinates, so it can be compared
+        // directly against the Pressable's window X.
+        const isRightHalf = e.nativeEvent.pageX >= cached.windowX + cached.width / 2;
+        goToMode(isRightHalf ? 'log' : 'details');
+      } else {
+        // No measurement yet — fall back to the previous default (log).
+        goToMode('log');
       }
-      handlePress(e);
     },
-    [behavior.id, handlePress, navigation],
+    [goToMode, refreshBounds],
+  );
+
+  const handleLayout = useCallback(
+    (_e: LayoutChangeEvent) => {
+      refreshBounds();
+    },
+    [refreshBounds],
   );
 
   return (
     <View style={styles.card}>
       <Pressable
+        ref={pressableRef}
         style={styles.content}
-        onPress={handlePressFallback}
+        onPress={handlePress}
         onLayout={handleLayout}
+        onPressIn={refreshBounds}
       >
         <BehaviorSummary
           behavior={behavior}
