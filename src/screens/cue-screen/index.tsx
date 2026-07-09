@@ -10,6 +10,7 @@ import { useSettingsStore } from '../../store/settings-store';
 import type { EnergyLevel, LocationCue, MoodCue } from '../../types/cue';
 import { Colors } from '../../utils/colors';
 import { CueChipGroup } from './components/cue-chip-group';
+import { CueLogList } from './components/cue-log-list';
 import { CueSection } from './components/cue-section';
 import { CueTriggerComposer } from './components/cue-trigger-composer';
 import { CueTriggerRuleCard } from './components/cue-trigger-rule-card';
@@ -37,6 +38,7 @@ export function CueScreen() {
   const homeName = useCueStore(s => s.homeName);
   const bedtime = useCueStore(s => s.bedtime);
   const wakeUpTime = useCueStore(s => s.wakeUpTime);
+  const cueLogs = useCueStore(s => s.cueLogs);
   const triggerRules = useCueStore(s => s.triggerRules);
   const setEnergyLevel = useCueStore(s => s.setEnergyLevel);
   const setMood = useCueStore(s => s.setMood);
@@ -161,6 +163,8 @@ export function CueScreen() {
             )}
           </View>
         </CueSection>
+
+        <CueLogList logs={cueLogs} />
       </ScrollView>
     </SafeAreaView>
   );

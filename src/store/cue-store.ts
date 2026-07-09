@@ -2,7 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { CueTriggerRule, EnergyLevel, LocationCue, MoodCue } from '../types/cue';
+import type { CueLogEntry, CueLogType, CueTriggerRule, EnergyLevel, LocationCue, MoodCue } from '../types/cue';
+
+const MAX_CUE_LOGS = 50;
 
 interface CueStore {
   energyLevel: EnergyLevel | null;
@@ -11,6 +13,7 @@ interface CueStore {
   homeName: string;
   bedtime: string;
   wakeUpTime: string;
+  cueLogs: CueLogEntry[];
   triggerRules: CueTriggerRule[];
   setEnergyLevel: (energyLevel: EnergyLevel) => void;
   setMood: (mood: MoodCue) => void;
@@ -23,6 +26,19 @@ interface CueStore {
   removeTriggerRule: (ruleId: string) => void;
 }
 
+function appendCueLog(logs: CueLogEntry[], type: CueLogType, value: string, label: string) {
+  return [
+    {
+      id: uuidv4(),
+      type,
+      value,
+      label,
+      timestamp: Date.now(),
+    },
+    ...logs,
+  ].slice(0, MAX_CUE_LOGS);
+}
+
 export const useCueStore = create<CueStore>()(
   persist(
     set => ({
@@ -32,10 +48,24 @@ export const useCueStore = create<CueStore>()(
       homeName: 'Home',
       bedtime: '22:30',
       wakeUpTime: '07:00',
+      cueLogs: [],
       triggerRules: [],
-      setEnergyLevel: energyLevel => set({ energyLevel }),
-      setMood: mood => set({ mood }),
-      setLocation: location => set({ location }),
+      setEnergyLevel: energyLevel =>
+        set(state =>
+          state.energyLevel === energyLevel
+            ? state
+            : { energyLevel, cueLogs: appendCueLog(state.cueLogs, 'energy', energyLevel, 'Energy') },
+        ),
+      setMood: mood =>
+        set(state =>
+          state.mood === mood ? state : { mood, cueLogs: appendCueLog(state.cueLogs, 'mood', mood, 'Mood') },
+        ),
+      setLocation: location =>
+        set(state =>
+          state.location === location
+            ? state
+            : { location, cueLogs: appendCueLog(state.cueLogs, 'location', location, 'Location') },
+        ),
       setHomeName: homeName => set({ homeName }),
       setBedtime: bedtime => set({ bedtime }),
       setWakeUpTime: wakeUpTime => set({ wakeUpTime }),
