@@ -139,11 +139,17 @@ interface GetDailyGoalProgressParams {
   newValue?: number;
   dayCutoffHour?: number;
   editLogId?: string;
+  /** When set, sum the field across all these behaviors (typically every
+   *  behavior in the same category) instead of just `behavior`. The form
+   *  uses this so its progress matches the day screen, which also sums
+   *  per category. `editLogId` is still skipped when present. */
+  categoryBehaviors?: BehaviorEntry[];
 }
 
-/** Sum a metadata field's value across all logs on `dateStr`, optionally
- *  skipping the log being edited so the caller can show "current" as
- *  everything-but-this-log. Non-numeric or missing values are treated as 0. */
+/** Sum a metadata field's value across all logs on `dateStr` for the given
+ *  behavior, optionally skipping the log being edited so the caller can show
+ *  "current" as everything-but-this-log. Non-numeric or missing values are
+ *  treated as 0. */
 function sumFieldOnDate(
   behavior: BehaviorEntry,
   dateStr: string,
@@ -160,9 +166,27 @@ function sumFieldOnDate(
   return total;
 }
 
+/** Sum a metadata field's value across all logs on `dateStr` for every
+ *  behavior in `behaviors`, optionally skipping the log being edited. */
+function sumFieldOnDateAcrossBehaviors(
+  behaviors: BehaviorEntry[],
+  dateStr: string,
+  fieldKey: string,
+  dayCutoffHour: number,
+  editLogId?: string,
+): number {
+  let total = 0;
+  for (const behavior of behaviors) {
+    total += sumFieldOnDate(behavior, dateStr, fieldKey, dayCutoffHour, editLogId);
+  }
+  return total;
+}
+
 /** Daily-goal progress for a single metadata field. Returns `null` when the
  *  field has no `dailyGoal` (or it's <= 0) so callers can skip rendering the
- *  bar entirely. `after` includes the value the user is about to log. */
+ *  bar entirely. `after` includes the value the user is about to log. When
+ *  `categoryBehaviors` is provided, "current" sums across all of them so the
+ *  bar matches the per-category total shown on the day screen. */
 export function getDailyGoalProgress({
   behavior,
   dateStr,
@@ -170,11 +194,15 @@ export function getDailyGoalProgress({
   newValue,
   dayCutoffHour = 0,
   editLogId,
+  categoryBehaviors,
 }: GetDailyGoalProgressParams): DailyGoalProgress | null {
   const goal = field.dailyGoal;
   if (goal == null || !Number.isFinite(goal) || goal <= 0) return null;
 
-  const current = sumFieldOnDate(behavior, dateStr, field.key, dayCutoffHour, editLogId);
+  const current =
+    categoryBehaviors != null
+      ? sumFieldOnDateAcrossBehaviors(categoryBehaviors, dateStr, field.key, dayCutoffHour, editLogId)
+      : sumFieldOnDate(behavior, dateStr, field.key, dayCutoffHour, editLogId);
   const contribution = newValue != null && Number.isFinite(newValue) && newValue > 0 ? newValue : 0;
   const after = current + contribution;
   const deltaPercent = Math.round(((after - current) / goal) * 100);

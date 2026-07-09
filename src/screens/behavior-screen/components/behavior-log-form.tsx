@@ -63,6 +63,16 @@ export function BehaviorLogForm({
       [behavior.categoryId],
     ),
   );
+  // Sum the field across every behavior in the same category so the progress
+  // bar matches the day screen's per-category total. Subscribe to the raw
+  // `behaviors` array (stable reference) and filter outside the selector —
+  // otherwise `.filter()` returns a new array each call and trips Zustand's
+  // "getSnapshot should be cached" check.
+  const allBehaviors = useBehaviorStore(state => state.behaviors);
+  const categoryBehaviors = useMemo(
+    () => (behavior.categoryId ? allBehaviors.filter(b => b.categoryId === behavior.categoryId) : undefined),
+    [allBehaviors, behavior.categoryId],
+  );
   const logBehavior = useBehaviorStore(state => state.logBehavior);
   const updateLog = useBehaviorStore(state => state.updateLog);
   const removeLog = useBehaviorStore(state => state.removeLog);
@@ -151,10 +161,20 @@ export function BehaviorLogForm({
         newValue,
         dayCutoffHour,
         editLogId,
+        categoryBehaviors,
       });
     }
     return map;
-  }, [behavior, calculatedMetadataValues, dayCutoffHour, editLogId, metadataFields, metadataValues, selectedDate]);
+  }, [
+    behavior,
+    calculatedMetadataValues,
+    categoryBehaviors,
+    dayCutoffHour,
+    editLogId,
+    metadataFields,
+    metadataValues,
+    selectedDate,
+  ]);
 
   const maxTimestampForDate = useMemo(
     () => getDayMaxTimestamp(selectedDate, nowRef.current, dayCutoffHour),
