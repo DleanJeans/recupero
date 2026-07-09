@@ -6,6 +6,7 @@ import { Text } from './text';
 interface SelectPillProps {
   label: string;
   active: boolean;
+  children?: React.ReactNode;
   activeBtnStyle?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   activeTextStyle?: StyleProp<TextStyle>;
@@ -15,6 +16,7 @@ interface SelectPillProps {
 export function SelectPill({
   label,
   active,
+  children,
   activeBtnStyle,
   textStyle,
   activeTextStyle,
@@ -26,7 +28,7 @@ export function SelectPill({
       style={({ pressed }) => [styles.btn, style, active && activeBtnStyle, pressed && { opacity: 0.7 }]}
       onPress={onPress}
     >
-      <Text style={[styles.text, textStyle, active && activeTextStyle]}>{label}</Text>
+      {children ?? <Text style={[styles.text, textStyle, active && activeTextStyle]}>{label}</Text>}
     </Pressable>
   );
 }

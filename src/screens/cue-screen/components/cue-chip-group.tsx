@@ -1,12 +1,15 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SelectPill } from '../../../components/select-pill';
 import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
 interface CueChipGroupProps<T extends string> {
   label: string;
-  options: Array<{ label: string; value: T }>;
+  options: Array<{ label: string; value: T; icon: IoniconName }>;
   value: T | null;
   onChange: (value: T) => void;
 }
@@ -27,7 +30,16 @@ export function CueChipGroup<T extends string>({ label, options, value, onChange
               style={[styles.chip, active && styles.chipActive]}
               textStyle={styles.chipText}
               activeTextStyle={styles.chipTextActive}
-            />
+            >
+              <View style={styles.chipContent}>
+                <Ionicons
+                  name={option.icon}
+                  size={16}
+                  color={active ? Colors.text.primary : Colors.text.light}
+                />
+                <Text style={[styles.chipText, active && styles.chipTextActive]}>{option.label}</Text>
+              </View>
+            </SelectPill>
           );
         })}
       </View>
@@ -57,6 +69,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.bg.input,
     paddingHorizontal: 12,
     paddingVertical: 8,
+  },
+  chipContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   chipActive: {
     backgroundColor: Colors.bg.elevated,

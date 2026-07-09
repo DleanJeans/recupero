@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from '../../components/safe-area-view';
@@ -13,17 +14,19 @@ import { CueSection } from './components/cue-section';
 import { CueTriggerComposer } from './components/cue-trigger-composer';
 import { CueTriggerRuleCard } from './components/cue-trigger-rule-card';
 
-const ENERGY_OPTIONS: Array<{ label: string; value: EnergyLevel }> = [
-  { label: 'Low', value: 'low' },
-  { label: 'Steady', value: 'steady' },
-  { label: 'High', value: 'high' },
-];
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
-const MOOD_OPTIONS: Array<{ label: string; value: MoodCue }> = [
-  { label: 'Good', value: 'good' },
-  { label: 'Neutral', value: 'neutral' },
-  { label: 'Rough', value: 'rough' },
-];
+const ENERGY_OPTIONS = [
+  { label: 'Low', value: 'low', icon: 'battery-dead-outline' },
+  { label: 'Steady', value: 'steady', icon: 'battery-half-outline' },
+  { label: 'High', value: 'high', icon: 'battery-full-outline' },
+] satisfies Array<{ label: string; value: EnergyLevel; icon: IoniconName }>;
+
+const MOOD_OPTIONS = [
+  { label: 'Good', value: 'good', icon: 'happy-outline' },
+  { label: 'Neutral', value: 'neutral', icon: 'remove-circle-outline' },
+  { label: 'Rough', value: 'rough', icon: 'sad-outline' },
+] satisfies Array<{ label: string; value: MoodCue; icon: IoniconName }>;
 
 export function CueScreen() {
   const behaviors = useBehaviorStore(s => s.behaviors);
@@ -49,13 +52,14 @@ export function CueScreen() {
     const filtered = hidePrivate ? behaviors.filter(behavior => !behavior.private) : behaviors;
     return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
   }, [behaviors, hidePrivate]);
-  const locationOptions = useMemo<Array<{ label: string; value: LocationCue }>>(
-    () => [
-      { label: homeName.trim() || 'Home', value: 'home' },
-      { label: 'Outside', value: 'outside' },
-      { label: 'In bed', value: 'bed' },
-      { label: 'Other', value: 'other' },
-    ],
+  const locationOptions = useMemo(
+    () =>
+      [
+        { label: homeName.trim() || 'Home', value: 'home', icon: 'home-outline' },
+        { label: 'Outside', value: 'outside', icon: 'walk-outline' },
+        { label: 'In bed', value: 'bed', icon: 'bed-outline' },
+        { label: 'Other', value: 'other', icon: 'location-outline' },
+      ] satisfies Array<{ label: string; value: LocationCue; icon: IoniconName }>,
     [homeName],
   );
   const visibleBehaviorNameById = useMemo(
