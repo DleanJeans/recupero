@@ -1,11 +1,13 @@
-import React, { memo, useMemo } from 'react';
+import DateTimePicker, {
+  DateTimePickerAndroid,
+  type DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
+import React, { memo, useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
-import { NumberWheel } from './number-wheel';
 
-const ALL_HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-const ALL_MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+const IS_ANDROID = process.env.EXPO_OS === 'android';
 
 interface TimePickerProps {
   label: string;
@@ -13,9 +15,7 @@ interface TimePickerProps {
   minute: number;
   maxHour: number;
   maxMinute: number;
-  wheelKey: number;
   collapsed: boolean;
-  onHourChange: (h: number) => void;
   onMinuteChange: (m: number) => void;
   onExpand: () => void;
 }
@@ -26,49 +26,64 @@ function TimePickerComponent({
   minute,
   maxHour,
   maxMinute,
-  wheelKey,
   collapsed,
-  onHourChange,
   onMinuteChange,
   onExpand,
 }: TimePickerProps) {
-  const hourValues = useMemo(() => ALL_HOURS.slice(0, maxHour + 1), [maxHour]);
-  const minuteValues = useMemo(() => ALL_MINUTES.slice(0, maxMinute + 1), [maxMinute]);
+  const value = useMemo(() => new Date(2000, 0, 1, hour, minute), [hour, minute]);
+  const maximumDate = useMemo(() => new Date(2000, 0, 1, maxHour, maxMinute), [maxHour, maxMinute]);
   const displayTime = useMemo(
     () => `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
     [hour, minute],
   );
+  const handleChange = useCallback(
+    (event: DateTimePickerEvent, selectedDate?: Date) => {
+      if (event.type === 'dismissed' || !selectedDate) return;
+      const selectedMinutes = selectedDate.getHours() * 60 + selectedDate.getMinutes();
+      const maxMinutes = maxHour * 60 + maxMinute;
+      onMinuteChange(Math.min(selectedMinutes, maxMinutes) - hour * 60);
+    },
+    [hour, maxHour, maxMinute, onMinuteChange],
+  );
+  const handlePress = useCallback(() => {
+    if (!IS_ANDROID) {
+      onExpand();
+      return;
+    }
+    DateTimePickerAndroid.open({
+      value,
+      mode: 'time',
+      display: 'spinner',
+      is24Hour: true,
+      onChange: handleChange,
+    });
+  }, [handleChange, onExpand, value]);
 
   return (
     <>
       <Text style={styles.sectionLabel}>{label}</Text>
       <Pressable
-        style={[styles.collapsedTime, !collapsed && styles.hiddenControl]}
-        onPress={onExpand}
-        pointerEvents={collapsed ? 'auto' : 'none'}
+        style={[styles.collapsedTime, !IS_ANDROID && !collapsed && styles.hiddenControl]}
+        onPress={handlePress}
+        pointerEvents={IS_ANDROID || collapsed ? 'auto' : 'none'}
       >
         <Text style={styles.collapsedTimeText}>{displayTime}</Text>
       </Pressable>
-      <View style={[styles.wheels, collapsed && styles.hiddenWheels]}>
-        <View
-          style={[styles.wheelsContent, collapsed && styles.hiddenControl]}
-          pointerEvents={collapsed ? 'none' : 'auto'}
-        >
-          <NumberWheel
-            resetKey={wheelKey}
-            values={hourValues}
-            initialIndex={Math.min(hour, maxHour)}
-            onChange={onHourChange}
-          />
-          <Text style={styles.colon}>:</Text>
-          <NumberWheel
-            resetKey={wheelKey}
-            values={minuteValues}
-            initialIndex={Math.min(minute, maxMinute)}
-            onChange={onMinuteChange}
+      {!IS_ANDROID && (
+        <View style={[styles.pickerContainer, collapsed && styles.hiddenControl]}>
+          <DateTimePicker
+            value={value}
+            maximumDate={maximumDate}
+            mode="time"
+            display="spinner"
+            minuteInterval={1}
+            themeVariant="dark"
+            textColor={Colors.text.primary}
+            onChange={handleChange}
+            style={styles.picker}
           />
         </View>
-      </View>
+      )}
     </>
   );
 }
@@ -85,12 +100,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: 'center',
   },
-  wheels: { marginBottom: 16, overflow: 'hidden' },
-  wheelsContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  colon: { color: Colors.text.primary, fontSize: 28, fontWeight: '700', marginBottom: 4 },
   collapsedTime: { alignItems: 'center', marginBottom: 16 },
-  hiddenWheels: { height: 0, marginBottom: 0 },
   hiddenControl: { height: 0, marginBottom: 0, opacity: 0, overflow: 'hidden' },
+  pickerContainer: { height: 216, marginBottom: 16, overflow: 'hidden' },
+  picker: { height: 216 },
   collapsedTimeText: {
     color: Colors.text.primary,
     fontSize: 28,

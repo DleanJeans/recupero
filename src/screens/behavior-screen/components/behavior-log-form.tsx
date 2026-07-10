@@ -105,8 +105,6 @@ export function BehaviorLogForm({
   const [endMinutes, setEndMinutes] = useState(Math.max(initialStartMinutes, initialEndMinutes));
   const showTimeRange =
     hasTimerRange || existingLog?.endTimestamp != null || (!existingLog && behavior.durationXpEnabled === true);
-  const [startWheelKey, setStartWheelKey] = useState(0);
-  const [endWheelKey, setEndWheelKey] = useState(0);
   const notesRef = useRef<import('react-native').TextInput>(null);
   const [notes, setNotes] = useState(String(existingLog?.metadata?.notes ?? ''));
   const [timePickerCollapsed, setTimePickerCollapsed] = useState(true);
@@ -191,13 +189,11 @@ export function BehaviorLogForm({
     const clampedEndMinutes = Math.min(endMinutes, maxTimeMinutes);
     if (clampedEndMinutes !== endMinutes) {
       setEndMinutes(clampedEndMinutes);
-      setEndWheelKey(key => key + 1);
     }
 
     const clampedStartMinutes = Math.min(startMinutes, clampedEndMinutes);
     if (clampedStartMinutes !== startMinutes) {
       setStartMinutes(clampedStartMinutes);
-      setStartWheelKey(key => key + 1);
     }
   }, [endMinutes, maxTimeMinutes, startMinutes]);
 
@@ -225,12 +221,8 @@ export function BehaviorLogForm({
     (nextMinutes: number) => {
       const clampedMinutes = Math.min(nextMinutes, maxTimeMinutes);
       setStartMinutes(clampedMinutes);
-      if (clampedMinutes !== nextMinutes) {
-        setStartWheelKey(key => key + 1);
-      }
       if (clampedMinutes > endMinutes) {
         setEndMinutes(clampedMinutes);
-        setEndWheelKey(key => key + 1);
       }
     },
     [endMinutes, maxTimeMinutes],
@@ -240,12 +232,8 @@ export function BehaviorLogForm({
     (nextMinutes: number) => {
       const clampedMinutes = Math.min(nextMinutes, maxTimeMinutes);
       setEndMinutes(clampedMinutes);
-      if (clampedMinutes !== nextMinutes) {
-        setEndWheelKey(key => key + 1);
-      }
       if (clampedMinutes < startMinutes) {
         setStartMinutes(clampedMinutes);
-        setStartWheelKey(key => key + 1);
       }
     },
     [maxTimeMinutes, startMinutes],
@@ -370,16 +358,14 @@ export function BehaviorLogForm({
   }, [behaviorId, editLogId, onSaved, removeLog]);
 
   const renderTimePicker = useCallback(
-    (label: string, hour: number, minute: number, wheelKey: number, applyMinutes: (nextMinutes: number) => void) => (
+    (label: string, hour: number, minute: number, applyMinutes: (nextMinutes: number) => void) => (
       <TimePicker
         label={label}
         hour={hour}
         minute={minute}
         maxHour={maxTimeHour}
         maxMinute={getMaxMinuteForHour(hour)}
-        wheelKey={wheelKey}
         collapsed={timePickerCollapsed}
-        onHourChange={nextHour => applyMinutes(nextHour * 60 + minute)}
         onMinuteChange={nextMinute => applyMinutes(hour * 60 + nextMinute)}
         onExpand={handleExpandTime}
       />
@@ -406,19 +392,17 @@ export function BehaviorLogForm({
           {showTimeRange ? (
             <View style={styles.timePickerRow}>
               <View style={styles.timePickerColumn}>
-                {renderTimePicker('Start', startHour, startMinute, startWheelKey, applyStartMinutes)}
+                {renderTimePicker('Start', startHour, startMinute, applyStartMinutes)}
               </View>
 
               <Text style={styles.timePickerSeparator}>-</Text>
 
               <View style={styles.timePickerColumn}>
-                {renderTimePicker('End', endHour, endMinute, endWheelKey, applyEndMinutes)}
+                {renderTimePicker('End', endHour, endMinute, applyEndMinutes)}
               </View>
             </View>
           ) : (
-            <View style={styles.singleTimePicker}>
-              {renderTimePicker('Time', endHour, endMinute, endWheelKey, applyEndMinutes)}
-            </View>
+            <View style={styles.singleTimePicker}>{renderTimePicker('Time', endHour, endMinute, applyEndMinutes)}</View>
           )}
 
           {showTimeRange && (
