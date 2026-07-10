@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Keyboard } from 'react-native';
 import { REWARD_ANIMATION_MS } from '../../../components/log-reward-preview';
+import { TimePicker } from '../../../components/time-picker';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useSettingsStore } from '../../../store/settings-store';
 import type { BehaviorEntry, MetadataField } from '../../../types/behavior';
@@ -19,7 +20,6 @@ import {
 import { getMoneyRewardForLog } from '../../../utils/money-utils';
 import { formatDuration, MS_PER_MINUTE } from '../../../utils/time-utils';
 import { XP_PER_LOG } from '../../../utils/xp-utils';
-import { TimePicker } from '../../../components/time-picker';
 
 export interface BehaviorLogFormProps {
   behaviorId: string;
