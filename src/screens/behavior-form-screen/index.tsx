@@ -77,7 +77,12 @@ export function BehaviorFormScreen() {
   const [moneyReward, setMoneyReward] = useState(() => behavior?.type !== 'neutral' && behavior?.moneyReward != null);
   const [moneyRewardAmount, setMoneyRewardAmount] = useState(() =>
     String(
-      getMoneyRewardAmount(behavior?.moneyReward, behavior?.xpEnabled === true && behavior?.durationXpEnabled === true),
+      getMoneyRewardAmount(
+        behavior?.moneyReward,
+        behavior
+          ? behavior.xpEnabled === true && behavior.durationXpEnabled === true
+          : defaultXpEnabled === true && defaultDurationXpEnabled === true,
+      ),
     ),
   );
   const [type, setType] = useState<BehaviorType>(behavior?.type ?? 'neutral');
