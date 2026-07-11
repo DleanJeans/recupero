@@ -27,11 +27,13 @@ import {
   getManualMetadataFields,
   getSelectedAmountMetadataField,
 } from '../../../utils/metadata-calculation-utils';
+import { getMoneyRewardForLog } from '../../../utils/money-utils';
 import { formatDuration, MS_PER_MINUTE } from '../../../utils/time-utils';
 import { XP_PER_LOG } from '../../../utils/xp-utils';
 import { FabButtonRow } from '../../components/fab-button-row';
 import { CalculatedMetadataFields } from './calculated-metadata-fields';
 import { FloatingXPBurst, type XPBurst } from './floating-xp-burst';
+import { LogRewardPreview } from './log-reward-preview';
 import { MetadataInputRow } from './metadata-input-row';
 import { TimePicker } from './time-picker';
 
@@ -246,7 +248,18 @@ export function BehaviorLogForm({
   const durationMinutes = Math.max(1, endMinutes - startMinutes);
   const durationMs = durationMinutes * MS_PER_MINUTE;
   const earnedXp = showTimeRange ? durationMinutes : XP_PER_LOG;
-  const logButtonLabel = editLogId ? 'Save' : !showTimeRange && behavior.xpEnabled ? `Log +${XP_PER_LOG} XP` : 'Log';
+  const moneyRewardAmount =
+    behavior.moneyReward == null || behavior.type === 'neutral'
+      ? undefined
+      : getMoneyRewardForLog(
+          {
+            id: 'preview',
+            timestamp: 0,
+            ...(showTimeRange ? { endTimestamp: durationMs } : {}),
+          },
+          behavior.moneyReward,
+          behavior.durationXpEnabled === true,
+        ) * (behavior.type === 'undesirable' ? -1 : 1);
   const maxTimeHour = Math.floor(maxTimeMinutes / 60);
   const getMaxMinuteForHour = useCallback(
     (hour: number) => (maxTimeHour === hour ? maxTimeMinutes % 60 : 59),
@@ -409,7 +422,6 @@ export function BehaviorLogForm({
             <View style={styles.durationCard}>
               <Text style={styles.durationLabel}>Duration</Text>
               <Text style={styles.durationValue}>{formatDuration(durationMs)}</Text>
-              {behavior.xpEnabled && <Text style={styles.durationHint}>+{earnedXp} XP</Text>}
             </View>
           )}
         </View>
@@ -486,21 +498,29 @@ export function BehaviorLogForm({
             </View>
           </Button>
         ) : null}
-        <Button
-          variant="primary"
-          style={styles.logButton}
-          onPress={handleConfirm}
-          disabled={pending}
-          overlay={xpBursts.map(burst => (
-            <FloatingXPBurst
-              key={burst.id}
-              burst={burst}
-              onDone={removeXPBurst}
+        <View style={styles.logAction}>
+          {!editLogId && (
+            <LogRewardPreview
+              xp={behavior.xpEnabled ? earnedXp : undefined}
+              money={moneyRewardAmount}
             />
-          ))}
-        >
-          {logButtonLabel}
-        </Button>
+          )}
+          <Button
+            variant="primary"
+            style={styles.logButton}
+            onPress={handleConfirm}
+            disabled={pending}
+            overlay={xpBursts.map(burst => (
+              <FloatingXPBurst
+                key={burst.id}
+                burst={burst}
+                onDone={removeXPBurst}
+              />
+            ))}
+          >
+            {editLogId ? 'Save' : 'Log'}
+          </Button>
+        </View>
       </FabButtonRow>
     </View>
   );
@@ -564,11 +584,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
-  durationHint: {
-    color: Colors.type.desirable,
-    fontSize: 13,
-    fontWeight: '700',
-  },
   body: {
     flex: 1,
   },
@@ -585,6 +600,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
     lineHeight: 22,
+  },
+  logAction: {
+    flex: 1,
+    gap: 6,
   },
   logButton: {
     flex: 1,
