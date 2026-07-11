@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Colors } from '../utils/colors';
 import { formatVnd } from '../utils/money-utils';
 import { Text } from './text';
@@ -9,13 +10,34 @@ interface LogRewardPreviewProps {
   money?: number;
   undesirable?: boolean;
   decayed?: boolean;
+  animate?: boolean;
 }
 
-export function LogRewardPreview({ xp, money, undesirable = false, decayed = false }: LogRewardPreviewProps) {
+export const REWARD_ANIMATION_MS = 850;
+const REWARD_ANIMATION_DISTANCE = 24;
+
+export function LogRewardPreview({
+  xp,
+  money,
+  undesirable = false,
+  decayed = false,
+  animate = false,
+}: LogRewardPreviewProps) {
+  const progress = useSharedValue(0);
+
+  useEffect(() => {
+    progress.value = animate ? withTiming(1, { duration: REWARD_ANIMATION_MS }) : 0;
+  }, [animate, progress]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: 1 - progress.value,
+    transform: [{ translateY: -REWARD_ANIMATION_DISTANCE * progress.value }],
+  }));
+
   if (xp == null && money == null) return null;
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, animate && animatedStyle]}>
       {xp != null && (
         <Text style={[styles.reward, undesirable ? styles.penalty : styles.xp, decayed && styles.decayed]}>
           +{xp} XP
@@ -27,7 +49,7 @@ export function LogRewardPreview({ xp, money, undesirable = false, decayed = fal
           {formatVnd(Math.abs(money))}
         </Text>
       )}
-    </View>
+    </Animated.View>
   );
 }
 

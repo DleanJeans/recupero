@@ -1,17 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Alert,
-  type GestureResponderEvent,
-  Keyboard,
-  KeyboardAvoidingView,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
 import { Button } from '../../../components/button';
 import { DatePicker } from '../../../components/date-picker';
-import { LogRewardPreview } from '../../../components/log-reward-preview';
+import { LogRewardPreview, REWARD_ANIMATION_MS } from '../../../components/log-reward-preview';
 import { Text, TextInput } from '../../../components/text';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useSettingsStore } from '../../../store/settings-store';
@@ -33,7 +25,6 @@ import { formatDuration, MS_PER_MINUTE } from '../../../utils/time-utils';
 import { XP_PER_LOG } from '../../../utils/xp-utils';
 import { FabButtonRow } from '../../components/fab-button-row';
 import { CalculatedMetadataFields } from './calculated-metadata-fields';
-import { FloatingXPBurst, type XPBurst } from './floating-xp-burst';
 import { MetadataInputRow } from './metadata-input-row';
 import { TimePicker } from './time-picker';
 
@@ -110,8 +101,6 @@ export function BehaviorLogForm({
   const notesRef = useRef<import('react-native').TextInput>(null);
   const [notes, setNotes] = useState(String(existingLog?.metadata?.notes ?? ''));
   const [timePickerCollapsed, setTimePickerCollapsed] = useState(true);
-  const [xpBursts, setXPBursts] = useState<XPBurst[]>([]);
-  const nextXPBurstId = useRef(0);
 
   const metadataFields = useMemo(() => category?.metadataFields ?? [], [category?.metadataFields]);
   const amountField = useMemo(
@@ -213,10 +202,6 @@ export function BehaviorLogForm({
     setTimePickerCollapsed(false);
   }, []);
 
-  const removeXPBurst = useCallback((id: number) => {
-    setXPBursts(prev => prev.filter(burst => burst.id !== id));
-  }, []);
-
   const handleCollapseTime = useCallback(() => setTimePickerCollapsed(true), []);
   const handleInputBlur = useCallback(() => {}, []);
   const applyStartMinutes = useCallback(
@@ -260,100 +245,82 @@ export function BehaviorLogForm({
           behavior.moneyReward,
           behavior.durationXpEnabled === true,
         ) * (behavior.type === 'undesirable' ? -1 : 1);
+  const hasReward = behavior.xpEnabled || moneyRewardAmount != null;
   const maxTimeHour = Math.floor(maxTimeMinutes / 60);
   const getMaxMinuteForHour = useCallback(
     (hour: number) => (maxTimeHour === hour ? maxTimeMinutes % 60 : 59),
     [maxTimeHour, maxTimeMinutes],
   );
 
-  const handleConfirm = useCallback(
-    (event: GestureResponderEvent) => {
-      const logHour = showTimeRange ? startHour : endHour;
-      const logMinute = showTimeRange ? startMinute : endMinute;
-      const rawStartTimestamp = getLogFormTimestamp(
-        selectedDate,
-        logHour,
-        logMinute,
-        dayCutoffHour,
-        maxTimestampForDate,
-      );
-      const rawEndTimestamp = getLogFormTimestamp(selectedDate, endHour, endMinute, dayCutoffHour, maxTimestampForDate);
-      const endTimestamp = Math.min(rawEndTimestamp, maxTimestampForDate);
-      const startTimestamp = Math.min(rawStartTimestamp, endTimestamp);
-      const saveEndTimestamp = showTimeRange ? endTimestamp : undefined;
+  const handleConfirm = useCallback(() => {
+    const logHour = showTimeRange ? startHour : endHour;
+    const logMinute = showTimeRange ? startMinute : endMinute;
+    const rawStartTimestamp = getLogFormTimestamp(selectedDate, logHour, logMinute, dayCutoffHour, maxTimestampForDate);
+    const rawEndTimestamp = getLogFormTimestamp(selectedDate, endHour, endMinute, dayCutoffHour, maxTimestampForDate);
+    const endTimestamp = Math.min(rawEndTimestamp, maxTimestampForDate);
+    const startTimestamp = Math.min(rawStartTimestamp, endTimestamp);
+    const saveEndTimestamp = showTimeRange ? endTimestamp : undefined;
 
-      const metadata: Record<string, string | number> = {};
-      if (notes.trim()) metadata.notes = notes.trim();
-      const metadataInputFields: MetadataField[] = amountField
-        ? [amountField, ...manualMetadataFields]
-        : metadataFields;
-      for (const field of metadataInputFields) {
+    const metadata: Record<string, string | number> = {};
+    if (notes.trim()) metadata.notes = notes.trim();
+    const metadataInputFields: MetadataField[] = amountField ? [amountField, ...manualMetadataFields] : metadataFields;
+    for (const field of metadataInputFields) {
+      const value = metadataValues[field.key];
+      const parsed = Number(value);
+      if (value !== undefined && value !== '' && Number.isFinite(parsed)) {
+        metadata[field.key] = parsed;
+      }
+    }
+    if (amountField) {
+      Object.assign(metadata, calculatedMetadataValues);
+      for (const field of calculatedMetadataFields) {
+        if (metadata[field.key] != null) continue;
         const value = metadataValues[field.key];
         const parsed = Number(value);
         if (value !== undefined && value !== '' && Number.isFinite(parsed)) {
           metadata[field.key] = parsed;
         }
       }
-      if (amountField) {
-        Object.assign(metadata, calculatedMetadataValues);
-        for (const field of calculatedMetadataFields) {
-          if (metadata[field.key] != null) continue;
-          const value = metadataValues[field.key];
-          const parsed = Number(value);
-          if (value !== undefined && value !== '' && Number.isFinite(parsed)) {
-            metadata[field.key] = parsed;
-          }
-        }
-      }
-      const metadataOrUndefined = Object.keys(metadata).length > 0 ? metadata : undefined;
+    }
+    const metadataOrUndefined = Object.keys(metadata).length > 0 ? metadata : undefined;
 
-      if (editLogId) {
-        updateLog(behaviorId, editLogId, startTimestamp, metadataOrUndefined, saveEndTimestamp);
-        onSaved();
-        return;
-      }
+    if (editLogId) {
+      updateLog(behaviorId, editLogId, startTimestamp, metadataOrUndefined, saveEndTimestamp);
+      onSaved();
+      return;
+    }
 
-      logBehavior(behaviorId, startTimestamp, metadataOrUndefined, saveEndTimestamp);
+    logBehavior(behaviorId, startTimestamp, metadataOrUndefined, saveEndTimestamp);
 
-      if (behavior.xpEnabled) {
-        const { locationX, locationY } = event.nativeEvent;
-        const id = nextXPBurstId.current;
-        nextXPBurstId.current += 1;
-        setXPBursts(prev => [...prev, { id, x: locationX, y: locationY, xp: earnedXp }]);
-      }
-
-      const delay = behavior.xpEnabled ? 1500 : 0;
-      if (delay > 0) setPending(true);
-      closeTimeoutRef.current = setTimeout(() => {
-        setPending(false);
-        onSaved();
-      }, delay);
-    },
-    [
-      amountField,
-      behavior.xpEnabled,
-      behaviorId,
-      calculatedMetadataFields,
-      calculatedMetadataValues,
-      editLogId,
-      earnedXp,
-      endHour,
-      endMinute,
-      dayCutoffHour,
-      logBehavior,
-      manualMetadataFields,
-      maxTimestampForDate,
-      metadataFields,
-      metadataValues,
-      notes,
-      onSaved,
-      selectedDate,
-      showTimeRange,
-      startHour,
-      startMinute,
-      updateLog,
-    ],
-  );
+    const delay = hasReward ? REWARD_ANIMATION_MS : 0;
+    if (delay > 0) setPending(true);
+    closeTimeoutRef.current = setTimeout(() => {
+      setPending(false);
+      onSaved();
+    }, delay);
+  }, [
+    amountField,
+    behaviorId,
+    calculatedMetadataFields,
+    calculatedMetadataValues,
+    editLogId,
+    endHour,
+    endMinute,
+    dayCutoffHour,
+    logBehavior,
+    manualMetadataFields,
+    maxTimestampForDate,
+    metadataFields,
+    metadataValues,
+    notes,
+    onSaved,
+    selectedDate,
+    showTimeRange,
+    startHour,
+    startMinute,
+    updateLog,
+    hasReward,
+  ]);
 
   const handleDelete = useCallback(() => {
     if (!editLogId) return;
@@ -504,6 +471,7 @@ export function BehaviorLogForm({
               xp={behavior.xpEnabled ? earnedXp : undefined}
               money={moneyRewardAmount}
               undesirable={behavior.type === 'undesirable'}
+              animate={pending}
             />
           )}
           <Button
@@ -511,15 +479,17 @@ export function BehaviorLogForm({
             style={styles.logButton}
             onPress={handleConfirm}
             disabled={pending}
-            overlay={xpBursts.map(burst => (
-              <FloatingXPBurst
-                key={burst.id}
-                burst={burst}
-                onDone={removeXPBurst}
-              />
-            ))}
           >
-            {editLogId ? 'Save' : 'Log'}
+            {pending ? (
+              <ActivityIndicator
+                size="small"
+                color={Colors.bg.black}
+              />
+            ) : editLogId ? (
+              'Save'
+            ) : (
+              'Log'
+            )}
           </Button>
         </View>
       </FabButtonRow>
