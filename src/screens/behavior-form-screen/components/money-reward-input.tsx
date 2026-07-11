@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
+import { formatVndAmount, parseVndInput } from '../../../utils/money-utils';
 
 interface MoneyRewardInputProps {
   value: string;
@@ -11,18 +12,20 @@ interface MoneyRewardInputProps {
 }
 
 export function MoneyRewardInput({ value, rateLabel, negative = false, onChangeText }: MoneyRewardInputProps) {
+  const displayedValue = value ? formatVndAmount(parseVndInput(value)) : '';
+
   return (
     <View style={styles.row}>
       <View style={styles.inputGroup}>
         <TextInput
           style={[styles.input, negative ? styles.inputNegative : styles.inputPositive]}
-          value={value}
+          value={displayedValue}
           onChangeText={onChangeText}
           placeholder="0"
           placeholderTextColor={Colors.text.dim}
           keyboardType="number-pad"
           returnKeyType="done"
-          maxLength={10}
+          maxLength={13}
         />
         <Text style={[styles.unit, negative ? styles.unitNegative : styles.unitPositive]}>₫ {rateLabel}</Text>
       </View>
@@ -34,15 +37,17 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    width: '100%',
   },
   inputGroup: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
   input: {
-    width: 100,
+    flex: 1,
+    minWidth: 0,
     backgroundColor: Colors.bg.elevated,
     borderRadius: 8,
     fontSize: 14,

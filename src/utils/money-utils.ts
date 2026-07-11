@@ -75,8 +75,12 @@ export function getMoneyBalance(behaviors: BehaviorEntry[], purchases: ReadonlyA
 }
 
 export function formatVnd(amount: number): string {
+  return `${formatVndAmount(amount)} ${VND_SYMBOL}`;
+}
+
+export function formatVndAmount(amount: number): string {
   const normalizedAmount = Number.isFinite(amount) ? Math.max(0, Math.round(amount)) : 0;
-  return `${normalizedAmount.toLocaleString('en-US')} ${VND_SYMBOL}`;
+  return normalizedAmount.toLocaleString('en-US');
 }
 
 export function sanitizeVndInput(value: string): string {

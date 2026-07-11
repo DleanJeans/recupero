@@ -1,6 +1,7 @@
 import type { BehaviorEntry, LogEntry } from '../src/types/behavior';
 import {
   formatVnd,
+  formatVndAmount,
   getBehaviorMoney,
   getMoneyBalance,
   getMoneyRewardAmount,
@@ -142,5 +143,9 @@ describe('money-utils', () => {
 
   it('formats Vietnamese dong with the ₫ symbol', () => {
     expect(formatVnd(5_000)).toBe('5,000 ₫');
+  });
+
+  it('formats a Vietnamese dong input with separators', () => {
+    expect(formatVndAmount(5_000)).toBe('5,000');
   });
 });
