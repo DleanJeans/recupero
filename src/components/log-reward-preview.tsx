@@ -8,14 +8,21 @@ interface LogRewardPreviewProps {
   xp?: number;
   money?: number;
   undesirable?: boolean;
+  xpStrikethrough?: boolean;
 }
 
-export function LogRewardPreview({ xp, money, undesirable = false }: LogRewardPreviewProps) {
+export function LogRewardPreview({ xp, money, undesirable = false, xpStrikethrough = false }: LogRewardPreviewProps) {
   if (xp == null && money == null) return null;
 
   return (
     <View style={styles.container}>
-      {xp != null && <Text style={[styles.reward, undesirable ? styles.penalty : styles.xp]}>+{xp} XP</Text>}
+      {xp != null && (
+        <Text
+          style={[styles.reward, undesirable ? styles.penalty : styles.xp, xpStrikethrough && styles.strikethrough]}
+        >
+          +{xp} XP
+        </Text>
+      )}
       {money != null && (
         <Text style={[styles.reward, money < 0 ? styles.penalty : styles.money]}>
           {money > 0 ? '+' : money < 0 ? '-' : ''}
@@ -38,6 +45,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
+  },
+  strikethrough: {
+    textDecorationLine: 'line-through',
   },
   xp: {
     color: Colors.type.desirable,
