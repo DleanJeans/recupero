@@ -16,8 +16,9 @@ interface MoneyBalanceProps {
   disabled?: boolean;
 }
 
-const BALANCE_ANIMATION_MS = 420;
-const BALANCE_POP_MS = 140;
+const BALANCE_ANIMATION_MS = 1000;
+const BALANCE_ANIMATION_DELAY_MS = 800;
+const BALANCE_POP_MS = 500;
 
 export function MoneyBalance({ disabled = false }: MoneyBalanceProps) {
   const isFocused = useIsFocused();
@@ -30,6 +31,7 @@ export function MoneyBalance({ disabled = false }: MoneyBalanceProps) {
   const displayedBalanceRef = useRef(balance);
   const previousBalanceRef = useRef(balance);
   const pendingBalanceRef = useRef<number | null>(null);
+  const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelTweenRef = useRef<(() => void) | null>(null);
   const hasFocusedRef = useRef(false);
   const scale = useSharedValue(1);
@@ -37,28 +39,37 @@ export function MoneyBalance({ disabled = false }: MoneyBalanceProps) {
   const animateBalance = useCallback(
     (targetBalance: number) => {
       const fromBalance = displayedBalanceRef.current;
+      if (animationTimeoutRef.current != null) clearTimeout(animationTimeoutRef.current);
+      cancelTweenRef.current?.();
+      animationTimeoutRef.current = null;
+      scale.value = 1;
       if (fromBalance === targetBalance) return;
 
-      cancelTweenRef.current?.();
-      scale.value = withSequence(
-        withTiming(1.25, { duration: BALANCE_POP_MS }),
-        withTiming(1, { duration: BALANCE_ANIMATION_MS - BALANCE_POP_MS }),
-      );
-      cancelTweenRef.current = animateInteger({
-        from: fromBalance,
-        to: targetBalance,
-        durationMs: BALANCE_ANIMATION_MS,
-        onUpdate: value => {
-          displayedBalanceRef.current = value;
-          setDisplayedBalance(value);
-        },
-      });
+      animationTimeoutRef.current = setTimeout(() => {
+        animationTimeoutRef.current = null;
+        scale.value = withSequence(
+          withTiming(1.25, { duration: BALANCE_POP_MS }),
+          withTiming(1, { duration: BALANCE_ANIMATION_MS - BALANCE_POP_MS }),
+        );
+        cancelTweenRef.current = animateInteger({
+          from: fromBalance,
+          to: targetBalance,
+          durationMs: BALANCE_ANIMATION_MS,
+          onUpdate: value => {
+            displayedBalanceRef.current = value;
+            setDisplayedBalance(value);
+          },
+        });
+      }, BALANCE_ANIMATION_DELAY_MS);
     },
     [scale],
   );
 
   useEffect(() => {
-    return () => cancelTweenRef.current?.();
+    return () => {
+      if (animationTimeoutRef.current != null) clearTimeout(animationTimeoutRef.current);
+      cancelTweenRef.current?.();
+    };
   }, []);
 
   useEffect(() => {
@@ -66,6 +77,10 @@ export function MoneyBalance({ disabled = false }: MoneyBalanceProps) {
     previousBalanceRef.current = balance;
 
     if (!isFocused) {
+      if (animationTimeoutRef.current != null) clearTimeout(animationTimeoutRef.current);
+      animationTimeoutRef.current = null;
+      cancelTweenRef.current?.();
+      scale.value = 1;
       if (hasFocusedRef.current && balance !== previousBalance) pendingBalanceRef.current = balance;
       return;
     }
