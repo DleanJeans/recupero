@@ -114,9 +114,9 @@ export function ShopScreen() {
             {formatVnd(balance)}
           </Text>
           <View style={styles.statsRow}>
-            <Text style={styles.stat}>Earned {formatVnd(earned)}</Text>
-            <Text style={styles.stat}>Lost {formatVnd(penalties)}</Text>
-            <Text style={styles.stat}>Spent {formatVnd(spent)}</Text>
+            <Text style={[styles.stat, styles.earnedStat]}>Earned {formatVnd(earned)}</Text>
+            <Text style={[styles.stat, styles.lostStat]}>Lost {formatVnd(penalties)}</Text>
+            <Text style={[styles.stat, styles.spentStat]}>Spent {formatVnd(spent)}</Text>
           </View>
         </View>
 
@@ -230,8 +230,16 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   stat: {
-    color: Colors.text.muted,
     fontSize: 12,
+  },
+  earnedStat: {
+    color: Colors.type.desirable,
+  },
+  lostStat: {
+    color: Colors.type.undesirable,
+  },
+  spentStat: {
+    color: Colors.type.neutral,
   },
   section: {
     gap: 10,
