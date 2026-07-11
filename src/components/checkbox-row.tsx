@@ -11,6 +11,7 @@ interface CheckboxRowProps {
   hint?: string;
   checked: boolean;
   onToggle: () => void;
+  disabled?: boolean;
   style?: ViewStyle;
   /**
    * Collapsable content rendered below the toggle row within the same card.
@@ -27,7 +28,16 @@ interface CheckboxRowProps {
   variant?: 'card' | 'row';
 }
 
-export function CheckboxRow({ label, hint, checked, onToggle, style, children, variant = 'card' }: CheckboxRowProps) {
+export function CheckboxRow({
+  label,
+  hint,
+  checked,
+  onToggle,
+  disabled = false,
+  style,
+  children,
+  variant = 'card',
+}: CheckboxRowProps) {
   const isRow = variant === 'row';
   const hasChildren = !isRow && children != null && children !== false;
 
@@ -35,7 +45,7 @@ export function CheckboxRow({ label, hint, checked, onToggle, style, children, v
     <Ionicons
       name={(checked ? 'checkbox' : 'checkbox-outline') as IconName}
       size={22}
-      color={checked ? Colors.text.primary : Colors.border.light}
+      color={disabled ? Colors.text.dim : checked ? Colors.text.primary : Colors.border.light}
     />
   );
 
@@ -49,8 +59,9 @@ export function CheckboxRow({ label, hint, checked, onToggle, style, children, v
   if (isRow) {
     return (
       <Pressable
-        style={({ pressed }) => [styles.row, pressed && styles.pressed, style]}
+        style={({ pressed }) => [styles.row, disabled && styles.disabled, pressed && styles.pressed, style]}
         onPress={onToggle}
+        disabled={disabled}
       >
         {icon}
         {labelStack}
@@ -60,10 +71,11 @@ export function CheckboxRow({ label, hint, checked, onToggle, style, children, v
 
   if (hasChildren) {
     return (
-      <View style={[styles.card, style]}>
+      <View style={[styles.card, disabled && styles.disabled, style]}>
         <Pressable
           style={({ pressed }) => [styles.toggleInCard, pressed && styles.pressed]}
           onPress={onToggle}
+          disabled={disabled}
         >
           {icon}
           {labelStack}
@@ -75,8 +87,9 @@ export function CheckboxRow({ label, hint, checked, onToggle, style, children, v
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.cardSolo, pressed && styles.pressed, style]}
+      style={({ pressed }) => [styles.cardSolo, disabled && styles.disabled, pressed && styles.pressed, style]}
       onPress={onToggle}
+      disabled={disabled}
     >
       {icon}
       {labelStack}
@@ -117,6 +130,9 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.7,
+  },
+  disabled: {
+    opacity: 0.45,
   },
   labelStack: {
     flex: 1,

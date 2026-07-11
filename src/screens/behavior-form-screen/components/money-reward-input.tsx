@@ -6,16 +6,17 @@ import { Colors } from '../../../utils/colors';
 interface MoneyRewardInputProps {
   label: string;
   value: string;
+  negative?: boolean;
   onChangeText: (value: string) => void;
 }
 
-export function MoneyRewardInput({ label, value, onChangeText }: MoneyRewardInputProps) {
+export function MoneyRewardInput({ label, value, negative = false, onChangeText }: MoneyRewardInputProps) {
   return (
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.inputGroup}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, negative ? styles.inputNegative : styles.inputPositive]}
           value={value}
           onChangeText={onChangeText}
           placeholder="0"
@@ -24,7 +25,7 @@ export function MoneyRewardInput({ label, value, onChangeText }: MoneyRewardInpu
           returnKeyType="done"
           maxLength={10}
         />
-        <Text style={styles.unit}>₫</Text>
+        <Text style={[styles.unit, negative ? styles.unitNegative : styles.unitPositive]}>₫</Text>
       </View>
     </View>
   );
@@ -51,7 +52,6 @@ const styles = StyleSheet.create({
     width: 100,
     backgroundColor: Colors.bg.elevated,
     borderRadius: 8,
-    color: Colors.text.primary,
     fontSize: 14,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -59,8 +59,19 @@ const styles = StyleSheet.create({
   },
   unit: {
     width: 16,
-    color: Colors.text.faint,
     fontSize: 14,
     fontWeight: '700',
+  },
+  inputPositive: {
+    color: Colors.type.desirable,
+  },
+  inputNegative: {
+    color: Colors.type.undesirable,
+  },
+  unitPositive: {
+    color: Colors.type.desirable,
+  },
+  unitNegative: {
+    color: Colors.type.undesirable,
   },
 });

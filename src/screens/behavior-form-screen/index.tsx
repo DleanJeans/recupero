@@ -83,7 +83,7 @@ export function BehaviorFormScreen() {
     behavior ? behavior.durationXpEnabled === true : defaultDurationXpEnabled === true,
   );
   const [hideTotalXp, setHideTotalXp] = useState(() => behavior?.hideTotalXp === true);
-  const [moneyReward, setMoneyReward] = useState(() => behavior?.moneyReward != null);
+  const [moneyReward, setMoneyReward] = useState(() => behavior?.type !== 'neutral' && behavior?.moneyReward != null);
   const [moneyRewardAmount, setMoneyRewardAmount] = useState(() =>
     String(
       getMoneyRewardAmount(behavior?.moneyReward, behavior?.xpEnabled === true && behavior?.durationXpEnabled === true),
@@ -161,7 +161,7 @@ export function BehaviorFormScreen() {
     setXpEnabled(behavior.xpEnabled === true);
     setDurationXpEnabled(behavior.durationXpEnabled === true);
     setHideTotalXp(behavior.hideTotalXp === true);
-    setMoneyReward(behavior.moneyReward != null);
+    setMoneyReward(behavior.type !== 'neutral' && behavior.moneyReward != null);
     setMoneyRewardAmount(
       String(
         getMoneyRewardAmount(behavior.moneyReward, behavior.xpEnabled === true && behavior.durationXpEnabled === true),
@@ -212,9 +212,11 @@ export function BehaviorFormScreen() {
     behavior?.moneyReward,
     behavior?.xpEnabled === true && behavior?.durationXpEnabled === true,
   );
-  const moneyRewardInputInvalid = moneyReward && moneyRewardAmount.trim() === '';
+  const moneyRewardEnabled = type !== 'neutral' && moneyReward;
+  const savedMoneyRewardEnabled = behavior?.type !== 'neutral' && behavior?.moneyReward != null;
+  const moneyRewardInputInvalid = moneyRewardEnabled && moneyRewardAmount.trim() === '';
   const moneyRewardAmountChanged =
-    moneyReward && (moneyRewardInputInvalid || parseVndInput(moneyRewardAmount) !== savedMoneyRewardAmount);
+    moneyRewardEnabled && (moneyRewardInputInvalid || parseVndInput(moneyRewardAmount) !== savedMoneyRewardAmount);
 
   const hasChanges =
     isEdit &&
@@ -227,7 +229,7 @@ export function BehaviorFormScreen() {
       xpEnabled !== (behavior.xpEnabled === true) ||
       durationXpEnabled !== (behavior.durationXpEnabled === true) ||
       hideTotalXp !== (behavior.hideTotalXp === true) ||
-      moneyReward !== (behavior.moneyReward != null) ||
+      moneyRewardEnabled !== savedMoneyRewardEnabled ||
       moneyRewardAmountChanged ||
       cooldownEnabled !== (behavior.cooldownEnabled ?? !!behavior.cooldownMinutes) ||
       cooldownMinutes !== (behavior.cooldownMinutes || 0) ||
@@ -270,7 +272,7 @@ export function BehaviorFormScreen() {
     }
     setStarValidationError(null);
     if (moneyRewardInputInvalid) return;
-    const moneyRewardConfig = moneyReward ? parseVndInput(moneyRewardAmount) : undefined;
+    const moneyRewardConfig = moneyRewardEnabled ? parseVndInput(moneyRewardAmount) : undefined;
     const defaultMetadataObj = Object.fromEntries(
       Object.entries(behaviorDefaultMetadata)
         .filter(([, v]) => v !== '' && v !== '0' && Number.isFinite(Number(v)))
@@ -457,13 +459,17 @@ export function BehaviorFormScreen() {
                   ? 'Neutral logs do not change money'
                   : `Earn ${formatVnd(parseVndInput(moneyRewardAmount))} ${moneyRewardDurationBased ? 'per minute' : 'per log'}`
             }
-            checked={moneyReward}
-            onToggle={() => setMoneyReward(v => !v)}
+            checked={moneyRewardEnabled}
+            disabled={type === 'neutral'}
+            onToggle={() => {
+              if (type !== 'neutral') setMoneyReward(v => !v);
+            }}
           >
-            {moneyReward && (
+            {moneyRewardEnabled && (
               <MoneyRewardInput
                 label={moneyRewardDurationBased ? 'Per minute' : 'Per log'}
                 value={moneyRewardAmount}
+                negative={type === 'undesirable'}
                 onChangeText={value => setMoneyRewardAmount(sanitizeVndInput(value))}
               />
             )}
