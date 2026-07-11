@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   },
   titleActions: {
     alignItems: 'flex-end',
-    gap: 2,
+    gap: 12,
   },
   iconActions: {
     flexDirection: 'row',

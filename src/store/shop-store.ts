@@ -8,6 +8,8 @@ interface ShopStore {
   items: ShopItem[];
   purchases: ShopPurchase[];
   addItem: (name: string, cost: number) => boolean;
+  updateItem: (itemId: string, name: string, cost: number) => boolean;
+  removeItem: (itemId: string) => boolean;
   buyItem: (itemId: string, availableBalance: number) => boolean;
 }
 
@@ -32,6 +34,24 @@ export const useShopStore = create<ShopStore>()(
             },
           ],
         }));
+        return true;
+      },
+      updateItem: (itemId, name, cost) => {
+        const trimmedName = name.trim();
+        const normalizedCost = Math.round(cost);
+        if (!trimmedName || !Number.isFinite(normalizedCost) || normalizedCost <= 0) return false;
+        if (!get().items.some(item => item.id === itemId)) return false;
+
+        set(state => ({
+          items: state.items.map(item =>
+            item.id === itemId ? { ...item, name: trimmedName, cost: normalizedCost } : item,
+          ),
+        }));
+        return true;
+      },
+      removeItem: itemId => {
+        if (!get().items.some(item => item.id === itemId)) return false;
+        set(state => ({ items: state.items.filter(item => item.id !== itemId) }));
         return true;
       },
       buyItem: (itemId, availableBalance) => {

@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { BackButton } from '../../components/back-button';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
@@ -28,6 +28,8 @@ export function ShopScreen() {
   const items = useShopStore(state => state.items);
   const purchases = useShopStore(state => state.purchases);
   const addItem = useShopStore(state => state.addItem);
+  const updateItem = useShopStore(state => state.updateItem);
+  const removeItem = useShopStore(state => state.removeItem);
   const buyItem = useShopStore(state => state.buyItem);
   const [itemName, setItemName] = useState('');
   const [itemCost, setItemCost] = useState('');
@@ -93,6 +95,13 @@ export function ShopScreen() {
                 item={item}
                 balance={balance}
                 onBuy={() => buyItem(item.id, balance)}
+                onEdit={(name, cost) => updateItem(item.id, name, cost)}
+                onDelete={() =>
+                  Alert.alert('Delete reward?', `Remove "${item.name}" from your shop?`, [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Delete', style: 'destructive', onPress: () => removeItem(item.id) },
+                  ])
+                }
               />
             ))
           )}
