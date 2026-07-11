@@ -18,7 +18,7 @@ export function MoneyLogButton({ onPress }: Props) {
     >
       <Ionicons
         name="receipt-outline"
-        size={20}
+        size={18}
         color={Colors.text.light}
       />
     </Button>
