@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { BehaviorIcon } from '../../components/behavior-icon';
 import { Button } from '../../components/button';
+import { MoneyBalance } from '../../components/money-balance';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { Text } from '../../components/text';
@@ -152,6 +153,7 @@ export function TimerScreen() {
           <>
             <View style={styles.header}>
               <ScreenTitle>Timer</ScreenTitle>
+              <MoneyBalance />
             </View>
 
             <TaskComposer
@@ -239,6 +241,7 @@ function TimerPanel({
           />
         </Button>
         <ScreenTitle>Timer</ScreenTitle>
+        <MoneyBalance />
       </View>
 
       <View style={styles.lockedBehaviorCard}>
@@ -335,11 +338,15 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 8,
   },
   timerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginLeft: -8,
   },
   lockedBehaviorCard: {

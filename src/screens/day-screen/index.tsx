@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { MoneyBalance } from '../../components/money-balance';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { useDeferredComputation } from '../../hooks/use-deferred-computation';
@@ -139,6 +140,7 @@ export function DayScreen() {
     >
       <View style={styles.header}>
         <ScreenTitle>Day</ScreenTitle>
+        <MoneyBalance />
       </View>
 
       <DateNavigationRow
@@ -184,6 +186,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg.primary,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 10,

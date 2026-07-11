@@ -24,5 +24,6 @@ export type RootStackParamList = {
     categoryId?: string;
     selectOnSave?: boolean;
   };
+  Shop: undefined;
   Settings: undefined;
 };

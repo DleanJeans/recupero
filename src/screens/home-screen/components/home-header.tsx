@@ -4,6 +4,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button } from '../../../components/button';
+import { MoneyBalance } from '../../../components/money-balance';
 import { Text } from '../../../components/text';
 import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
@@ -23,6 +24,7 @@ export function HomeHeader({ showXp, onToggleXp, isSearching, onSearchPress }: H
     <View style={styles.titleRow}>
       <Text style={styles.title}>Recupero</Text>
       <View style={styles.titleActions}>
+        <MoneyBalance />
         <HeaderIcon
           icon={
             <StatsIcon

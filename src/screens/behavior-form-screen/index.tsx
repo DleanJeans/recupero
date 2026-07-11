@@ -11,6 +11,7 @@ import { CategoryPicker } from '../../components/category-picker';
 import { CheckboxRow } from '../../components/checkbox-row';
 import { CooldownIcon } from '../../components/cooldown-icon';
 import { EmojiPicker } from '../../components/emoji-picker';
+import { MoneyBalance } from '../../components/money-balance';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { SelectPill } from '../../components/select-pill';
@@ -305,6 +306,7 @@ export function BehaviorFormScreen() {
       <View style={styles.header}>
         <BackButton />
         <ScreenTitle>{isEdit ? 'Edit Behavior' : 'New Behavior'}</ScreenTitle>
+        <MoneyBalance />
       </View>
       <KeyboardAvoidingView
         behavior="height"
@@ -604,6 +606,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 8,
     paddingBottom: 8,
   },

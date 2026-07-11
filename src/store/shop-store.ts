@@ -1,0 +1,61 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { v4 as uuidv4 } from 'uuid';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import type { ShopItem, ShopPurchase } from '../types/shop';
+
+interface ShopStore {
+  items: ShopItem[];
+  purchases: ShopPurchase[];
+  addItem: (name: string, cost: number) => boolean;
+  buyItem: (itemId: string, availableBalance: number) => boolean;
+}
+
+export const useShopStore = create<ShopStore>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      purchases: [],
+      addItem: (name, cost) => {
+        const trimmedName = name.trim();
+        const normalizedCost = Math.round(cost);
+        if (!trimmedName || !Number.isFinite(normalizedCost) || normalizedCost <= 0) return false;
+
+        set(state => ({
+          items: [
+            ...state.items,
+            {
+              id: uuidv4(),
+              name: trimmedName,
+              cost: normalizedCost,
+              createdAt: Date.now(),
+            },
+          ],
+        }));
+        return true;
+      },
+      buyItem: (itemId, availableBalance) => {
+        const item = get().items.find(candidate => candidate.id === itemId);
+        if (!item || item.cost > availableBalance) return false;
+
+        set(state => ({
+          purchases: [
+            ...state.purchases,
+            {
+              id: uuidv4(),
+              itemId: item.id,
+              itemName: item.name,
+              cost: item.cost,
+              purchasedAt: Date.now(),
+            },
+          ],
+        }));
+        return true;
+      },
+    }),
+    {
+      name: 'recupero-shop',
+      storage: createJSONStorage(() => AsyncStorage),
+    },
+  ),
+);

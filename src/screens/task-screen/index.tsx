@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { Button } from '../../components/button';
+import { MoneyBalance } from '../../components/money-balance';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { Text } from '../../components/text';
@@ -188,6 +189,7 @@ export function TaskScreen() {
     >
       <View style={styles.header}>
         <ScreenTitle>Tasks</ScreenTitle>
+        <MoneyBalance />
       </View>
 
       <DateNavigationRow
@@ -262,6 +264,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg.primary,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 10,
