@@ -81,6 +81,7 @@ export function BehaviorFormScreen() {
     behavior ? behavior.durationXpEnabled === true : defaultDurationXpEnabled === true,
   );
   const [hideTotalXp, setHideTotalXp] = useState(() => behavior?.hideTotalXp === true);
+  const [moneyReward, setMoneyReward] = useState(() => behavior?.moneyReward === true);
   const [type, setType] = useState<BehaviorType>(behavior?.type ?? 'neutral');
   const [cooldownMinutes, setCooldownMinutes] = useState(() => behavior?.cooldownMinutes || 0);
   const [cooldownType, setCooldownType] = useState<'rest' | 'limit'>(() => behavior?.cooldownType || 'rest');
@@ -152,6 +153,7 @@ export function BehaviorFormScreen() {
     setXpEnabled(behavior.xpEnabled === true);
     setDurationXpEnabled(behavior.durationXpEnabled === true);
     setHideTotalXp(behavior.hideTotalXp === true);
+    setMoneyReward(behavior.moneyReward === true);
     setCooldownMinutes(behavior.cooldownMinutes || 0);
     setCooldownType(behavior.cooldownType || 'rest');
     setCooldownUnit(behavior.cooldownUnit);
@@ -204,6 +206,7 @@ export function BehaviorFormScreen() {
       xpEnabled !== (behavior.xpEnabled === true) ||
       durationXpEnabled !== (behavior.durationXpEnabled === true) ||
       hideTotalXp !== (behavior.hideTotalXp === true) ||
+      moneyReward !== (behavior.moneyReward === true) ||
       cooldownEnabled !== (behavior.cooldownEnabled ?? !!behavior.cooldownMinutes) ||
       cooldownMinutes !== (behavior.cooldownMinutes || 0) ||
       cooldownType !== (behavior.cooldownType || 'rest') ||
@@ -269,6 +272,7 @@ export function BehaviorFormScreen() {
         xpDecay: xpEnabled ? (xpDecayEnabled ? xpDecaySerialized : undefined) : behavior?.xpDecay,
         durationXpEnabled: xpEnabled && durationXpEnabled ? true : undefined,
         hideTotalXp: xpEnabled && hideTotalXp ? true : undefined,
+        moneyReward: moneyReward ? true : undefined,
       });
     } else {
       addBehavior(
@@ -289,6 +293,7 @@ export function BehaviorFormScreen() {
         cooldownEnabled,
         xpEnabled && durationXpEnabled ? true : undefined,
         xpEnabled && hideTotalXp ? true : undefined,
+        moneyReward ? true : undefined,
       );
     }
     savedRef.current = true;
@@ -418,6 +423,13 @@ export function BehaviorFormScreen() {
               </View>
             )}
           </CheckboxRow>
+
+          <CheckboxRow
+            label="Reward money"
+            hint="5,000 ₫ per log; 1,000 ₫ per timed minute"
+            checked={moneyReward}
+            onToggle={() => setMoneyReward(v => !v)}
+          />
 
           <CheckboxRow
             label="Private"

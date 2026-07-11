@@ -35,6 +35,7 @@ interface BehaviorStore {
     cooldownEnabled?: boolean,
     durationXpEnabled?: true,
     hideTotalXp?: true,
+    moneyReward?: true,
   ) => void;
   updateBehaviorCooldown: (behaviorId: string, cooldownMinutes: number) => void;
   updateBehavior: (
@@ -62,6 +63,7 @@ interface BehaviorStore {
       xpDecay?: BehaviorEntry['xpDecay'];
       durationXpEnabled?: true;
       hideTotalXp?: true;
+      moneyReward?: true;
     },
   ) => void;
   logBehavior: (
@@ -117,6 +119,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
         cooldownEnabled,
         durationXpEnabled,
         hideTotalXp,
+        moneyReward,
       ) =>
         set(state => ({
           behaviors: [
@@ -143,6 +146,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               xpDecay,
               durationXpEnabled,
               hideTotalXp,
+              moneyReward,
             },
           ],
         })),
