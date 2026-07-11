@@ -31,7 +31,7 @@ import {
   getSelectedAmountMetadataField,
   sanitizeDecimalInput,
 } from '../../utils/metadata-calculation-utils';
-import { formatVnd, getMoneyRewardAmount, parseVndInput, sanitizeVndInput } from '../../utils/money-utils';
+import { getMoneyRewardAmount, parseVndInput, sanitizeVndInput } from '../../utils/money-utils';
 import { BehaviorTypePicker } from './components/behavior-type-picker';
 import type { CooldownUnit } from './components/cooldown-input';
 import { CooldownInput } from './components/cooldown-input';
@@ -452,13 +452,7 @@ export function BehaviorFormScreen() {
 
           <CheckboxRow
             label={type === 'undesirable' ? 'Money penalty' : 'Reward money'}
-            hint={
-              type === 'undesirable'
-                ? `Lose ${formatVnd(parseVndInput(moneyRewardAmount))} ${moneyRewardDurationBased ? 'per minute' : 'per log'}`
-                : type === 'neutral'
-                  ? 'Neutral logs do not change money'
-                  : `Earn ${formatVnd(parseVndInput(moneyRewardAmount))} ${moneyRewardDurationBased ? 'per minute' : 'per log'}`
-            }
+            hint={type === 'neutral' ? 'Neutral logs do not change money' : undefined}
             checked={moneyRewardEnabled}
             disabled={type === 'neutral'}
             onToggle={() => {
@@ -467,8 +461,8 @@ export function BehaviorFormScreen() {
           >
             {moneyRewardEnabled && (
               <MoneyRewardInput
-                label={moneyRewardDurationBased ? 'Per minute' : 'Per log'}
                 value={moneyRewardAmount}
+                rateLabel={moneyRewardDurationBased ? 'per minute' : 'per log'}
                 negative={type === 'undesirable'}
                 onChangeText={value => setMoneyRewardAmount(sanitizeVndInput(value))}
               />

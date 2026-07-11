@@ -4,16 +4,15 @@ import { Text, TextInput } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 
 interface MoneyRewardInputProps {
-  label: string;
   value: string;
+  rateLabel: string;
   negative?: boolean;
   onChangeText: (value: string) => void;
 }
 
-export function MoneyRewardInput({ label, value, negative = false, onChangeText }: MoneyRewardInputProps) {
+export function MoneyRewardInput({ value, rateLabel, negative = false, onChangeText }: MoneyRewardInputProps) {
   return (
     <View style={styles.row}>
-      <Text style={styles.label}>{label}</Text>
       <View style={styles.inputGroup}>
         <TextInput
           style={[styles.input, negative ? styles.inputNegative : styles.inputPositive]}
@@ -25,7 +24,7 @@ export function MoneyRewardInput({ label, value, negative = false, onChangeText 
           returnKeyType="done"
           maxLength={10}
         />
-        <Text style={[styles.unit, negative ? styles.unitNegative : styles.unitPositive]}>₫</Text>
+        <Text style={[styles.unit, negative ? styles.unitNegative : styles.unitPositive]}>₫ {rateLabel}</Text>
       </View>
     </View>
   );
@@ -36,12 +35,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-  },
-  label: {
-    flex: 1,
-    color: Colors.text.muted,
-    fontSize: 13,
-    fontWeight: '500',
   },
   inputGroup: {
     flexDirection: 'row',
@@ -58,7 +51,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   unit: {
-    width: 16,
     fontSize: 14,
     fontWeight: '700',
   },
