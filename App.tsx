@@ -17,6 +17,7 @@ import { BehaviorScreen } from './src/screens/behavior-screen';
 import { CategoryFormScreen } from './src/screens/category-form-screen';
 import { DayScreen } from './src/screens/day-screen';
 import { HomeScreen } from './src/screens/home-screen';
+import { MoneyLogScreen } from './src/screens/money-log-screen';
 import { SettingsScreen } from './src/screens/settings-screen';
 import { ShopScreen } from './src/screens/shop-screen';
 import { TaskScreen } from './src/screens/task-screen';
@@ -40,6 +41,7 @@ const linking = {
       BehaviorForm: 'behavior-form',
       CategoryForm: 'category-form',
       Shop: 'shop',
+      MoneyLog: 'money-log',
     },
   },
 };
@@ -131,6 +133,10 @@ export default function App() {
                   <Stack.Screen
                     name="Shop"
                     component={ShopScreen}
+                  />
+                  <Stack.Screen
+                    name="MoneyLog"
+                    component={MoneyLogScreen}
                   />
                   <Stack.Screen
                     name="Settings"

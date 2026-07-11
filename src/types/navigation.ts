@@ -25,5 +25,6 @@ export type RootStackParamList = {
     selectOnSave?: boolean;
   };
   Shop: undefined;
+  MoneyLog: undefined;
   Settings: undefined;
 };

@@ -21,7 +21,7 @@ import {
   parseVndInput,
 } from '../../utils/money-utils';
 import { AddShopItemForm } from './components/add-shop-item-form';
-import { MoneyLogSection } from './components/money-log-section';
+import { MoneyLogButton } from './components/money-log-button';
 import { PurchaseLogRow } from './components/purchase-log-row';
 import { ShopItemRow } from './components/shop-item-row';
 
@@ -119,6 +119,7 @@ export function ShopScreen() {
             <Text style={[styles.stat, styles.lostStat]}>Lost {formatVnd(penalties)}</Text>
             <Text style={[styles.stat, styles.spentStat]}>Spent {formatVnd(spent)}</Text>
           </View>
+          <MoneyLogButton onPress={() => navigation.navigate('MoneyLog')} />
         </View>
 
         <View style={styles.section}>
@@ -185,11 +186,6 @@ export function ShopScreen() {
             </View>
           )}
         </View>
-
-        <MoneyLogSection
-          behaviors={behaviors}
-          purchases={purchases}
-        />
       </ScrollView>
     </SafeAreaView>
   );
