@@ -129,7 +129,7 @@ const textActiveStyles = StyleSheet.create({
 export const buttonStyles = StyleSheet.create({
   fab: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 32,
     left: 16,
     right: 16,
     flex: 0,

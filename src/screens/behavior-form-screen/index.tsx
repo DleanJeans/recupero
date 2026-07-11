@@ -478,18 +478,16 @@ export function BehaviorFormScreen() {
       </KeyboardAvoidingView>
 
       {!isKeyboardOpen && (
-        <View style={styles.actions}>
-          <Button
-            variant="primary"
-            fab
-            onPress={handleSave}
-            disabled={
-              isEdit ? !hasChanges || moneyRewardInputInvalid : !name.trim() || !icon.trim() || moneyRewardInputInvalid
-            }
-          >
-            {isEdit ? 'Save' : 'Add'}
-          </Button>
-        </View>
+        <Button
+          variant="primary"
+          fab
+          onPress={handleSave}
+          disabled={
+            isEdit ? !hasChanges || moneyRewardInputInvalid : !name.trim() || !icon.trim() || moneyRewardInputInvalid
+          }
+        >
+          {isEdit ? 'Save' : 'Add'}
+        </Button>
       )}
     </SafeAreaView>
   );
@@ -703,15 +701,6 @@ const styles = StyleSheet.create({
   cooldownTypeRow: {
     marginLeft: 'auto',
     alignSelf: 'auto',
-  },
-  actions: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    paddingTop: 8,
   },
   defaultMetaSection: {
     gap: 8,

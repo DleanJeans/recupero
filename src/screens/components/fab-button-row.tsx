@@ -15,5 +15,6 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     flexDirection: 'row',
     gap: 12,
+    bottom: 16,
   },
 });
