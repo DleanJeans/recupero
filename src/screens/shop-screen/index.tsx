@@ -3,6 +3,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { BackButton } from '../../components/back-button';
+import { Button } from '../../components/button';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { Text } from '../../components/text';
@@ -33,6 +34,7 @@ export function ShopScreen() {
   const buyItem = useShopStore(state => state.buyItem);
   const [itemName, setItemName] = useState('');
   const [itemCost, setItemCost] = useState('');
+  const [showAddItem, setShowAddItem] = useState(false);
 
   const balance = useMemo(() => getMoneyBalance(behaviors, purchases), [behaviors, purchases]);
   const earned = useMemo(() => getTotalMoneyEarned(behaviors), [behaviors]);
@@ -44,6 +46,7 @@ export function ShopScreen() {
     if (!addItem(itemName, parseVndInput(itemCost))) return;
     setItemName('');
     setItemCost('');
+    setShowAddItem(false);
   };
 
   return (
@@ -76,16 +79,26 @@ export function ShopScreen() {
           </View>
         </View>
 
-        <AddShopItemForm
-          name={itemName}
-          cost={itemCost}
-          onNameChange={setItemName}
-          onCostChange={setItemCost}
-          onAdd={handleAddItem}
-        />
-
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Items</Text>
+          <View style={styles.sectionHeader}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={() => setShowAddItem(value => !value)}
+            >
+              {showAddItem ? 'Close' : 'Add Item'}
+            </Button>
+            <Text style={styles.sectionTitle}>Items</Text>
+          </View>
+          {showAddItem && (
+            <AddShopItemForm
+              name={itemName}
+              cost={itemCost}
+              onNameChange={setItemName}
+              onCostChange={setItemCost}
+              onAdd={handleAddItem}
+            />
+          )}
           {items.length === 0 ? (
             <Text style={styles.empty}>Add a reward to start your shop.</Text>
           ) : (
@@ -172,6 +185,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   section: {
+    gap: 10,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
   },
   sectionTitle: {
