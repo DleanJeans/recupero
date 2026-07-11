@@ -71,7 +71,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
               xp={xp}
               money={money}
               undesirable={behavior.type === 'undesirable'}
-              xpStrikethrough={isDecayed}
+              decayed={isDecayed}
             />
           ) : null}
           {metadataFields?.map(field => {
