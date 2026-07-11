@@ -11,8 +11,7 @@ interface Props {
 export function MoneyLogButton({ onPress }: Props) {
   return (
     <Button
-      variant="secondary"
-      size="sm"
+      variant="icon"
       onPress={onPress}
       accessibilityLabel="Open money log"
       style={styles.button}
