@@ -48,6 +48,8 @@ const styles = StyleSheet.create({
   },
   strikethrough: {
     textDecorationLine: 'line-through',
+    textDecorationStyle: 'double',
+    opacity: 0.55,
   },
   xp: {
     color: Colors.type.desirable,
