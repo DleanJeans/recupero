@@ -15,6 +15,7 @@ interface TimerStore {
    *  the user just backed out and the stopped timer should stay (so Relog
    *  remains available). */
   pendingLogBehaviorLogCount: number | undefined;
+  start: (behaviorId: string, timestamp?: number) => void;
   setLockedBehavior: (behaviorId: string) => void;
   setStart: (timestamp: number) => void;
   setStop: (timestamp: number) => void;
@@ -34,6 +35,13 @@ export const useTimerStore = create<TimerStore>()(
       startTimestamp: undefined,
       stopTimestamp: undefined,
       pendingLogBehaviorLogCount: undefined,
+      start: (behaviorId, timestamp = Date.now()) =>
+        set({
+          lockedBehaviorId: behaviorId,
+          startTimestamp: timestamp,
+          stopTimestamp: undefined,
+          pendingLogBehaviorLogCount: undefined,
+        }),
       setLockedBehavior: behaviorId => set({ lockedBehaviorId: behaviorId }),
       setStart: timestamp => set({ startTimestamp: timestamp, stopTimestamp: undefined }),
       setStop: timestamp => set({ stopTimestamp: timestamp }),

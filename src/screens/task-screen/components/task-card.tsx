@@ -1,15 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { BehaviorIcon } from '../../../components/behavior-icon';
 import { Button } from '../../../components/button';
 import { Text } from '../../../components/text';
+import { useTimerStore } from '../../../store/timer-store';
 import type { BehaviorEntry } from '../../../types/behavior';
+import type { RootStackParamList } from '../../../types/navigation';
 import type { TaskEntry } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
 import { isTaskCompleteOnDate } from '../../../utils/task-utils';
 import { TaskStarRow } from './task-star-row';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const TASK_CARD_LAYOUT = LinearTransition.duration(240);
 
@@ -23,9 +29,18 @@ interface TaskCardProps {
 }
 
 function TaskCardComponent({ task, behavior, selectedDate, onToggle, onEdit, onRemove }: TaskCardProps) {
+  const navigation = useNavigation<NavigationProp>();
+  const startTimer = useTimerStore(s => s.start);
   const complete = isTaskCompleteOnDate(task, selectedDate);
   const isBehaviorTask = task.source === 'behavior' || (!task.source && task.behaviorId);
   const taskMeta = isBehaviorTask ? 'Behavior task' : behavior ? `One-off · ${behavior.name}` : 'One-off';
+  const canTrack = behavior?.xpEnabled === true && behavior.durationXpEnabled === true;
+
+  const handlePlay = () => {
+    if (!behavior || !canTrack) return;
+    startTimer(behavior.id);
+    navigation.navigate('Timer');
+  };
 
   return (
     <Animated.View
@@ -68,6 +83,20 @@ function TaskCardComponent({ task, behavior, selectedDate, onToggle, onEdit, onR
           </View>
         </View>
       </Pressable>
+      {canTrack && (
+        <Button
+          variant="icon"
+          onPress={handlePlay}
+          accessibilityLabel={`Start timer for ${task.title}`}
+          style={styles.playButton}
+        >
+          <Ionicons
+            name="play"
+            size={18}
+            color={Colors.text.primary}
+          />
+        </Button>
+      )}
       <Button
         variant="icon"
         onPress={onRemove}
@@ -138,6 +167,10 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   removeButton: {
+    alignSelf: 'stretch',
+    width: 42,
+  },
+  playButton: {
     alignSelf: 'stretch',
     width: 42,
   },
