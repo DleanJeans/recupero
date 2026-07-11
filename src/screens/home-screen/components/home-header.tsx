@@ -24,27 +24,29 @@ export function HomeHeader({ showXp, onToggleXp, isSearching, onSearchPress }: H
     <View style={styles.titleRow}>
       <Text style={styles.title}>Recupero</Text>
       <View style={styles.titleActions}>
+        <View style={styles.iconActions}>
+          <HeaderIcon
+            icon={
+              <StatsIcon
+                size={22}
+                active={showXp}
+              />
+            }
+            onPress={onToggleXp}
+            accessibilityLabel={showXp ? 'Hide XP' : 'Show XP'}
+          />
+          <HeaderIcon
+            name={isSearching ? 'search' : 'search-outline'}
+            onPress={onSearchPress}
+            accessibilityLabel={isSearching ? 'Close search' : 'Search'}
+          />
+          <HeaderIcon
+            name="settings-outline"
+            onPress={() => navigation.navigate('Settings')}
+            accessibilityLabel="Settings"
+          />
+        </View>
         <MoneyBalance />
-        <HeaderIcon
-          icon={
-            <StatsIcon
-              size={22}
-              active={showXp}
-            />
-          }
-          onPress={onToggleXp}
-          accessibilityLabel={showXp ? 'Hide XP' : 'Show XP'}
-        />
-        <HeaderIcon
-          name={isSearching ? 'search' : 'search-outline'}
-          onPress={onSearchPress}
-          accessibilityLabel={isSearching ? 'Close search' : 'Search'}
-        />
-        <HeaderIcon
-          name="settings-outline"
-          onPress={() => navigation.navigate('Settings')}
-          accessibilityLabel="Settings"
-        />
       </View>
     </View>
   );
@@ -92,6 +94,10 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   titleActions: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  iconActions: {
     flexDirection: 'row',
     gap: 16,
     alignItems: 'center',
