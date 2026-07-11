@@ -36,6 +36,7 @@ export function ShopScreen() {
   const undoPurchase = useShopStore(state => state.undoPurchase);
   const [itemName, setItemName] = useState('');
   const [itemCost, setItemCost] = useState('');
+  const [itemOneTime, setItemOneTime] = useState(false);
   const [itemFormMode, setItemFormMode] = useState<'add' | { type: 'edit'; itemId: string } | null>(null);
 
   const balance = useMemo(() => getMoneyBalance(behaviors, purchases), [behaviors, purchases]);
@@ -47,19 +48,24 @@ export function ShopScreen() {
   const resetItemForm = () => {
     setItemName('');
     setItemCost('');
+    setItemOneTime(false);
     setItemFormMode(null);
   };
 
   const handleSubmitItem = () => {
     if (itemFormMode == null) return;
     const cost = parseVndInput(itemCost);
-    const saved = itemFormMode === 'add' ? addItem(itemName, cost) : updateItem(itemFormMode.itemId, itemName, cost);
+    const saved =
+      itemFormMode === 'add'
+        ? addItem(itemName, cost, itemOneTime)
+        : updateItem(itemFormMode.itemId, itemName, cost, itemOneTime);
     if (saved) resetItemForm();
   };
 
   const handleEditItem = (item: ShopItem) => {
     setItemName(item.name);
     setItemCost(String(item.cost));
+    setItemOneTime(item.oneTime === true);
     setItemFormMode({ type: 'edit', itemId: item.id });
   };
 
@@ -117,21 +123,20 @@ export function ShopScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Items</Text>
-            <Button
-              variant="ghost"
-              size="sm"
-              onPress={() => {
-                if (itemFormMode != null) {
-                  resetItemForm();
-                  return;
-                }
-                setItemName('');
-                setItemCost('');
-                setItemFormMode('add');
-              }}
-            >
-              {itemFormMode ? 'Close' : 'Add Item'}
-            </Button>
+            {itemFormMode == null && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onPress={() => {
+                  setItemName('');
+                  setItemCost('');
+                  setItemOneTime(false);
+                  setItemFormMode('add');
+                }}
+              >
+                Add Item
+              </Button>
+            )}
           </View>
           {itemFormMode && (
             <AddShopItemForm
@@ -141,6 +146,8 @@ export function ShopScreen() {
               onCostChange={setItemCost}
               onSubmit={handleSubmitItem}
               onCancel={resetItemForm}
+              oneTime={itemOneTime}
+              onOneTimeChange={() => setItemOneTime(value => !value)}
               title={itemFormMode === 'add' ? 'Add item' : 'Edit item'}
               submitLabel={itemFormMode === 'add' ? 'Add item' : 'Save'}
             />

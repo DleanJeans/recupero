@@ -7,8 +7,8 @@ import type { ShopItem, ShopPurchase } from '../types/shop';
 interface ShopStore {
   items: ShopItem[];
   purchases: ShopPurchase[];
-  addItem: (name: string, cost: number) => boolean;
-  updateItem: (itemId: string, name: string, cost: number) => boolean;
+  addItem: (name: string, cost: number, oneTime?: boolean) => boolean;
+  updateItem: (itemId: string, name: string, cost: number, oneTime?: boolean) => boolean;
   removeItem: (itemId: string) => boolean;
   buyItem: (itemId: string, availableBalance: number) => boolean;
   undoPurchase: (purchaseId: string) => boolean;
@@ -19,7 +19,7 @@ export const useShopStore = create<ShopStore>()(
     (set, get) => ({
       items: [],
       purchases: [],
-      addItem: (name, cost) => {
+      addItem: (name, cost, oneTime) => {
         const trimmedName = name.trim();
         const normalizedCost = Math.round(cost);
         if (!trimmedName || !Number.isFinite(normalizedCost) || normalizedCost <= 0) return false;
@@ -32,12 +32,13 @@ export const useShopStore = create<ShopStore>()(
               name: trimmedName,
               cost: normalizedCost,
               createdAt: Date.now(),
+              oneTime: oneTime ? true : undefined,
             },
           ],
         }));
         return true;
       },
-      updateItem: (itemId, name, cost) => {
+      updateItem: (itemId, name, cost, oneTime) => {
         const trimmedName = name.trim();
         const normalizedCost = Math.round(cost);
         if (!trimmedName || !Number.isFinite(normalizedCost) || normalizedCost <= 0) return false;
@@ -45,7 +46,9 @@ export const useShopStore = create<ShopStore>()(
 
         set(state => ({
           items: state.items.map(item =>
-            item.id === itemId ? { ...item, name: trimmedName, cost: normalizedCost } : item,
+            item.id === itemId
+              ? { ...item, name: trimmedName, cost: normalizedCost, oneTime: oneTime ? true : undefined }
+              : item,
           ),
         }));
         return true;

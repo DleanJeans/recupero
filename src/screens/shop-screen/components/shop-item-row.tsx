@@ -33,6 +33,7 @@ export function ShopItemRow({ item, balance, onBuy, onEdit, onDelete }: ShopItem
           style={styles.cost}
         >
           {formatVnd(item.cost)}
+          {item.oneTime ? ' · One time' : ''}
         </Text>
       </View>
       <View style={styles.actions}>

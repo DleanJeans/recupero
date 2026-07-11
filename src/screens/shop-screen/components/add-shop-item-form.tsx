@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button } from '../../../components/button';
+import { CheckboxRow } from '../../../components/checkbox-row';
 import { Text, TextInput } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 import { formatVnd, parseVndInput, sanitizeVndInput } from '../../../utils/money-utils';
@@ -12,6 +13,8 @@ interface AddShopItemFormProps {
   onCostChange: (value: string) => void;
   onSubmit: () => void;
   onCancel: () => void;
+  oneTime: boolean;
+  onOneTimeChange: () => void;
   title: string;
   submitLabel: string;
 }
@@ -23,6 +26,8 @@ export function AddShopItemForm({
   onCostChange,
   onSubmit,
   onCancel,
+  oneTime,
+  onOneTimeChange,
   title,
   submitLabel,
 }: AddShopItemFormProps) {
@@ -54,6 +59,13 @@ export function AddShopItemForm({
           maxLength={12}
         />
       </View>
+      <CheckboxRow
+        label="One-time reward"
+        hint="Remove from the shop after buying"
+        checked={oneTime}
+        onToggle={onOneTimeChange}
+        variant="row"
+      />
       <View style={styles.bottomRow}>
         <Button
           variant="primary"
