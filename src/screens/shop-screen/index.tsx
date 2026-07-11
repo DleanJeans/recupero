@@ -113,7 +113,7 @@ export function ShopScreen() {
               variant="ghost"
               size="sm"
               onPress={() => {
-                if (itemFormMode === 'add') {
+                if (itemFormMode != null) {
                   resetItemForm();
                   return;
                 }
