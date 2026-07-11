@@ -81,7 +81,7 @@ function HeaderIcon({ icon, name, onPress, accessibilityLabel }: HeaderIconProps
 const styles = StyleSheet.create({
   titleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     marginHorizontal: 16,
     marginTop: 8,
