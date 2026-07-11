@@ -425,13 +425,6 @@ export function BehaviorFormScreen() {
             {xpEnabled && (
               <View style={styles.xpOptions}>
                 <CheckboxRow
-                  label="Hide Total XP"
-                  hint="Hide lifetime XP in habit details"
-                  checked={hideTotalXp}
-                  onToggle={() => setHideTotalXp(v => !v)}
-                  variant="row"
-                />
-                <CheckboxRow
                   label="Track duration for XP"
                   hint="Use start and end time, awarding 1 XP per minute"
                   checked={durationXpEnabled}
@@ -445,6 +438,13 @@ export function BehaviorFormScreen() {
                   onToggle={handleXpDecayToggle}
                   onChangeEvery={handleXpDecayChangeEvery}
                   onUnitChange={handleXpDecayUnitChange}
+                />
+                <CheckboxRow
+                  label="Hide Total XP"
+                  hint="Hide lifetime XP in habit details"
+                  checked={hideTotalXp}
+                  onToggle={() => setHideTotalXp(v => !v)}
+                  variant="row"
                 />
               </View>
             )}
