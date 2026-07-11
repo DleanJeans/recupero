@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: 100,
-    backgroundColor: Colors.bg.input,
+    backgroundColor: Colors.bg.elevated,
     borderRadius: 8,
     color: Colors.text.primary,
     fontSize: 14,

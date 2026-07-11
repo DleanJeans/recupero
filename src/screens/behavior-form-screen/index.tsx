@@ -449,7 +449,7 @@ export function BehaviorFormScreen() {
           </CheckboxRow>
 
           <CheckboxRow
-            label="Reward money"
+            label={type === 'undesirable' ? 'Money penalty' : 'Reward money'}
             hint={
               type === 'undesirable'
                 ? `Lose ${formatVnd(parseVndInput(moneyRewardAmount))} ${moneyRewardDurationBased ? 'per minute' : 'per log'}`
