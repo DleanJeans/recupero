@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Button } from '../../../components/button';
 import { DatePicker } from '../../../components/date-picker';
+import { LogRewardPreview } from '../../../components/log-reward-preview';
 import { Text, TextInput } from '../../../components/text';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useSettingsStore } from '../../../store/settings-store';
@@ -33,7 +34,6 @@ import { XP_PER_LOG } from '../../../utils/xp-utils';
 import { FabButtonRow } from '../../components/fab-button-row';
 import { CalculatedMetadataFields } from './calculated-metadata-fields';
 import { FloatingXPBurst, type XPBurst } from './floating-xp-burst';
-import { LogRewardPreview } from './log-reward-preview';
 import { MetadataInputRow } from './metadata-input-row';
 import { TimePicker } from './time-picker';
 

@@ -66,6 +66,7 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
             );
           })()}
         <BehaviorLogItem
+          behavior={behavior}
           log={item}
           metadataFields={metadataFields}
           elapsedTick={elapsedTick}
@@ -74,7 +75,7 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
         />
       </>
     ),
-    [behavior.xpDecay, dayCutoffHour, decayedLogIds, elapsedTick, metadataFields, onEditLog],
+    [behavior, dayCutoffHour, decayedLogIds, elapsedTick, metadataFields, onEditLog],
   );
 
   const renderSectionHeader = useCallback(

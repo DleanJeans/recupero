@@ -1,8 +1,8 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text } from '../../../components/text';
-import { Colors } from '../../../utils/colors';
-import { formatVnd } from '../../../utils/money-utils';
+import { Colors } from '../utils/colors';
+import { formatVnd } from '../utils/money-utils';
+import { Text } from './text';
 
 interface LogRewardPreviewProps {
   xp?: number;

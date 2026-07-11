@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { BehaviorIcon } from '../../components/behavior-icon';
 import { Button } from '../../components/button';
+import { LogRewardPreview } from '../../components/log-reward-preview';
 import { MoneyBalance } from '../../components/money-balance';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
@@ -15,8 +16,9 @@ import { useTimerStore } from '../../store/timer-store';
 import type { BehaviorEntry } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
+import { getMoneyRewardForLog } from '../../utils/money-utils';
 import { formatStopwatchDuration } from '../../utils/stopwatch-utils';
-import { formatTime } from '../../utils/time-utils';
+import { formatTime, MS_PER_MINUTE } from '../../utils/time-utils';
 import { TaskComposer } from '../task-screen/components/task-composer';
 
 export function TimerScreen() {
@@ -226,6 +228,21 @@ function TimerPanel({
   onStop,
   onResume,
 }: TimerPanelProps) {
+  const rewardMinutes = startTimestamp == null ? 0 : Math.max(1, Math.floor(elapsedMs / MS_PER_MINUTE));
+  const rewardLog =
+    startTimestamp == null
+      ? undefined
+      : {
+          id: 'timer-preview',
+          timestamp: startTimestamp,
+          endTimestamp: startTimestamp + rewardMinutes * MS_PER_MINUTE,
+        };
+  const rewardXp = isRunning && behavior.xpEnabled ? rewardMinutes : undefined;
+  const rewardMoney =
+    isRunning && rewardLog && behavior.moneyReward != null && behavior.type !== 'neutral'
+      ? getMoneyRewardForLog(rewardLog, behavior.moneyReward, true) * (behavior.type === 'undesirable' ? -1 : 1)
+      : undefined;
+
   return (
     <>
       <View style={styles.timerHeader}>
@@ -264,6 +281,13 @@ function TimerPanel({
         <Text style={styles.stopwatchValue}>{formatStopwatchDuration(elapsedMs)}</Text>
         {startTimestamp != null && (
           <Text style={styles.stopwatchCaption}>{`Started at ${formatTime(startTimestamp)}`}</Text>
+        )}
+        {(rewardXp != null || rewardMoney != null) && (
+          <LogRewardPreview
+            xp={rewardXp}
+            money={rewardMoney}
+            undesirable={behavior.type === 'undesirable'}
+          />
         )}
         <View style={styles.timerActions}>
           {hasStopped ? (

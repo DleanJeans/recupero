@@ -1,14 +1,18 @@
 import React, { useCallback, useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { LogRewardPreview } from '../../../components/log-reward-preview';
 import { Text } from '../../../components/text';
 import { useSettingsStore } from '../../../store/settings-store';
-import type { LogEntry, MetadataField } from '../../../types/behavior';
+import type { BehaviorEntry, LogEntry, MetadataField } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 import { getLogDurationMs, getLogEndTimestamp, hasTimedLogRange } from '../../../utils/log-utils';
 import { formatMetadataValueUnit } from '../../../utils/metadata-calculation-utils';
+import { getMoneyRewardForLog } from '../../../utils/money-utils';
 import { formatDuration, formatElapsedNumeric, formatTimeRange } from '../../../utils/time-utils';
+import { getLogXp } from '../../../utils/xp-utils';
 
 interface Props {
+  behavior: BehaviorEntry;
   log: LogEntry;
   onEdit: () => void;
   metadataFields?: MetadataField[];
@@ -17,6 +21,7 @@ interface Props {
 }
 
 export const BehaviorLogItem = React.memo(function BehaviorLogItem({
+  behavior,
   log,
   onEdit,
   metadataFields,
@@ -30,10 +35,17 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
   );
   const isRange = hasTimedLogRange(log);
   const elapsedText = useMemo(() => formatElapsedNumeric(getLogEndTimestamp(log)), [elapsedTick, log]);
-  const durationText = useMemo(
-    () => (isRange ? formatDuration(getLogDurationMs(log)) : undefined),
-    [log, isRange],
-  );
+  const durationText = useMemo(() => (isRange ? formatDuration(getLogDurationMs(log)) : undefined), [log, isRange]);
+  const xp = behavior.xpEnabled ? getLogXp(log) : undefined;
+  const money =
+    behavior.moneyReward != null && behavior.type !== 'neutral'
+      ? getMoneyRewardForLog(log, behavior.moneyReward, behavior.durationXpEnabled === true) *
+        (behavior.type === 'undesirable' ? -1 : 1)
+      : undefined;
+  const hasMetadata =
+    metadataFields?.some(field => log.metadata?.[field.key] != null) === true || Boolean(log.metadata?.notes);
+  const hasReward = xp != null || money != null;
+  const hasContent = hasMetadata || hasReward;
 
   const handlePress = useCallback(() => onEdit(), [onEdit]);
 
@@ -42,15 +54,25 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
       style={[styles.logItem, isRange && styles.logItemRange, isDecayed && styles.decayedLogItem]}
       onPress={handlePress}
     >
-        <View style={[styles.timeContent, isRange && styles.timeContentRange]}>
-          <Text style={[styles.dateText, isDecayed && styles.decayedText]}>
-            {timeText}
-            {durationText ? <Text style={[styles.timeText, isDecayed && styles.decayedText]}> ({durationText})</Text> : null}
-          </Text>
-          <Text style={[styles.elapsedText, isDecayed && styles.decayedText]}>{elapsedText}</Text>
-        </View>
-        {log.metadata ? <View style={[styles.separator, isRange && styles.separatorRange]} /> : null}
-        <View style={log.metadata ? styles.contentArea : undefined}>
+      <View style={[styles.timeContent, isRange && styles.timeContentRange]}>
+        <Text style={[styles.dateText, isDecayed && styles.decayedText]}>
+          {timeText}
+          {durationText ? (
+            <Text style={[styles.timeText, isDecayed && styles.decayedText]}> ({durationText})</Text>
+          ) : null}
+        </Text>
+        <Text style={[styles.elapsedText, isDecayed && styles.decayedText]}>{elapsedText}</Text>
+      </View>
+      {hasContent ? <View style={[styles.separator, isRange && styles.separatorRange]} /> : null}
+      {hasContent ? (
+        <View style={styles.contentArea}>
+          {hasReward ? (
+            <LogRewardPreview
+              xp={xp}
+              money={money}
+              undesirable={behavior.type === 'undesirable'}
+            />
+          ) : null}
           {metadataFields?.map(field => {
             const val = log.metadata?.[field.key];
             if (val == null) return null;
@@ -77,6 +99,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
             </View>
           ) : null}
         </View>
+      ) : null}
     </Pressable>
   );
 });
