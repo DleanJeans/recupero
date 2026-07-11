@@ -6,6 +6,7 @@ import type { BehaviorEntry, BehaviorType, Category, MetadataField, StarPeriod }
 import type { AddTaskInput, TaskEntry } from '../types/task';
 import { getLogEndTimestamp } from '../utils/log-utils';
 import { getLoggableDefaultMetadata } from '../utils/metadata-calculation-utils';
+import { DEFAULT_MONEY_REWARD } from '../utils/money-utils';
 import { isTaskCompleteOnDate, timestampForTaskDate } from '../utils/task-utils';
 import { useSettingsStore } from './settings-store';
 
@@ -35,7 +36,7 @@ interface BehaviorStore {
     cooldownEnabled?: boolean,
     durationXpEnabled?: true,
     hideTotalXp?: true,
-    moneyReward?: true,
+    moneyReward?: BehaviorEntry['moneyReward'],
   ) => void;
   updateBehaviorCooldown: (behaviorId: string, cooldownMinutes: number) => void;
   updateBehavior: (
@@ -63,7 +64,7 @@ interface BehaviorStore {
       xpDecay?: BehaviorEntry['xpDecay'];
       durationXpEnabled?: true;
       hideTotalXp?: true;
-      moneyReward?: true;
+      moneyReward?: BehaviorEntry['moneyReward'];
     },
   ) => void;
   logBehavior: (
@@ -370,11 +371,12 @@ export const useBehaviorStore = create<BehaviorStore>()(
     {
       name: 'recupero-behaviors',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 4,
+      version: 5,
       // v0 → v1: rename `xp` field to `xpEnabled` and drop the old key.
       // v1 → v2: backfill `cooldownEnabled` from `cooldownMinutes` (old logs had no opt-in flag).
       // v2 → v3: add persisted tasks.
       // v3 → v4: opt existing behaviors into retrospective money effects.
+      // v4 → v5: replace the legacy money opt-in with editable default rates.
       migrate: (persistedState, version) => {
         let state = persistedState as BehaviorStore & { tasks?: TaskEntry[] };
         if (version < 1) {
@@ -411,6 +413,19 @@ export const useBehaviorStore = create<BehaviorStore>()(
               ...b,
               moneyReward: true as const,
             })),
+          };
+        }
+        if (version < 5) {
+          state = {
+            ...state,
+            behaviors: (state.behaviors ?? []).map(b =>
+              b.moneyReward === true
+                ? {
+                    ...b,
+                    moneyReward: { ...DEFAULT_MONEY_REWARD },
+                  }
+                : b,
+            ),
           };
         }
         return state;

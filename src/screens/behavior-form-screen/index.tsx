@@ -31,10 +31,12 @@ import {
   getSelectedAmountMetadataField,
   sanitizeDecimalInput,
 } from '../../utils/metadata-calculation-utils';
+import { formatVnd, getMoneyRewardRates, parseVndInput, sanitizeVndInput } from '../../utils/money-utils';
 import { BehaviorTypePicker } from './components/behavior-type-picker';
 import type { CooldownUnit } from './components/cooldown-input';
 import { CooldownInput } from './components/cooldown-input';
 import { CooldownTypeToggle } from './components/cooldown-type-toggle';
+import { MoneyRewardInputs } from './components/money-reward-inputs';
 import { StarThresholdsFormField } from './components/star-thresholds-form-field';
 import { XPDecayInput } from './components/xp-decay-input';
 
@@ -81,7 +83,11 @@ export function BehaviorFormScreen() {
     behavior ? behavior.durationXpEnabled === true : defaultDurationXpEnabled === true,
   );
   const [hideTotalXp, setHideTotalXp] = useState(() => behavior?.hideTotalXp === true);
-  const [moneyReward, setMoneyReward] = useState(() => behavior?.moneyReward === true);
+  const [moneyReward, setMoneyReward] = useState(() => behavior?.moneyReward != null);
+  const [moneyPerLog, setMoneyPerLog] = useState(() => String(getMoneyRewardRates(behavior?.moneyReward).perLog));
+  const [moneyPerMinute, setMoneyPerMinute] = useState(() =>
+    String(getMoneyRewardRates(behavior?.moneyReward).perMinute),
+  );
   const [type, setType] = useState<BehaviorType>(behavior?.type ?? 'neutral');
   const [cooldownMinutes, setCooldownMinutes] = useState(() => behavior?.cooldownMinutes || 0);
   const [cooldownType, setCooldownType] = useState<'rest' | 'limit'>(() => behavior?.cooldownType || 'rest');
@@ -153,7 +159,10 @@ export function BehaviorFormScreen() {
     setXpEnabled(behavior.xpEnabled === true);
     setDurationXpEnabled(behavior.durationXpEnabled === true);
     setHideTotalXp(behavior.hideTotalXp === true);
-    setMoneyReward(behavior.moneyReward === true);
+    setMoneyReward(behavior.moneyReward != null);
+    const moneyRewardRates = getMoneyRewardRates(behavior.moneyReward);
+    setMoneyPerLog(String(moneyRewardRates.perLog));
+    setMoneyPerMinute(String(moneyRewardRates.perMinute));
     setCooldownMinutes(behavior.cooldownMinutes || 0);
     setCooldownType(behavior.cooldownType || 'rest');
     setCooldownUnit(behavior.cooldownUnit);
@@ -195,6 +204,14 @@ export function BehaviorFormScreen() {
     defaultMetadataChanged = [...keys].some(k => String(orig[k] ?? '') !== (behaviorDefaultMetadata[k] ?? ''));
   }
 
+  const savedMoneyRewardRates = getMoneyRewardRates(behavior?.moneyReward);
+  const moneyRewardInputInvalid = moneyReward && (moneyPerLog.trim() === '' || moneyPerMinute.trim() === '');
+  const moneyRewardRatesChanged =
+    moneyReward &&
+    (moneyRewardInputInvalid ||
+      parseVndInput(moneyPerLog) !== savedMoneyRewardRates.perLog ||
+      parseVndInput(moneyPerMinute) !== savedMoneyRewardRates.perMinute);
+
   const hasChanges =
     isEdit &&
     behavior &&
@@ -206,7 +223,8 @@ export function BehaviorFormScreen() {
       xpEnabled !== (behavior.xpEnabled === true) ||
       durationXpEnabled !== (behavior.durationXpEnabled === true) ||
       hideTotalXp !== (behavior.hideTotalXp === true) ||
-      moneyReward !== (behavior.moneyReward === true) ||
+      moneyReward !== (behavior.moneyReward != null) ||
+      moneyRewardRatesChanged ||
       cooldownEnabled !== (behavior.cooldownEnabled ?? !!behavior.cooldownMinutes) ||
       cooldownMinutes !== (behavior.cooldownMinutes || 0) ||
       cooldownType !== (behavior.cooldownType || 'rest') ||
@@ -247,6 +265,13 @@ export function BehaviorFormScreen() {
       return;
     }
     setStarValidationError(null);
+    if (moneyRewardInputInvalid) return;
+    const moneyRewardConfig = moneyReward
+      ? {
+          perLog: parseVndInput(moneyPerLog),
+          perMinute: parseVndInput(moneyPerMinute),
+        }
+      : undefined;
     const defaultMetadataObj = Object.fromEntries(
       Object.entries(behaviorDefaultMetadata)
         .filter(([, v]) => v !== '' && v !== '0' && Number.isFinite(Number(v)))
@@ -272,7 +297,7 @@ export function BehaviorFormScreen() {
         xpDecay: xpEnabled ? (xpDecayEnabled ? xpDecaySerialized : undefined) : behavior?.xpDecay,
         durationXpEnabled: xpEnabled && durationXpEnabled ? true : undefined,
         hideTotalXp: xpEnabled && hideTotalXp ? true : undefined,
-        moneyReward: moneyReward ? true : undefined,
+        moneyReward: moneyRewardConfig,
       });
     } else {
       addBehavior(
@@ -293,7 +318,7 @@ export function BehaviorFormScreen() {
         cooldownEnabled,
         xpEnabled && durationXpEnabled ? true : undefined,
         xpEnabled && hideTotalXp ? true : undefined,
-        moneyReward ? true : undefined,
+        moneyRewardConfig,
       );
     }
     savedRef.current = true;
@@ -428,14 +453,23 @@ export function BehaviorFormScreen() {
             label="Reward money"
             hint={
               type === 'undesirable'
-                ? 'Lose 5,000 ₫ per log; 1,000 ₫ per timed minute'
+                ? `Lose ${formatVnd(parseVndInput(moneyPerLog))} per log; ${formatVnd(parseVndInput(moneyPerMinute))} per timed minute`
                 : type === 'neutral'
                   ? 'Neutral logs do not change money'
-                  : 'Earn 5,000 ₫ per log; 1,000 ₫ per timed minute'
+                  : `Earn ${formatVnd(parseVndInput(moneyPerLog))} per log; ${formatVnd(parseVndInput(moneyPerMinute))} per timed minute`
             }
             checked={moneyReward}
             onToggle={() => setMoneyReward(v => !v)}
-          />
+          >
+            {moneyReward && (
+              <MoneyRewardInputs
+                perLog={moneyPerLog}
+                perMinute={moneyPerMinute}
+                onPerLogChange={value => setMoneyPerLog(sanitizeVndInput(value))}
+                onPerMinuteChange={value => setMoneyPerMinute(sanitizeVndInput(value))}
+              />
+            )}
+          </CheckboxRow>
 
           <CheckboxRow
             label="Private"
@@ -451,7 +485,9 @@ export function BehaviorFormScreen() {
             variant="primary"
             fab
             onPress={handleSave}
-            disabled={isEdit ? !hasChanges : !name.trim() || !icon.trim()}
+            disabled={
+              isEdit ? !hasChanges || moneyRewardInputInvalid : !name.trim() || !icon.trim() || moneyRewardInputInvalid
+            }
           >
             {isEdit ? 'Save' : 'Add'}
           </Button>

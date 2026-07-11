@@ -25,6 +25,11 @@ export interface LogEntry {
 
 export type BehaviorType = 'undesirable' | 'neutral' | 'desirable';
 
+export interface MoneyRewardRates {
+  perLog: number;
+  perMinute: number;
+}
+
 export interface BehaviorEntry {
   id: string;
   name: string;
@@ -66,7 +71,7 @@ export interface BehaviorEntry {
   /** Hide the lifetime Total XP bar. Undefined = show total XP when XP bars are visible. */
   hideTotalXp?: true;
   /** Opt-in money effects. Desirable logs earn, undesirable logs lose, and neutral logs do nothing. */
-  moneyReward?: true;
+  moneyReward?: MoneyRewardRates | true;
   /** Opt-in XP decay. For days/weeks/months, lose 1 log for each completed period
    *  with fewer than `every` logs. For hours, lose 1 log every `every` elapsed hours.
    *  Undefined = feature off. Ignored at runtime when `xpEnabled` is off. */

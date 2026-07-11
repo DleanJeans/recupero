@@ -4,6 +4,7 @@ import {
   getBehaviorMoney,
   getMoneyBalance,
   getMoneyRewardForLog,
+  getMoneyRewardRates,
   getTotalMoneyEarned,
   getTotalMoneyPenalties,
   getTotalMoneySpent,
@@ -35,6 +36,20 @@ describe('money-utils', () => {
 
   it('awards the per-minute reward for a timed log', () => {
     expect(getMoneyRewardForLog(makeLog({ endTimestamp: 15 * 60_000 }))).toBe(15 * MONEY_PER_MINUTE);
+  });
+
+  it('uses customized per-log and per-minute rates', () => {
+    const rates = { perLog: 7_500, perMinute: 250 };
+    const behavior = makeBehavior({
+      moneyReward: rates,
+      type: 'desirable',
+      logs: [makeLog(), makeLog({ id: 'log-2', endTimestamp: 4 * 60_000 })],
+    });
+
+    expect(getMoneyRewardRates(rates)).toEqual(rates);
+    expect(getMoneyRewardForLog(makeLog(), rates)).toBe(7_500);
+    expect(getMoneyRewardForLog(makeLog({ endTimestamp: 4 * 60_000 }), rates)).toBe(1_000);
+    expect(getBehaviorMoney(behavior)).toBe(8_500);
   });
 
   it('clamps a zero-minute timed log to one rewarded minute', () => {
