@@ -8,6 +8,7 @@ export const DEFAULT_MONEY_REWARD = { perLog: MONEY_PER_LOG, perMinute: MONEY_PE
 
 export interface MoneyLogTransaction {
   id: string;
+  behaviorId: string;
   behaviorName: string;
   log: LogEntry;
   amount: number;
@@ -106,6 +107,7 @@ export function getMoneyLogTransactions(
         amount,
         transaction: {
           id: `${behavior.id}:${log.id}`,
+          behaviorId: behavior.id,
           behaviorName: behavior.name,
           log,
           amount,

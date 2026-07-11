@@ -1,6 +1,9 @@
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
+import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
 import type { MoneyLogTransaction } from '../../../utils/money-utils';
 import { formatVnd } from '../../../utils/money-utils';
@@ -11,8 +14,21 @@ interface Props {
 }
 
 export function MoneyLogRow({ transaction }: Props) {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
   return (
-    <View style={styles.row}>
+    <Pressable
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      onPress={() =>
+        navigation.navigate('BehaviorLog', {
+          behaviorId: transaction.behaviorId,
+          initialMode: 'log',
+          logId: transaction.log.id,
+        })
+      }
+      accessibilityRole="button"
+      accessibilityLabel={`Edit money log for ${transaction.behaviorName}`}
+    >
       <View style={styles.details}>
         <Text
           selectable
@@ -41,7 +57,7 @@ export function MoneyLogRow({ transaction }: Props) {
           Balance {formatVnd(transaction.balanceAfter)}
         </Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -53,6 +69,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border.default,
+  },
+  pressed: {
+    opacity: 0.65,
   },
   details: {
     flex: 1,
