@@ -43,9 +43,9 @@ export function ShopItemRow({ item, balance, onBuy, onEdit, onDelete }: ShopItem
           style={styles.iconButton}
         >
           <Ionicons
-            name="pencil-outline"
+            name="create-outline"
             size={18}
-            color={Colors.text.muted}
+            color={Colors.text.light}
           />
         </Button>
         <Button
@@ -65,8 +65,18 @@ export function ShopItemRow({ item, balance, onBuy, onEdit, onDelete }: ShopItem
           size="sm"
           onPress={onBuy}
           disabled={!canBuy}
+          accessibilityLabel={canBuy ? `Buy ${item.name}` : `Not enough money for ${item.name}`}
         >
-          {canBuy ? 'Buy' : 'Not enough'}
+          <View style={styles.buyAction}>
+            <Ionicons
+              name="cart-outline"
+              size={16}
+              color={canBuy ? Colors.bg.black : Colors.text.light}
+            />
+            <Text style={[styles.buyLabel, canBuy ? styles.buyLabelPrimary : styles.buyLabelSecondary]}>
+              {canBuy ? 'Buy' : 'Not enough'}
+            </Text>
+          </View>
         </Button>
       </View>
     </View>
@@ -95,6 +105,21 @@ const styles = StyleSheet.create({
     width: 30,
     height: 34,
     justifyContent: 'center',
+  },
+  buyAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  buyLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  buyLabelPrimary: {
+    color: Colors.bg.black,
+  },
+  buyLabelSecondary: {
+    color: Colors.text.light,
   },
   name: {
     color: Colors.text.primary,
