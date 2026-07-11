@@ -14,6 +14,7 @@ import { MoneyLogList } from '../shop-screen/components/money-log-list';
 export function MoneyLogScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const behaviors = useBehaviorStore(state => state.behaviors);
+  const tasks = useBehaviorStore(state => state.tasks);
   const purchases = useShopStore(state => state.purchases);
 
   return (
@@ -28,6 +29,7 @@ export function MoneyLogScreen() {
       <MoneyLogList
         behaviors={behaviors}
         purchases={purchases}
+        tasks={tasks}
       />
     </SafeAreaView>
   );

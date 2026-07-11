@@ -17,8 +17,9 @@ interface MoneyBalanceProps {
 export function MoneyBalance({ disabled = false }: MoneyBalanceProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const behaviors = useBehaviorStore(state => state.behaviors);
+  const tasks = useBehaviorStore(state => state.tasks);
   const purchases = useShopStore(state => state.purchases);
-  const balance = useMemo(() => getMoneyBalance(behaviors, purchases), [behaviors, purchases]);
+  const balance = useMemo(() => getMoneyBalance(behaviors, purchases, tasks), [behaviors, purchases, tasks]);
 
   return (
     <Pressable

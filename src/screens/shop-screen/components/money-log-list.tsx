@@ -4,6 +4,7 @@ import { Text } from '../../../components/text';
 import { useAfterInteractionsFlag } from '../../../hooks/use-after-interactions-flag';
 import type { BehaviorEntry } from '../../../types/behavior';
 import type { ShopPurchase } from '../../../types/shop';
+import type { TaskEntry } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
 import { getMoneyLogTransactions } from '../../../utils/money-utils';
 import { MoneyLogRow } from './money-log-row';
@@ -11,13 +12,14 @@ import { MoneyLogRow } from './money-log-row';
 interface Props {
   behaviors: BehaviorEntry[];
   purchases: ShopPurchase[];
+  tasks: TaskEntry[];
 }
 
-export function MoneyLogList({ behaviors, purchases }: Props) {
-  const ready = useAfterInteractionsFlag([behaviors, purchases]);
+export function MoneyLogList({ behaviors, purchases, tasks }: Props) {
+  const ready = useAfterInteractionsFlag([behaviors, purchases, tasks]);
   const transactions = useMemo(
-    () => (ready ? getMoneyLogTransactions(behaviors, purchases) : []),
-    [behaviors, purchases, ready],
+    () => (ready ? getMoneyLogTransactions(behaviors, purchases, tasks) : []),
+    [behaviors, purchases, tasks, ready],
   );
 
   if (!ready) {
@@ -44,7 +46,7 @@ export function MoneyLogList({ behaviors, purchases }: Props) {
       maxToRenderPerBatch={12}
       windowSize={7}
       removeClippedSubviews
-      ListEmptyComponent={<Text style={styles.empty}>No money-affecting behavior logs yet.</Text>}
+      ListEmptyComponent={<Text style={styles.empty}>No money-affecting logs yet.</Text>}
     />
   );
 }

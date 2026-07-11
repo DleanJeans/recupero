@@ -28,6 +28,7 @@ import { ShopItemRow } from './components/shop-item-row';
 export function ShopScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const behaviors = useBehaviorStore(state => state.behaviors);
+  const tasks = useBehaviorStore(state => state.tasks);
   const items = useShopStore(state => state.items);
   const purchases = useShopStore(state => state.purchases);
   const addItem = useShopStore(state => state.addItem);
@@ -40,8 +41,8 @@ export function ShopScreen() {
   const [itemOneTime, setItemOneTime] = useState(false);
   const [itemFormMode, setItemFormMode] = useState<'add' | { type: 'edit'; itemId: string } | null>(null);
 
-  const balance = useMemo(() => getMoneyBalance(behaviors, purchases), [behaviors, purchases]);
-  const earned = useMemo(() => getTotalMoneyEarned(behaviors), [behaviors]);
+  const balance = useMemo(() => getMoneyBalance(behaviors, purchases, tasks), [behaviors, purchases, tasks]);
+  const earned = useMemo(() => getTotalMoneyEarned(behaviors, tasks), [behaviors, tasks]);
   const penalties = useMemo(() => getTotalMoneyPenalties(behaviors), [behaviors]);
   const spent = useMemo(() => getTotalMoneySpent(purchases), [purchases]);
   const recentPurchases = useMemo(() => [...purchases].reverse(), [purchases]);

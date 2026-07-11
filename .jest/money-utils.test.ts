@@ -1,4 +1,5 @@
 import type { BehaviorEntry, LogEntry } from '../src/types/behavior';
+import type { TaskEntry } from '../src/types/task';
 import {
   formatVnd,
   formatVndAmount,
@@ -8,11 +9,13 @@ import {
   getMoneyRewardAmount,
   getMoneyRewardForLog,
   getMoneyRewardRates,
+  getTaskMoney,
   getTotalMoneyEarned,
   getTotalMoneyPenalties,
   getTotalMoneySpent,
   MONEY_PER_LOG,
   MONEY_PER_MINUTE,
+  MONEY_PER_TASK_STAR,
 } from '../src/utils/money-utils';
 
 function makeBehavior(overrides: Partial<BehaviorEntry> = {}): BehaviorEntry {
@@ -30,6 +33,18 @@ function makeBehavior(overrides: Partial<BehaviorEntry> = {}): BehaviorEntry {
 
 function makeLog(overrides: Partial<LogEntry> = {}): LogEntry {
   return { id: 'log-1', timestamp: 0, ...overrides };
+}
+
+function makeTask(overrides: Partial<TaskEntry> = {}): TaskEntry {
+  return {
+    id: 'task-1',
+    title: 'One-off task',
+    scheduledDate: '2024-01-01',
+    stars: 1,
+    completedDates: [],
+    createdAt: 0,
+    ...overrides,
+  };
 }
 
 describe('money-utils', () => {
@@ -132,6 +147,16 @@ describe('money-utils', () => {
     expect(getBehaviorMoney(behavior)).toBe(-7 * MONEY_PER_MINUTE);
   });
 
+  it('rewards completed one-off tasks based on their stars', () => {
+    const oneOff = makeTask({ stars: 3, completedDates: ['2024-01-01', '2024-01-02'] });
+    const behaviorTask = makeTask({ source: 'behavior', behaviorId: 'behavior-1', completedDates: ['2024-01-01'] });
+
+    expect(getTaskMoney(oneOff)).toBe(6 * MONEY_PER_TASK_STAR);
+    expect(getTaskMoney(behaviorTask)).toBe(0);
+    expect(getTotalMoneyEarned([], [oneOff, behaviorTask])).toBe(6 * MONEY_PER_TASK_STAR);
+    expect(getMoneyBalance([], [], [oneOff])).toBe(6 * MONEY_PER_TASK_STAR);
+  });
+
   it('subtracts purchases without allowing a negative balance', () => {
     const behavior = makeBehavior({ moneyReward: true, type: 'desirable', logs: [makeLog()] });
     const penalty = makeBehavior({ moneyReward: true, type: 'undesirable', logs: [makeLog()] });
@@ -162,6 +187,21 @@ describe('money-utils', () => {
       { amount: -MONEY_PER_LOG, balanceAfter: 0 },
       { amount: MONEY_PER_LOG, balanceAfter: MONEY_PER_LOG },
     ]);
+  });
+
+  it('builds money transactions for completed one-off tasks', () => {
+    const task = makeTask({ stars: 2, completedDates: ['2024-01-01'] });
+
+    const transactions = getMoneyLogTransactions([], [], [task]);
+
+    expect(transactions).toHaveLength(1);
+    expect(transactions[0]).toMatchObject({
+      source: 'task',
+      taskId: task.id,
+      taskTitle: task.title,
+      amount: 2 * MONEY_PER_TASK_STAR,
+      balanceAfter: 2 * MONEY_PER_TASK_STAR,
+    });
   });
 
   it('formats Vietnamese dong with the ₫ symbol', () => {

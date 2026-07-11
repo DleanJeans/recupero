@@ -1,19 +1,35 @@
 import type { BehaviorEntry, LogEntry, MoneyRewardRates } from '../types/behavior';
+import type { TaskEntry } from '../types/task';
 import { getLogDurationMinutes, getLogEndTimestamp, hasTimedLogRange } from './log-utils';
+import { isOneOffTask, timestampForTaskDate } from './task-utils';
 
 export const MONEY_PER_LOG = 5_000;
 export const MONEY_PER_MINUTE = 1_000;
+export const MONEY_PER_TASK_STAR = 5_000;
 export const VND_SYMBOL = '₫';
 export const DEFAULT_MONEY_REWARD = { perLog: MONEY_PER_LOG, perMinute: MONEY_PER_MINUTE } as const;
 
-export interface MoneyLogTransaction {
+interface MoneyLogTransactionBase {
   id: string;
-  behaviorId: string;
-  behaviorName: string;
-  log: LogEntry;
   amount: number;
   balanceAfter: number;
 }
+
+export interface BehaviorMoneyLogTransaction extends MoneyLogTransactionBase {
+  source: 'behavior';
+  behaviorId: string;
+  behaviorName: string;
+  log: LogEntry;
+}
+
+export interface TaskMoneyLogTransaction extends MoneyLogTransactionBase {
+  source: 'task';
+  taskId: string;
+  taskTitle: string;
+  completedAt: number;
+}
+
+export type MoneyLogTransaction = BehaviorMoneyLogTransaction | TaskMoneyLogTransaction;
 
 function normalizeMoneyRate(value: number | undefined, fallback: number): number {
   return value != null && Number.isFinite(value) && value >= 0 ? Math.round(value) : fallback;
@@ -61,8 +77,16 @@ export function getBehaviorMoney(behavior: BehaviorEntry): number {
   return behavior.type === 'undesirable' ? -total : total;
 }
 
-export function getTotalMoneyEarned(behaviors: BehaviorEntry[]): number {
-  return behaviors.reduce((total, behavior) => total + Math.max(0, getBehaviorMoney(behavior)), 0);
+export function getTaskMoney(task: TaskEntry): number {
+  if (!isOneOffTask(task)) return 0;
+  return task.completedDates.length * task.stars * MONEY_PER_TASK_STAR;
+}
+
+export function getTotalMoneyEarned(behaviors: BehaviorEntry[], tasks: ReadonlyArray<TaskEntry> = []): number {
+  return (
+    behaviors.reduce((total, behavior) => total + Math.max(0, getBehaviorMoney(behavior)), 0) +
+    tasks.reduce((total, task) => total + getTaskMoney(task), 0)
+  );
 }
 
 export function getTotalMoneyPenalties(behaviors: BehaviorEntry[]): number {
@@ -76,19 +100,29 @@ export function getTotalMoneySpent(purchases: ReadonlyArray<{ cost: number }>): 
   );
 }
 
-export function getMoneyBalance(behaviors: BehaviorEntry[], purchases: ReadonlyArray<{ cost: number }>): number {
+export function getMoneyBalance(
+  behaviors: BehaviorEntry[],
+  purchases: ReadonlyArray<{ cost: number }>,
+  tasks: ReadonlyArray<TaskEntry> = [],
+): number {
   return Math.max(
     0,
-    getTotalMoneyEarned(behaviors) - getTotalMoneyPenalties(behaviors) - getTotalMoneySpent(purchases),
+    getTotalMoneyEarned(behaviors, tasks) - getTotalMoneyPenalties(behaviors) - getTotalMoneySpent(purchases),
   );
 }
 
 export function getMoneyLogTransactions(
   behaviors: BehaviorEntry[],
   purchases: ReadonlyArray<{ cost: number; purchasedAt: number }>,
+  tasks: ReadonlyArray<TaskEntry> = [],
 ): MoneyLogTransaction[] {
   const events: Array<
-    | { timestamp: number; order: number; amount: number; transaction: Omit<MoneyLogTransaction, 'balanceAfter'> }
+    | {
+        timestamp: number;
+        order: number;
+        amount: number;
+        transaction: Omit<BehaviorMoneyLogTransaction, 'balanceAfter'> | Omit<TaskMoneyLogTransaction, 'balanceAfter'>;
+      }
     | { timestamp: number; order: number; amount: number }
   > = [];
   let order = 0;
@@ -107,10 +141,32 @@ export function getMoneyLogTransactions(
         amount,
         transaction: {
           id: `${behavior.id}:${log.id}`,
+          source: 'behavior',
           behaviorId: behavior.id,
           behaviorName: behavior.name,
           log,
           amount,
+        },
+      });
+    }
+  }
+
+  for (const task of tasks) {
+    if (!isOneOffTask(task)) continue;
+
+    for (const completedDate of task.completedDates) {
+      const timestamp = timestampForTaskDate(completedDate);
+      events.push({
+        timestamp,
+        order: order++,
+        amount: task.stars * MONEY_PER_TASK_STAR,
+        transaction: {
+          id: `task:${task.id}:${completedDate}`,
+          source: 'task',
+          taskId: task.id,
+          taskTitle: task.title,
+          completedAt: timestamp,
+          amount: task.stars * MONEY_PER_TASK_STAR,
         },
       });
     }

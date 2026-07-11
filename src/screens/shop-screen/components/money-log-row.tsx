@@ -15,32 +15,28 @@ interface Props {
 
 export function MoneyLogRow({ transaction }: Props) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const isBehaviorTransaction = transaction.source === 'behavior';
+  const name = isBehaviorTransaction ? transaction.behaviorName : transaction.taskTitle;
+  const date = isBehaviorTransaction ? (
+    <>
+      {formatCompactDate(transaction.log.timestamp)} ·{' '}
+      {formatTimeRange(transaction.log.timestamp, transaction.log.endTimestamp)}
+    </>
+  ) : (
+    formatCompactDate(transaction.completedAt)
+  );
 
-  return (
-    <Pressable
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-      onPress={() =>
-        navigation.navigate('BehaviorLog', {
-          behaviorId: transaction.behaviorId,
-          initialMode: 'log',
-          logId: transaction.log.id,
-        })
-      }
-      accessibilityRole="button"
-      accessibilityLabel={`Edit money log for ${transaction.behaviorName}`}
-    >
+  const content = (
+    <>
       <View style={styles.details}>
         <Text
           selectable
           style={styles.name}
           numberOfLines={1}
         >
-          {transaction.behaviorName}
+          {name}
         </Text>
-        <Text style={styles.date}>
-          {formatCompactDate(transaction.log.timestamp)} ·{' '}
-          {formatTimeRange(transaction.log.timestamp, transaction.log.endTimestamp)}
-        </Text>
+        <Text style={styles.date}>{date}</Text>
       </View>
       <View style={styles.values}>
         <Text
@@ -57,6 +53,27 @@ export function MoneyLogRow({ transaction }: Props) {
           Balance {formatVnd(transaction.balanceAfter)}
         </Text>
       </View>
+    </>
+  );
+
+  if (!isBehaviorTransaction) {
+    return <View style={styles.row}>{content}</View>;
+  }
+
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      onPress={() =>
+        navigation.navigate('BehaviorLog', {
+          behaviorId: transaction.behaviorId,
+          initialMode: 'log',
+          logId: transaction.log.id,
+        })
+      }
+      accessibilityRole="button"
+      accessibilityLabel={`Edit money log for ${transaction.behaviorName}`}
+    >
+      {content}
     </Pressable>
   );
 }

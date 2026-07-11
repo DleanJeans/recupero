@@ -24,6 +24,10 @@ export function isTaskCompleteOnDate(task: TaskEntry, dateStr: string): boolean 
   return task.completedDates.includes(dateStr);
 }
 
+export function isOneOffTask(task: Pick<TaskEntry, 'source' | 'behaviorId'>): boolean {
+  return task.source !== 'behavior' && task.behaviorId == null;
+}
+
 export function getTaskStarsForDate(tasks: TaskEntry[] | undefined, dateStr: string): number {
   return (tasks ?? []).reduce((total, task) => {
     if (task.archived || !isTaskCompleteOnDate(task, dateStr)) return total;
