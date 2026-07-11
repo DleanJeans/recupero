@@ -21,6 +21,7 @@ import {
   parseVndInput,
 } from '../../utils/money-utils';
 import { AddShopItemForm } from './components/add-shop-item-form';
+import { MoneyLogSection } from './components/money-log-section';
 import { PurchaseLogRow } from './components/purchase-log-row';
 import { ShopItemRow } from './components/shop-item-row';
 
@@ -184,6 +185,11 @@ export function ShopScreen() {
             </View>
           )}
         </View>
+
+        <MoneyLogSection
+          behaviors={behaviors}
+          purchases={purchases}
+        />
       </ScrollView>
     </SafeAreaView>
   );

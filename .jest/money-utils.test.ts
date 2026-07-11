@@ -4,6 +4,7 @@ import {
   formatVndAmount,
   getBehaviorMoney,
   getMoneyBalance,
+  getMoneyLogTransactions,
   getMoneyRewardAmount,
   getMoneyRewardForLog,
   getMoneyRewardRates,
@@ -139,6 +140,28 @@ describe('money-utils', () => {
     expect(getMoneyBalance([behavior], [{ cost: 1_000 }])).toBe(4_000);
     expect(getMoneyBalance([behavior, penalty], [{ cost: 1_000 }])).toBe(0);
     expect(getMoneyBalance([behavior], [{ cost: 10_000 }])).toBe(0);
+  });
+
+  it('builds behavior money transactions with the balance after each log', () => {
+    const earned = makeBehavior({
+      id: 'earned-behavior',
+      moneyReward: true,
+      type: 'desirable',
+      logs: [makeLog({ id: 'earned-log', timestamp: 1_000 })],
+    });
+    const lost = makeBehavior({
+      id: 'lost-behavior',
+      moneyReward: true,
+      type: 'undesirable',
+      logs: [makeLog({ id: 'lost-log', timestamp: 3_000 })],
+    });
+
+    const transactions = getMoneyLogTransactions([earned, lost], [{ cost: 1_000, purchasedAt: 2_000 }]);
+
+    expect(transactions.map(({ amount, balanceAfter }) => ({ amount, balanceAfter }))).toEqual([
+      { amount: -MONEY_PER_LOG, balanceAfter: 0 },
+      { amount: MONEY_PER_LOG, balanceAfter: MONEY_PER_LOG },
+    ]);
   });
 
   it('formats Vietnamese dong with the ₫ symbol', () => {

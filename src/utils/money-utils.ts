@@ -1,10 +1,18 @@
 import type { BehaviorEntry, LogEntry, MoneyRewardRates } from '../types/behavior';
-import { getLogDurationMinutes, hasTimedLogRange } from './log-utils';
+import { getLogDurationMinutes, getLogEndTimestamp, hasTimedLogRange } from './log-utils';
 
 export const MONEY_PER_LOG = 5_000;
 export const MONEY_PER_MINUTE = 1_000;
 export const VND_SYMBOL = '₫';
 export const DEFAULT_MONEY_REWARD = { perLog: MONEY_PER_LOG, perMinute: MONEY_PER_MINUTE } as const;
+
+export interface MoneyLogTransaction {
+  id: string;
+  behaviorName: string;
+  log: LogEntry;
+  amount: number;
+  balanceAfter: number;
+}
 
 function normalizeMoneyRate(value: number | undefined, fallback: number): number {
   return value != null && Number.isFinite(value) && value >= 0 ? Math.round(value) : fallback;
@@ -72,6 +80,58 @@ export function getMoneyBalance(behaviors: BehaviorEntry[], purchases: ReadonlyA
     0,
     getTotalMoneyEarned(behaviors) - getTotalMoneyPenalties(behaviors) - getTotalMoneySpent(purchases),
   );
+}
+
+export function getMoneyLogTransactions(
+  behaviors: BehaviorEntry[],
+  purchases: ReadonlyArray<{ cost: number; purchasedAt: number }>,
+): MoneyLogTransaction[] {
+  const events: Array<
+    | { timestamp: number; order: number; amount: number; transaction: Omit<MoneyLogTransaction, 'balanceAfter'> }
+    | { timestamp: number; order: number; amount: number }
+  > = [];
+  let order = 0;
+
+  for (const behavior of behaviors) {
+    if (behavior.moneyReward == null || behavior.type === 'neutral') continue;
+
+    for (const log of behavior.logs) {
+      const reward = getMoneyRewardForLog(log, behavior.moneyReward, behavior.durationXpEnabled === true);
+      const amount = behavior.type === 'undesirable' ? -reward : reward;
+      if (amount === 0) continue;
+
+      events.push({
+        timestamp: getLogEndTimestamp(log),
+        order: order++,
+        amount,
+        transaction: {
+          id: `${behavior.id}:${log.id}`,
+          behaviorName: behavior.name,
+          log,
+          amount,
+        },
+      });
+    }
+  }
+
+  for (const purchase of purchases) {
+    const amount = Number.isFinite(purchase.cost) ? -Math.max(0, purchase.cost) : 0;
+    if (amount === 0) continue;
+    events.push({ timestamp: purchase.purchasedAt, order: order++, amount });
+  }
+
+  events.sort((a, b) => a.timestamp - b.timestamp || a.order - b.order);
+
+  let rawBalance = 0;
+  const transactions: MoneyLogTransaction[] = [];
+  for (const event of events) {
+    rawBalance += event.amount;
+    if ('transaction' in event) {
+      transactions.push({ ...event.transaction, balanceAfter: Math.max(0, rawBalance) });
+    }
+  }
+
+  return transactions.reverse();
 }
 
 export function formatVnd(amount: number): string {
