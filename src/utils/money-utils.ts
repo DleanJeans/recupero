@@ -20,7 +20,10 @@ export function getTotalMoneyEarned(behaviors: BehaviorEntry[]): number {
 }
 
 export function getTotalMoneySpent(purchases: ReadonlyArray<{ cost: number }>): number {
-  return purchases.reduce((total, purchase) => total + Math.max(0, purchase.cost), 0);
+  return purchases.reduce(
+    (total, purchase) => total + (Number.isFinite(purchase.cost) ? Math.max(0, purchase.cost) : 0),
+    0,
+  );
 }
 
 export function getMoneyBalance(behaviors: BehaviorEntry[], purchases: ReadonlyArray<{ cost: number }>): number {
@@ -28,5 +31,10 @@ export function getMoneyBalance(behaviors: BehaviorEntry[], purchases: ReadonlyA
 }
 
 export function formatVnd(amount: number): string {
-  return `${Math.max(0, Math.round(amount)).toLocaleString('en-US')} ${VND_SYMBOL}`;
+  const normalizedAmount = Number.isFinite(amount) ? Math.max(0, Math.round(amount)) : 0;
+  return `${normalizedAmount.toLocaleString('en-US')} ${VND_SYMBOL}`;
+}
+
+export function parseVndInput(value: string): number {
+  return Number(value.replace(/\D/g, ''));
 }

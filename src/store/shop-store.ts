@@ -36,7 +36,7 @@ export const useShopStore = create<ShopStore>()(
       },
       buyItem: (itemId, availableBalance) => {
         const item = get().items.find(candidate => candidate.id === itemId);
-        if (!item || item.cost > availableBalance) return false;
+        if (!item || !Number.isFinite(availableBalance) || item.cost > availableBalance) return false;
 
         set(state => ({
           purchases: [

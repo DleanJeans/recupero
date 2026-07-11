@@ -18,6 +18,7 @@ import { CategoryFormScreen } from './src/screens/category-form-screen';
 import { DayScreen } from './src/screens/day-screen';
 import { HomeScreen } from './src/screens/home-screen';
 import { SettingsScreen } from './src/screens/settings-screen';
+import { ShopScreen } from './src/screens/shop-screen';
 import { TaskScreen } from './src/screens/task-screen';
 import { TimerScreen } from './src/screens/timer-screen';
 import type { RootStackParamList } from './src/types/navigation';
@@ -38,6 +39,7 @@ const linking = {
       BehaviorLog: 'behavior-log/:behaviorId',
       BehaviorForm: 'behavior-form',
       CategoryForm: 'category-form',
+      Shop: 'shop',
     },
   },
 };
@@ -125,6 +127,10 @@ export default function App() {
                   <Stack.Screen
                     name="CategoryForm"
                     component={CategoryFormScreen}
+                  />
+                  <Stack.Screen
+                    name="Shop"
+                    component={ShopScreen}
                   />
                   <Stack.Screen
                     name="Settings"

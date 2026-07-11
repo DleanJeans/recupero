@@ -2,23 +2,25 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
-const STORAGE_KEYS = { behaviors: 'recupero-behaviors', settings: 'recupero-settings' } as const;
+const STORAGE_KEYS = { behaviors: 'recupero-behaviors', settings: 'recupero-settings', shop: 'recupero-shop' } as const;
 
 interface ExportData {
   version: 1;
   exportedAt: string;
   behaviors: string | null;
   settings: string | null;
+  shop?: string | null;
 }
 
 export async function exportToFile(): Promise<{ success: boolean; message: string }> {
   try {
-    const [behaviors, settings] = await Promise.all([
+    const [behaviors, settings, shop] = await Promise.all([
       AsyncStorage.getItem(STORAGE_KEYS.behaviors),
       AsyncStorage.getItem(STORAGE_KEYS.settings),
+      AsyncStorage.getItem(STORAGE_KEYS.shop),
     ]);
 
-    const data: ExportData = { version: 1, exportedAt: new Date().toISOString(), behaviors, settings };
+    const data: ExportData = { version: 1, exportedAt: new Date().toISOString(), behaviors, settings, shop };
 
     const json = JSON.stringify(data, null, 2);
     const filename = `recupero-backup-${new Date().toISOString().slice(0, 10)}.json`;
@@ -55,6 +57,9 @@ export async function importFromFile(fileUri: string): Promise<{ success: boolea
     }
     if (data.settings) {
       operations.push(AsyncStorage.setItem(STORAGE_KEYS.settings, data.settings));
+    }
+    if (data.shop) {
+      operations.push(AsyncStorage.setItem(STORAGE_KEYS.shop, data.shop));
     }
 
     await Promise.all(operations);
