@@ -71,7 +71,7 @@ export interface BehaviorEntry {
   /** Hide the lifetime Total XP bar. Undefined = show total XP when XP bars are visible. */
   hideTotalXp?: true;
   /** Opt-in money effects. Desirable logs earn, undesirable logs lose, and neutral logs do nothing. */
-  moneyReward?: MoneyRewardRates | true;
+  moneyReward?: number | MoneyRewardRates | true;
   /** Opt-in XP decay. For days/weeks/months, lose 1 log for each completed period
    *  with fewer than `every` logs. For hours, lose 1 log every `every` elapsed hours.
    *  Undefined = feature off. Ignored at runtime when `xpEnabled` is off. */

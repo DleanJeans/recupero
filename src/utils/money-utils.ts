@@ -11,23 +11,44 @@ function normalizeMoneyRate(value: number | undefined, fallback: number): number
 }
 
 export function getMoneyRewardRates(reward: BehaviorEntry['moneyReward']): MoneyRewardRates {
-  if (reward == null || reward === true) return { ...DEFAULT_MONEY_REWARD };
+  if (reward == null || reward === true || typeof reward === 'number') return { ...DEFAULT_MONEY_REWARD };
   return {
     perLog: normalizeMoneyRate(reward.perLog, MONEY_PER_LOG),
     perMinute: normalizeMoneyRate(reward.perMinute, MONEY_PER_MINUTE),
   };
 }
 
-export function getMoneyRewardForLog(log: LogEntry, rates: MoneyRewardRates = DEFAULT_MONEY_REWARD): number {
-  if (!hasTimedLogRange(log)) return rates.perLog;
-  return getLogDurationMinutes(log) * rates.perMinute;
+export function getMoneyRewardAmount(reward: BehaviorEntry['moneyReward'], durationBased = false): number {
+  const fallback = durationBased ? MONEY_PER_MINUTE : MONEY_PER_LOG;
+  if (typeof reward === 'number') return normalizeMoneyRate(reward, fallback);
+  if (reward == null || reward === true) return fallback;
+  return normalizeMoneyRate(durationBased ? reward.perMinute : reward.perLog, fallback);
+}
+
+export function getMoneyRewardForLog(
+  log: LogEntry,
+  reward: BehaviorEntry['moneyReward'] = DEFAULT_MONEY_REWARD,
+  durationBased = false,
+): number {
+  if (reward === true) return getMoneyRewardForLog(log, DEFAULT_MONEY_REWARD);
+  if (reward != null && typeof reward === 'object') {
+    if (!hasTimedLogRange(log)) return normalizeMoneyRate(reward.perLog, MONEY_PER_LOG);
+    return getLogDurationMinutes(log) * normalizeMoneyRate(reward.perMinute, MONEY_PER_MINUTE);
+  }
+
+  const amount = getMoneyRewardAmount(reward, durationBased);
+  if (!durationBased || !hasTimedLogRange(log)) return amount;
+  return getLogDurationMinutes(log) * amount;
 }
 
 export function getBehaviorMoney(behavior: BehaviorEntry): number {
   if (behavior.moneyReward == null || behavior.type === 'neutral') return 0;
 
-  const rates = getMoneyRewardRates(behavior.moneyReward);
-  const total = behavior.logs.reduce((sum, log) => sum + getMoneyRewardForLog(log, rates), 0);
+  const durationBased = behavior.durationXpEnabled === true;
+  const total = behavior.logs.reduce(
+    (sum, log) => sum + getMoneyRewardForLog(log, behavior.moneyReward, durationBased),
+    0,
+  );
   return behavior.type === 'undesirable' ? -total : total;
 }
 

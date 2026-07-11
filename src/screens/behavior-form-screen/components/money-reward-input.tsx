@@ -3,37 +3,13 @@ import { StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 
-interface MoneyRewardInputsProps {
-  perLog: string;
-  perMinute: string;
-  onPerLogChange: (value: string) => void;
-  onPerMinuteChange: (value: string) => void;
-}
-
-export function MoneyRewardInputs({ perLog, perMinute, onPerLogChange, onPerMinuteChange }: MoneyRewardInputsProps) {
-  return (
-    <View style={styles.container}>
-      <MoneyRewardInput
-        label="Per log"
-        value={perLog}
-        onChangeText={onPerLogChange}
-      />
-      <MoneyRewardInput
-        label="Per minute"
-        value={perMinute}
-        onChangeText={onPerMinuteChange}
-      />
-    </View>
-  );
-}
-
 interface MoneyRewardInputProps {
   label: string;
   value: string;
   onChangeText: (value: string) => void;
 }
 
-function MoneyRewardInput({ label, value, onChangeText }: MoneyRewardInputProps) {
+export function MoneyRewardInput({ label, value, onChangeText }: MoneyRewardInputProps) {
   return (
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
@@ -55,9 +31,6 @@ function MoneyRewardInput({ label, value, onChangeText }: MoneyRewardInputProps)
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 8,
-  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
