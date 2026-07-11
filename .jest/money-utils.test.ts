@@ -53,6 +53,23 @@ describe('money-utils', () => {
     expect(getTotalMoneyEarned([rewarded, notRewarded])).toBe(MONEY_PER_LOG + 5 * MONEY_PER_MINUTE);
   });
 
+  it('rewards historical logs when the behavior is enabled for money', () => {
+    const behavior = makeBehavior({
+      moneyReward: true,
+      type: 'desirable',
+      logs: [
+        makeLog({ timestamp: new Date('2024-01-01T12:00:00').getTime() }),
+        makeLog({
+          id: 'log-2',
+          timestamp: new Date('2024-01-02T12:00:00').getTime(),
+          endTimestamp: new Date('2024-01-02T12:20:00').getTime(),
+        }),
+      ],
+    });
+
+    expect(getBehaviorMoney(behavior)).toBe(MONEY_PER_LOG + 20 * MONEY_PER_MINUTE);
+  });
+
   it('does not change money for neutral logs', () => {
     const behavior = makeBehavior({ moneyReward: true, type: 'neutral', logs: [makeLog()] });
 

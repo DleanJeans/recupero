@@ -370,10 +370,11 @@ export const useBehaviorStore = create<BehaviorStore>()(
     {
       name: 'recupero-behaviors',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 3,
+      version: 4,
       // v0 → v1: rename `xp` field to `xpEnabled` and drop the old key.
       // v1 → v2: backfill `cooldownEnabled` from `cooldownMinutes` (old logs had no opt-in flag).
       // v2 → v3: add persisted tasks.
+      // v3 → v4: opt existing behaviors into retrospective money effects.
       migrate: (persistedState, version) => {
         let state = persistedState as BehaviorStore & { tasks?: TaskEntry[] };
         if (version < 1) {
@@ -401,6 +402,15 @@ export const useBehaviorStore = create<BehaviorStore>()(
           state = {
             ...state,
             tasks: state.tasks ?? [],
+          };
+        }
+        if (version < 4) {
+          state = {
+            ...state,
+            behaviors: (state.behaviors ?? []).map(b => ({
+              ...b,
+              moneyReward: true as const,
+            })),
           };
         }
         return state;
