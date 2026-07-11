@@ -7,14 +7,15 @@ import { formatVnd } from '../../../utils/money-utils';
 interface LogRewardPreviewProps {
   xp?: number;
   money?: number;
+  undesirable?: boolean;
 }
 
-export function LogRewardPreview({ xp, money }: LogRewardPreviewProps) {
+export function LogRewardPreview({ xp, money, undesirable = false }: LogRewardPreviewProps) {
   if (xp == null && money == null) return null;
 
   return (
     <View style={styles.container}>
-      {xp != null && <Text style={[styles.reward, styles.xp]}>+{xp} XP</Text>}
+      {xp != null && <Text style={[styles.reward, undesirable ? styles.penalty : styles.xp]}>+{xp} XP</Text>}
       {money != null && (
         <Text style={[styles.reward, money < 0 ? styles.penalty : styles.money]}>
           {money > 0 ? '+' : money < 0 ? '-' : ''}

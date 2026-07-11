@@ -503,6 +503,7 @@ export function BehaviorLogForm({
             <LogRewardPreview
               xp={behavior.xpEnabled ? earnedXp : undefined}
               money={moneyRewardAmount}
+              undesirable={behavior.type === 'undesirable'}
             />
           )}
           <Button
