@@ -466,14 +466,14 @@ export function BehaviorLogForm({
           </Button>
         ) : null}
         <View style={styles.logAction}>
-          {!editLogId && (
+          <View style={styles.rewardPreview}>
             <LogRewardPreview
               xp={behavior.xpEnabled ? earnedXp : undefined}
               money={moneyRewardAmount}
               undesirable={behavior.type === 'undesirable'}
               animate={pending}
             />
-          )}
+          </View>
           <Button
             variant="primary"
             style={styles.logButton}
@@ -575,6 +575,14 @@ const styles = StyleSheet.create({
   logAction: {
     flex: 1,
     gap: 6,
+    position: 'relative',
+  },
+  rewardPreview: {
+    position: 'absolute',
+    bottom: '100%',
+    left: 0,
+    right: 0,
+    marginBottom: 6,
   },
   logButton: {
     flex: 1,
@@ -586,6 +594,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 12,
+    marginTop: 'auto',
   },
   deleteIconWrapper: {
     width: 24,
