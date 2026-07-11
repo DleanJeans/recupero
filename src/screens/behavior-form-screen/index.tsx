@@ -428,7 +428,13 @@ export function BehaviorFormScreen() {
 
           <CheckboxRow
             label="Reward money"
-            hint="5,000 ₫ per log; 1,000 ₫ per timed minute"
+            hint={
+              type === 'undesirable'
+                ? 'Lose 5,000 ₫ per log; 1,000 ₫ per timed minute'
+                : type === 'neutral'
+                  ? 'Neutral logs do not change money'
+                  : 'Earn 5,000 ₫ per log; 1,000 ₫ per timed minute'
+            }
             checked={moneyReward}
             onToggle={() => setMoneyReward(v => !v)}
           />

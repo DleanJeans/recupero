@@ -65,7 +65,7 @@ export interface BehaviorEntry {
   durationXpEnabled?: true;
   /** Hide the lifetime Total XP bar. Undefined = show total XP when XP bars are visible. */
   hideTotalXp?: true;
-  /** Opt-in money rewards. Instant logs earn 5,000 ₫; timed logs earn 1,000 ₫ per minute. */
+  /** Opt-in money effects. Desirable logs earn, undesirable logs lose, and neutral logs do nothing. */
   moneyReward?: true;
   /** Opt-in XP decay. For days/weeks/months, lose 1 log for each completed period
    *  with fewer than `every` logs. For hours, lose 1 log every `every` elapsed hours.

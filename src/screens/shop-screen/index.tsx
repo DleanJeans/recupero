@@ -15,6 +15,7 @@ import {
   formatVnd,
   getMoneyBalance,
   getTotalMoneyEarned,
+  getTotalMoneyPenalties,
   getTotalMoneySpent,
   parseVndInput,
 } from '../../utils/money-utils';
@@ -34,6 +35,7 @@ export function ShopScreen() {
 
   const balance = useMemo(() => getMoneyBalance(behaviors, purchases), [behaviors, purchases]);
   const earned = useMemo(() => getTotalMoneyEarned(behaviors), [behaviors]);
+  const penalties = useMemo(() => getTotalMoneyPenalties(behaviors), [behaviors]);
   const spent = useMemo(() => getTotalMoneySpent(purchases), [purchases]);
   const recentPurchases = useMemo(() => [...purchases].reverse(), [purchases]);
 
@@ -69,6 +71,7 @@ export function ShopScreen() {
           </Text>
           <View style={styles.statsRow}>
             <Text style={styles.stat}>Earned {formatVnd(earned)}</Text>
+            <Text style={styles.stat}>Lost {formatVnd(penalties)}</Text>
             <Text style={styles.stat}>Spent {formatVnd(spent)}</Text>
           </View>
         </View>

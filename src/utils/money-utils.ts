@@ -11,12 +11,18 @@ export function getMoneyRewardForLog(log: LogEntry): number {
 }
 
 export function getBehaviorMoney(behavior: BehaviorEntry): number {
-  if (behavior.moneyReward !== true) return 0;
-  return behavior.logs.reduce((total, log) => total + getMoneyRewardForLog(log), 0);
+  if (behavior.moneyReward !== true || behavior.type === 'neutral') return 0;
+
+  const total = behavior.logs.reduce((sum, log) => sum + getMoneyRewardForLog(log), 0);
+  return behavior.type === 'undesirable' ? -total : total;
 }
 
 export function getTotalMoneyEarned(behaviors: BehaviorEntry[]): number {
-  return behaviors.reduce((total, behavior) => total + getBehaviorMoney(behavior), 0);
+  return behaviors.reduce((total, behavior) => total + Math.max(0, getBehaviorMoney(behavior)), 0);
+}
+
+export function getTotalMoneyPenalties(behaviors: BehaviorEntry[]): number {
+  return behaviors.reduce((total, behavior) => total + Math.max(0, -getBehaviorMoney(behavior)), 0);
 }
 
 export function getTotalMoneySpent(purchases: ReadonlyArray<{ cost: number }>): number {
@@ -27,7 +33,10 @@ export function getTotalMoneySpent(purchases: ReadonlyArray<{ cost: number }>): 
 }
 
 export function getMoneyBalance(behaviors: BehaviorEntry[], purchases: ReadonlyArray<{ cost: number }>): number {
-  return Math.max(0, getTotalMoneyEarned(behaviors) - getTotalMoneySpent(purchases));
+  return Math.max(
+    0,
+    getTotalMoneyEarned(behaviors) - getTotalMoneyPenalties(behaviors) - getTotalMoneySpent(purchases),
+  );
 }
 
 export function formatVnd(amount: number): string {

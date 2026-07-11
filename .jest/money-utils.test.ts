@@ -5,6 +5,7 @@ import {
   getMoneyBalance,
   getMoneyRewardForLog,
   getTotalMoneyEarned,
+  getTotalMoneyPenalties,
   getTotalMoneySpent,
   MONEY_PER_LOG,
   MONEY_PER_MINUTE,
@@ -43,6 +44,7 @@ describe('money-utils', () => {
   it('only counts logs for behaviors with money rewards enabled', () => {
     const rewarded = makeBehavior({
       moneyReward: true,
+      type: 'desirable',
       logs: [makeLog(), makeLog({ id: 'log-2', endTimestamp: 5 * 60_000 })],
     });
     const notRewarded = makeBehavior({ logs: [makeLog()] });
@@ -51,11 +53,38 @@ describe('money-utils', () => {
     expect(getTotalMoneyEarned([rewarded, notRewarded])).toBe(MONEY_PER_LOG + 5 * MONEY_PER_MINUTE);
   });
 
+  it('does not change money for neutral logs', () => {
+    const behavior = makeBehavior({ moneyReward: true, type: 'neutral', logs: [makeLog()] });
+
+    expect(getBehaviorMoney(behavior)).toBe(0);
+    expect(getTotalMoneyEarned([behavior])).toBe(0);
+    expect(getTotalMoneyPenalties([behavior])).toBe(0);
+  });
+
+  it('takes the flat reward away for undesirable logs', () => {
+    const behavior = makeBehavior({ moneyReward: true, type: 'undesirable', logs: [makeLog()] });
+
+    expect(getBehaviorMoney(behavior)).toBe(-MONEY_PER_LOG);
+    expect(getTotalMoneyPenalties([behavior])).toBe(MONEY_PER_LOG);
+  });
+
+  it('takes the per-minute reward away for timed undesirable logs', () => {
+    const behavior = makeBehavior({
+      moneyReward: true,
+      type: 'undesirable',
+      logs: [makeLog({ endTimestamp: 7 * 60_000 })],
+    });
+
+    expect(getBehaviorMoney(behavior)).toBe(-7 * MONEY_PER_MINUTE);
+  });
+
   it('subtracts purchases without allowing a negative balance', () => {
-    const behavior = makeBehavior({ moneyReward: true, logs: [makeLog()] });
+    const behavior = makeBehavior({ moneyReward: true, type: 'desirable', logs: [makeLog()] });
+    const penalty = makeBehavior({ moneyReward: true, type: 'undesirable', logs: [makeLog()] });
 
     expect(getTotalMoneySpent([{ cost: 1_000 }, { cost: 2_000 }])).toBe(3_000);
     expect(getMoneyBalance([behavior], [{ cost: 1_000 }])).toBe(4_000);
+    expect(getMoneyBalance([behavior, penalty], [{ cost: 1_000 }])).toBe(0);
     expect(getMoneyBalance([behavior], [{ cost: 10_000 }])).toBe(0);
   });
 
