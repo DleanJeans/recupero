@@ -13,29 +13,20 @@ import { CooldownIcon } from '../../components/cooldown-icon';
 import { EmojiPicker } from '../../components/emoji-picker';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
-import { SelectPill } from '../../components/select-pill';
 import { Text, TextInput } from '../../components/text';
 import { useStarThresholdsForm } from '../../hooks/use-star-thresholds-form';
 import { useXPDecayForm } from '../../hooks/use-xp-decay-form';
 import { useBehaviorStore } from '../../store/behavior-store';
-import type { BehaviorEntry, BehaviorType, Category, MetadataField } from '../../types/behavior';
+import type { BehaviorEntry, BehaviorType } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
-import {
-  formatMetadataAmountBasis,
-  formatMetadataFieldLabel,
-  formatMetadataRateUnit,
-  getAmountMetadataFields,
-  getCalculatedMetadataFields,
-  getManualMetadataFields,
-  getSelectedAmountMetadataField,
-  sanitizeDecimalInput,
-} from '../../utils/metadata-calculation-utils';
+import { getAmountMetadataFields, getSelectedAmountMetadataField } from '../../utils/metadata-calculation-utils';
 import { getMoneyRewardAmount, parseVndInput, sanitizeVndInput } from '../../utils/money-utils';
 import { BehaviorTypePicker } from './components/behavior-type-picker';
 import type { CooldownUnit } from './components/cooldown-input';
 import { CooldownInput } from './components/cooldown-input';
 import { CooldownTypeToggle } from './components/cooldown-type-toggle';
+import { MetadataEditor } from './components/metadata-editor';
 import { MoneyRewardInput } from './components/money-reward-input';
 import { StarThresholdsFormField } from './components/star-thresholds-form-field';
 import { XPDecayInput } from './components/xp-decay-input';
@@ -518,117 +509,6 @@ const NameInput = React.forwardRef<RNTextInput, NameInputProps>(function NameInp
   );
 });
 
-interface MetadataEditorProps {
-  categoryId: string | undefined;
-  categories: Category[];
-  defaults: Record<string, string>;
-  amountFieldKey: string | undefined;
-  onChange: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-  onAmountFieldChange: (fieldKey: string) => void;
-}
-
-function MetadataEditor({
-  categoryId,
-  categories,
-  defaults,
-  amountFieldKey,
-  onChange,
-  onAmountFieldChange,
-}: MetadataEditorProps) {
-  const selectedCat = categories.find(c => c.id === categoryId);
-  const fields = selectedCat?.metadataFields ?? [];
-  if (!fields?.length) return null;
-
-  const amountFields = getAmountMetadataFields(fields);
-  const selectedAmountField = getSelectedAmountMetadataField(fields, amountFieldKey);
-  const manualFields = getManualMetadataFields(fields);
-  const calculatedFields = getCalculatedMetadataFields(fields);
-
-  return (
-    <View style={styles.defaultMetaSection}>
-      {amountFields.length > 0 && (
-        <>
-          <Text style={styles.defaultMetaLabel}>Amount unit</Text>
-          <View style={styles.quantityUnitRow}>
-            {amountFields.map(field => (
-              <SelectPill
-                key={field.key}
-                label={formatMetadataFieldLabel(field)}
-                active={selectedAmountField?.key === field.key}
-                activeBtnStyle={styles.quantityUnitOptionActive}
-                textStyle={styles.quantityUnitOptionText}
-                activeTextStyle={styles.quantityUnitOptionTextActive}
-                onPress={() => onAmountFieldChange(field.key)}
-                style={styles.quantityUnitOption}
-              />
-            ))}
-          </View>
-        </>
-      )}
-
-      {manualFields.length > 0 && (
-        <>
-          <Text style={styles.defaultMetaLabel}>Default values</Text>
-          {manualFields.map((field: MetadataField) => (
-            <MetadataDefaultInput
-              key={field.key}
-              field={field}
-              value={defaults[field.key] ?? ''}
-              label={formatMetadataFieldLabel(field)}
-              onChange={onChange}
-            />
-          ))}
-        </>
-      )}
-
-      {calculatedFields.length > 0 && (
-        <>
-          <Text style={styles.defaultMetaLabel}>Rates per {formatMetadataAmountBasis(selectedAmountField)}</Text>
-          {calculatedFields.map((field: MetadataField) => (
-            <MetadataDefaultInput
-              key={field.key}
-              field={field}
-              value={defaults[field.key] ?? ''}
-              label={field.label}
-              unitLabel={formatMetadataRateUnit({ field, amountField: selectedAmountField, separator: '\n' })}
-              onChange={onChange}
-            />
-          ))}
-        </>
-      )}
-    </View>
-  );
-}
-
-interface MetadataDefaultInputProps {
-  field: MetadataField;
-  value: string;
-  label: string;
-  unitLabel?: string;
-  onChange: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-}
-
-function MetadataDefaultInput({ field, value, label, unitLabel, onChange }: MetadataDefaultInputProps) {
-  return (
-    <View style={styles.defaultMetaRow}>
-      <Text style={styles.defaultMetaFieldLabel}>{label}</Text>
-      <View style={styles.defaultMetaInputGroup}>
-        <TextInput
-          style={styles.defaultMetaInput}
-          value={value}
-          onChangeText={v => onChange(prev => ({ ...prev, [field.key]: sanitizeDecimalInput(v) }))}
-          placeholder="0"
-          placeholderTextColor={Colors.text.dim}
-          keyboardType="decimal-pad"
-          returnKeyType="done"
-          maxLength={8}
-        />
-        {unitLabel ? <Text style={styles.defaultMetaUnit}>{unitLabel}</Text> : null}
-      </View>
-    </View>
-  );
-}
-
 // #endregion
 
 const styles = StyleSheet.create({
@@ -701,73 +581,5 @@ const styles = StyleSheet.create({
   cooldownTypeRow: {
     marginLeft: 'auto',
     alignSelf: 'auto',
-  },
-  defaultMetaSection: {
-    gap: 8,
-    marginTop: 12,
-  },
-  defaultMetaLabel: {
-    color: Colors.text.light,
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginTop: 8,
-  },
-  defaultMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  defaultMetaFieldLabel: {
-    color: Colors.text.muted,
-    fontSize: 13,
-    fontWeight: '500',
-    flex: 1,
-  },
-  defaultMetaInput: {
-    backgroundColor: Colors.bg.input,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    color: Colors.text.primary,
-    fontSize: 14,
-    width: 80,
-    textAlign: 'right',
-  },
-  defaultMetaInputGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  defaultMetaUnit: {
-    color: Colors.text.faint,
-    fontSize: 12,
-    fontWeight: '600',
-    width: 40,
-  },
-  quantityUnitRow: {
-    flexDirection: 'row',
-    borderRadius: 8,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Colors.border.default,
-  },
-  quantityUnitOption: {
-    flex: 1,
-    paddingVertical: 9,
-    backgroundColor: Colors.bg.card,
-  },
-  quantityUnitOptionActive: {
-    backgroundColor: Colors.text.light,
-  },
-  quantityUnitOptionText: {
-    color: Colors.text.muted,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  quantityUnitOptionTextActive: {
-    color: Colors.bg.primary,
-    fontWeight: '600',
   },
 });
