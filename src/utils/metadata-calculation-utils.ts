@@ -9,9 +9,29 @@ const MetadataFieldCalculationOrder: Record<MetadataFieldCalculation, number> = 
 };
 
 export function sanitizeDecimalInput(value: string): string {
-  const sanitized = value.replace(/[^0-9.]/g, '');
-  const [first, ...rest] = sanitized.split('.');
-  return rest.length > 0 ? `${first}.${rest.join('')}` : sanitized;
+  return value
+    .replace(/[^0-9.-]/g, '')
+    .split('-')
+    .map(term => {
+      const [first, ...rest] = term.split('.');
+      return rest.length > 0 ? `${first}.${rest.join('')}` : term;
+    })
+    .join('-');
+}
+
+export function evaluateDecimalInput(value: string): string {
+  const sanitized = sanitizeDecimalInput(value);
+  if (!/^\d+(?:\.\d+)?(?:-\d+(?:\.\d+)?)*$/.test(sanitized)) return sanitized;
+
+  const [first, ...rest] = sanitized.split('-');
+  const result = rest.reduce((total, term) => total - Number(term), Number(first));
+  return Number.isFinite(result) ? String(Number(result.toFixed(10))) : sanitized;
+}
+
+export function parseDecimalInput(value: string): number | undefined {
+  if (value.trim() === '') return undefined;
+  const parsed = Number(evaluateDecimalInput(value));
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 export function getMetadataFieldCalculation(field: MetadataField): MetadataFieldCalculation {

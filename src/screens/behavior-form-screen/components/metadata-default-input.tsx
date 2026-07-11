@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../../components/text';
 import type { MetadataField } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
-import { sanitizeDecimalInput } from '../../../utils/metadata-calculation-utils';
+import { evaluateDecimalInput, sanitizeDecimalInput } from '../../../utils/metadata-calculation-utils';
 
 interface MetadataDefaultInputProps {
   field: MetadataField;
@@ -22,6 +22,7 @@ export function MetadataDefaultInput({ field, value, label, unitLabel, onChange 
           style={styles.input}
           value={value}
           onChangeText={v => onChange(prev => ({ ...prev, [field.key]: sanitizeDecimalInput(v) }))}
+          onBlur={() => onChange(prev => ({ ...prev, [field.key]: evaluateDecimalInput(prev[field.key] ?? '') }))}
           placeholder="0"
           placeholderTextColor={Colors.text.dim}
           keyboardType="decimal-pad"

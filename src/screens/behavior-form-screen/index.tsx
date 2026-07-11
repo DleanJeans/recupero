@@ -20,7 +20,11 @@ import { useBehaviorStore } from '../../store/behavior-store';
 import type { BehaviorEntry, BehaviorType } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
-import { getAmountMetadataFields, getSelectedAmountMetadataField } from '../../utils/metadata-calculation-utils';
+import {
+  getAmountMetadataFields,
+  getSelectedAmountMetadataField,
+  parseDecimalInput,
+} from '../../utils/metadata-calculation-utils';
 import { getMoneyRewardAmount, parseVndInput, sanitizeVndInput } from '../../utils/money-utils';
 import { BehaviorTypePicker } from './components/behavior-type-picker';
 import type { CooldownUnit } from './components/cooldown-input';
@@ -271,8 +275,8 @@ export function BehaviorFormScreen() {
     const moneyRewardConfig = moneyRewardEnabled ? parseVndInput(moneyRewardAmount) : undefined;
     const defaultMetadataObj = Object.fromEntries(
       Object.entries(behaviorDefaultMetadata)
-        .filter(([, v]) => v !== '' && v !== '0' && Number.isFinite(Number(v)))
-        .map(([k, v]) => [k, Number(v)]),
+        .map(([k, v]) => [k, parseDecimalInput(v)] as const)
+        .filter((entry): entry is readonly [string, number] => entry[1] != null && entry[1] !== 0),
     );
     if (isEdit && behavior) {
       updateBehavior(behavior.id, {

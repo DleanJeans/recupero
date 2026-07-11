@@ -14,6 +14,7 @@ import {
   getDailyGoalProgress,
   getManualMetadataFields,
   getSelectedAmountMetadataField,
+  parseDecimalInput,
 } from '../../../utils/metadata-calculation-utils';
 import { getMoneyRewardForLog } from '../../../utils/money-utils';
 import { formatDuration, MS_PER_MINUTE } from '../../../utils/time-utils';
@@ -116,7 +117,7 @@ export function useBehaviorLogForm({
     if (!amountField) return {};
     const amountValue = metadataValues[amountField.key];
     if (amountValue === undefined || amountValue === '') return {};
-    return buildCalculatedMetadata(metadataFields, behavior.defaultMetadata, Number(amountValue));
+    return buildCalculatedMetadata(metadataFields, behavior.defaultMetadata, parseDecimalInput(amountValue));
   }, [amountField, behavior.defaultMetadata, metadataFields, metadataValues]);
 
   const progressByField = useMemo<Record<string, DailyGoalProgress | null>>(() => {
@@ -127,8 +128,7 @@ export function useBehaviorLogForm({
         newValue = calculatedMetadataValues[field.key];
       } else {
         const raw = metadataValues[field.key];
-        const parsed = raw === undefined || raw === '' ? NaN : Number(raw);
-        newValue = Number.isFinite(parsed) ? parsed : undefined;
+        newValue = raw === undefined ? undefined : parseDecimalInput(raw);
       }
       map[field.key] = getDailyGoalProgress({
         behavior,
@@ -253,8 +253,8 @@ export function useBehaviorLogForm({
     const metadataInputFields: MetadataField[] = amountField ? [amountField, ...manualMetadataFields] : metadataFields;
     for (const field of metadataInputFields) {
       const value = metadataValues[field.key];
-      const parsed = Number(value);
-      if (value !== undefined && value !== '' && Number.isFinite(parsed)) {
+      const parsed = value === undefined ? undefined : parseDecimalInput(value);
+      if (parsed != null) {
         metadata[field.key] = parsed;
       }
     }
@@ -263,8 +263,8 @@ export function useBehaviorLogForm({
       for (const field of calculatedMetadataFields) {
         if (metadata[field.key] != null) continue;
         const value = metadataValues[field.key];
-        const parsed = Number(value);
-        if (value !== undefined && value !== '' && Number.isFinite(parsed)) {
+        const parsed = value === undefined ? undefined : parseDecimalInput(value);
+        if (parsed != null) {
           metadata[field.key] = parsed;
         }
       }

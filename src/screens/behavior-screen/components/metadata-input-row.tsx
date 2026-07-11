@@ -5,7 +5,7 @@ import { Text, TextInput } from '../../../components/text';
 import type { MetadataField } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 import type { DailyGoalProgress } from '../../../utils/metadata-calculation-utils';
-import { sanitizeDecimalInput } from '../../../utils/metadata-calculation-utils';
+import { evaluateDecimalInput, sanitizeDecimalInput } from '../../../utils/metadata-calculation-utils';
 
 interface MetadataInputRowProps {
   field: MetadataField;
@@ -31,7 +31,10 @@ export function MetadataInputRow({ field, value, label, onChange, onFocus, onBlu
         value={value}
         onChangeText={v => onChange(prev => ({ ...prev, [field.key]: sanitizeDecimalInput(v) }))}
         onFocus={onFocus}
-        onBlur={onBlur}
+        onBlur={() => {
+          onChange(prev => ({ ...prev, [field.key]: evaluateDecimalInput(prev[field.key] ?? '') }));
+          onBlur();
+        }}
         placeholder="0"
         placeholderTextColor={Colors.text.dim}
         keyboardType="decimal-pad"
