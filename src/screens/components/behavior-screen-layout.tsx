@@ -10,7 +10,6 @@ interface Props {
   behavior: BehaviorEntry;
   titleOverride?: string;
   children: React.ReactNode;
-  actions?: React.ReactNode;
   summaryXpMotionEnabled?: boolean;
   showCurrentHabitXpLabel?: boolean;
   summaryStarMotionEnabled?: boolean;
@@ -25,7 +24,6 @@ export function BehaviorScreenLayout({
   behavior,
   titleOverride,
   children,
-  actions,
   summaryXpMotionEnabled,
   showCurrentHabitXpLabel,
   summaryStarMotionEnabled,
@@ -47,8 +45,6 @@ export function BehaviorScreenLayout({
       </View>
 
       <View style={styles.body}>{children}</View>
-
-      {actions}
     </SafeAreaView>
   );
 }

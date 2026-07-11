@@ -11,8 +11,8 @@ import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import { BehaviorScreenLayout } from '../components/behavior-screen-layout';
 import { BehaviorActions } from './components/behavior-actions';
-import { BehaviorLogForm } from './components/behavior-log-form';
 import { BehaviorLogList } from './components/behavior-log-list';
+import { BehaviorLogScreen } from './components/behavior-log-screen';
 
 type ScreenMode = 'details' | 'log';
 
@@ -128,15 +128,6 @@ export function BehaviorScreen() {
       showCurrentHabitXpLabel
       summaryStarMotionEnabled={mode === 'log'}
       onBack={handleBack}
-      actions={
-        mode === 'details' ? (
-          <BehaviorActions
-            onDelete={handleDeleteBehavior}
-            onEdit={() => navigation.navigate('BehaviorForm', { behaviorId: behavior.id })}
-            onLog={handleOpenLog}
-          />
-        ) : undefined
-      }
     >
       {mode === 'details' ? (
         <View style={styles.detailsBody}>
@@ -144,9 +135,14 @@ export function BehaviorScreen() {
             behavior={behavior}
             onEditLog={handleEditLog}
           />
+          <BehaviorActions
+            onDelete={handleDeleteBehavior}
+            onEdit={() => navigation.navigate('BehaviorForm', { behaviorId: behavior.id })}
+            onLog={handleOpenLog}
+          />
         </View>
       ) : (
-        <BehaviorLogForm
+        <BehaviorLogScreen
           key={formKey}
           behaviorId={behaviorId}
           behavior={behavior}
