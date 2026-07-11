@@ -3,6 +3,7 @@ export interface ShopItem {
   name: string;
   cost: number;
   createdAt: number;
+  oneTime?: true;
 }
 
 export interface ShopPurchase {
@@ -11,4 +12,6 @@ export interface ShopPurchase {
   itemName: string;
   cost: number;
   purchasedAt: number;
+  oneTime?: true;
+  itemCreatedAt?: number;
 }

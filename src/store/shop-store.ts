@@ -11,6 +11,7 @@ interface ShopStore {
   updateItem: (itemId: string, name: string, cost: number) => boolean;
   removeItem: (itemId: string) => boolean;
   buyItem: (itemId: string, availableBalance: number) => boolean;
+  undoPurchase: (purchaseId: string) => boolean;
 }
 
 export const useShopStore = create<ShopStore>()(
@@ -67,8 +68,33 @@ export const useShopStore = create<ShopStore>()(
               itemName: item.name,
               cost: item.cost,
               purchasedAt: Date.now(),
+              oneTime: item.oneTime,
+              itemCreatedAt: item.createdAt,
             },
           ],
+          items: item.oneTime ? state.items.filter(candidate => candidate.id !== item.id) : state.items,
+        }));
+        return true;
+      },
+      undoPurchase: purchaseId => {
+        const purchase = get().purchases.find(candidate => candidate.id === purchaseId);
+        if (!purchase) return false;
+
+        set(state => ({
+          purchases: state.purchases.filter(candidate => candidate.id !== purchaseId),
+          items:
+            purchase.oneTime && !state.items.some(item => item.id === purchase.itemId)
+              ? [
+                  ...state.items,
+                  {
+                    id: purchase.itemId,
+                    name: purchase.itemName,
+                    cost: purchase.cost,
+                    createdAt: purchase.itemCreatedAt ?? purchase.purchasedAt,
+                    oneTime: true,
+                  },
+                ]
+              : state.items,
         }));
         return true;
       },

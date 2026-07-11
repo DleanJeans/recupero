@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { Button } from '../../../components/button';
 import { Text } from '../../../components/text';
 import type { ShopPurchase } from '../../../types/shop';
 import { Colors } from '../../../utils/colors';
@@ -8,9 +9,10 @@ import { formatCompactDate, formatTime } from '../../../utils/time-utils';
 
 interface PurchaseLogRowProps {
   purchase: ShopPurchase;
+  onUndo: () => void;
 }
 
-export function PurchaseLogRow({ purchase }: PurchaseLogRowProps) {
+export function PurchaseLogRow({ purchase, onUndo }: PurchaseLogRowProps) {
   return (
     <View style={styles.row}>
       <View style={styles.details}>
@@ -24,12 +26,21 @@ export function PurchaseLogRow({ purchase }: PurchaseLogRowProps) {
           {formatCompactDate(purchase.purchasedAt)} · {formatTime(purchase.purchasedAt)}
         </Text>
       </View>
-      <Text
-        selectable
-        style={styles.cost}
-      >
-        -{formatVnd(purchase.cost)}
-      </Text>
+      <View style={styles.actions}>
+        <Text
+          selectable
+          style={styles.cost}
+        >
+          -{formatVnd(purchase.cost)}
+        </Text>
+        <Button
+          variant="ghost"
+          size="sm"
+          onPress={onUndo}
+        >
+          Undo
+        </Button>
+      </View>
     </View>
   );
 }
@@ -61,5 +72,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
+  },
+  actions: {
+    alignItems: 'flex-end',
+    gap: 4,
   },
 });

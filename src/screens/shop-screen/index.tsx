@@ -33,6 +33,7 @@ export function ShopScreen() {
   const updateItem = useShopStore(state => state.updateItem);
   const removeItem = useShopStore(state => state.removeItem);
   const buyItem = useShopStore(state => state.buyItem);
+  const undoPurchase = useShopStore(state => state.undoPurchase);
   const [itemName, setItemName] = useState('');
   const [itemCost, setItemCost] = useState('');
   const [itemFormMode, setItemFormMode] = useState<'add' | { type: 'edit'; itemId: string } | null>(null);
@@ -73,6 +74,13 @@ export function ShopScreen() {
           if (itemFormMode !== 'add' && itemFormMode?.itemId === item.id) resetItemForm();
         },
       },
+    ]);
+  };
+
+  const handleBuyItem = (item: ShopItem) => {
+    Alert.alert('Buy reward?', `Spend ${formatVnd(item.cost)} on "${item.name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Buy', onPress: () => buyItem(item.id, balance) },
     ]);
   };
 
@@ -145,7 +153,7 @@ export function ShopScreen() {
                 key={item.id}
                 item={item}
                 balance={balance}
-                onBuy={() => buyItem(item.id, balance)}
+                onBuy={() => handleBuyItem(item)}
                 onEdit={() => handleEditItem(item)}
                 onDelete={() => handleDeleteItem(item)}
               />
@@ -163,6 +171,7 @@ export function ShopScreen() {
                 <PurchaseLogRow
                   key={purchase.id}
                   purchase={purchase}
+                  onUndo={() => undoPurchase(purchase.id)}
                 />
               ))}
             </View>
