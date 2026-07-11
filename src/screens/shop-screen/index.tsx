@@ -3,7 +3,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { BackButton } from '../../components/back-button';
-import { MoneyBalance } from '../../components/money-balance';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { Text } from '../../components/text';
@@ -53,7 +52,6 @@ export function ShopScreen() {
       <View style={styles.header}>
         <BackButton onPress={() => navigation.goBack()} />
         <ScreenTitle>Shop</ScreenTitle>
-        <MoneyBalance disabled />
       </View>
 
       <ScrollView
@@ -128,7 +126,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 8,
     paddingBottom: 8,
   },

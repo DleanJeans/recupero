@@ -8,7 +8,6 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { BackButton } from '../../components/back-button';
 import { Button } from '../../components/button';
 import { CategoryForm } from '../../components/category-picker/category-form';
-import { MoneyBalance } from '../../components/money-balance';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { Text } from '../../components/text';
@@ -96,7 +95,6 @@ export function CategoryFormScreen() {
         <View style={styles.header}>
           <BackButton />
           <ScreenTitle>Category Not Found</ScreenTitle>
-          <MoneyBalance />
         </View>
         <Text style={styles.emptyText}>This category no longer exists.</Text>
       </SafeAreaView>
@@ -108,7 +106,6 @@ export function CategoryFormScreen() {
       <View style={styles.header}>
         <BackButton />
         <ScreenTitle>{isEditing ? 'Edit Category' : 'New Category'}</ScreenTitle>
-        <MoneyBalance />
       </View>
       <KeyboardAvoidingView
         behavior="height"
@@ -187,7 +184,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 8,
     paddingBottom: 8,
   },

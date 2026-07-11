@@ -1,7 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { BackButton } from '../../components/back-button';
-import { MoneyBalance } from '../../components/money-balance';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { Colors } from '../../utils/colors';
@@ -16,7 +15,6 @@ export function SettingsScreen() {
       <View style={styles.header}>
         <BackButton />
         <ScreenTitle>Settings</ScreenTitle>
-        <MoneyBalance />
       </View>
 
       <TimeFormatPicker />
@@ -29,11 +27,5 @@ export function SettingsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg.primary },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    paddingBottom: 8,
-  },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingBottom: 8 },
 });

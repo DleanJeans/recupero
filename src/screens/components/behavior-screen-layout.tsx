@@ -2,7 +2,6 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { BackButton } from '../../components/back-button';
 import { BehaviorSummary } from '../../components/behavior-summary';
-import { MoneyBalance } from '../../components/money-balance';
 import { SafeAreaView } from '../../components/safe-area-view';
 import type { BehaviorEntry } from '../../types/behavior';
 import { Colors } from '../../utils/colors';
@@ -45,7 +44,6 @@ export function BehaviorScreenLayout({
           showCurrentHabitXpLabel={showCurrentHabitXpLabel}
           starMotionEnabled={summaryStarMotionEnabled}
         />
-        <MoneyBalance />
       </View>
 
       <View style={styles.body}>{children}</View>
