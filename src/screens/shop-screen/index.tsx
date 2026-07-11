@@ -213,6 +213,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     gap: 6,
     padding: 18,
+    position: 'relative',
   },
   balanceLabel: {
     color: Colors.text.faint,

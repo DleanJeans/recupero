@@ -1,8 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Button } from '../../../components/button';
-import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 
 interface Props {
@@ -18,31 +17,23 @@ export function MoneyLogButton({ onPress }: Props) {
       accessibilityLabel="Open money log"
       style={styles.button}
     >
-      <View style={styles.content}>
-        <Text style={styles.label}>Money log</Text>
-        <Ionicons
-          name="chevron-forward"
-          size={18}
-          color={Colors.text.light}
-        />
-      </View>
+      <Ionicons
+        name="receipt-outline"
+        size={20}
+        color={Colors.text.light}
+      />
     </Button>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    alignSelf: 'stretch',
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  label: {
-    color: Colors.text.light,
-    fontSize: 14,
-    fontWeight: '600',
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.bg.input,
   },
 });
