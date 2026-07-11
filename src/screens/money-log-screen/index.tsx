@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { BackButton } from '../../components/back-button';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
@@ -25,15 +25,10 @@ export function MoneyLogScreen() {
         <BackButton onPress={() => navigation.goBack()} />
         <ScreenTitle>Money Log</ScreenTitle>
       </View>
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
-      >
-        <MoneyLogList
-          behaviors={behaviors}
-          purchases={purchases}
-        />
-      </ScrollView>
+      <MoneyLogList
+        behaviors={behaviors}
+        purchases={purchases}
+      />
     </SafeAreaView>
   );
 }
@@ -48,10 +43,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 8,
     paddingBottom: 8,
-  },
-  content: {
-    gap: 20,
-    paddingHorizontal: 16,
-    paddingBottom: 32,
   },
 });
