@@ -10,16 +10,28 @@ interface AddShopItemFormProps {
   cost: string;
   onNameChange: (value: string) => void;
   onCostChange: (value: string) => void;
-  onAdd: () => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+  title: string;
+  submitLabel: string;
 }
 
-export function AddShopItemForm({ name, cost, onNameChange, onCostChange, onAdd }: AddShopItemFormProps) {
+export function AddShopItemForm({
+  name,
+  cost,
+  onNameChange,
+  onCostChange,
+  onSubmit,
+  onCancel,
+  title,
+  submitLabel,
+}: AddShopItemFormProps) {
   const canAdd = name.trim().length > 0 && parseVndInput(cost) > 0;
   const displayedCost = cost ? formatVnd(parseVndInput(cost)) : '';
 
   return (
     <View style={styles.card}>
-      <Text style={styles.sectionLabel}>Add item</Text>
+      <Text style={styles.sectionLabel}>{title}</Text>
       <View style={styles.inputRow}>
         <TextInput
           style={styles.nameInput}
@@ -45,11 +57,20 @@ export function AddShopItemForm({ name, cost, onNameChange, onCostChange, onAdd 
       <View style={styles.bottomRow}>
         <Button
           variant="primary"
-          onPress={onAdd}
+          onPress={onSubmit}
           disabled={!canAdd}
+          size="sm"
           style={styles.addButton}
         >
-          Add item
+          {submitLabel}
+        </Button>
+        <Button
+          variant="ghost"
+          onPress={onCancel}
+          size="sm"
+          style={styles.cancelButton}
+        >
+          Cancel
         </Button>
       </View>
     </View>
@@ -71,7 +92,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   nameInput: {
-    flex: 2,
+    flex: 3,
     minWidth: 0,
     backgroundColor: Colors.bg.input,
     borderRadius: 8,
@@ -84,7 +105,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   costInput: {
-    flex: 1,
+    flex: 2,
     backgroundColor: Colors.bg.input,
     borderRadius: 8,
     color: Colors.type.desirable,
@@ -100,6 +121,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   addButton: {
+    justifyContent: 'center',
+  },
+  cancelButton: {
     justifyContent: 'center',
   },
 });

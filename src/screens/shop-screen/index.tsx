@@ -10,6 +10,7 @@ import { Text } from '../../components/text';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useShopStore } from '../../store/shop-store';
 import type { RootStackParamList } from '../../types/navigation';
+import type { ShopItem } from '../../types/shop';
 import { Colors } from '../../utils/colors';
 import {
   formatVnd,
@@ -34,7 +35,7 @@ export function ShopScreen() {
   const buyItem = useShopStore(state => state.buyItem);
   const [itemName, setItemName] = useState('');
   const [itemCost, setItemCost] = useState('');
-  const [showAddItem, setShowAddItem] = useState(false);
+  const [itemFormMode, setItemFormMode] = useState<'add' | { type: 'edit'; itemId: string } | null>(null);
 
   const balance = useMemo(() => getMoneyBalance(behaviors, purchases), [behaviors, purchases]);
   const earned = useMemo(() => getTotalMoneyEarned(behaviors), [behaviors]);
@@ -42,11 +43,37 @@ export function ShopScreen() {
   const spent = useMemo(() => getTotalMoneySpent(purchases), [purchases]);
   const recentPurchases = useMemo(() => [...purchases].reverse(), [purchases]);
 
-  const handleAddItem = () => {
-    if (!addItem(itemName, parseVndInput(itemCost))) return;
+  const resetItemForm = () => {
     setItemName('');
     setItemCost('');
-    setShowAddItem(false);
+    setItemFormMode(null);
+  };
+
+  const handleSubmitItem = () => {
+    if (itemFormMode == null) return;
+    const cost = parseVndInput(itemCost);
+    const saved = itemFormMode === 'add' ? addItem(itemName, cost) : updateItem(itemFormMode.itemId, itemName, cost);
+    if (saved) resetItemForm();
+  };
+
+  const handleEditItem = (item: ShopItem) => {
+    setItemName(item.name);
+    setItemCost(String(item.cost));
+    setItemFormMode({ type: 'edit', itemId: item.id });
+  };
+
+  const handleDeleteItem = (item: ShopItem) => {
+    Alert.alert('Delete reward?', `Remove "${item.name}" from your shop?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          removeItem(item.id);
+          if (itemFormMode !== 'add' && itemFormMode?.itemId === item.id) resetItemForm();
+        },
+      },
+    ]);
   };
 
   return (
@@ -81,22 +108,33 @@ export function ShopScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Items</Text>
             <Button
               variant="ghost"
               size="sm"
-              onPress={() => setShowAddItem(value => !value)}
+              onPress={() => {
+                if (itemFormMode === 'add') {
+                  resetItemForm();
+                  return;
+                }
+                setItemName('');
+                setItemCost('');
+                setItemFormMode('add');
+              }}
             >
-              {showAddItem ? 'Close' : 'Add Item'}
+              {itemFormMode ? 'Close' : 'Add Item'}
             </Button>
-            <Text style={styles.sectionTitle}>Items</Text>
           </View>
-          {showAddItem && (
+          {itemFormMode && (
             <AddShopItemForm
               name={itemName}
               cost={itemCost}
               onNameChange={setItemName}
               onCostChange={setItemCost}
-              onAdd={handleAddItem}
+              onSubmit={handleSubmitItem}
+              onCancel={resetItemForm}
+              title={itemFormMode === 'add' ? 'Add item' : 'Edit item'}
+              submitLabel={itemFormMode === 'add' ? 'Add item' : 'Save'}
             />
           )}
           {items.length === 0 ? (
@@ -108,13 +146,8 @@ export function ShopScreen() {
                 item={item}
                 balance={balance}
                 onBuy={() => buyItem(item.id, balance)}
-                onEdit={(name, cost) => updateItem(item.id, name, cost)}
-                onDelete={() =>
-                  Alert.alert('Delete reward?', `Remove "${item.name}" from your shop?`, [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Delete', style: 'destructive', onPress: () => removeItem(item.id) },
-                  ])
-                }
+                onEdit={() => handleEditItem(item)}
+                onDelete={() => handleDeleteItem(item)}
               />
             ))
           )}
@@ -190,7 +223,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'space-between',
   },
   sectionTitle: {
     color: Colors.text.light,
