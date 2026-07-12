@@ -91,6 +91,7 @@ export function BehaviorFormScreen() {
       ),
     ),
   );
+  const [moneyRewardAmountTouched, setMoneyRewardAmountTouched] = useState(() => behavior?.moneyReward != null);
   const [type, setType] = useState<BehaviorType>(behavior?.type ?? 'neutral');
   const [cooldownMinutes, setCooldownMinutes] = useState(() => behavior?.cooldownMinutes || 0);
   const [cooldownType, setCooldownType] = useState<'rest' | 'limit'>(() => behavior?.cooldownType || 'rest');
@@ -107,6 +108,21 @@ export function BehaviorFormScreen() {
   );
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const moneyRewardDurationBased = xpEnabled && durationXpEnabled;
+  const handleDurationXpToggle = () => {
+    const nextEnabled = !durationXpEnabled;
+    setDurationXpEnabled(nextEnabled);
+    if (nextEnabled && moneyReward && !moneyRewardAmountTouched) {
+      setMoneyRewardAmount(String(getMoneyRewardAmount(undefined, true)));
+    }
+  };
+  const handleMoneyRewardToggle = () => {
+    if (type === 'neutral') return;
+    const nextEnabled = !moneyReward;
+    setMoneyReward(nextEnabled);
+    if (nextEnabled && moneyRewardDurationBased && !moneyRewardAmountTouched) {
+      setMoneyRewardAmount(String(getMoneyRewardAmount(undefined, true)));
+    }
+  };
   const selectedCategory = useMemo(() => categories.find(c => c.id === categoryId), [categories, categoryId]);
   const metadataFields = selectedCategory?.metadataFields ?? [];
   const selectedAmountField = getSelectedAmountMetadataField(
@@ -178,6 +194,7 @@ export function BehaviorFormScreen() {
         getMoneyRewardAmount(behavior.moneyReward, behavior.xpEnabled === true && behavior.durationXpEnabled === true),
       ),
     );
+    setMoneyRewardAmountTouched(behavior.moneyReward != null);
     setCooldownMinutes(behavior.cooldownMinutes || 0);
     setCooldownType(behavior.cooldownType || 'rest');
     setCooldownUnit(behavior.cooldownUnit);
@@ -454,7 +471,7 @@ export function BehaviorFormScreen() {
                   label="Track duration for XP"
                   hint="Use start and end time, awarding 1 XP per minute"
                   checked={durationXpEnabled}
-                  onToggle={() => setDurationXpEnabled(v => !v)}
+                  onToggle={handleDurationXpToggle}
                   variant="row"
                 />
                 <XPDecayInput
@@ -481,9 +498,7 @@ export function BehaviorFormScreen() {
             hint={type === 'neutral' ? 'Neutral logs do not change money' : undefined}
             checked={moneyRewardEnabled}
             disabled={type === 'neutral'}
-            onToggle={() => {
-              if (type !== 'neutral') setMoneyReward(v => !v);
-            }}
+            onToggle={handleMoneyRewardToggle}
           >
             {moneyRewardEnabled && (
               <View style={styles.moneyOptions}>
@@ -491,7 +506,10 @@ export function BehaviorFormScreen() {
                   value={moneyRewardAmount}
                   rateLabel={moneyRewardDurationBased ? 'per minute' : 'per log'}
                   negative={type === 'undesirable'}
-                  onChangeText={value => setMoneyRewardAmount(sanitizeVndInput(value))}
+                  onChangeText={value => {
+                    setMoneyRewardAmountTouched(true);
+                    setMoneyRewardAmount(sanitizeVndInput(value));
+                  }}
                 />
                 {starsEnabled && (
                   <StarMoneyMultipliersFormField

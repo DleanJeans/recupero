@@ -71,6 +71,10 @@ describe('money-utils', () => {
     expect(getBehaviorMoney(behavior)).toBe(8_500);
   });
 
+  it('defaults duration-based money rewards to the per-minute rate', () => {
+    expect(getMoneyRewardAmount(undefined, true)).toBe(MONEY_PER_MINUTE);
+  });
+
   it('uses one customized amount as a per-log or per-minute rate', () => {
     const perLog = makeBehavior({
       moneyReward: 7_500,
