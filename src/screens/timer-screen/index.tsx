@@ -46,7 +46,10 @@ export function TimerScreen() {
       behavior => behavior.xpEnabled === true && behavior.durationXpEnabled === true,
     );
     const visibleBehaviors = hidePrivate ? timerBehaviors.filter(behavior => !behavior.private) : timerBehaviors;
-    return [...visibleBehaviors].sort((a, b) => a.name.localeCompare(b.name));
+    return [...visibleBehaviors].sort((a, b) => {
+      const timestampDiff = (b.lastTimestamp ?? -Infinity) - (a.lastTimestamp ?? -Infinity);
+      return timestampDiff || a.name.localeCompare(b.name);
+    });
   }, [behaviors, hidePrivate]);
   const behaviorById = useMemo(() => new Map(behaviors.map(behavior => [behavior.id, behavior])), [behaviors]);
   const lockedBehavior = lockedBehaviorId ? behaviorById.get(lockedBehaviorId) : undefined;
