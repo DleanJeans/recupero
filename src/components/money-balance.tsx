@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Pressable, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { useBehaviorStore } from '../store/behavior-store';
+import { useSettingsStore } from '../store/settings-store';
 import { useShopStore } from '../store/shop-store';
 import type { RootStackParamList } from '../types/navigation';
 import { animateInteger } from '../utils/animation-utils';
@@ -26,7 +27,11 @@ export function MoneyBalance({ disabled = false }: MoneyBalanceProps) {
   const behaviors = useBehaviorStore(state => state.behaviors);
   const tasks = useBehaviorStore(state => state.tasks);
   const purchases = useShopStore(state => state.purchases);
-  const balance = useMemo(() => getMoneyBalance(behaviors, purchases, tasks), [behaviors, purchases, tasks]);
+  const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
+  const balance = useMemo(
+    () => getMoneyBalance(behaviors, purchases, tasks, dayCutoffHour),
+    [behaviors, dayCutoffHour, purchases, tasks],
+  );
   const [displayedBalance, setDisplayedBalance] = useState(balance);
   const displayedBalanceRef = useRef(balance);
   const previousBalanceRef = useRef(balance);

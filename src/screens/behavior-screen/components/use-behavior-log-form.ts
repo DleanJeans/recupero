@@ -3,7 +3,7 @@ import { Alert, Keyboard } from 'react-native';
 import { REWARD_ANIMATION_MS } from '../../../components/log-reward-preview';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useSettingsStore } from '../../../store/settings-store';
-import type { BehaviorEntry, MetadataField } from '../../../types/behavior';
+import type { BehaviorEntry, LogEntry, MetadataField } from '../../../types/behavior';
 import { toDateString } from '../../../utils/date-utils';
 import { getDayMaxTimestamp, getDefaultTimedLogStartTimestamp, getLogFormTimestamp } from '../../../utils/log-utils';
 import {
@@ -16,7 +16,7 @@ import {
   getSelectedAmountMetadataField,
   parseDecimalInput,
 } from '../../../utils/metadata-calculation-utils';
-import { getMoneyRewardForLog } from '../../../utils/money-utils';
+import { getMoneyRewardForLog, getStarMoneyMultiplierForLog } from '../../../utils/money-utils';
 import { formatDuration, MS_PER_MINUTE } from '../../../utils/time-utils';
 import { XP_PER_LOG } from '../../../utils/xp-utils';
 import { TimePicker } from './time-picker';
@@ -220,18 +220,26 @@ export function useBehaviorLogForm({
   const durationMinutes = Math.max(1, endMinutes - startMinutes);
   const durationMs = durationMinutes * MS_PER_MINUTE;
   const earnedXp = showTimeRange ? durationMinutes : XP_PER_LOG;
+  const rewardHour = showTimeRange ? startHour : endHour;
+  const rewardMinute = showTimeRange ? startMinute : endMinute;
+  const rewardTimestamp = getLogFormTimestamp(
+    selectedDate,
+    rewardHour,
+    rewardMinute,
+    dayCutoffHour,
+    maxTimestampForDate,
+  );
+  const rewardLog: LogEntry = {
+    id: 'preview',
+    timestamp: rewardTimestamp,
+    ...(showTimeRange ? { endTimestamp: rewardTimestamp + durationMs } : {}),
+  };
   const moneyRewardAmount =
     behavior.moneyReward == null || behavior.type === 'neutral'
       ? undefined
-      : getMoneyRewardForLog(
-          {
-            id: 'preview',
-            timestamp: 0,
-            ...(showTimeRange ? { endTimestamp: durationMs } : {}),
-          },
-          behavior.moneyReward,
-          behavior.durationXpEnabled === true,
-        ) * (behavior.type === 'undesirable' ? -1 : 1);
+      : getMoneyRewardForLog(rewardLog, behavior.moneyReward, behavior.durationXpEnabled === true) *
+        getStarMoneyMultiplierForLog(behavior, rewardLog, dayCutoffHour) *
+        (behavior.type === 'undesirable' ? -1 : 1);
   const hasReward = behavior.xpEnabled || moneyRewardAmount != null;
   const maxTimeHour = Math.floor(maxTimeMinutes / 60);
   const getMaxMinuteForHour = useCallback(

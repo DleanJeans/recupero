@@ -1,6 +1,8 @@
 import type { BehaviorEntry, LogEntry, MoneyRewardRates } from '../types/behavior';
 import type { TaskEntry } from '../types/task';
+import { toDateString } from './date-utils';
 import { getLogDurationMinutes, getLogEndTimestamp, hasTimedLogRange } from './log-utils';
+import { getEarnedStars, getPeriodRange, getStarPeriod, getThresholds } from './star-utils';
 import { isOneOffTask, timestampForTaskDate } from './task-utils';
 
 export const MONEY_PER_LOG = 5_000;
@@ -66,12 +68,41 @@ export function getMoneyRewardForLog(
   return getLogDurationMinutes(log) * amount;
 }
 
-export function getBehaviorMoney(behavior: BehaviorEntry): number {
+export function getStarMoneyMultiplierForLog(behavior: BehaviorEntry, log: LogEntry, dayCutoffHour = 0): number {
+  const thresholds = getThresholds(behavior);
+  if (!thresholds) return 1;
+
+  const dateStr = toDateString(new Date(log.timestamp), dayCutoffHour);
+  const { start, end } = getPeriodRange(getStarPeriod(behavior), dateStr);
+  const logs = behavior.logs.some(item => item.id === log.id) ? behavior.logs : [...behavior.logs, log];
+  const orderedLogs = logs
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => {
+      const itemDate = toDateString(new Date(item.timestamp), dayCutoffHour);
+      return itemDate >= start && itemDate <= end;
+    })
+    .sort((a, b) => a.item.timestamp - b.item.timestamp || a.index - b.index)
+    .map(({ item }) => item);
+  const logIndex = orderedLogs.findIndex(item => item.id === log.id);
+  if (logIndex < 0) return 1;
+
+  const previousStars = getEarnedStars(logIndex, thresholds);
+  const earnedStars = getEarnedStars(logIndex + 1, thresholds);
+  if (earnedStars <= previousStars) return 1;
+
+  const multiplier = behavior.starMoneyMultipliers?.[earnedStars - 1];
+  return multiplier != null && Number.isFinite(multiplier) && multiplier >= 0 ? multiplier : 1;
+}
+
+export function getBehaviorMoney(behavior: BehaviorEntry, dayCutoffHour = 0): number {
   if (behavior.moneyReward == null || behavior.type === 'neutral') return 0;
 
   const durationBased = behavior.durationXpEnabled === true;
   const total = behavior.logs.reduce(
-    (sum, log) => sum + getMoneyRewardForLog(log, behavior.moneyReward, durationBased),
+    (sum, log) =>
+      sum +
+      getMoneyRewardForLog(log, behavior.moneyReward, durationBased) *
+        getStarMoneyMultiplierForLog(behavior, log, dayCutoffHour),
     0,
   );
   return behavior.type === 'undesirable' ? -total : total;
@@ -82,15 +113,19 @@ export function getTaskMoney(task: TaskEntry): number {
   return task.completedDates.length * task.stars * MONEY_PER_TASK_STAR;
 }
 
-export function getTotalMoneyEarned(behaviors: BehaviorEntry[], tasks: ReadonlyArray<TaskEntry> = []): number {
+export function getTotalMoneyEarned(
+  behaviors: BehaviorEntry[],
+  tasks: ReadonlyArray<TaskEntry> = [],
+  dayCutoffHour = 0,
+): number {
   return (
-    behaviors.reduce((total, behavior) => total + Math.max(0, getBehaviorMoney(behavior)), 0) +
+    behaviors.reduce((total, behavior) => total + Math.max(0, getBehaviorMoney(behavior, dayCutoffHour)), 0) +
     tasks.reduce((total, task) => total + getTaskMoney(task), 0)
   );
 }
 
-export function getTotalMoneyPenalties(behaviors: BehaviorEntry[]): number {
-  return behaviors.reduce((total, behavior) => total + Math.max(0, -getBehaviorMoney(behavior)), 0);
+export function getTotalMoneyPenalties(behaviors: BehaviorEntry[], dayCutoffHour = 0): number {
+  return behaviors.reduce((total, behavior) => total + Math.max(0, -getBehaviorMoney(behavior, dayCutoffHour)), 0);
 }
 
 export function getTotalMoneySpent(purchases: ReadonlyArray<{ cost: number }>): number {
@@ -104,10 +139,13 @@ export function getMoneyBalance(
   behaviors: BehaviorEntry[],
   purchases: ReadonlyArray<{ cost: number }>,
   tasks: ReadonlyArray<TaskEntry> = [],
+  dayCutoffHour = 0,
 ): number {
   return Math.max(
     0,
-    getTotalMoneyEarned(behaviors, tasks) - getTotalMoneyPenalties(behaviors) - getTotalMoneySpent(purchases),
+    getTotalMoneyEarned(behaviors, tasks, dayCutoffHour) -
+      getTotalMoneyPenalties(behaviors, dayCutoffHour) -
+      getTotalMoneySpent(purchases),
   );
 }
 
@@ -115,6 +153,7 @@ export function getMoneyLogTransactions(
   behaviors: BehaviorEntry[],
   purchases: ReadonlyArray<{ cost: number; purchasedAt: number }>,
   tasks: ReadonlyArray<TaskEntry> = [],
+  dayCutoffHour = 0,
 ): MoneyLogTransaction[] {
   const events: Array<
     | {
@@ -131,7 +170,9 @@ export function getMoneyLogTransactions(
     if (behavior.moneyReward == null || behavior.type === 'neutral') continue;
 
     for (const log of behavior.logs) {
-      const reward = getMoneyRewardForLog(log, behavior.moneyReward, behavior.durationXpEnabled === true);
+      const reward =
+        getMoneyRewardForLog(log, behavior.moneyReward, behavior.durationXpEnabled === true) *
+        getStarMoneyMultiplierForLog(behavior, log, dayCutoffHour);
       const amount = behavior.type === 'undesirable' ? -reward : reward;
       if (amount === 0) continue;
 

@@ -8,6 +8,7 @@ import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { Text } from '../../components/text';
 import { useBehaviorStore } from '../../store/behavior-store';
+import { useSettingsStore } from '../../store/settings-store';
 import { useShopStore } from '../../store/shop-store';
 import type { RootStackParamList } from '../../types/navigation';
 import type { ShopItem } from '../../types/shop';
@@ -31,6 +32,7 @@ export function ShopScreen() {
   const tasks = useBehaviorStore(state => state.tasks);
   const items = useShopStore(state => state.items);
   const purchases = useShopStore(state => state.purchases);
+  const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
   const addItem = useShopStore(state => state.addItem);
   const updateItem = useShopStore(state => state.updateItem);
   const removeItem = useShopStore(state => state.removeItem);
@@ -41,9 +43,12 @@ export function ShopScreen() {
   const [itemOneTime, setItemOneTime] = useState(false);
   const [itemFormMode, setItemFormMode] = useState<'add' | { type: 'edit'; itemId: string } | null>(null);
 
-  const balance = useMemo(() => getMoneyBalance(behaviors, purchases, tasks), [behaviors, purchases, tasks]);
-  const earned = useMemo(() => getTotalMoneyEarned(behaviors, tasks), [behaviors, tasks]);
-  const penalties = useMemo(() => getTotalMoneyPenalties(behaviors), [behaviors]);
+  const balance = useMemo(
+    () => getMoneyBalance(behaviors, purchases, tasks, dayCutoffHour),
+    [behaviors, dayCutoffHour, purchases, tasks],
+  );
+  const earned = useMemo(() => getTotalMoneyEarned(behaviors, tasks, dayCutoffHour), [behaviors, dayCutoffHour, tasks]);
+  const penalties = useMemo(() => getTotalMoneyPenalties(behaviors, dayCutoffHour), [behaviors, dayCutoffHour]);
   const spent = useMemo(() => getTotalMoneySpent(purchases), [purchases]);
   const recentPurchases = useMemo(() => [...purchases].reverse(), [purchases]);
 

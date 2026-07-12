@@ -7,7 +7,7 @@ import type { BehaviorEntry, LogEntry, MetadataField } from '../../../types/beha
 import { Colors } from '../../../utils/colors';
 import { getLogDurationMs, getLogEndTimestamp, hasTimedLogRange } from '../../../utils/log-utils';
 import { formatMetadataValueUnit } from '../../../utils/metadata-calculation-utils';
-import { getMoneyRewardForLog } from '../../../utils/money-utils';
+import { getMoneyRewardForLog, getStarMoneyMultiplierForLog } from '../../../utils/money-utils';
 import { formatDuration, formatElapsedNumeric, formatTimeRange } from '../../../utils/time-utils';
 import { getLogXp } from '../../../utils/xp-utils';
 
@@ -29,6 +29,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
   isDecayed = false,
 }: Props) {
   const timeFormat = useSettingsStore(state => state.timeFormat);
+  const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
   const timeText = useMemo(
     () => formatTimeRange(log.timestamp, log.endTimestamp, timeFormat === '12h'),
     [log.endTimestamp, log.timestamp, timeFormat],
@@ -40,6 +41,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
   const money =
     behavior.moneyReward != null && behavior.type !== 'neutral'
       ? getMoneyRewardForLog(log, behavior.moneyReward, behavior.durationXpEnabled === true) *
+        getStarMoneyMultiplierForLog(behavior, log, dayCutoffHour) *
         (behavior.type === 'undesirable' ? -1 : 1)
       : undefined;
   const hasMetadata =

@@ -16,7 +16,7 @@ import { useTimerStore } from '../../store/timer-store';
 import type { BehaviorEntry } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
-import { getMoneyRewardForLog } from '../../utils/money-utils';
+import { getMoneyRewardForLog, getStarMoneyMultiplierForLog } from '../../utils/money-utils';
 import { formatStopwatchDuration } from '../../utils/stopwatch-utils';
 import { formatTime, MS_PER_MINUTE } from '../../utils/time-utils';
 import { TaskComposer } from '../task-screen/components/task-composer';
@@ -25,6 +25,7 @@ export function TimerScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const behaviors = useBehaviorStore(state => state.behaviors);
   const hidePrivate = useSettingsStore(state => state.hidePrivate);
+  const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
   const lockedBehaviorId = useTimerStore(state => state.lockedBehaviorId);
   const startTimestamp = useTimerStore(state => state.startTimestamp);
   const stopTimestamp = useTimerStore(state => state.stopTimestamp);
@@ -146,6 +147,7 @@ export function TimerScreen() {
             hasStarted={startTimestamp != null}
             hasStopped={stopTimestamp != null}
             startTimestamp={startTimestamp}
+            dayCutoffHour={dayCutoffHour}
             onBack={handleBackToPicker}
             onStart={handleStart}
             onStop={handleStop}
@@ -210,6 +212,7 @@ interface TimerPanelProps {
   hasStarted: boolean;
   hasStopped: boolean;
   startTimestamp: number | undefined;
+  dayCutoffHour: number;
   onBack: () => void;
   onStart: () => void;
   onStop: () => void;
@@ -223,6 +226,7 @@ function TimerPanel({
   hasStarted,
   hasStopped,
   startTimestamp,
+  dayCutoffHour,
   onBack,
   onStart,
   onStop,
@@ -240,7 +244,9 @@ function TimerPanel({
   const rewardXp = isRunning && behavior.xpEnabled ? rewardMinutes : undefined;
   const rewardMoney =
     isRunning && rewardLog && behavior.moneyReward != null && behavior.type !== 'neutral'
-      ? getMoneyRewardForLog(rewardLog, behavior.moneyReward, true) * (behavior.type === 'undesirable' ? -1 : 1)
+      ? getMoneyRewardForLog(rewardLog, behavior.moneyReward, true) *
+        getStarMoneyMultiplierForLog(behavior, rewardLog, dayCutoffHour) *
+        (behavior.type === 'undesirable' ? -1 : 1)
       : undefined;
 
   return (

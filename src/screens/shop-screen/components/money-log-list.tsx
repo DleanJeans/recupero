@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
 import { useAfterInteractionsFlag } from '../../../hooks/use-after-interactions-flag';
+import { useSettingsStore } from '../../../store/settings-store';
 import type { BehaviorEntry } from '../../../types/behavior';
 import type { ShopPurchase } from '../../../types/shop';
 import type { TaskEntry } from '../../../types/task';
@@ -16,10 +17,11 @@ interface Props {
 }
 
 export function MoneyLogList({ behaviors, purchases, tasks }: Props) {
+  const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
   const ready = useAfterInteractionsFlag([behaviors, purchases, tasks]);
   const transactions = useMemo(
-    () => (ready ? getMoneyLogTransactions(behaviors, purchases, tasks) : []),
-    [behaviors, purchases, tasks, ready],
+    () => (ready ? getMoneyLogTransactions(behaviors, purchases, tasks, dayCutoffHour) : []),
+    [behaviors, dayCutoffHour, purchases, tasks, ready],
   );
 
   if (!ready) {

@@ -9,6 +9,7 @@ import {
   getMoneyRewardAmount,
   getMoneyRewardForLog,
   getMoneyRewardRates,
+  getStarMoneyMultiplierForLog,
   getTaskMoney,
   getTotalMoneyEarned,
   getTotalMoneyPenalties,
@@ -103,6 +104,33 @@ describe('money-utils', () => {
 
     expect(getBehaviorMoney(rewarded)).toBe(MONEY_PER_LOG + 5 * MONEY_PER_MINUTE);
     expect(getTotalMoneyEarned([rewarded, notRewarded])).toBe(MONEY_PER_LOG + 5 * MONEY_PER_MINUTE);
+  });
+
+  it('applies star multipliers only when a log earns a new star', () => {
+    const logs = [1, 2, 3, 4, 5].map((timestamp, index) => makeLog({ id: `log-${index}`, timestamp }));
+    const behavior = makeBehavior({
+      moneyReward: true,
+      type: 'desirable',
+      starThresholds: [1, 3, 5],
+      starMoneyMultipliers: [1, 1, 2],
+      logs,
+    });
+
+    expect(getStarMoneyMultiplierForLog(behavior, logs[0])).toBe(1);
+    expect(getStarMoneyMultiplierForLog(behavior, logs[2])).toBe(1);
+    expect(getStarMoneyMultiplierForLog(behavior, logs[4])).toBe(2);
+    expect(getBehaviorMoney(behavior)).toBe(4 * MONEY_PER_LOG + 2 * MONEY_PER_LOG);
+  });
+
+  it('defaults missing star multipliers to one', () => {
+    const behavior = makeBehavior({
+      moneyReward: true,
+      type: 'desirable',
+      starThresholds: [1, 3, 5],
+      logs: [1, 2, 3, 4, 5].map((timestamp, index) => makeLog({ id: `log-${index}`, timestamp })),
+    });
+
+    expect(getBehaviorMoney(behavior)).toBe(5 * MONEY_PER_LOG);
   });
 
   it('rewards historical logs when the behavior is enabled for money', () => {

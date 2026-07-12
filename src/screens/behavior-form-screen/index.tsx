@@ -14,6 +14,7 @@ import { EmojiPicker } from '../../components/emoji-picker';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { Text, TextInput } from '../../components/text';
+import { useStarMoneyMultipliersForm } from '../../hooks/use-star-money-multipliers-form';
 import { useStarThresholdsForm } from '../../hooks/use-star-thresholds-form';
 import { useXPDecayForm } from '../../hooks/use-xp-decay-form';
 import { useBehaviorStore } from '../../store/behavior-store';
@@ -32,6 +33,7 @@ import { CooldownInput } from './components/cooldown-input';
 import { CooldownTypeToggle } from './components/cooldown-type-toggle';
 import { MetadataEditor } from './components/metadata-editor';
 import { MoneyRewardInput } from './components/money-reward-input';
+import { StarMoneyMultipliersFormField } from './components/star-money-multipliers-form-field';
 import { StarThresholdsFormField } from './components/star-thresholds-form-field';
 import { XPDecayInput } from './components/xp-decay-input';
 
@@ -128,6 +130,15 @@ export function BehaviorFormScreen() {
   } = useStarThresholdsForm(behavior, isEdit);
 
   const {
+    inputs: starMoneyMultiplierInputs,
+    validationError: starMoneyMultiplierValidationError,
+    parsedMultipliers,
+    changed: starMoneyMultiplierFormChanged,
+    handleInputChange: handleStarMoneyMultiplierInputChange,
+    setValidationError: setStarMoneyMultiplierValidationError,
+  } = useStarMoneyMultipliersForm(behavior, isEdit);
+
+  const {
     enabled: xpDecayEnabled,
     every: xpDecayEvery,
     unit: xpDecayUnit,
@@ -213,6 +224,11 @@ export function BehaviorFormScreen() {
     behavior?.xpEnabled === true && behavior?.durationXpEnabled === true,
   );
   const moneyRewardEnabled = type !== 'neutral' && moneyReward;
+  const starMoneyMultipliersEnabled = starsEnabled && moneyRewardEnabled;
+  const starMoneyMultipliersChanged = starMoneyMultipliersEnabled
+    ? starMoneyMultiplierFormChanged
+    : behavior?.starMoneyMultipliers != null;
+  const starMoneyMultipliersInvalid = starMoneyMultipliersEnabled && parsedMultipliers.values == null;
   const savedMoneyRewardEnabled = behavior?.type !== 'neutral' && behavior?.moneyReward != null;
   const moneyRewardInputInvalid = moneyRewardEnabled && moneyRewardAmount.trim() === '';
   const moneyRewardAmountChanged =
@@ -231,6 +247,7 @@ export function BehaviorFormScreen() {
       hideTotalXp !== (behavior.hideTotalXp === true) ||
       moneyRewardEnabled !== savedMoneyRewardEnabled ||
       moneyRewardAmountChanged ||
+      starMoneyMultipliersChanged ||
       cooldownEnabled !== (behavior.cooldownEnabled ?? !!behavior.cooldownMinutes) ||
       cooldownMinutes !== (behavior.cooldownMinutes || 0) ||
       cooldownType !== (behavior.cooldownType || 'rest') ||
@@ -272,7 +289,14 @@ export function BehaviorFormScreen() {
     }
     setStarValidationError(null);
     if (moneyRewardInputInvalid) return;
+    if (starMoneyMultipliersInvalid) {
+      setStarMoneyMultiplierValidationError(parsedMultipliers.error);
+      return;
+    }
     const moneyRewardConfig = moneyRewardEnabled ? parseVndInput(moneyRewardAmount) : undefined;
+    const starMoneyMultipliersConfig = starMoneyMultipliersEnabled
+      ? (parsedMultipliers.values ?? undefined)
+      : undefined;
     const defaultMetadataObj = Object.fromEntries(
       Object.entries(behaviorDefaultMetadata)
         .map(([k, v]) => [k, parseDecimalInput(v)] as const)
@@ -293,6 +317,7 @@ export function BehaviorFormScreen() {
         metadataAmountFieldKey: selectedAmountField?.key,
         starThresholds: starsEnabled ? (parsedStars.values ?? undefined) : undefined,
         starPeriod: starsEnabled ? starPeriod : undefined,
+        starMoneyMultipliers: starMoneyMultipliersConfig,
         // XP is opt-in. When off, preserve the existing xpDecay config (it's ignored at runtime).
         xpEnabled: xpEnabled ? true : undefined,
         xpDecay: xpEnabled ? (xpDecayEnabled ? xpDecaySerialized : undefined) : behavior?.xpDecay,
@@ -314,6 +339,7 @@ export function BehaviorFormScreen() {
         selectedAmountField?.key,
         starsEnabled ? (parsedStars.values ?? undefined) : undefined,
         starsEnabled ? starPeriod : undefined,
+        starMoneyMultipliersConfig,
         xpEnabled ? true : undefined,
         xpDecayEnabled ? xpDecaySerialized : undefined,
         cooldownEnabled,
@@ -460,12 +486,21 @@ export function BehaviorFormScreen() {
             }}
           >
             {moneyRewardEnabled && (
-              <MoneyRewardInput
-                value={moneyRewardAmount}
-                rateLabel={moneyRewardDurationBased ? 'per minute' : 'per log'}
-                negative={type === 'undesirable'}
-                onChangeText={value => setMoneyRewardAmount(sanitizeVndInput(value))}
-              />
+              <View style={styles.moneyOptions}>
+                <MoneyRewardInput
+                  value={moneyRewardAmount}
+                  rateLabel={moneyRewardDurationBased ? 'per minute' : 'per log'}
+                  negative={type === 'undesirable'}
+                  onChangeText={value => setMoneyRewardAmount(sanitizeVndInput(value))}
+                />
+                {starsEnabled && (
+                  <StarMoneyMultipliersFormField
+                    inputs={starMoneyMultiplierInputs}
+                    validationError={starMoneyMultiplierValidationError ?? parsedMultipliers.error}
+                    onInputChange={handleStarMoneyMultiplierInputChange}
+                  />
+                )}
+              </View>
             )}
           </CheckboxRow>
 
@@ -483,7 +518,9 @@ export function BehaviorFormScreen() {
           fab
           onPress={handleSave}
           disabled={
-            isEdit ? !hasChanges || moneyRewardInputInvalid : !name.trim() || !icon.trim() || moneyRewardInputInvalid
+            isEdit
+              ? !hasChanges || moneyRewardInputInvalid || starMoneyMultipliersInvalid
+              : !name.trim() || !icon.trim() || moneyRewardInputInvalid || starMoneyMultipliersInvalid
           }
         >
           {isEdit ? 'Save' : 'Add'}
@@ -577,6 +614,9 @@ const styles = StyleSheet.create({
   },
   xpOptions: {
     gap: 10,
+  },
+  moneyOptions: {
+    gap: 12,
   },
   typeRow: {
     flexDirection: 'row',

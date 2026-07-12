@@ -1,7 +1,8 @@
-import type { BehaviorEntry, LogEntry, StarPeriod } from '../types/behavior';
+import type { BehaviorEntry, LogEntry, StarMoneyMultipliers, StarPeriod } from '../types/behavior';
 import { getMonthStart, getWeekStart, toDateString } from './date-utils';
 
 export const DEFAULT_STAR_THRESHOLDS: [number, number, number] = [1, 3, 5];
+export const DEFAULT_STAR_MONEY_MULTIPLIERS: StarMoneyMultipliers = [1, 1, 1];
 
 /** Returns the behavior's star thresholds, or `undefined` when the
  *  feature is off (i.e. `starThresholds` is not set on the behavior). */

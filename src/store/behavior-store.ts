@@ -31,6 +31,7 @@ interface BehaviorStore {
     metadataAmountFieldKey?: string,
     starThresholds?: [number, number | null, number | null],
     starPeriod?: StarPeriod,
+    starMoneyMultipliers?: BehaviorEntry['starMoneyMultipliers'],
     xpEnabled?: true,
     xpDecay?: BehaviorEntry['xpDecay'],
     cooldownEnabled?: boolean,
@@ -60,6 +61,7 @@ interface BehaviorStore {
       metadataAmountFieldKey?: string;
       starThresholds?: [number, number | null, number | null] | undefined;
       starPeriod?: StarPeriod | undefined;
+      starMoneyMultipliers?: BehaviorEntry['starMoneyMultipliers'];
       xpEnabled?: true;
       xpDecay?: BehaviorEntry['xpDecay'];
       durationXpEnabled?: true;
@@ -115,6 +117,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
         metadataAmountFieldKey,
         starThresholds,
         starPeriod,
+        starMoneyMultipliers,
         xpEnabled,
         xpDecay,
         cooldownEnabled,
@@ -143,6 +146,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               cooldownEnabled,
               starThresholds,
               starPeriod,
+              starMoneyMultipliers,
               xpEnabled,
               xpDecay,
               durationXpEnabled,

@@ -30,6 +30,8 @@ export interface MoneyRewardRates {
   perMinute: number;
 }
 
+export type StarMoneyMultipliers = [number, number, number];
+
 export interface BehaviorEntry {
   id: string;
   name: string;
@@ -63,6 +65,8 @@ export interface BehaviorEntry {
    *  for v1 stored data that predates this field. Ignored when
    *  `starThresholds` is undefined. */
   starPeriod?: StarPeriod;
+  /** Money multipliers for logs that earn the 1st, 2nd, or 3rd star. */
+  starMoneyMultipliers?: StarMoneyMultipliers;
   /** Opt-in XP calculation (level, XP bar). Sub-feature `xpDecay` is gated on this.
    *  Undefined = feature off. */
   xpEnabled?: true;
