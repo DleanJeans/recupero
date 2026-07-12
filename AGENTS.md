@@ -11,3 +11,5 @@
 6. Run `format:imports {touched-files-paths}` and format:changed after completing coding
 
 7. Minimize prop drilling. Save and read directly from stores if possible.
+
+When creating an icon Button, use variant="icon"

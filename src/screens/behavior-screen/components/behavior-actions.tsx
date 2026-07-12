@@ -45,7 +45,7 @@ export function BehaviorActions({ behaviorId, canTrackTimer, onDelete, onEdit, o
         </View>
       </Button>
       <Button
-        variant="secondary"
+        variant="icon"
         style={styles.iconAction}
         onPress={onEdit}
         accessibilityLabel="Edit behavior"
@@ -65,7 +65,7 @@ export function BehaviorActions({ behaviorId, canTrackTimer, onDelete, onEdit, o
       </Button>
       {canTrackTimer && (
         <Button
-          variant="secondary"
+          variant="icon"
           style={styles.iconAction}
           onPress={handleStartTimer}
           accessibilityLabel="Start timer"
@@ -88,6 +88,7 @@ const styles = StyleSheet.create({
     height: 48,
     padding: 0,
     justifyContent: 'center',
+    backgroundColor: Colors.bg.input,
   },
   deleteButton: {
     width: 48,
