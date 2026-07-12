@@ -3,7 +3,8 @@ import {
   getAllDailyMetadataTotals,
   getBehaviorLogsForDate,
   getDailyMetadataContributions,
-} from '../src/utils/behaviorUtils';
+  groupBehaviorsByRecency,
+} from '../src/utils/behavior-utils';
 
 function ts(dateStr: string, time: string): number {
   return new Date(`${dateStr}T${time}:00`).getTime();
@@ -89,5 +90,17 @@ describe('daily metadata utilities', () => {
       { logId: 'lunch', value: 20, unit: 'g' },
       { logId: 'morning', value: 10, unit: 'g' },
     ]);
+  });
+});
+
+describe('behavior recency utilities', () => {
+  it('puts never-logged behaviors before logged behaviors', () => {
+    const sections = groupBehaviorsByRecency([
+      makeBehavior({ id: 'logged', name: 'Logged', lastTimestamp: Date.now() }),
+      makeBehavior({ id: 'never', name: 'Never', lastTimestamp: null }),
+    ]);
+
+    expect(sections.map(section => section.title)).toEqual(['Never', 'Today']);
+    expect(sections[0].data.map(behavior => behavior.id)).toEqual(['never']);
   });
 });

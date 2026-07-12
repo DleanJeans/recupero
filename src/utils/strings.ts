@@ -11,6 +11,7 @@ export const Label = {
 } as const;
 
 export const Group = {
+  NEVER: Label.NEVER,
   TODAY: Label.TODAY,
   YESTERDAY: Label.YESTERDAY,
   THIS_WEEK: 'This Week',

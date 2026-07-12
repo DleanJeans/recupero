@@ -30,13 +30,13 @@ export interface DailyMetadataContribution {
 
 /**
  * Sort behaviors by most recent activity (lastTimestamp descending),
- * with null timestamps pushed to the bottom, and name as tiebreaker.
+ * with never-logged behaviors first, and name as tiebreaker.
  */
 export function sortBehaviorsByRecent(behaviors: BehaviorEntry[]): BehaviorEntry[] {
   return [...behaviors].sort((a, b) => {
-    if (a.lastTimestamp === null && b.lastTimestamp === null) return 0;
-    if (a.lastTimestamp === null) return 1;
-    if (b.lastTimestamp === null) return -1;
+    if (a.lastTimestamp === null && b.lastTimestamp === null) return a.name.localeCompare(b.name);
+    if (a.lastTimestamp === null) return -1;
+    if (b.lastTimestamp === null) return 1;
     const diff = b.lastTimestamp - a.lastTimestamp;
     if (diff !== 0) return diff;
     return a.name.localeCompare(b.name);
@@ -44,6 +44,7 @@ export function sortBehaviorsByRecent(behaviors: BehaviorEntry[]): BehaviorEntry
 }
 
 export type RecencyGroup =
+  | typeof Group.NEVER
   | typeof Group.TODAY
   | typeof Group.YESTERDAY
   | typeof Group.THIS_WEEK
@@ -52,6 +53,7 @@ export type RecencyGroup =
   | typeof Group.OLDER;
 
 export const GROUP_ORDER: RecencyGroup[] = [
+  Group.NEVER,
   Group.TODAY,
   Group.YESTERDAY,
   Group.THIS_WEEK,
@@ -61,7 +63,7 @@ export const GROUP_ORDER: RecencyGroup[] = [
 ];
 
 export function getRecencyGroup(lastTimestamp: number | null, dayCutoffHour = 0): RecencyGroup {
-  if (lastTimestamp === null) return 'Older';
+  if (lastTimestamp === null) return Group.NEVER;
 
   const now = new Date();
   const date = new Date(lastTimestamp);
