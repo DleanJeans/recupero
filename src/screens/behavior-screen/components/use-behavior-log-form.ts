@@ -231,7 +231,7 @@ export function useBehaviorLogForm({
     maxTimestampForDate,
   );
   const rewardLog: LogEntry = {
-    id: 'preview',
+    id: editLogId ?? 'preview',
     timestamp: rewardTimestamp,
     ...(showTimeRange ? { endTimestamp: rewardTimestamp + durationMs } : {}),
   };

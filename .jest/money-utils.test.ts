@@ -137,6 +137,17 @@ describe('money-utils', () => {
     expect(getBehaviorMoney(behavior)).toBe(5 * MONEY_PER_LOG);
   });
 
+  it('uses an edited log preview in star multiplier calculations', () => {
+    const logs = [1, 2, 3].map((timestamp, index) => makeLog({ id: `log-${index}`, timestamp }));
+    const behavior = makeBehavior({
+      starThresholds: [1, 2, 3],
+      starMoneyMultipliers: [1, 1, 2],
+      logs,
+    });
+
+    expect(getStarMoneyMultiplierForLog(behavior, { ...logs[2], timestamp: 0 })).toBe(1);
+  });
+
   it('rewards historical logs when the behavior is enabled for money', () => {
     const behavior = makeBehavior({
       moneyReward: true,

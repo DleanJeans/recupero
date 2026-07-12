@@ -74,7 +74,9 @@ export function getStarMoneyMultiplierForLog(behavior: BehaviorEntry, log: LogEn
 
   const dateStr = toDateString(new Date(log.timestamp), dayCutoffHour);
   const { start, end } = getPeriodRange(getStarPeriod(behavior), dateStr);
-  const logs = behavior.logs.some(item => item.id === log.id) ? behavior.logs : [...behavior.logs, log];
+  const logs = behavior.logs.some(item => item.id === log.id)
+    ? behavior.logs.map(item => (item.id === log.id ? log : item))
+    : [...behavior.logs, log];
   const orderedLogs = logs
     .map((item, index) => ({ item, index }))
     .filter(({ item }) => {

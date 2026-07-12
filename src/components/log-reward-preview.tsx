@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
   },
   moneyMultiplier: {
-    color: Colors.text.muted,
+    color: Colors.star.filled,
   },
   penalty: {
     color: Colors.type.undesirable,
