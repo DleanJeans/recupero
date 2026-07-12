@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Keyboard } from 'react-native';
-import { REWARD_ANIMATION_MS } from '../../../components/log-reward-preview';
+import { type MoneyRewardPreview, REWARD_ANIMATION_MS } from '../../../components/log-reward-preview';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useSettingsStore } from '../../../store/settings-store';
 import type { BehaviorEntry, LogEntry, MetadataField } from '../../../types/behavior';
@@ -177,6 +177,7 @@ export function useBehaviorLogForm({
 
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pending, setPending] = useState(false);
+  const [pendingMoneyReward, setPendingMoneyReward] = useState<MoneyRewardPreview>();
   useEffect(() => {
     return () => {
       if (closeTimeoutRef.current != null) clearTimeout(closeTimeoutRef.current);
@@ -234,12 +235,17 @@ export function useBehaviorLogForm({
     timestamp: rewardTimestamp,
     ...(showTimeRange ? { endTimestamp: rewardTimestamp + durationMs } : {}),
   };
-  const moneyRewardAmount =
+  const originalMoneyRewardAmount =
     behavior.moneyReward == null || behavior.type === 'neutral'
       ? undefined
       : getMoneyRewardForLog(rewardLog, behavior.moneyReward, behavior.durationXpEnabled === true) *
-        getStarMoneyMultiplierForLog(behavior, rewardLog, dayCutoffHour) *
         (behavior.type === 'undesirable' ? -1 : 1);
+  const moneyRewardMultiplier =
+    originalMoneyRewardAmount == null ? undefined : getStarMoneyMultiplierForLog(behavior, rewardLog, dayCutoffHour);
+  const moneyRewardAmount =
+    originalMoneyRewardAmount == null || moneyRewardMultiplier == null
+      ? undefined
+      : originalMoneyRewardAmount * moneyRewardMultiplier;
   const hasReward = behavior.xpEnabled || moneyRewardAmount != null;
   const maxTimeHour = Math.floor(maxTimeMinutes / 60);
   const getMaxMinuteForHour = useCallback(
@@ -288,9 +294,21 @@ export function useBehaviorLogForm({
     logBehavior(behaviorId, startTimestamp, metadataOrUndefined, saveEndTimestamp);
 
     const delay = hasReward ? REWARD_ANIMATION_MS : 0;
-    if (delay > 0) setPending(true);
+    if (delay > 0) {
+      setPending(true);
+      setPendingMoneyReward(
+        moneyRewardAmount == null
+          ? undefined
+          : {
+              amount: moneyRewardAmount,
+              originalAmount: originalMoneyRewardAmount ?? moneyRewardAmount,
+              multiplier: moneyRewardMultiplier ?? 1,
+            },
+      );
+    }
     closeTimeoutRef.current = setTimeout(() => {
       setPending(false);
+      setPendingMoneyReward(undefined);
       onSaved();
     }, delay);
   }, [
@@ -315,6 +333,9 @@ export function useBehaviorLogForm({
     startMinute,
     updateLog,
     hasReward,
+    moneyRewardAmount,
+    moneyRewardMultiplier,
+    originalMoneyRewardAmount,
   ]);
 
   const handleDelete = useCallback(() => {
@@ -366,7 +387,9 @@ export function useBehaviorLogForm({
     manualMetadataFields,
     metadataFields,
     metadataValues,
-    moneyRewardAmount,
+    moneyRewardAmount: pendingMoneyReward?.amount ?? moneyRewardAmount,
+    moneyRewardOriginalAmount: pendingMoneyReward?.originalAmount ?? originalMoneyRewardAmount,
+    moneyRewardMultiplier: pendingMoneyReward?.multiplier ?? moneyRewardMultiplier,
     notes,
     notesRef,
     pending,

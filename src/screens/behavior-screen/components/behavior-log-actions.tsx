@@ -12,7 +12,17 @@ interface Props {
 }
 
 export function BehaviorLogActions({ form }: Props) {
-  const { behavior, editLogId, earnedXp, handleConfirm, handleDelete, moneyRewardAmount, pending } = form;
+  const {
+    behavior,
+    editLogId,
+    earnedXp,
+    handleConfirm,
+    handleDelete,
+    moneyRewardAmount,
+    moneyRewardMultiplier,
+    moneyRewardOriginalAmount,
+    pending,
+  } = form;
 
   return (
     <FabButtonRow>
@@ -36,6 +46,8 @@ export function BehaviorLogActions({ form }: Props) {
         <LogRewardPreview
           xp={behavior.xpEnabled ? earnedXp : undefined}
           money={moneyRewardAmount}
+          moneyOriginal={moneyRewardOriginalAmount}
+          moneyMultiplier={moneyRewardMultiplier}
           undesirable={behavior.type === 'undesirable'}
           animate={pending}
         />

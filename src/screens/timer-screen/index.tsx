@@ -242,12 +242,18 @@ function TimerPanel({
           endTimestamp: startTimestamp + rewardMinutes * MS_PER_MINUTE,
         };
   const rewardXp = isRunning && behavior.xpEnabled ? rewardMinutes : undefined;
-  const rewardMoney =
+  const rewardMoneyOriginal =
     isRunning && rewardLog && behavior.moneyReward != null && behavior.type !== 'neutral'
-      ? getMoneyRewardForLog(rewardLog, behavior.moneyReward, true) *
-        getStarMoneyMultiplierForLog(behavior, rewardLog, dayCutoffHour) *
-        (behavior.type === 'undesirable' ? -1 : 1)
+      ? getMoneyRewardForLog(rewardLog, behavior.moneyReward, true) * (behavior.type === 'undesirable' ? -1 : 1)
       : undefined;
+  const rewardMoneyMultiplier =
+    rewardLog == null || rewardMoneyOriginal == null
+      ? undefined
+      : getStarMoneyMultiplierForLog(behavior, rewardLog, dayCutoffHour);
+  const rewardMoney =
+    rewardMoneyOriginal == null || rewardMoneyMultiplier == null
+      ? undefined
+      : rewardMoneyOriginal * rewardMoneyMultiplier;
 
   return (
     <>
@@ -292,6 +298,8 @@ function TimerPanel({
           <LogRewardPreview
             xp={rewardXp}
             money={rewardMoney}
+            moneyOriginal={rewardMoneyOriginal}
+            moneyMultiplier={rewardMoneyMultiplier}
             undesirable={behavior.type === 'undesirable'}
           />
         )}

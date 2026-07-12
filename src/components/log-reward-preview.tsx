@@ -2,12 +2,20 @@ import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Colors } from '../utils/colors';
-import { formatVnd } from '../utils/money-utils';
+import { formatSignedVnd } from '../utils/money-utils';
 import { Text } from './text';
+
+export interface MoneyRewardPreview {
+  amount: number;
+  originalAmount: number;
+  multiplier: number;
+}
 
 interface LogRewardPreviewProps {
   xp?: number;
   money?: number;
+  moneyOriginal?: number;
+  moneyMultiplier?: number;
   undesirable?: boolean;
   decayed?: boolean;
   animate?: boolean;
@@ -19,6 +27,8 @@ const REWARD_ANIMATION_DISTANCE = 24;
 export function LogRewardPreview({
   xp,
   money,
+  moneyOriginal,
+  moneyMultiplier,
   undesirable = false,
   decayed = false,
   animate = false,
@@ -36,6 +46,10 @@ export function LogRewardPreview({
 
   if (xp == null && money == null) return null;
 
+  const showMoneyMultiplier =
+    money != null && moneyOriginal != null && moneyMultiplier != null && moneyMultiplier !== 1;
+  const moneyStyle = money != null && money < 0 ? styles.penalty : styles.money;
+
   return (
     <Animated.View style={[styles.container, animate && animatedStyle]}>
       {xp != null && (
@@ -43,12 +57,16 @@ export function LogRewardPreview({
           +{xp} XP
         </Text>
       )}
-      {money != null && (
-        <Text style={[styles.reward, money < 0 ? styles.penalty : styles.money]}>
-          {money > 0 ? '+' : money < 0 ? '-' : ''}
-          {formatVnd(Math.abs(money))}
-        </Text>
-      )}
+      {money != null &&
+        (showMoneyMultiplier ? (
+          <View style={styles.moneyMultiplierRow}>
+            <Text style={[styles.reward, styles.originalMoney, moneyStyle]}>{formatSignedVnd(moneyOriginal)}</Text>
+            <Text style={[styles.reward, styles.moneyMultiplier]}>×{moneyMultiplier}</Text>
+            <Text style={[styles.reward, moneyStyle]}>{formatSignedVnd(money)}</Text>
+          </View>
+        ) : (
+          <Text style={[styles.reward, moneyStyle]}>{formatSignedVnd(money)}</Text>
+        ))}
     </Animated.View>
   );
 }
@@ -74,6 +92,18 @@ const styles = StyleSheet.create({
   },
   money: {
     color: Colors.type.desirable,
+  },
+  moneyMultiplierRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  originalMoney: {
+    opacity: 0.65,
+    textDecorationLine: 'line-through',
+  },
+  moneyMultiplier: {
+    color: Colors.text.muted,
   },
   penalty: {
     color: Colors.type.undesirable,

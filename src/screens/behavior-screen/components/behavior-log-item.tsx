@@ -38,12 +38,14 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
   const elapsedText = useMemo(() => formatElapsedNumeric(getLogEndTimestamp(log)), [elapsedTick, log]);
   const durationText = useMemo(() => (isRange ? formatDuration(getLogDurationMs(log)) : undefined), [log, isRange]);
   const xp = behavior.xpEnabled ? getLogXp(log) : undefined;
-  const money =
+  const moneyOriginal =
     behavior.moneyReward != null && behavior.type !== 'neutral'
       ? getMoneyRewardForLog(log, behavior.moneyReward, behavior.durationXpEnabled === true) *
-        getStarMoneyMultiplierForLog(behavior, log, dayCutoffHour) *
         (behavior.type === 'undesirable' ? -1 : 1)
       : undefined;
+  const moneyMultiplier =
+    moneyOriginal == null ? undefined : getStarMoneyMultiplierForLog(behavior, log, dayCutoffHour);
+  const money = moneyOriginal == null || moneyMultiplier == null ? undefined : moneyOriginal * moneyMultiplier;
   const hasMetadata =
     metadataFields?.some(field => log.metadata?.[field.key] != null) === true || Boolean(log.metadata?.notes);
   const hasReward = xp != null || money != null;
@@ -72,6 +74,8 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
             <LogRewardPreview
               xp={xp}
               money={money}
+              moneyOriginal={moneyOriginal}
+              moneyMultiplier={moneyMultiplier}
               undesirable={behavior.type === 'undesirable'}
               decayed={isDecayed}
             />
