@@ -4,6 +4,7 @@ import {
   getOrderedMetadataFields,
   parseDecimalInput,
   sanitizeDecimalInput,
+  syncBehaviorLogMetadata,
 } from '../src/utils/metadata-calculation-utils';
 
 describe('metadata decimal input', () => {
@@ -32,5 +33,26 @@ describe('metadata ordering', () => {
       'protein',
       'fiber',
     ]);
+  });
+});
+
+describe('behavior log metadata synchronization', () => {
+  it('updates manual defaults and recalculates per-100 fields while keeping notes', () => {
+    const amountField: MetadataField = { key: 'amount', label: 'Amount', calculation: 'amount', unit: 'g' };
+    const fields: MetadataField[] = [
+      amountField,
+      { key: 'protein', label: 'Protein', calculation: 'per100', unit: 'g' },
+      { key: 'fiber', label: 'Fiber' },
+    ];
+
+    expect(
+      syncBehaviorLogMetadata({
+        metadata: { amount: 250, protein: 20, notes: 'breakfast' },
+        fields,
+        previousDefaultMetadata: { protein: 20 },
+        defaultMetadata: { protein: 30, fiber: 6 },
+        amountField,
+      }),
+    ).toEqual({ amount: 250, protein: 75, fiber: 6, notes: 'breakfast' });
   });
 });

@@ -5,7 +5,11 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import type { BehaviorEntry, BehaviorType, Category, MetadataField, StarPeriod } from '../types/behavior';
 import type { AddTaskInput, TaskEntry } from '../types/task';
 import { getLogEndTimestamp } from '../utils/log-utils';
-import { getLoggableDefaultMetadata } from '../utils/metadata-calculation-utils';
+import {
+  getLoggableDefaultMetadata,
+  getSelectedAmountMetadataField,
+  syncBehaviorLogMetadata,
+} from '../utils/metadata-calculation-utils';
 import { DEFAULT_MONEY_REWARD } from '../utils/money-utils';
 import { isTaskCompleteOnDate, timestampForTaskDate } from '../utils/task-utils';
 import { useSettingsStore } from './settings-store';
@@ -217,14 +221,36 @@ export const useBehaviorStore = create<BehaviorStore>()(
         })),
       updateBehavior: (behaviorId, updates) =>
         set(state => ({
-          behaviors: state.behaviors.map(b =>
-            b.id === behaviorId
-              ? {
-                  ...b,
-                  ...updates,
-                }
-              : b,
-          ),
+          behaviors: state.behaviors.map(b => {
+            if (b.id !== behaviorId) return b;
+
+            const nextBehavior = { ...b, ...updates };
+            if (!Object.prototype.hasOwnProperty.call(updates, 'defaultMetadata')) return nextBehavior;
+
+            const categoryId = Object.prototype.hasOwnProperty.call(updates, 'categoryId')
+              ? updates.categoryId
+              : b.categoryId;
+            const category = categoryId ? state.categories.find(c => c.id === categoryId) : undefined;
+            const fields = category?.metadataFields ?? [];
+            const amountFieldKey = Object.prototype.hasOwnProperty.call(updates, 'metadataAmountFieldKey')
+              ? updates.metadataAmountFieldKey
+              : b.metadataAmountFieldKey;
+            const amountField = getSelectedAmountMetadataField(fields, amountFieldKey, b.metadataQuantityUnit);
+
+            return {
+              ...nextBehavior,
+              logs: b.logs.map(log => ({
+                ...log,
+                metadata: syncBehaviorLogMetadata({
+                  metadata: log.metadata,
+                  fields,
+                  previousDefaultMetadata: b.defaultMetadata,
+                  defaultMetadata: updates.defaultMetadata,
+                  amountField,
+                }),
+              })),
+            };
+          }),
         })),
       addCategory: (name, emoji, metadataFields) =>
         set(state => ({

@@ -1,4 +1,4 @@
-import type { BehaviorEntry, MetadataField, MetadataFieldCalculation } from '../types/behavior';
+import type { BehaviorEntry, LogEntry, MetadataField, MetadataFieldCalculation } from '../types/behavior';
 import { roundTo2 } from './number-utils';
 import { getLogsForDate } from './star-utils';
 
@@ -160,6 +160,52 @@ export function buildCalculatedMetadata(
       })
       .filter((entry): entry is readonly [string, number] => entry != null),
   );
+}
+
+interface SyncBehaviorLogMetadataParams {
+  metadata: LogEntry['metadata'];
+  fields: MetadataField[];
+  previousDefaultMetadata?: Record<string, number>;
+  defaultMetadata?: Record<string, number>;
+  amountField?: MetadataField;
+}
+
+export function syncBehaviorLogMetadata({
+  metadata,
+  fields,
+  previousDefaultMetadata,
+  defaultMetadata,
+  amountField,
+}: SyncBehaviorLogMetadataParams): LogEntry['metadata'] {
+  const nextMetadata = { ...(metadata ?? {}) };
+  const previousManualMetadata = getLoggableDefaultMetadata(previousDefaultMetadata, fields);
+  const manualMetadata = getLoggableDefaultMetadata(defaultMetadata, fields);
+
+  for (const key of Object.keys(previousManualMetadata)) {
+    if (!(key in manualMetadata)) delete nextMetadata[key];
+  }
+  Object.assign(nextMetadata, manualMetadata);
+
+  const rawAmount = amountField ? nextMetadata[amountField.key] : undefined;
+  const amountValue =
+    typeof rawAmount === 'number'
+      ? Number.isFinite(rawAmount)
+        ? rawAmount
+        : undefined
+      : parseDecimalInput(String(rawAmount ?? ''));
+  if (amountValue != null) {
+    const calculatedMetadata = buildCalculatedMetadata(fields, defaultMetadata, amountValue);
+    for (const field of getCalculatedMetadataFields(fields)) {
+      const value = calculatedMetadata[field.key];
+      if (value != null) {
+        nextMetadata[field.key] = value;
+      } else {
+        delete nextMetadata[field.key];
+      }
+    }
+  }
+
+  return Object.keys(nextMetadata).length > 0 ? nextMetadata : undefined;
 }
 
 export interface DailyGoalProgress {
