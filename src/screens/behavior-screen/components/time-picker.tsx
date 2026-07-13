@@ -13,8 +13,10 @@ interface TimePickerProps {
   label: string;
   hour: number;
   minute: number;
+  second: number;
   maxHour: number;
   maxMinute: number;
+  maxSecond: number;
   collapsed: boolean;
   onMinuteChange: (m: number) => void;
   onExpand: () => void;
@@ -24,17 +26,22 @@ function TimePickerComponent({
   label,
   hour,
   minute,
+  second,
   maxHour,
   maxMinute,
+  maxSecond,
   collapsed,
   onMinuteChange,
   onExpand,
 }: TimePickerProps) {
-  const value = useMemo(() => new Date(2000, 0, 1, hour, minute), [hour, minute]);
-  const maximumDate = useMemo(() => new Date(2000, 0, 1, maxHour, maxMinute), [maxHour, maxMinute]);
+  const value = useMemo(() => new Date(2000, 0, 1, hour, minute, second), [hour, minute, second]);
+  const maximumDate = useMemo(
+    () => new Date(2000, 0, 1, maxHour, maxMinute, maxSecond),
+    [maxHour, maxMinute, maxSecond],
+  );
   const displayTime = useMemo(
-    () => `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
-    [hour, minute],
+    () => `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`,
+    [hour, minute, second],
   );
   const handleChange = useCallback(
     (event: DateTimePickerEvent, selectedDate?: Date) => {

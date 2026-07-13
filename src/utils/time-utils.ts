@@ -8,19 +8,22 @@ export { MS_PER_DAY } from './date-utils';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-export function formatTime(timestamp: number, hour12?: boolean): string {
+export function formatTime(timestamp: number, hour12?: boolean, showSeconds = false): string {
   const resolved = hour12 ?? useSettingsStore.getState().timeFormat === '12h';
   return new Date(timestamp).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
+    ...(showSeconds ? { second: '2-digit' } : {}),
     hour12: resolved,
   });
 }
 
 export function formatTimeRange(startTimestamp: number, endTimestamp?: number, hour12?: boolean): string {
-  const start = formatTime(startTimestamp, hour12);
+  const showSeconds =
+    endTimestamp != null && (new Date(startTimestamp).getSeconds() !== 0 || new Date(endTimestamp).getSeconds() !== 0);
+  const start = formatTime(startTimestamp, hour12, showSeconds);
   if (endTimestamp == null) return start;
-  const end = formatTime(endTimestamp, hour12);
+  const end = formatTime(endTimestamp, hour12, showSeconds);
   return `${start} - ${end}`;
 }
 
@@ -137,30 +140,34 @@ export function isOlderThanYesterday(timestamp: number): boolean {
   return toDateString(date, dayCutoffHour) < toDateString(y);
 }
 
-export function formatDuration(ms: number): string {
+export function formatDuration(ms: number, showSeconds = false): string {
   const totalSeconds = Math.floor(ms / 1000);
-  if (totalSeconds < 60) return Label.JUST_NOW;
+  if (totalSeconds < 60) return showSeconds ? `${totalSeconds}s` : Label.JUST_NOW;
 
   const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
+  const withSeconds = (value: string) => (showSeconds && seconds > 0 ? `${value} ${seconds}s` : value);
 
   if (days > 0) {
     const remainingHours = hours % 24;
     const remainingMinutes = minutes % 60;
     if (remainingHours > 0) {
-      return `${days}${Unit.DAY} ${remainingHours}${Unit.HOUR}`;
+      return withSeconds(`${days}${Unit.DAY} ${remainingHours}${Unit.HOUR}`);
     }
     if (remainingMinutes > 0) {
-      return `${days}${Unit.DAY} ${remainingMinutes}${Unit.MIN}`;
+      return withSeconds(`${days}${Unit.DAY} ${remainingMinutes}${Unit.MIN}`);
     }
-    return `${days}${Unit.DAY}`;
+    return withSeconds(`${days}${Unit.DAY}`);
   }
 
   if (hours > 0) {
     const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}${Unit.HOUR} ${remainingMinutes}${Unit.MIN}` : `${hours}${Unit.HOUR}`;
+    return withSeconds(
+      remainingMinutes > 0 ? `${hours}${Unit.HOUR} ${remainingMinutes}${Unit.MIN}` : `${hours}${Unit.HOUR}`,
+    );
   }
 
-  return `${minutes}${Unit.MIN}`;
+  return withSeconds(`${minutes}${Unit.MIN}`);
 }

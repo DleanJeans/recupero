@@ -5,7 +5,7 @@ import {
   formatElapsedNumeric,
   formatElapsedText,
   formatTimeRange,
-} from '../src/utils/timeUtils';
+} from '../src/utils/time-utils';
 
 describe('formatCooldown', () => {
   it('returns empty string for 0 or negative or NaN', () => {
@@ -49,6 +49,12 @@ describe('formatTimeRange', () => {
     const start = new Date(2026, 5, 20, 9, 5, 0).getTime();
     const end = new Date(2026, 5, 20, 9, 35, 0).getTime();
     expect(formatTimeRange(start, end, false)).toBe('09:05 - 09:35');
+  });
+
+  it('includes seconds for precise time ranges', () => {
+    const start = new Date(2026, 5, 20, 9, 5, 30).getTime();
+    const end = new Date(2026, 5, 20, 9, 35, 45).getTime();
+    expect(formatTimeRange(start, end, false)).toBe('09:05:30 - 09:35:45');
   });
 });
 
@@ -304,6 +310,11 @@ describe('formatDuration', () => {
     expect(formatDuration(5 * 60_000)).toBe('5m');
     expect(formatDuration(1 * 60_000)).toBe('1m');
     expect(formatDuration(59 * 60_000)).toBe('59m');
+  });
+
+  it('includes seconds when requested', () => {
+    expect(formatDuration(30_000, true)).toBe('30s');
+    expect(formatDuration(90_000, true)).toBe('1m 30s');
   });
 
   it('returns "Xh Ym" for hours and minutes', () => {

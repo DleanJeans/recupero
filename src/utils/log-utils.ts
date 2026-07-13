@@ -18,12 +18,22 @@ export function hasTimedLogRange(log: LogEntry): boolean {
 
 export function getLogDurationMinutes(log: LogEntry): number {
   if (!hasTimedLogRange(log)) return LEGACY_LOG_XP;
-  return Math.max(1, Math.round((getLogEndTimestamp(log) - getLogStartTimestamp(log)) / MS_PER_MINUTE));
+  return Math.max(1, getLogDurationSeconds(log) / 60);
+}
+
+export function getLogDurationSeconds(log: LogEntry): number {
+  if (!hasTimedLogRange(log)) return 0;
+  return Math.max(0, Math.floor((getLogEndTimestamp(log) - getLogStartTimestamp(log)) / 1000));
 }
 
 export function getLogDurationMs(log: LogEntry): number {
   if (!hasTimedLogRange(log)) return 0;
-  return Math.max(MS_PER_MINUTE, getLogEndTimestamp(log) - getLogStartTimestamp(log));
+  return Math.max(0, getLogEndTimestamp(log) - getLogStartTimestamp(log));
+}
+
+export function getTimeOfDaySeconds(timestamp: number): number {
+  const date = new Date(timestamp);
+  return date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
 }
 
 export function getLogGapBounds(olderLog: LogEntry, newerLog: LogEntry): { earlierMs: number; laterMs: number } {
@@ -40,7 +50,7 @@ export function getLogGapDurationMs(olderLog: LogEntry, newerLog: LogEntry): num
 
 export function getDayMaxTimestamp(dateStr: string, now: Date = new Date(), dayCutoffHour = 0): number {
   if (dateStr === toDateString(now, dayCutoffHour)) return now.getTime();
-  return getDayStartTimestamp(dateStr, dayCutoffHour) + MS_PER_DAY - MS_PER_MINUTE;
+  return getDayStartTimestamp(dateStr, dayCutoffHour) + MS_PER_DAY - 1;
 }
 
 export function getDefaultTimedLogStartTimestamp(now: Date = new Date(), dayCutoffHour = 0): number {
@@ -54,13 +64,14 @@ export function getLogFormTimestamp(
   minute: number,
   dayCutoffHour = 0,
   maxTimestamp = Date.now(),
+  second = 0,
 ): number {
-  const timestamp = timestampForDateTime(dateStr, hour, minute, dayCutoffHour);
+  const timestamp = timestampForDateTime(dateStr, hour, minute, dayCutoffHour, second);
   if (timestamp <= maxTimestamp || dayCutoffHour <= 0 || hour >= dayCutoffHour) return timestamp;
 
   const maxDate = new Date(maxTimestamp);
   if (dateStr !== toDateString(maxDate)) return timestamp;
 
   const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day, hour, minute, 0, 0).getTime();
+  return new Date(year, month - 1, day, hour, minute, second, 0).getTime();
 }

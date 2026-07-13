@@ -83,10 +83,11 @@ export function timestampForDateTime(
   hour: number,
   minute: number,
   dayCutoffHour = DEFAULT_DAY_CUTOFF_HOUR,
+  second = 0,
 ): number {
   const [year, month, day] = dateStr.split('-').map(Number);
   const cutoff = normalizeDayCutoffHour(dayCutoffHour);
-  const d = new Date(year, month - 1, day, hour, minute, 0, 0);
+  const d = new Date(year, month - 1, day, hour, minute, second, 0);
   if (cutoff > 0 && hour < cutoff) {
     d.setDate(d.getDate() + 1);
   }

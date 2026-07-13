@@ -57,6 +57,10 @@ describe('money-utils', () => {
     expect(getMoneyRewardForLog(makeLog({ endTimestamp: 15 * 60_000 }))).toBe(15 * MONEY_PER_MINUTE);
   });
 
+  it('awards fractional per-minute rewards for seconds', () => {
+    expect(getMoneyRewardForLog(makeLog({ endTimestamp: 15 * 60_000 + 30_000 }))).toBe(15.5 * MONEY_PER_MINUTE);
+  });
+
   it('uses customized per-log and per-minute rates', () => {
     const rates = { perLog: 7_500, perMinute: 250 };
     const behavior = makeBehavior({

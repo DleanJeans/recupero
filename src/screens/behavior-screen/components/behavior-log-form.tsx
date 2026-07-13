@@ -16,14 +16,15 @@ interface Props {
 export function BehaviorLogForm({ form }: Props) {
   const {
     amountField,
-    applyEndMinutes,
-    applyStartMinutes,
+    applyEndSeconds,
+    applyStartSeconds,
     behavior,
     calculatedMetadataFields,
     calculatedMetadataValues,
     durationMs,
     endHour,
     endMinute,
+    endSecond,
     handleCollapseTime,
     handleInputBlur,
     manualMetadataFields,
@@ -40,6 +41,7 @@ export function BehaviorLogForm({ form }: Props) {
     showTimeRange,
     startHour,
     startMinute,
+    startSecond,
     todayStr,
   } = form;
 
@@ -62,23 +64,25 @@ export function BehaviorLogForm({ form }: Props) {
           {showTimeRange ? (
             <View style={styles.timePickerRow}>
               <View style={styles.timePickerColumn}>
-                {renderTimePicker('Start', startHour, startMinute, applyStartMinutes)}
+                {renderTimePicker('Start', startHour, startMinute, startSecond, applyStartSeconds)}
               </View>
 
               <Text style={styles.timePickerSeparator}>-</Text>
 
               <View style={styles.timePickerColumn}>
-                {renderTimePicker('End', endHour, endMinute, applyEndMinutes)}
+                {renderTimePicker('End', endHour, endMinute, endSecond, applyEndSeconds)}
               </View>
             </View>
           ) : (
-            <View style={styles.singleTimePicker}>{renderTimePicker('Time', endHour, endMinute, applyEndMinutes)}</View>
+            <View style={styles.singleTimePicker}>
+              {renderTimePicker('Time', endHour, endMinute, endSecond, applyEndSeconds)}
+            </View>
           )}
 
           {showTimeRange && (
             <View style={styles.durationCard}>
               <Text style={styles.durationLabel}>Duration</Text>
-              <Text style={styles.durationValue}>{formatDuration(durationMs)}</Text>
+              <Text style={styles.durationValue}>{formatDuration(durationMs, true)}</Text>
             </View>
           )}
         </View>

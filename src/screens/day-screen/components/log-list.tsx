@@ -130,7 +130,7 @@ export function LogList({ entries, selectedDate, categories, onEditLog }: LogLis
                         {hasTimedLogRange(entry.log) && (
                           <Text style={styles.sessionText}>
                             {formatTimeRange(entry.log.timestamp, entry.log.endTimestamp)} ·{' '}
-                            {formatDuration(getLogDurationMs(entry.log))}
+                            {formatDuration(getLogDurationMs(entry.log), true)}
                           </Text>
                         )}
                         {formatEntryMetadata(entry.log.metadata, entry.behavior, categories)}

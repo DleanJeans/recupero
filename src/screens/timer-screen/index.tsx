@@ -18,7 +18,8 @@ import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import { getMoneyRewardForLog, getStarMoneyMultiplierForLog } from '../../utils/money-utils';
 import { formatStopwatchDuration } from '../../utils/stopwatch-utils';
-import { formatTime, MS_PER_MINUTE } from '../../utils/time-utils';
+import { formatTime } from '../../utils/time-utils';
+import { getLogXp } from '../../utils/xp-utils';
 import { TaskComposer } from '../task-screen/components/task-composer';
 
 export function TimerScreen() {
@@ -235,16 +236,15 @@ function TimerPanel({
   onStop,
   onResume,
 }: TimerPanelProps) {
-  const rewardMinutes = startTimestamp == null ? 0 : Math.max(1, Math.floor(elapsedMs / MS_PER_MINUTE));
   const rewardLog =
     startTimestamp == null
       ? undefined
       : {
           id: 'timer-preview',
           timestamp: startTimestamp,
-          endTimestamp: startTimestamp + rewardMinutes * MS_PER_MINUTE,
+          endTimestamp: startTimestamp + elapsedMs,
         };
-  const rewardXp = isRunning && behavior.xpEnabled ? rewardMinutes : undefined;
+  const rewardXp = isRunning && behavior.xpEnabled && rewardLog ? getLogXp(rewardLog) : undefined;
   const rewardMoneyOriginal =
     isRunning && rewardLog && behavior.moneyReward != null && behavior.type !== 'neutral'
       ? getMoneyRewardForLog(rewardLog, behavior.moneyReward, true) * (behavior.type === 'undesirable' ? -1 : 1)
