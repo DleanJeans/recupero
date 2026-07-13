@@ -18,6 +18,7 @@ interface TimerStore {
   start: (behaviorId: string, timestamp?: number) => void;
   setLockedBehavior: (behaviorId: string) => void;
   setStart: (timestamp: number) => void;
+  rewindStartMinute: () => void;
   setStop: (timestamp: number) => void;
   /** Clear the stop timestamp so the timer resumes from the original start
    *  instant. Also clears any pending-log snapshot since the user is
@@ -44,6 +45,8 @@ export const useTimerStore = create<TimerStore>()(
         }),
       setLockedBehavior: behaviorId => set({ lockedBehaviorId: behaviorId }),
       setStart: timestamp => set({ startTimestamp: timestamp, stopTimestamp: undefined }),
+      rewindStartMinute: () =>
+        set(state => (state.startTimestamp == null ? {} : { startTimestamp: state.startTimestamp - 60_000 })),
       setStop: timestamp => set({ stopTimestamp: timestamp }),
       resume: () => set({ stopTimestamp: undefined, pendingLogBehaviorLogCount: undefined }),
       markLogPending: logCount => set({ pendingLogBehaviorLogCount: logCount }),

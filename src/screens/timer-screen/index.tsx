@@ -33,6 +33,7 @@ export function TimerScreen() {
   const pendingLogBehaviorLogCount = useTimerStore(state => state.pendingLogBehaviorLogCount);
   const setLockedBehavior = useTimerStore(state => state.setLockedBehavior);
   const setStart = useTimerStore(state => state.setStart);
+  const rewindStartMinute = useTimerStore(state => state.rewindStartMinute);
   const setStop = useTimerStore(state => state.setStop);
   const markLogPending = useTimerStore(state => state.markLogPending);
   const clearPendingLog = useTimerStore(state => state.clearPendingLog);
@@ -114,6 +115,11 @@ export function TimerScreen() {
     setNowTick(Date.now());
   };
 
+  const handleRewindStart = () => {
+    rewindStartMinute();
+    setNowTick(Date.now());
+  };
+
   const handleStop = () => {
     if (!lockedBehavior || startTimestamp == null) return;
     // If we already have a stop timestamp, the user is re-opening the log
@@ -156,6 +162,7 @@ export function TimerScreen() {
             onStart={handleStart}
             onStop={handleStop}
             onResume={handleResume}
+            onRewindStart={handleRewindStart}
           />
         ) : (
           <>
@@ -221,6 +228,7 @@ interface TimerPanelProps {
   onStart: () => void;
   onStop: () => void;
   onResume: () => void;
+  onRewindStart: () => void;
 }
 
 function TimerPanel({
@@ -235,7 +243,14 @@ function TimerPanel({
   onStart,
   onStop,
   onResume,
+  onRewindStart,
 }: TimerPanelProps) {
+  const category = useBehaviorStore(
+    useCallback(
+      state => (behavior.categoryId ? state.categories.find(item => item.id === behavior.categoryId) : undefined),
+      [behavior.categoryId],
+    ),
+  );
   const rewardLog =
     startTimestamp == null
       ? undefined
@@ -282,6 +297,12 @@ function TimerPanel({
           size={34}
         />
         <View style={styles.lockedBehaviorText}>
+          {category && (
+            <View style={styles.categoryRow}>
+              <Text style={styles.categoryEmoji}>{category.emoji}</Text>
+              <Text style={styles.categoryName}>{category.name}</Text>
+            </View>
+          )}
           <Text
             style={styles.lockedBehaviorName}
             numberOfLines={1}
@@ -296,6 +317,16 @@ function TimerPanel({
         <Text style={styles.stopwatchValue}>{formatStopwatchDuration(elapsedMs)}</Text>
         {startTimestamp != null && (
           <Text style={styles.stopwatchCaption}>{`Started at ${formatTime(startTimestamp)}`}</Text>
+        )}
+        {startTimestamp != null && (
+          <Button
+            variant="secondary"
+            onPress={onRewindStart}
+            accessibilityLabel="Move start time back 1 minute"
+            style={styles.rewindButton}
+          >
+            -1 min
+          </Button>
         )}
         {(rewardXp != null || rewardMoney != null) && (
           <LogRewardPreview
@@ -402,6 +433,19 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  categoryRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 5,
+  },
+  categoryEmoji: {
+    fontSize: 14,
+  },
+  categoryName: {
+    color: Colors.text.muted,
+    fontSize: 12,
+    fontWeight: '600',
+  },
   lockedBehaviorName: {
     color: Colors.text.primary,
     fontSize: 17,
@@ -431,6 +475,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
     marginTop: -10,
+  },
+  rewindButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   timerActions: {
     flexDirection: 'row',
