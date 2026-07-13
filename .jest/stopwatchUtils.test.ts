@@ -1,4 +1,4 @@
-import { formatStopwatchDuration } from '../src/utils/stopwatchUtils';
+import { formatStopwatchDuration } from '../src/utils/stopwatch-utils';
 
 describe('formatStopwatchDuration', () => {
   it('formats minutes and seconds', () => {

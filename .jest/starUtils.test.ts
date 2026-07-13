@@ -8,7 +8,7 @@ import {
   getStarPeriodLogCountLabel,
   getThresholds,
   getTotalStarsForDate,
-} from '../src/utils/starUtils';
+} from '../src/utils/star-utils';
 
 function makeBehavior(overrides: Partial<BehaviorEntry> = {}): BehaviorEntry {
   return {

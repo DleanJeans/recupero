@@ -1,6 +1,6 @@
 import type { BehaviorEntry, LogEntry } from '../src/types/behavior';
 import type { TaskEntry } from '../src/types/task';
-import { getCalendarStarMetrics, getCalendarTaskCompletionMetrics } from '../src/utils/calendarMetrics';
+import { getCalendarStarMetrics, getCalendarTaskCompletionMetrics } from '../src/utils/calendar-metrics';
 
 function makeBehavior(overrides: Partial<BehaviorEntry> = {}): BehaviorEntry {
   return {

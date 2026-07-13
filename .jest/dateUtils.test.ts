@@ -1,4 +1,4 @@
-import { calendarDayDiff, describeDay } from '../src/utils/dateUtils';
+import { calendarDayDiff, describeDay } from '../src/utils/date-utils';
 
 function ts(dateStr: string, time: string = '12:00'): number {
   return new Date(`${dateStr}T${time}:00`).getTime();
