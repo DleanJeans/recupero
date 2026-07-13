@@ -316,17 +316,17 @@ function TimerPanel({
       <View style={styles.stopwatchPanel}>
         <Text style={styles.stopwatchValue}>{formatStopwatchDuration(elapsedMs)}</Text>
         {startTimestamp != null && (
-          <Text style={styles.stopwatchCaption}>{`Started at ${formatTime(startTimestamp)}`}</Text>
-        )}
-        {startTimestamp != null && (
-          <Button
-            variant="secondary"
-            onPress={onRewindStart}
-            accessibilityLabel="Move start time back 1 minute"
-            style={styles.rewindButton}
-          >
-            -1 min
-          </Button>
+          <View style={styles.startedRow}>
+            <Text style={styles.stopwatchCaption}>{`Started at ${formatTime(startTimestamp)}`}</Text>
+            <Button
+              variant="secondary"
+              onPress={onRewindStart}
+              accessibilityLabel="Move start time back 1 minute"
+              style={styles.rewindButton}
+            >
+              -1 min
+            </Button>
+          </View>
         )}
         {(rewardXp != null || rewardMoney != null) && (
           <LogRewardPreview
@@ -474,11 +474,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
+  },
+  startedRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
     marginTop: -10,
   },
   rewindButton: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   timerActions: {
     flexDirection: 'row',
