@@ -2,9 +2,9 @@ import DateTimePicker, {
   DateTimePickerAndroid,
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import React, { memo, useCallback, useMemo } from 'react';
-import { Keyboard, Pressable, StyleSheet, View } from 'react-native';
-import { Text, TextInput } from '../../../components/text';
+import React, { memo, useCallback, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 
 const IS_ANDROID = process.env.EXPO_OS === 'android';
@@ -38,11 +38,21 @@ function TimePickerComponent({
   onSecondChange,
   onExpand,
 }: TimePickerProps) {
+  const [editingSeconds, setEditingSeconds] = useState(false);
   const value = useMemo(() => new Date(2000, 0, 1, hour, minute, second), [hour, minute, second]);
   const maximumDate = useMemo(
     () => new Date(2000, 0, 1, maxHour, maxMinute, maxSecond),
     [maxHour, maxMinute, maxSecond],
   );
+  const pickerValue = useMemo(
+    () => (editingSeconds ? new Date(2000, 0, 1, 0, second) : value),
+    [editingSeconds, second, value],
+  );
+  const pickerMaximumDate = useMemo(
+    () => (editingSeconds ? new Date(2000, 0, 1, 0, maxSecond) : maximumDate),
+    [editingSeconds, maxSecond, maximumDate],
+  );
+  const pickerMinimumDate = useMemo(() => new Date(2000, 0, 1), []);
   const displayTime = useMemo(
     () =>
       showSeconds
@@ -51,15 +61,20 @@ function TimePickerComponent({
     [hour, minute, second, showSeconds],
   );
   const handleChange = useCallback(
-    (event: DateTimePickerEvent, selectedDate?: Date) => {
+    (event: DateTimePickerEvent, selectedDate: Date | undefined, secondsMode: boolean) => {
       if (event.type === 'dismissed' || !selectedDate) return;
+      if (secondsMode) {
+        onSecondChange(Math.min(selectedDate.getMinutes(), maxSecond));
+        return;
+      }
       const selectedMinutes = selectedDate.getHours() * 60 + selectedDate.getMinutes();
       const maxMinutes = maxHour * 60 + maxMinute;
       onMinuteChange(Math.min(selectedMinutes, maxMinutes) - hour * 60);
     },
-    [hour, maxHour, maxMinute, onMinuteChange],
+    [hour, maxHour, maxMinute, maxSecond, onMinuteChange, onSecondChange],
   );
   const handlePress = useCallback(() => {
+    setEditingSeconds(false);
     if (!IS_ANDROID) {
       onExpand();
       return;
@@ -69,55 +84,65 @@ function TimePickerComponent({
       mode: 'time',
       display: 'spinner',
       is24Hour: true,
-      onChange: handleChange,
+      minimumDate: pickerMinimumDate,
+      maximumDate: maximumDate,
+      onChange: (event, selectedDate) => handleChange(event, selectedDate, false),
     });
-  }, [handleChange, onExpand, value]);
-  const handleSecondChange = useCallback(
-    (text: string) => {
-      if (!/^\d{0,2}$/.test(text) || text === '') return;
-      onSecondChange(Math.min(Number(text), maxSecond));
-    },
-    [maxSecond, onSecondChange],
-  );
-  const handleSecondSubmit = useCallback(() => Keyboard.dismiss(), []);
+  }, [handleChange, maximumDate, onExpand, pickerMinimumDate, value]);
+  const handleSecondPress = useCallback(() => {
+    setEditingSeconds(true);
+    if (!IS_ANDROID) {
+      onExpand();
+      return;
+    }
+    DateTimePickerAndroid.open({
+      value: new Date(2000, 0, 1, 0, second),
+      mode: 'time',
+      display: 'spinner',
+      is24Hour: true,
+      minimumDate: pickerMinimumDate,
+      maximumDate: new Date(2000, 0, 1, 0, maxSecond),
+      onChange: (event, selectedDate) => handleChange(event, selectedDate, true),
+    });
+  }, [handleChange, maxSecond, onExpand, pickerMinimumDate, second]);
 
   return (
     <>
       <Text style={styles.sectionLabel}>{label}</Text>
-      <Pressable
-        style={[styles.collapsedTime, !IS_ANDROID && !collapsed && styles.hiddenControl]}
-        onPress={handlePress}
-        pointerEvents={IS_ANDROID || collapsed ? 'auto' : 'none'}
-      >
-        <Text style={styles.collapsedTimeText}>{displayTime}</Text>
-      </Pressable>
+      <View style={[styles.collapsedTime, !IS_ANDROID && !collapsed && styles.hiddenControl]}>
+        <Pressable
+          onPress={handlePress}
+          pointerEvents={IS_ANDROID || collapsed ? 'auto' : 'none'}
+          accessibilityLabel={`${label} hours and minutes`}
+        >
+          <Text style={styles.collapsedTimeText}>{displayTime.slice(0, 5)}</Text>
+        </Pressable>
+        {showSeconds && (
+          <>
+            <Text style={styles.timeSeparator}>:</Text>
+            <Pressable
+              onPress={handleSecondPress}
+              pointerEvents={IS_ANDROID || collapsed ? 'auto' : 'none'}
+              accessibilityLabel={`${label} seconds`}
+            >
+              <Text style={styles.collapsedTimeText}>{displayTime.slice(-2)}</Text>
+            </Pressable>
+          </>
+        )}
+      </View>
       {!IS_ANDROID && (
         <View style={[styles.pickerContainer, collapsed && styles.hiddenControl]}>
           <DateTimePicker
-            value={value}
-            maximumDate={maximumDate}
+            value={pickerValue}
+            minimumDate={pickerMinimumDate}
+            maximumDate={pickerMaximumDate}
             mode="time"
             display="spinner"
             minuteInterval={1}
             themeVariant="dark"
             textColor={Colors.text.primary}
-            onChange={handleChange}
+            onChange={(event, selectedDate) => handleChange(event, selectedDate, editingSeconds)}
             style={styles.picker}
-          />
-        </View>
-      )}
-      {showSeconds && (
-        <View style={styles.secondsEditor}>
-          <Text style={styles.secondsLabel}>Seconds</Text>
-          <TextInput
-            accessibilityLabel={`${label} seconds`}
-            style={styles.secondsInput}
-            value={String(second).padStart(2, '0')}
-            onChangeText={handleSecondChange}
-            onSubmitEditing={handleSecondSubmit}
-            keyboardType="number-pad"
-            maxLength={2}
-            selectTextOnFocus
           />
         </View>
       )}
@@ -141,31 +166,7 @@ const styles = StyleSheet.create({
   hiddenControl: { height: 0, marginBottom: 0, opacity: 0, overflow: 'hidden' },
   pickerContainer: { height: 216, marginBottom: 16, overflow: 'hidden' },
   picker: { height: 216 },
-  secondsEditor: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 10,
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  secondsLabel: {
-    color: Colors.text.light,
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
-  secondsInput: {
-    backgroundColor: Colors.bg.card,
-    borderRadius: 8,
-    color: Colors.text.primary,
-    fontSize: 20,
-    fontVariant: ['tabular-nums'],
-    minWidth: 48,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    textAlign: 'center',
-  },
+  timeSeparator: { color: Colors.text.primary, fontSize: 28, fontWeight: '700' },
   collapsedTimeText: {
     color: Colors.text.primary,
     fontSize: 28,
