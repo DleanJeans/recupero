@@ -18,6 +18,7 @@ import {
   getCalculatedMetadataFields,
   getDailyGoalProgress,
   getManualMetadataFields,
+  getOrderedMetadataFields,
   getSelectedAmountMetadataField,
   parseDecimalInput,
 } from '../../../utils/metadata-calculation-utils';
@@ -99,7 +100,10 @@ export function useBehaviorLogForm({
   const [notes, setNotes] = useState(String(existingLog?.metadata?.notes ?? ''));
   const [timePickerCollapsed, setTimePickerCollapsed] = useState(true);
 
-  const metadataFields = useMemo(() => category?.metadataFields ?? [], [category?.metadataFields]);
+  const metadataFields = useMemo(
+    () => getOrderedMetadataFields(category?.metadataFields ?? [], behavior.metadataOrder),
+    [behavior.metadataOrder, category?.metadataFields],
+  );
   const amountField = useMemo(
     () =>
       getSelectedAmountMetadataField(metadataFields, behavior.metadataAmountFieldKey, behavior.metadataQuantityUnit),

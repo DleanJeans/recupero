@@ -47,6 +47,7 @@ export interface BehaviorEntry {
   metadata: Record<string, string | number>;
   defaultMetadata?: Record<string, number>;
   metadataAmountFieldKey?: string;
+  metadataOrder?: string[];
   metadataQuantityUnit?: string;
   logs: LogEntry[];
   cooldownMinutes: number;

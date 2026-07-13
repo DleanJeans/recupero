@@ -1,5 +1,6 @@
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useCallback, useMemo } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SelectPill } from '../../../components/select-pill';
 import { Text } from '../../../components/text';
 import type { Category, MetadataField } from '../../../types/behavior';
@@ -11,6 +12,7 @@ import {
   getAmountMetadataFields,
   getCalculatedMetadataFields,
   getManualMetadataFields,
+  getOrderedMetadataFields,
   getSelectedAmountMetadataField,
 } from '../../../utils/metadata-calculation-utils';
 import { MetadataDefaultInput } from './metadata-default-input';
@@ -22,6 +24,8 @@ interface MetadataEditorProps {
   amountFieldKey: string | undefined;
   onChange: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   onAmountFieldChange: (fieldKey: string) => void;
+  metadataOrder?: string[];
+  onMetadataOrderChange: (order: string[]) => void;
 }
 
 export function MetadataEditor({
@@ -31,18 +35,69 @@ export function MetadataEditor({
   amountFieldKey,
   onChange,
   onAmountFieldChange,
+  metadataOrder,
+  onMetadataOrderChange,
 }: MetadataEditorProps) {
   const selectedCategory = categories.find(category => category.id === categoryId);
   const fields = selectedCategory?.metadataFields ?? [];
-  if (fields.length === 0) return null;
+  const orderedFields = useMemo(() => getOrderedMetadataFields(fields, metadataOrder), [fields, metadataOrder]);
+  const amountFields = getAmountMetadataFields(orderedFields);
+  const selectedAmountField = getSelectedAmountMetadataField(orderedFields, amountFieldKey);
+  const manualFields = getManualMetadataFields(orderedFields);
+  const calculatedFields = getCalculatedMetadataFields(orderedFields);
+  const moveField = useCallback(
+    (index: number, offset: number) => {
+      const next = [...orderedFields];
+      const targetIndex = index + offset;
+      if (targetIndex < 0 || targetIndex >= next.length) return;
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+      onMetadataOrderChange(next.map(field => field.key));
+    },
+    [onMetadataOrderChange, orderedFields],
+  );
 
-  const amountFields = getAmountMetadataFields(fields);
-  const selectedAmountField = getSelectedAmountMetadataField(fields, amountFieldKey);
-  const manualFields = getManualMetadataFields(fields);
-  const calculatedFields = getCalculatedMetadataFields(fields);
+  if (fields.length === 0) return null;
 
   return (
     <View style={styles.section}>
+      <Text style={styles.label}>Metadata order</Text>
+      <View style={styles.orderList}>
+        {orderedFields.map((field, index) => (
+          <View
+            key={field.key}
+            style={styles.orderRow}
+          >
+            <Text style={styles.orderLabel}>{formatMetadataFieldLabel(field)}</Text>
+            <View style={styles.orderButtons}>
+              <Pressable
+                accessibilityLabel={`Move ${field.label} up`}
+                disabled={index === 0}
+                onPress={() => moveField(index, -1)}
+                style={styles.orderButton}
+              >
+                <Ionicons
+                  name="chevron-up"
+                  size={16}
+                  color={index === 0 ? Colors.text.faint : Colors.text.light}
+                />
+              </Pressable>
+              <Pressable
+                accessibilityLabel={`Move ${field.label} down`}
+                disabled={index === orderedFields.length - 1}
+                onPress={() => moveField(index, 1)}
+                style={styles.orderButton}
+              >
+                <Ionicons
+                  name="chevron-down"
+                  size={16}
+                  color={index === orderedFields.length - 1 ? Colors.text.faint : Colors.text.light}
+                />
+              </Pressable>
+            </View>
+          </View>
+        ))}
+      </View>
+
       {amountFields.length > 0 && (
         <>
           <Text style={styles.label}>Amount unit</Text>
@@ -133,5 +188,29 @@ const styles = StyleSheet.create({
   quantityUnitOptionTextActive: {
     color: Colors.bg.primary,
     fontWeight: '600',
+  },
+  orderList: {
+    gap: 4,
+  },
+  orderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.bg.card,
+    borderRadius: 8,
+    paddingVertical: 5,
+    paddingLeft: 10,
+  },
+  orderLabel: {
+    color: Colors.text.secondary,
+    fontSize: 13,
+    flex: 1,
+  },
+  orderButtons: {
+    flexDirection: 'row',
+  },
+  orderButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
 });

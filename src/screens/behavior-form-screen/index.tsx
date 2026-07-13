@@ -23,6 +23,7 @@ import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import {
   getAmountMetadataFields,
+  getOrderedMetadataFields,
   getSelectedAmountMetadataField,
   parseDecimalInput,
 } from '../../utils/metadata-calculation-utils';
@@ -106,6 +107,7 @@ export function BehaviorFormScreen() {
   const [metadataAmountFieldKey, setMetadataAmountFieldKey] = useState<string | undefined>(
     () => behavior?.metadataAmountFieldKey,
   );
+  const [metadataOrder, setMetadataOrder] = useState<string[] | undefined>(() => behavior?.metadataOrder);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const moneyRewardDurationBased = xpEnabled && durationXpEnabled;
   const handleDurationXpToggle = () => {
@@ -203,6 +205,7 @@ export function BehaviorFormScreen() {
       Object.fromEntries(Object.entries(behavior.defaultMetadata ?? {}).map(([k, v]) => [k, String(v)])),
     );
     setMetadataAmountFieldKey(behavior.metadataAmountFieldKey);
+    setMetadataOrder(behavior.metadataOrder);
   }, [behavior]);
 
   useEffect(() => {
@@ -270,6 +273,7 @@ export function BehaviorFormScreen() {
       cooldownType !== (behavior.cooldownType || 'rest') ||
       cooldownUnit !== behavior.cooldownUnit ||
       defaultMetadataChanged ||
+      JSON.stringify(metadataOrder ?? []) !== JSON.stringify(behavior.metadataOrder ?? []) ||
       selectedAmountField?.key !==
         getSelectedAmountMetadataField(metadataFields, behavior.metadataAmountFieldKey)?.key ||
       starThresholdsChanged ||
@@ -319,6 +323,7 @@ export function BehaviorFormScreen() {
         .map(([k, v]) => [k, parseDecimalInput(v)] as const)
         .filter((entry): entry is readonly [string, number] => entry[1] != null && entry[1] !== 0),
     );
+    const savedMetadataOrder = getOrderedMetadataFields(metadataFields, metadataOrder).map(field => field.key);
     if (isEdit && behavior) {
       updateBehavior(behavior.id, {
         name: trimmed,
@@ -332,6 +337,7 @@ export function BehaviorFormScreen() {
         private: isPrivate,
         defaultMetadata: defaultMetadataObj,
         metadataAmountFieldKey: selectedAmountField?.key,
+        metadataOrder: metadataOrder?.length ? savedMetadataOrder : undefined,
         starThresholds: starsEnabled ? (parsedStars.values ?? undefined) : undefined,
         starPeriod: starsEnabled ? starPeriod : undefined,
         starMoneyMultipliers: starMoneyMultipliersConfig,
@@ -354,6 +360,7 @@ export function BehaviorFormScreen() {
         isPrivate,
         defaultMetadataObj,
         selectedAmountField?.key,
+        metadataOrder?.length ? savedMetadataOrder : undefined,
         starsEnabled ? (parsedStars.values ?? undefined) : undefined,
         starsEnabled ? starPeriod : undefined,
         starMoneyMultipliersConfig,
@@ -420,6 +427,8 @@ export function BehaviorFormScreen() {
             amountFieldKey={selectedAmountField?.key}
             onChange={setBehaviorDefaultMetadata}
             onAmountFieldChange={setMetadataAmountFieldKey}
+            metadataOrder={metadataOrder}
+            onMetadataOrderChange={setMetadataOrder}
           />
 
           <CheckboxRow

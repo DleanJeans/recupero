@@ -50,6 +50,23 @@ export function sortMetadataFieldsByCalculation(fields: MetadataField[]): Metada
     .map(({ field }) => field);
 }
 
+export function getOrderedMetadataFields(fields: MetadataField[], order?: string[]): MetadataField[] {
+  if (!order?.length) return fields;
+
+  const fieldsByKey = new Map(fields.map(field => [field.key, field]));
+  const orderedKeys = new Set<string>();
+  const orderedFields: MetadataField[] = [];
+
+  for (const key of order) {
+    const field = fieldsByKey.get(key);
+    if (!field || orderedKeys.has(key)) continue;
+    orderedKeys.add(key);
+    orderedFields.push(field);
+  }
+
+  return [...orderedFields, ...fields.filter(field => !orderedKeys.has(field.key))];
+}
+
 export function getAmountMetadataFields(fields: MetadataField[]): MetadataField[] {
   return fields.filter(field => getMetadataFieldCalculation(field) === 'amount');
 }

@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native
 import { DatePicker } from '../../../components/date-picker';
 import { Text, TextInput } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
-import { formatMetadataFieldLabel } from '../../../utils/metadata-calculation-utils';
+import { formatMetadataFieldLabel, getMetadataFieldCalculation } from '../../../utils/metadata-calculation-utils';
 import { formatDuration } from '../../../utils/time-utils';
 import { CalculatedMetadataFields } from './calculated-metadata-fields';
 import { MetadataInputRow } from './metadata-input-row';
@@ -15,11 +15,10 @@ interface Props {
 
 export function BehaviorLogForm({ form }: Props) {
   const {
-    amountField,
     applyEndSeconds,
     applyStartSeconds,
     behavior,
-    calculatedMetadataFields,
+    amountField,
     calculatedMetadataValues,
     durationMs,
     endHour,
@@ -27,7 +26,6 @@ export function BehaviorLogForm({ form }: Props) {
     endSecond,
     handleCollapseTime,
     handleInputBlur,
-    manualMetadataFields,
     metadataFields,
     metadataValues,
     notes,
@@ -96,37 +94,30 @@ export function BehaviorLogForm({ form }: Props) {
           removeClippedSubviews
         >
           {metadataFields.length > 0 && <Text style={styles.sectionLabel}>Metadata</Text>}
-          {amountField && (
-            <MetadataInputRow
-              field={amountField}
-              value={metadataValues[amountField.key] ?? ''}
-              label={formatMetadataFieldLabel(amountField)}
-              onChange={setMetadataValues}
-              onFocus={handleCollapseTime}
-              onBlur={handleInputBlur}
-              progress={progressByField[amountField.key]}
-            />
+          {metadataFields.map(field =>
+            getMetadataFieldCalculation(field) === 'per100' ? (
+              <CalculatedMetadataFields
+                key={field.key}
+                amountField={amountField}
+                defaultMetadata={behavior.defaultMetadata}
+                fields={[field]}
+                metadataValues={metadataValues}
+                calculatedMetadataValues={calculatedMetadataValues}
+                progressByField={progressByField}
+              />
+            ) : (
+              <MetadataInputRow
+                key={field.key}
+                field={field}
+                value={metadataValues[field.key] ?? ''}
+                label={formatMetadataFieldLabel(field)}
+                onChange={setMetadataValues}
+                onFocus={handleCollapseTime}
+                onBlur={handleInputBlur}
+                progress={progressByField[field.key]}
+              />
+            ),
           )}
-          {manualMetadataFields.map(field => (
-            <MetadataInputRow
-              key={field.key}
-              field={field}
-              value={metadataValues[field.key] ?? ''}
-              label={formatMetadataFieldLabel(field)}
-              onChange={setMetadataValues}
-              onFocus={handleCollapseTime}
-              onBlur={handleInputBlur}
-              progress={progressByField[field.key]}
-            />
-          ))}
-          <CalculatedMetadataFields
-            amountField={amountField}
-            defaultMetadata={behavior.defaultMetadata}
-            fields={calculatedMetadataFields}
-            metadataValues={metadataValues}
-            calculatedMetadataValues={calculatedMetadataValues}
-            progressByField={progressByField}
-          />
 
           <Text style={styles.sectionLabel}>Notes</Text>
           <TextInput
