@@ -4,7 +4,7 @@ import type { MetadataField } from '../../types/behavior';
 import { Colors } from '../../utils/colors';
 import { EmojiPicker } from '../emoji-picker';
 import { TextInput } from '../text';
-import MetadataFieldsSection from './metadata-fields-section';
+import CategoryMetadataEditor from './category-metadata-editor';
 
 export interface CategoryFormProps {
   emoji: string;
@@ -57,7 +57,7 @@ export function CategoryForm({
       </View>
 
       {onMetadataFieldsChange && (
-        <MetadataFieldsSection
+        <CategoryMetadataEditor
           key={metadataFieldsKey}
           fields={metadataFields}
           onChange={onMetadataFieldsChange}

@@ -1,7 +1,6 @@
 import type { BehaviorEntry, Category, LogEntry } from '../types/behavior';
 import { operationalDayDiff, toDateString, yesterday } from './date-utils';
 import { getLogEndTimestamp } from './log-utils';
-import { getOrderedMetadataFields } from './metadata-calculation-utils';
 import { roundTo2 } from './number-utils';
 import { Group } from './strings';
 
@@ -165,7 +164,7 @@ export function getDailyMetadataContributions(
     const category = categoryById.get(entry.behavior.categoryId);
     if (!category) continue;
 
-    const fields = getOrderedMetadataFields(category.metadataFields ?? [], entry.behavior.metadataOrder);
+    const fields = category.metadataFields ?? [];
     if (fields.length === 0) continue;
 
     for (const field of fields) {
@@ -198,12 +197,6 @@ export function getAllDailyMetadataTotals(
 ): DailyMetadataTotal[] {
   const result: DailyMetadataTotal[] = [];
   const categoryById = new Map(categories.map(category => [category.id, category]));
-  const fieldsByCategory = new Map(
-    categories.map(category => {
-      const categoryBehavior = behaviors.find(behavior => behavior.categoryId === category.id);
-      return [category.id, getOrderedMetadataFields(category.metadataFields ?? [], categoryBehavior?.metadataOrder)];
-    }),
-  );
   const totalsByCategory = new Map<string, Map<string, number>>();
 
   for (const behavior of behaviors) {
@@ -212,7 +205,7 @@ export function getAllDailyMetadataTotals(
     const category = categoryById.get(behavior.categoryId);
     if (!category) continue;
 
-    const fields = fieldsByCategory.get(category.id) ?? [];
+    const fields = category.metadataFields ?? [];
     if (fields.length === 0) continue;
 
     let categoryTotals = totalsByCategory.get(category.id);
@@ -236,7 +229,7 @@ export function getAllDailyMetadataTotals(
   }
 
   for (const category of categories) {
-    const fields = fieldsByCategory.get(category.id) ?? [];
+    const fields = category.metadataFields ?? [];
     if (fields.length === 0) continue;
 
     const categoryTotals = totalsByCategory.get(category.id);

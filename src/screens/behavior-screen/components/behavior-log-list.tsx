@@ -7,7 +7,6 @@ import type { BehaviorEntry } from '../../../types/behavior';
 import { groupLogsByRecency } from '../../../utils/behavior-utils';
 import { Colors } from '../../../utils/colors';
 import { getLogGapBounds } from '../../../utils/log-utils';
-import { getOrderedMetadataFields } from '../../../utils/metadata-calculation-utils';
 import { getDecayedLogs } from '../../../utils/xp-utils';
 import { BehaviorLogItem } from './behavior-log-item';
 import { DecayedXPSummary } from './decayed-xp-summary';
@@ -36,7 +35,7 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
     () => new Set(getDecayedLogs(behavior, now, dayCutoffHour).map(log => log.id)),
     [behavior, dayCutoffHour, now],
   );
-  const metadataFields = getOrderedMetadataFields(category?.metadataFields ?? [], behavior.metadataOrder);
+  const metadataFields = category?.metadataFields;
 
   useEffect(() => {
     const interval = setInterval(() => setElapsedTick(t => t + 1), 60000);

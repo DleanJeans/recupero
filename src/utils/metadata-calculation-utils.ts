@@ -2,12 +2,6 @@ import type { BehaviorEntry, LogEntry, MetadataField, MetadataFieldCalculation }
 import { roundTo2 } from './number-utils';
 import { getLogsForDate } from './star-utils';
 
-const MetadataFieldCalculationOrder: Record<MetadataFieldCalculation, number> = {
-  manual: 0,
-  amount: 1,
-  per100: 2,
-};
-
 export function sanitizeDecimalInput(value: string): string {
   return value
     .replace(/[^0-9.-]/g, '')
@@ -36,35 +30,6 @@ export function parseDecimalInput(value: string): number | undefined {
 
 export function getMetadataFieldCalculation(field: MetadataField): MetadataFieldCalculation {
   return field.calculation ?? 'manual';
-}
-
-export function sortMetadataFieldsByCalculation(fields: MetadataField[]): MetadataField[] {
-  return fields
-    .map((field, index) => ({ field, index }))
-    .sort((a, b) => {
-      const rankDiff =
-        MetadataFieldCalculationOrder[getMetadataFieldCalculation(a.field)] -
-        MetadataFieldCalculationOrder[getMetadataFieldCalculation(b.field)];
-      return rankDiff || a.index - b.index;
-    })
-    .map(({ field }) => field);
-}
-
-export function getOrderedMetadataFields(fields: MetadataField[], order?: string[]): MetadataField[] {
-  if (!order?.length) return fields;
-
-  const fieldsByKey = new Map(fields.map(field => [field.key, field]));
-  const orderedKeys = new Set<string>();
-  const orderedFields: MetadataField[] = [];
-
-  for (const key of order) {
-    const field = fieldsByKey.get(key);
-    if (!field || orderedKeys.has(key)) continue;
-    orderedKeys.add(key);
-    orderedFields.push(field);
-  }
-
-  return [...orderedFields, ...fields.filter(field => !orderedKeys.has(field.key))];
 }
 
 export function getAmountMetadataFields(fields: MetadataField[]): MetadataField[] {

@@ -6,7 +6,7 @@ import { Text } from '../../../components/text';
 import type { BehaviorEntry, Category, LogEntry } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 import { getLogDurationMs, hasTimedLogRange } from '../../../utils/log-utils';
-import { formatMetadataValueUnit, getOrderedMetadataFields } from '../../../utils/metadata-calculation-utils';
+import { formatMetadataValueUnit } from '../../../utils/metadata-calculation-utils';
 import { roundTo2 } from '../../../utils/number-utils';
 import { formatDuration, formatTime, formatTimeRange, MS_PER_MINUTE } from '../../../utils/time-utils';
 
@@ -30,7 +30,7 @@ function formatEntryMetadata(
   if (!metadata || Object.keys(metadata).length === 0) return null;
 
   const category = categories.find(c => c.id === behavior.categoryId);
-  const fields = getOrderedMetadataFields(category?.metadataFields ?? [], behavior.metadataOrder);
+  const fields = category?.metadataFields ?? [];
   const parts: string[] = [];
 
   if (metadata.notes) {

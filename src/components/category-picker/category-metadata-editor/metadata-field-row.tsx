@@ -18,20 +18,24 @@ export const MetadataFieldColumnFlex = {
 interface MetadataFieldRowProps {
   field: MetadataField;
   index: number;
+  isLast: boolean;
   onLabelChange: (index: number, value: string) => void;
   onDailyGoalChange: (index: number, value: string) => void;
   onUnitChange: (index: number, value: string) => void;
   onCalculationChange: (index: number, calculation: MetadataFieldCalculation) => void;
+  onMove: (index: number, offset: number) => void;
   onRemove: (index: number) => void;
 }
 
 export function MetadataFieldRow({
   field,
   index,
+  isLast,
   onLabelChange,
   onDailyGoalChange,
   onUnitChange,
   onCalculationChange,
+  onMove,
   onRemove,
 }: MetadataFieldRowProps) {
   return (
@@ -86,16 +90,45 @@ export function MetadataFieldRow({
           </View>
         </View>
       </View>
-      <Pressable
-        onPress={() => onRemove(index)}
-        style={styles.removeBtn}
-      >
-        <Ionicons
-          name="close-circle"
-          size={20}
-          color={Colors.text.faint}
-        />
-      </Pressable>
+      <View style={styles.actions}>
+        <View style={styles.reorderButtons}>
+          <Pressable
+            accessibilityLabel={`Move ${field.label || 'field'} up`}
+            disabled={index === 0}
+            onPress={() => onMove(index, -1)}
+            style={styles.actionButton}
+          >
+            <Ionicons
+              name="chevron-up"
+              size={17}
+              color={index === 0 ? Colors.text.faint : Colors.text.light}
+            />
+          </Pressable>
+          <Pressable
+            accessibilityLabel={`Move ${field.label || 'field'} down`}
+            disabled={isLast}
+            onPress={() => onMove(index, 1)}
+            style={styles.actionButton}
+          >
+            <Ionicons
+              name="chevron-down"
+              size={17}
+              color={isLast ? Colors.text.faint : Colors.text.light}
+            />
+          </Pressable>
+        </View>
+        <Pressable
+          accessibilityLabel={`Remove ${field.label || 'field'}`}
+          onPress={() => onRemove(index)}
+          style={styles.actionButton}
+        >
+          <Ionicons
+            name="close-circle"
+            size={20}
+            color={Colors.text.faint}
+          />
+        </Pressable>
+      </View>
     </Animated.View>
   );
 }
@@ -135,7 +168,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 6,
   },
-  removeBtn: {
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  reorderButtons: {
+    flexDirection: 'column',
+  },
+  actionButton: {
     padding: 3,
   },
   calculationRow: {

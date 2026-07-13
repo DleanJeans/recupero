@@ -33,7 +33,6 @@ interface BehaviorStore {
     isPrivate?: boolean,
     defaultMetadata?: Record<string, number>,
     metadataAmountFieldKey?: string,
-    metadataOrder?: string[],
     starThresholds?: [number, number | null, number | null],
     starPeriod?: StarPeriod,
     starMoneyMultipliers?: BehaviorEntry['starMoneyMultipliers'],
@@ -64,7 +63,6 @@ interface BehaviorStore {
       private?: boolean;
       defaultMetadata?: Record<string, number>;
       metadataAmountFieldKey?: string;
-      metadataOrder?: string[];
       starThresholds?: [number, number | null, number | null] | undefined;
       starPeriod?: StarPeriod | undefined;
       starMoneyMultipliers?: BehaviorEntry['starMoneyMultipliers'];
@@ -121,7 +119,6 @@ export const useBehaviorStore = create<BehaviorStore>()(
         isPrivate = false,
         defaultMetadata,
         metadataAmountFieldKey,
-        metadataOrder,
         starThresholds,
         starPeriod,
         starMoneyMultipliers,
@@ -146,7 +143,6 @@ export const useBehaviorStore = create<BehaviorStore>()(
               metadata: {},
               defaultMetadata,
               metadataAmountFieldKey,
-              metadataOrder,
               logs: [],
               cooldownMinutes,
               cooldownType,

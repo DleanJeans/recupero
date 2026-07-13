@@ -3,7 +3,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { MetadataField, MetadataFieldCalculation } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
-import { sanitizeDecimalInput, sortMetadataFieldsByCalculation } from '../../../utils/metadata-calculation-utils';
+import { sanitizeDecimalInput } from '../../../utils/metadata-calculation-utils';
 import { Text } from '../../text';
 import { MetadataFieldColumnFlex, MetadataFieldRow } from './metadata-field-row';
 
@@ -12,9 +12,9 @@ interface Props {
   onChange: (fields: MetadataField[]) => void;
 }
 
-function MetadataFieldsSection({ fields, onChange }: Props) {
+function CategoryMetadataEditor({ fields, onChange }: Props) {
   // Local copy so keystrokes don't trigger parent re-render → no focus loss
-  const [localFields, setLocalFields] = useState<MetadataField[]>(() => sortMetadataFieldsByCalculation(fields));
+  const [localFields, setLocalFields] = useState<MetadataField[]>(() => fields);
   const latestRef = useRef(localFields);
   latestRef.current = localFields;
   // No useEffect to sync from parent — use key prop on parent side to remount on category change
@@ -22,6 +22,7 @@ function MetadataFieldsSection({ fields, onChange }: Props) {
   const handleAddField = useCallback(() => {
     const key = `field_${Date.now()}`;
     const next = [...latestRef.current, { key, label: '', unit: '' }];
+    latestRef.current = next;
     setLocalFields(next);
     onChange(next);
   }, [onChange]);
@@ -29,6 +30,7 @@ function MetadataFieldsSection({ fields, onChange }: Props) {
   const handleRemoveField = useCallback(
     (index: number) => {
       const next = latestRef.current.filter((_, i) => i !== index);
+      latestRef.current = next;
       setLocalFields(next);
       onChange(next);
     },
@@ -76,15 +78,26 @@ function MetadataFieldsSection({ fields, onChange }: Props) {
 
   const handleCalculationChange = useCallback(
     (index: number, calculation: MetadataFieldCalculation) => {
-      const next = sortMetadataFieldsByCalculation(
-        latestRef.current.map((field, i) => {
-          if (i !== index) return field;
-          return {
-            ...field,
-            calculation: calculation === 'manual' ? undefined : calculation,
-          };
-        }),
-      );
+      const next = latestRef.current.map((field, i) => {
+        if (i !== index) return field;
+        return {
+          ...field,
+          calculation: calculation === 'manual' ? undefined : calculation,
+        };
+      });
+      latestRef.current = next;
+      setLocalFields(next);
+      onChange(next);
+    },
+    [onChange],
+  );
+
+  const handleMoveField = useCallback(
+    (index: number, offset: number) => {
+      const targetIndex = index + offset;
+      if (targetIndex < 0 || targetIndex >= latestRef.current.length) return;
+      const next = [...latestRef.current];
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
       latestRef.current = next;
       setLocalFields(next);
       onChange(next);
@@ -116,7 +129,7 @@ function MetadataFieldsSection({ fields, onChange }: Props) {
             <Text style={[styles.fieldHeaderLabel, styles.dailyGoalHeaderLabel]}>Daily Goal</Text>
             <Text style={[styles.fieldHeaderLabel, styles.unitHeaderLabel]}>Unit</Text>
           </View>
-          <View style={styles.removeHeaderSpacer} />
+          <View style={styles.actionsHeaderSpacer} />
         </View>
       )}
 
@@ -125,10 +138,12 @@ function MetadataFieldsSection({ fields, onChange }: Props) {
           key={field.key}
           field={field}
           index={index}
+          isLast={index === localFields.length - 1}
           onLabelChange={handleLabelChange}
           onDailyGoalChange={handleDailyGoalChange}
           onUnitChange={handleUnitChange}
           onCalculationChange={handleCalculationChange}
+          onMove={handleMoveField}
           onRemove={handleRemoveField}
         />
       ))}
@@ -136,7 +151,7 @@ function MetadataFieldsSection({ fields, onChange }: Props) {
   );
 }
 
-export default React.memo(MetadataFieldsSection);
+export default React.memo(CategoryMetadataEditor);
 
 const styles = StyleSheet.create({
   section: {
@@ -189,7 +204,7 @@ const styles = StyleSheet.create({
   unitHeaderLabel: {
     flex: MetadataFieldColumnFlex.unit,
   },
-  removeHeaderSpacer: {
-    width: 26,
+  actionsHeaderSpacer: {
+    width: 76,
   },
 });
