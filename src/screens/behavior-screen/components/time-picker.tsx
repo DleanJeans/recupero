@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: 'center',
   },
-  collapsedTime: { alignItems: 'center', marginBottom: 16 },
+  collapsedTime: { alignItems: 'center', flexDirection: 'row', justifyContent: 'center', marginBottom: 16 },
   hiddenControl: { height: 0, marginBottom: 0, opacity: 0, overflow: 'hidden' },
   pickerContainer: { height: 216, marginBottom: 16, overflow: 'hidden' },
   picker: { height: 216 },
