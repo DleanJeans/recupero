@@ -1,4 +1,5 @@
 import { getLogDurationMinutes, getLogDurationSeconds, getLogFormTimestamp } from '../src/utils/log-utils';
+import { getTimerXp } from '../src/utils/xp-utils';
 
 describe('log duration precision', () => {
   it('rounds duration-based XP to the nearest minute', () => {
@@ -10,6 +11,12 @@ describe('log duration precision', () => {
 
   it('keeps the raw duration in seconds for money calculations', () => {
     expect(getLogDurationSeconds({ id: 'log-1', timestamp: 0, endTimestamp: 90_000 })).toBe(90);
+  });
+
+  it('rounds Timer XP to one decimal place without float artifacts', () => {
+    expect(getTimerXp(30_000)).toBe(0.5);
+    expect(getTimerXp(90_000)).toBe(1.5);
+    expect(getTimerXp(126_000)).toBe(2.1);
   });
 });
 

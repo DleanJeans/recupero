@@ -19,7 +19,7 @@ import { Colors } from '../../utils/colors';
 import { getMoneyRewardForLog, getStarMoneyMultiplierForLog } from '../../utils/money-utils';
 import { formatStopwatchDuration } from '../../utils/stopwatch-utils';
 import { formatTime } from '../../utils/time-utils';
-import { getLogXp } from '../../utils/xp-utils';
+import { getTimerXp } from '../../utils/xp-utils';
 import { TaskComposer } from '../task-screen/components/task-composer';
 
 export function TimerScreen() {
@@ -259,7 +259,7 @@ function TimerPanel({
           timestamp: startTimestamp,
           endTimestamp: startTimestamp + elapsedMs,
         };
-  const rewardXp = isRunning && behavior.xpEnabled && rewardLog ? getLogXp(rewardLog) : undefined;
+  const rewardXp = isRunning && behavior.xpEnabled ? getTimerXp(elapsedMs) : undefined;
   const rewardMoneyOriginal =
     isRunning && rewardLog && behavior.moneyReward != null && behavior.type !== 'neutral'
       ? getMoneyRewardForLog(rewardLog, behavior.moneyReward, true) * (behavior.type === 'undesirable' ? -1 : 1)

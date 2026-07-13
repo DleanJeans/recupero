@@ -4,6 +4,7 @@ import { getLogDurationMinutes, getLogEndTimestamp, getLogStartTimestamp, LEGACY
 
 export const XP_PER_LOG = LEGACY_LOG_XP;
 const MS_PER_HOUR = 60 * 60 * 1000;
+const MS_PER_MINUTE = 60 * 1000;
 const behaviorXpCache = new WeakMap<LogEntry[], number>();
 const chronologicalLogsCache = new WeakMap<LogEntry[], LogEntry[]>();
 
@@ -135,6 +136,10 @@ export function getDecayedLogs(behavior: BehaviorEntry, now: number = Date.now()
 
 export function getLogXp(log: BehaviorEntry['logs'][number]): number {
   return getLogDurationMinutes(log);
+}
+
+export function getTimerXp(durationMs: number): number {
+  return Number((Math.max(0, durationMs) / MS_PER_MINUTE).toFixed(1));
 }
 
 export function getBehaviorXp(behavior: BehaviorEntry): number {
