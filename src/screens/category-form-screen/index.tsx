@@ -32,14 +32,15 @@ export function CategoryFormScreen() {
   const [metadataResetNonce, setMetadataResetNonce] = useState(0);
   const trimmedEmoji = emoji.trim();
   const trimmedName = name.trim();
+  const metadataFieldsValid = metadataFields.every(field => field.label.trim().length > 0);
   const metadataFieldsChanged = JSON.stringify(metadataFields) !== JSON.stringify(category?.metadataFields ?? []);
   const hasChanges =
     !isEditing ||
     (category != null && (trimmedEmoji !== category.emoji || trimmedName !== category.name || metadataFieldsChanged));
-  const canSave = trimmedEmoji.length > 0 && trimmedName.length > 0 && hasChanges;
+  const canSave = trimmedEmoji.length > 0 && trimmedName.length > 0 && metadataFieldsValid && hasChanges;
 
   const handleSave = () => {
-    if (!trimmedEmoji || !trimmedName) return;
+    if (!trimmedEmoji || !trimmedName || !metadataFieldsValid) return;
 
     const metadata = metadataFields.length > 0 ? metadataFields : undefined;
     const { addCategory, updateCategory } = useBehaviorStore.getState();
