@@ -115,7 +115,8 @@ export function useBehaviorLogForm({
         if (value != null) values[field.key] = String(value);
       }
     } else if (behavior.defaultMetadata) {
-      for (const field of manualMetadataFields) {
+      const defaultMetadataFields = amountField ? [amountField, ...manualMetadataFields] : manualMetadataFields;
+      for (const field of defaultMetadataFields) {
         const value = behavior.defaultMetadata[field.key];
         if (value != null) values[field.key] = String(value);
       }

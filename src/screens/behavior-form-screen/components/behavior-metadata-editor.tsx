@@ -60,6 +60,15 @@ export function BehaviorMetadataEditor({
               />
             ))}
           </View>
+          {selectedAmountField && (
+            <MetadataDefaultInput
+              field={selectedAmountField}
+              value={defaults[selectedAmountField.key] ?? ''}
+              label="Default amount"
+              unitLabel={selectedAmountField.unit}
+              onChange={onChange}
+            />
+          )}
         </>
       )}
 
