@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { useBehaviorStore } from '../../../store/behavior-store';
 import type { MetadataField, MetadataFieldCalculation } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 import { sanitizeDecimalInput } from '../../../utils/metadata-calculation-utils';
@@ -8,15 +9,21 @@ import { Text } from '../../text';
 import { MetadataFieldColumnFlex, MetadataFieldRow } from './metadata-field-row';
 
 interface Props {
+  categoryId?: string;
   fields: MetadataField[];
   onChange: (fields: MetadataField[]) => void;
 }
 
-function CategoryMetadataEditor({ fields, onChange }: Props) {
+function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
   // Local copy so keystrokes don't trigger parent re-render → no focus loss
   const [localFields, setLocalFields] = useState<MetadataField[]>(() => fields);
   const latestRef = useRef(localFields);
   latestRef.current = localFields;
+  const behaviors = useBehaviorStore(state => state.behaviors);
+  const categoryBehaviors = useMemo(
+    () => (categoryId ? behaviors.filter(behavior => behavior.categoryId === categoryId) : []),
+    [behaviors, categoryId],
+  );
   // No useEffect to sync from parent — use key prop on parent side to remount on category change
 
   const handleAddField = useCallback(() => {
@@ -29,12 +36,34 @@ function CategoryMetadataEditor({ fields, onChange }: Props) {
 
   const handleRemoveField = useCallback(
     (index: number) => {
-      const next = latestRef.current.filter((_, i) => i !== index);
-      latestRef.current = next;
-      setLocalFields(next);
-      onChange(next);
+      const field = latestRef.current[index];
+      if (!field) return;
+
+      const removeField = () => {
+        const next = latestRef.current.filter((_, i) => i !== index);
+        latestRef.current = next;
+        setLocalFields(next);
+        onChange(next);
+      };
+      const hasSavedValues = categoryBehaviors.some(behavior =>
+        behavior.logs.some(log => log.metadata?.[field.key] != null),
+      );
+
+      if (!hasSavedValues) {
+        removeField();
+        return;
+      }
+
+      Alert.alert(
+        'Delete metadata with saved values?',
+        'Existing logs contain values for this metadata. Removing the field will hide those values from your logs.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', style: 'destructive', onPress: removeField },
+        ],
+      );
     },
-    [onChange],
+    [categoryBehaviors, onChange],
   );
 
   const handleLabelChange = useCallback(

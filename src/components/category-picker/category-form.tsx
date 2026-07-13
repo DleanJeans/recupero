@@ -7,6 +7,7 @@ import { TextInput } from '../text';
 import CategoryMetadataEditor from './category-metadata-editor';
 
 export interface CategoryFormProps {
+  categoryId?: string;
   emoji: string;
   name: string;
   isEditing: boolean;
@@ -22,6 +23,7 @@ export interface CategoryFormProps {
 }
 
 export function CategoryForm({
+  categoryId,
   emoji,
   name,
   isEditing,
@@ -59,6 +61,7 @@ export function CategoryForm({
       {onMetadataFieldsChange && (
         <CategoryMetadataEditor
           key={metadataFieldsKey}
+          categoryId={categoryId}
           fields={metadataFields}
           onChange={onMetadataFieldsChange}
         />

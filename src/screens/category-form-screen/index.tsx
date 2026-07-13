@@ -117,6 +117,7 @@ export function CategoryFormScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <CategoryForm
+            categoryId={categoryId}
             emoji={emoji}
             name={name}
             isEditing={isEditing}
