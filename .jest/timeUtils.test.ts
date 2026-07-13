@@ -54,7 +54,8 @@ describe('formatTimeRange', () => {
   it('includes seconds for precise time ranges', () => {
     const start = new Date(2026, 5, 20, 9, 5, 30).getTime();
     const end = new Date(2026, 5, 20, 9, 35, 45).getTime();
-    expect(formatTimeRange(start, end, false)).toBe('09:05:30 - 09:35:45');
+    expect(formatTimeRange(start, end, false, true)).toBe('09:05:30 - 09:35:45');
+    expect(formatTimeRange(start, end, false)).toBe('09:05 - 09:35');
   });
 });
 

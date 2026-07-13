@@ -1,7 +1,7 @@
 import type { BehaviorEntry, LogEntry, MoneyRewardRates } from '../types/behavior';
 import type { TaskEntry } from '../types/task';
 import { toDateString } from './date-utils';
-import { getLogDurationMinutes, getLogEndTimestamp, hasTimedLogRange } from './log-utils';
+import { getLogDurationSeconds, getLogEndTimestamp, hasTimedLogRange } from './log-utils';
 import { getEarnedStars, getPeriodRange, getStarPeriod, getThresholds } from './star-utils';
 import { isOneOffTask, timestampForTaskDate } from './task-utils';
 
@@ -10,6 +10,7 @@ export const MONEY_PER_MINUTE = 1_000;
 export const MONEY_PER_TASK_STAR = 5_000;
 export const VND_SYMBOL = '₫';
 export const DEFAULT_MONEY_REWARD = { perLog: MONEY_PER_LOG, perMinute: MONEY_PER_MINUTE } as const;
+const MONEY_ROUNDING_UNIT = 100;
 
 interface MoneyLogTransactionBase {
   id: string;
@@ -37,6 +38,10 @@ function normalizeMoneyRate(value: number | undefined, fallback: number): number
   return value != null && Number.isFinite(value) && value >= 0 ? Math.round(value) : fallback;
 }
 
+function getRoundedDurationMoney(seconds: number, perMinute: number): number {
+  return Math.round((seconds * perMinute) / 60 / MONEY_ROUNDING_UNIT) * MONEY_ROUNDING_UNIT;
+}
+
 export function getMoneyRewardRates(reward: BehaviorEntry['moneyReward']): MoneyRewardRates {
   if (reward == null || reward === true || typeof reward === 'number') return { ...DEFAULT_MONEY_REWARD };
   return {
@@ -60,12 +65,12 @@ export function getMoneyRewardForLog(
   if (reward === true) return getMoneyRewardForLog(log, DEFAULT_MONEY_REWARD);
   if (reward != null && typeof reward === 'object') {
     if (!hasTimedLogRange(log)) return normalizeMoneyRate(reward.perLog, MONEY_PER_LOG);
-    return getLogDurationMinutes(log) * normalizeMoneyRate(reward.perMinute, MONEY_PER_MINUTE);
+    return getRoundedDurationMoney(getLogDurationSeconds(log), normalizeMoneyRate(reward.perMinute, MONEY_PER_MINUTE));
   }
 
   const amount = getMoneyRewardAmount(reward, durationBased);
   if (!durationBased || !hasTimedLogRange(log)) return amount;
-  return getLogDurationMinutes(log) * amount;
+  return getRoundedDurationMoney(getLogDurationSeconds(log), amount);
 }
 
 export function getStarMoneyMultiplierForLog(behavior: BehaviorEntry, log: LogEntry, dayCutoffHour = 0): number {

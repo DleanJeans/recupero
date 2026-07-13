@@ -18,7 +18,7 @@ export function hasTimedLogRange(log: LogEntry): boolean {
 
 export function getLogDurationMinutes(log: LogEntry): number {
   if (!hasTimedLogRange(log)) return LEGACY_LOG_XP;
-  return Math.max(1, getLogDurationSeconds(log) / 60);
+  return Math.round(getLogDurationSeconds(log) / 60);
 }
 
 export function getLogDurationSeconds(log: LogEntry): number {

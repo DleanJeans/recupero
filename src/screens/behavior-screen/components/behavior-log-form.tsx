@@ -39,6 +39,7 @@ export function BehaviorLogForm({ form }: Props) {
     setNotes,
     setSelectedDate,
     showTimeRange,
+    showSeconds,
     startHour,
     startMinute,
     startSecond,
@@ -82,7 +83,7 @@ export function BehaviorLogForm({ form }: Props) {
           {showTimeRange && (
             <View style={styles.durationCard}>
               <Text style={styles.durationLabel}>Duration</Text>
-              <Text style={styles.durationValue}>{formatDuration(durationMs, true)}</Text>
+              <Text style={styles.durationValue}>{formatDuration(durationMs, showSeconds)}</Text>
             </View>
           )}
         </View>

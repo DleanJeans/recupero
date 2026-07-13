@@ -36,10 +36,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
   );
   const isRange = hasTimedLogRange(log);
   const elapsedText = useMemo(() => formatElapsedNumeric(getLogEndTimestamp(log)), [elapsedTick, log]);
-  const durationText = useMemo(
-    () => (isRange ? formatDuration(getLogDurationMs(log), true) : undefined),
-    [log, isRange],
-  );
+  const durationText = useMemo(() => (isRange ? formatDuration(getLogDurationMs(log)) : undefined), [log, isRange]);
   const xp = behavior.xpEnabled ? getLogXp(log) : undefined;
   const moneyOriginal =
     behavior.moneyReward != null && behavior.type !== 'neutral'

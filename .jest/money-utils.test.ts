@@ -57,8 +57,9 @@ describe('money-utils', () => {
     expect(getMoneyRewardForLog(makeLog({ endTimestamp: 15 * 60_000 }))).toBe(15 * MONEY_PER_MINUTE);
   });
 
-  it('awards fractional per-minute rewards for seconds', () => {
-    expect(getMoneyRewardForLog(makeLog({ endTimestamp: 15 * 60_000 + 30_000 }))).toBe(15.5 * MONEY_PER_MINUTE);
+  it('multiplies raw seconds and rounds money to the nearest 100', () => {
+    expect(getMoneyRewardForLog(makeLog({ endTimestamp: 15 * 60_000 + 30_000 }))).toBe(15_500);
+    expect(getMoneyRewardForLog(makeLog({ endTimestamp: 89_000 }))).toBe(1_500);
   });
 
   it('uses customized per-log and per-minute rates', () => {
@@ -98,8 +99,8 @@ describe('money-utils', () => {
     expect(getBehaviorMoney(perMinute)).toBe(1_000);
   });
 
-  it('clamps a zero-minute timed log to one rewarded minute', () => {
-    expect(getMoneyRewardForLog(makeLog({ endTimestamp: 0 }))).toBe(MONEY_PER_MINUTE);
+  it('allows a zero-second timed log to earn zero money', () => {
+    expect(getMoneyRewardForLog(makeLog({ endTimestamp: 0 }))).toBe(0);
   });
 
   it('only counts logs for behaviors with money rewards enabled', () => {

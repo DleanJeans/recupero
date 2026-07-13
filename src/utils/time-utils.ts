@@ -18,9 +18,12 @@ export function formatTime(timestamp: number, hour12?: boolean, showSeconds = fa
   });
 }
 
-export function formatTimeRange(startTimestamp: number, endTimestamp?: number, hour12?: boolean): string {
-  const showSeconds =
-    endTimestamp != null && (new Date(startTimestamp).getSeconds() !== 0 || new Date(endTimestamp).getSeconds() !== 0);
+export function formatTimeRange(
+  startTimestamp: number,
+  endTimestamp?: number,
+  hour12?: boolean,
+  showSeconds = false,
+): string {
   const start = formatTime(startTimestamp, hour12, showSeconds);
   if (endTimestamp == null) return start;
   const end = formatTime(endTimestamp, hour12, showSeconds);

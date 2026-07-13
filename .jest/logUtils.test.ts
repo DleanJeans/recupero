@@ -1,11 +1,15 @@
 import { getLogDurationMinutes, getLogDurationSeconds, getLogFormTimestamp } from '../src/utils/log-utils';
 
 describe('log duration precision', () => {
-  it('keeps seconds in duration-based reward units', () => {
-    const log = { id: 'log-1', timestamp: 0, endTimestamp: 90_000 };
+  it('rounds duration-based XP to the nearest minute', () => {
+    expect(getLogDurationMinutes({ id: 'log-1', timestamp: 0, endTimestamp: 29_000 })).toBe(0);
+    expect(getLogDurationMinutes({ id: 'log-2', timestamp: 0, endTimestamp: 30_000 })).toBe(1);
+    expect(getLogDurationMinutes({ id: 'log-3', timestamp: 0, endTimestamp: 89_000 })).toBe(1);
+    expect(getLogDurationMinutes({ id: 'log-4', timestamp: 0, endTimestamp: 90_000 })).toBe(2);
+  });
 
-    expect(getLogDurationSeconds(log)).toBe(90);
-    expect(getLogDurationMinutes(log)).toBe(1.5);
+  it('keeps the raw duration in seconds for money calculations', () => {
+    expect(getLogDurationSeconds({ id: 'log-1', timestamp: 0, endTimestamp: 90_000 })).toBe(90);
   });
 });
 

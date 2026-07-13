@@ -82,8 +82,13 @@ export function useBehaviorLogForm({
     existingLog?.timestamp ??
     timerStartTimestamp ??
     getDefaultTimedLogStartTimestamp(new Date(initialEndTimestamp), dayCutoffHour);
-  const initialStartSeconds = getTimeOfDaySeconds(initialStartTimestamp);
-  const initialEndSeconds = getTimeOfDaySeconds(initialEndTimestamp);
+  const showSeconds = hasTimerRange;
+  const initialStartSeconds = showSeconds
+    ? getTimeOfDaySeconds(initialStartTimestamp)
+    : Math.floor(getTimeOfDaySeconds(initialStartTimestamp) / 60) * 60;
+  const initialEndSeconds = showSeconds
+    ? getTimeOfDaySeconds(initialEndTimestamp)
+    : Math.floor(getTimeOfDaySeconds(initialEndTimestamp) / 60) * 60;
 
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [startSeconds, setStartSeconds] = useState(initialStartSeconds);
@@ -161,11 +166,14 @@ export function useBehaviorLogForm({
     [dayCutoffHour, selectedDate],
   );
   const maxTimeSeconds = useMemo(() => {
-    if (selectedDate !== todayStr) return 23 * 60 * 60 + 59 * 60 + 59;
+    if (selectedDate !== todayStr) return showSeconds ? 23 * 60 * 60 + 59 * 60 + 59 : 23 * 60 * 60 + 59 * 60;
     const date = new Date(maxTimestampForDate);
-    if (dayCutoffHour > 0 && date.getHours() < dayCutoffHour) return 23 * 60 * 60 + 59 * 60 + 59;
-    return getTimeOfDaySeconds(maxTimestampForDate);
-  }, [dayCutoffHour, maxTimestampForDate, selectedDate, todayStr]);
+    if (dayCutoffHour > 0 && date.getHours() < dayCutoffHour) {
+      return showSeconds ? 23 * 60 * 60 + 59 * 60 + 59 : 23 * 60 * 60 + 59 * 60;
+    }
+    const currentSeconds = getTimeOfDaySeconds(maxTimestampForDate);
+    return showSeconds ? currentSeconds : Math.floor(currentSeconds / 60) * 60;
+  }, [dayCutoffHour, maxTimestampForDate, selectedDate, showSeconds, todayStr]);
 
   useEffect(() => {
     const clampedEndSeconds = Math.min(endSeconds, maxTimeSeconds);
@@ -227,7 +235,7 @@ export function useBehaviorLogForm({
   const durationMs = Math.max(0, (endSeconds - startSeconds) * 1000);
   const rewardHour = showTimeRange ? startHour : endHour;
   const rewardMinute = showTimeRange ? startMinute : endMinute;
-  const rewardSecond = showTimeRange ? startSecond : endSecond;
+  const rewardSecond = showSeconds && showTimeRange ? startSecond : 0;
   const rewardTimestamp = getLogFormTimestamp(
     selectedDate,
     rewardHour,
@@ -257,7 +265,7 @@ export function useBehaviorLogForm({
   const handleConfirm = useCallback(() => {
     const logHour = showTimeRange ? startHour : endHour;
     const logMinute = showTimeRange ? startMinute : endMinute;
-    const logSecond = showTimeRange ? startSecond : endSecond;
+    const logSecond = showSeconds && showTimeRange ? startSecond : 0;
     const rawStartTimestamp = getLogFormTimestamp(
       selectedDate,
       logHour,
@@ -272,7 +280,7 @@ export function useBehaviorLogForm({
       endMinute,
       dayCutoffHour,
       maxTimestampForDate,
-      endSecond,
+      showSeconds ? endSecond : 0,
     );
     const endTimestamp = Math.min(rawEndTimestamp, maxTimestampForDate);
     const startTimestamp = Math.min(rawStartTimestamp, endTimestamp);
@@ -345,6 +353,7 @@ export function useBehaviorLogForm({
     notes,
     onSaved,
     selectedDate,
+    showSeconds,
     showTimeRange,
     startHour,
     startMinute,
@@ -377,15 +386,22 @@ export function useBehaviorLogForm({
         label,
         hour,
         minute,
-        second,
+        second: showSeconds ? second : 0,
         maxHour: Math.floor(maxTimeSeconds / 3600),
         maxMinute: Math.floor((maxTimeSeconds % 3600) / 60),
-        maxSecond: maxTimeSeconds % 60,
+        maxSecond:
+          showSeconds &&
+          hour === Math.floor(maxTimeSeconds / 3600) &&
+          minute === Math.floor((maxTimeSeconds % 3600) / 60)
+            ? maxTimeSeconds % 60
+            : 59,
+        showSeconds,
         collapsed: timePickerCollapsed,
-        onMinuteChange: nextMinute => applySeconds(hour * 3600 + nextMinute * 60 + second),
+        onMinuteChange: nextMinute => applySeconds(hour * 3600 + nextMinute * 60 + (showSeconds ? second : 0)),
+        onSecondChange: nextSecond => applySeconds(hour * 3600 + minute * 60 + nextSecond),
         onExpand: handleExpandTime,
       }),
-    [handleExpandTime, maxTimeSeconds, timePickerCollapsed],
+    [handleExpandTime, maxTimeSeconds, showSeconds, timePickerCollapsed],
   );
 
   return {
@@ -421,6 +437,7 @@ export function useBehaviorLogForm({
     setNotes,
     setSelectedDate,
     showTimeRange,
+    showSeconds,
     startHour,
     startMinute,
     startSecond,
