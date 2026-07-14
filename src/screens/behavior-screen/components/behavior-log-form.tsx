@@ -94,8 +94,12 @@ export function BehaviorLogForm({ form }: Props) {
           removeClippedSubviews
         >
           {metadataFields.length > 0 && <Text style={styles.sectionLabel}>Metadata</Text>}
-          {metadataFields.map(field =>
-            getMetadataFieldCalculation(field) === 'per100' ? (
+          {metadataFields.map(field => {
+            if (getMetadataFieldCalculation(field) === 'amount' && field.key !== amountField?.key) {
+              return null;
+            }
+
+            return getMetadataFieldCalculation(field) === 'per100' ? (
               <CalculatedMetadataFields
                 key={field.key}
                 amountField={amountField}
@@ -116,8 +120,8 @@ export function BehaviorLogForm({ form }: Props) {
                 onBlur={handleInputBlur}
                 progress={progressByField[field.key]}
               />
-            ),
-          )}
+            );
+          })}
 
           <Text style={styles.sectionLabel}>Notes</Text>
           <TextInput
