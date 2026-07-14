@@ -13,3 +13,5 @@
 7. Minimize prop drilling. Save and read directly from stores if possible.
 
 When creating an icon Button, use variant="icon"
+
+See [REGRESSIONS.md](REGRESSIONS.md) for metadata regression contracts and focused checks.
