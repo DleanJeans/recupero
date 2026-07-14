@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { DailyGoalProgressBar } from '../../../components/daily-goal-progress-bar';
 import { Text, TextInput } from '../../../components/text';
 import type { MetadataField } from '../../../types/behavior';
@@ -14,16 +14,26 @@ interface MetadataInputRowProps {
   onChange: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   onFocus: () => void;
   onBlur: () => void;
+  style?: StyleProp<ViewStyle>;
   /** When set and the field has a `dailyGoal`, render a small progress bar
    *  under the input showing today's progress and the after-log delta. */
   progress?: DailyGoalProgress | null;
 }
 
-export function MetadataInputRow({ field, value, label, onChange, onFocus, onBlur, progress }: MetadataInputRowProps) {
+export function MetadataInputRow({
+  field,
+  value,
+  label,
+  onChange,
+  onFocus,
+  onBlur,
+  progress,
+  style,
+}: MetadataInputRowProps) {
   return (
     <View
       key={field.key}
-      style={styles.metadataFieldRow}
+      style={[styles.metadataFieldRow, style]}
     >
       <Text style={styles.metadataFieldLabel}>{label}</Text>
       <TextInput

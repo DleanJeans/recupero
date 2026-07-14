@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { DailyGoalProgressBar } from '../../../components/daily-goal-progress-bar';
 import { Text } from '../../../components/text';
 import type { MetadataField } from '../../../types/behavior';
@@ -18,6 +18,7 @@ interface CalculatedMetadataFieldsProps {
   fields: MetadataField[];
   metadataValues: Record<string, string>;
   calculatedMetadataValues: Record<string, number>;
+  style?: StyleProp<ViewStyle>;
   /** Per-field progress for fields that have a `dailyGoal`. Rows whose key
    *  is missing or whose entry is `null` won't show a bar. */
   progressByField?: Record<string, DailyGoalProgress | null>;
@@ -30,11 +31,12 @@ export function CalculatedMetadataFields({
   metadataValues,
   calculatedMetadataValues,
   progressByField,
+  style,
 }: CalculatedMetadataFieldsProps) {
   if (fields.length === 0) return null;
 
   return (
-    <View style={styles.grid}>
+    <View style={[styles.grid, style]}>
       {fields.map(field => {
         const value = calculatedMetadataValues[field.key];
         const existingValue = metadataValues[field.key];
@@ -81,8 +83,7 @@ function ProgressIndicator({ progress, unit }: { progress: DailyGoalProgress; un
         <Text style={styles.progressDelta}>+{progress.deltaPercent}%</Text>
       </View>
       <Text style={styles.progressValue}>
-        {roundTo2(progress.current)}{' '}
-        <Text style={styles.progressValueAfter}>→ {roundTo2(progress.after)}</Text> /{' '}
+        {roundTo2(progress.current)} <Text style={styles.progressValueAfter}>→ {roundTo2(progress.after)}</Text> /{' '}
         {roundTo2(progress.goal)}
         {unit ? ` ${unit}` : ''}
       </Text>

@@ -1,5 +1,7 @@
-import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
 import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
+import { Button } from '../../../components/button';
 import { DatePicker } from '../../../components/date-picker';
 import { Text, TextInput } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
@@ -14,6 +16,7 @@ interface Props {
 }
 
 export function BehaviorLogForm({ form }: Props) {
+  const [metadataColumns, setMetadataColumns] = useState<1 | 2>(2);
   const {
     applyEndSeconds,
     applyStartSeconds,
@@ -93,35 +96,56 @@ export function BehaviorLogForm({ form }: Props) {
           showsVerticalScrollIndicator={false}
           removeClippedSubviews
         >
-          {metadataFields.length > 0 && <Text style={styles.sectionLabel}>Metadata</Text>}
-          {metadataFields.map(field => {
-            if (getMetadataFieldCalculation(field) === 'amount' && field.key !== amountField?.key) {
-              return null;
-            }
+          {metadataFields.length > 0 && (
+            <View style={styles.metadataHeader}>
+              <Text style={[styles.sectionLabel, styles.metadataSectionLabel]}>Metadata</Text>
+              <Button
+                variant="icon"
+                style={styles.metadataLayoutButton}
+                onPress={() => setMetadataColumns(columns => (columns === 2 ? 1 : 2))}
+                accessibilityLabel={`Use ${metadataColumns === 2 ? 'one' : 'two'}-column metadata layout`}
+              >
+                <Ionicons
+                  name={metadataColumns === 2 ? 'list-outline' : 'grid-outline'}
+                  size={20}
+                  color={Colors.text.light}
+                />
+              </Button>
+            </View>
+          )}
+          <View style={[styles.metadataGrid, metadataColumns === 1 && styles.metadataGridSingle]}>
+            {metadataFields.map(field => {
+              if (getMetadataFieldCalculation(field) === 'amount' && field.key !== amountField?.key) {
+                return null;
+              }
 
-            return getMetadataFieldCalculation(field) === 'per100' ? (
-              <CalculatedMetadataFields
-                key={field.key}
-                amountField={amountField}
-                defaultMetadata={behavior.defaultMetadata}
-                fields={[field]}
-                metadataValues={metadataValues}
-                calculatedMetadataValues={calculatedMetadataValues}
-                progressByField={progressByField}
-              />
-            ) : (
-              <MetadataInputRow
-                key={field.key}
-                field={field}
-                value={metadataValues[field.key] ?? ''}
-                label={formatMetadataFieldLabel(field)}
-                onChange={setMetadataValues}
-                onFocus={handleCollapseTime}
-                onBlur={handleInputBlur}
-                progress={progressByField[field.key]}
-              />
-            );
-          })}
+              const itemStyle = metadataColumns === 2 ? styles.metadataGridItem : styles.metadataGridSingleItem;
+              return getMetadataFieldCalculation(field) === 'per100' ? (
+                <CalculatedMetadataFields
+                  key={field.key}
+                  amountField={amountField}
+                  defaultMetadata={behavior.defaultMetadata}
+                  fields={[field]}
+                  metadataValues={metadataValues}
+                  calculatedMetadataValues={calculatedMetadataValues}
+                  progressByField={progressByField}
+                  style={itemStyle}
+                />
+              ) : (
+                <MetadataInputRow
+                  key={field.key}
+                  field={field}
+                  value={metadataValues[field.key] ?? ''}
+                  label={formatMetadataFieldLabel(field)}
+                  onChange={setMetadataValues}
+                  onFocus={handleCollapseTime}
+                  onBlur={handleInputBlur}
+                  progress={progressByField[field.key]}
+                  style={itemStyle}
+                />
+              );
+            })}
+          </View>
 
           <Text style={styles.sectionLabel}>Notes</Text>
           <TextInput
@@ -177,6 +201,40 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 10,
+  },
+  metadataHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  metadataSectionLabel: {
+    marginBottom: 0,
+  },
+  metadataLayoutButton: {
+    width: 36,
+    height: 32,
+    padding: 0,
+  },
+  metadataGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  metadataGridSingle: {
+    gap: 0,
+  },
+  metadataGridItem: {
+    flexBasis: '48%',
+    flexGrow: 1,
+    minWidth: 0,
+    marginBottom: 0,
+  },
+  metadataGridSingleItem: {
+    flexBasis: '100%',
+    flexGrow: 1,
+    minWidth: 0,
+    marginBottom: 12,
   },
   durationCard: {
     alignItems: 'center',
