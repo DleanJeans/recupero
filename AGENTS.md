@@ -14,4 +14,4 @@
 
 When creating an icon Button, use variant="icon"
 
-See [REGRESSIONS.md](REGRESSIONS.md) for metadata regression contracts and focused checks.
+See [REGRESSIONS.md](REGRESSIONS.md) for metadata regression contracts.

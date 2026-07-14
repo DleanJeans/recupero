@@ -16,12 +16,13 @@ interface Props {
 }
 
 export function BehaviorLogForm({ form }: Props) {
-  const [metadataColumns, setMetadataColumns] = useState<1 | 2>(2);
+  const [calculatedMetadataColumns, setCalculatedMetadataColumns] = useState<1 | 2>(2);
   const {
     applyEndSeconds,
     applyStartSeconds,
     behavior,
     amountField,
+    calculatedMetadataFields,
     calculatedMetadataValues,
     durationMs,
     endHour,
@@ -99,28 +100,37 @@ export function BehaviorLogForm({ form }: Props) {
           {metadataFields.length > 0 && (
             <View style={styles.metadataHeader}>
               <Text style={[styles.sectionLabel, styles.metadataSectionLabel]}>Metadata</Text>
-              <Button
-                variant="icon"
-                style={styles.metadataLayoutButton}
-                onPress={() => setMetadataColumns(columns => (columns === 2 ? 1 : 2))}
-                accessibilityLabel={`Use ${metadataColumns === 2 ? 'one' : 'two'}-column metadata layout`}
-              >
-                <Ionicons
-                  name={metadataColumns === 2 ? 'list-outline' : 'grid-outline'}
-                  size={20}
-                  color={Colors.text.light}
-                />
-              </Button>
+              {calculatedMetadataFields.length > 1 && (
+                <Button
+                  variant="icon"
+                  style={styles.metadataLayoutButton}
+                  onPress={() => setCalculatedMetadataColumns(columns => (columns === 2 ? 1 : 2))}
+                  accessibilityLabel={`Use ${calculatedMetadataColumns === 2 ? 'one' : 'two'}-column calculated metadata layout`}
+                >
+                  <Ionicons
+                    name={calculatedMetadataColumns === 2 ? 'list-outline' : 'grid-outline'}
+                    size={20}
+                    color={Colors.text.light}
+                  />
+                </Button>
+              )}
             </View>
           )}
-          <View style={[styles.metadataGrid, metadataColumns === 1 && styles.metadataGridSingle]}>
+          <View style={styles.metadataFields}>
             {metadataFields.map(field => {
               if (getMetadataFieldCalculation(field) === 'amount' && field.key !== amountField?.key) {
                 return null;
               }
 
-              const itemStyle = metadataColumns === 2 ? styles.metadataGridItem : styles.metadataGridSingleItem;
-              return getMetadataFieldCalculation(field) === 'per100' ? (
+              const isCalculatedField = getMetadataFieldCalculation(field) === 'per100';
+              const itemStyle = isCalculatedField
+                ? calculatedMetadataFields.length > 1
+                  ? calculatedMetadataColumns === 2
+                    ? styles.calculatedMetadataGridItem
+                    : styles.calculatedMetadataSingleItem
+                  : styles.metadataFullWidthItem
+                : styles.metadataFullWidthItem;
+              return isCalculatedField ? (
                 <CalculatedMetadataFields
                   key={field.key}
                   amountField={amountField}
@@ -216,25 +226,30 @@ const styles = StyleSheet.create({
     height: 32,
     padding: 0,
   },
-  metadataGrid: {
+  metadataFields: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
   },
-  metadataGridSingle: {
-    gap: 0,
+  metadataFullWidthItem: {
+    width: '100%',
+    flexGrow: 0,
+    flexShrink: 0,
+    marginBottom: 0,
   },
-  metadataGridItem: {
-    flexBasis: '48%',
-    flexGrow: 1,
+  calculatedMetadataGridItem: {
+    width: '48%',
+    flexGrow: 0,
+    flexShrink: 0,
     minWidth: 0,
     marginBottom: 0,
   },
-  metadataGridSingleItem: {
-    flexBasis: '100%',
-    flexGrow: 1,
+  calculatedMetadataSingleItem: {
+    width: '100%',
+    flexGrow: 0,
+    flexShrink: 0,
     minWidth: 0,
-    marginBottom: 12,
+    marginBottom: 0,
   },
   durationCard: {
     alignItems: 'center',
