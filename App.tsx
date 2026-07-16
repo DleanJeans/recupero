@@ -6,6 +6,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context';
+import { AppLaunchLoading } from './src/components/app-launch-loading';
 import { BottomNav, type BottomNavRoute } from './src/components/bottom-nav';
 import { ConfettiOverlay } from './src/components/confetti-overlay';
 import { Text } from './src/components/text';
@@ -74,7 +75,7 @@ export default function App() {
     [deferNavigation, navigationRef],
   );
 
-  if (!fontsReady) return null;
+  if (!fontsReady) return <AppLaunchLoading />;
 
   return (
     <GestureHandlerRootView
