@@ -9,7 +9,11 @@ const bundleSuffix = isDev ? '.dev' : variant === 'preview' ? '.preview' : '';
 const baseId = 'com.dleanjeans.recupero';
 const bundleId = `${baseId}${bundleSuffix}`;
 
-const plugins: NonNullable<ExpoConfig['plugins']> = ['expo-sharing', '@react-native-community/datetimepicker'];
+const plugins: NonNullable<ExpoConfig['plugins']> = [
+  './plugins/with-loading-splash',
+  'expo-sharing',
+  '@react-native-community/datetimepicker',
+];
 
 if (isDev) {
   plugins.push('./plugins/withJVMMemory');
