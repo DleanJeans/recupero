@@ -28,6 +28,7 @@ export function TimerScreen() {
   const hidePrivate = useSettingsStore(state => state.hidePrivate);
   const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
   const lockedBehaviorId = useTimerStore(state => state.lockedBehaviorId);
+  const initialNotes = useTimerStore(state => state.initialNotes);
   const startTimestamp = useTimerStore(state => state.startTimestamp);
   const stopTimestamp = useTimerStore(state => state.stopTimestamp);
   const pendingLogBehaviorLogCount = useTimerStore(state => state.pendingLogBehaviorLogCount);
@@ -134,6 +135,7 @@ export function TimerScreen() {
     navigation.navigate('BehaviorLog', {
       behaviorId: lockedBehavior.id,
       initialMode: 'log',
+      initialNotes,
       timerStartTimestamp: startTimestamp,
       timerEndTimestamp: stoppedAt,
     });

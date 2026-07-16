@@ -19,7 +19,7 @@ type ScreenMode = 'details' | 'log';
 export function BehaviorScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'BehaviorLog'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { behaviorId, initialMode, logId, timerStartTimestamp, timerEndTimestamp } = route.params;
+  const { behaviorId, initialMode, initialNotes, logId, timerStartTimestamp, timerEndTimestamp } = route.params;
 
   const behavior = useBehaviorStore(useCallback(state => state.behaviors.find(b => b.id === behaviorId), [behaviorId]));
 
@@ -149,6 +149,7 @@ export function BehaviorScreen() {
           behaviorId={behaviorId}
           behavior={behavior}
           editLogId={editLogId}
+          initialNotes={initialNotes}
           timerStartTimestamp={timerStartTimestamp}
           timerEndTimestamp={timerEndTimestamp}
           onSaved={handleSaved}

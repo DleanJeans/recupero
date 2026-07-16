@@ -5,6 +5,8 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 interface TimerStore {
   /** Behavior locked in for the current timer session, if any. */
   lockedBehaviorId: string | undefined;
+  /** Notes to prefill when logging the current timer session. */
+  initialNotes: string | undefined;
   /** Wall-clock instant the user hit Start. Drives elapsed time. */
   startTimestamp: number | undefined;
   /** Wall-clock instant the user hit Stop, if applicable. Undefined while running. */
@@ -15,7 +17,7 @@ interface TimerStore {
    *  the user just backed out and the stopped timer should stay (so Relog
    *  remains available). */
   pendingLogBehaviorLogCount: number | undefined;
-  start: (behaviorId: string, timestamp?: number) => void;
+  start: (behaviorId: string, timestamp?: number, initialNotes?: string) => void;
   setLockedBehavior: (behaviorId: string) => void;
   setStart: (timestamp: number) => void;
   rewindStartMinute: () => void;
@@ -33,12 +35,14 @@ export const useTimerStore = create<TimerStore>()(
   persist(
     set => ({
       lockedBehaviorId: undefined,
+      initialNotes: undefined,
       startTimestamp: undefined,
       stopTimestamp: undefined,
       pendingLogBehaviorLogCount: undefined,
-      start: (behaviorId, timestamp = Date.now()) =>
+      start: (behaviorId, timestamp = Date.now(), initialNotes) =>
         set({
           lockedBehaviorId: behaviorId,
+          initialNotes,
           startTimestamp: timestamp,
           stopTimestamp: undefined,
           pendingLogBehaviorLogCount: undefined,
@@ -54,6 +58,7 @@ export const useTimerStore = create<TimerStore>()(
       reset: () =>
         set({
           lockedBehaviorId: undefined,
+          initialNotes: undefined,
           startTimestamp: undefined,
           stopTimestamp: undefined,
           pendingLogBehaviorLogCount: undefined,

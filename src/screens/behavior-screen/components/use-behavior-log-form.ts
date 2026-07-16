@@ -30,6 +30,7 @@ export interface BehaviorLogFormProps {
   behaviorId: string;
   behavior: BehaviorEntry;
   editLogId?: string;
+  initialNotes?: string;
   timerStartTimestamp?: number;
   timerEndTimestamp?: number;
   onSaved: () => void;
@@ -39,6 +40,7 @@ export function useBehaviorLogForm({
   behaviorId,
   behavior,
   editLogId,
+  initialNotes,
   timerStartTimestamp,
   timerEndTimestamp,
   onSaved,
@@ -96,7 +98,7 @@ export function useBehaviorLogForm({
   const showTimeRange =
     hasTimerRange || existingLog?.endTimestamp != null || (!existingLog && behavior.durationXpEnabled === true);
   const notesRef = useRef<import('react-native').TextInput>(null);
-  const [notes, setNotes] = useState(String(existingLog?.metadata?.notes ?? ''));
+  const [notes, setNotes] = useState(String(existingLog?.metadata?.notes ?? initialNotes ?? ''));
   const [timePickerCollapsed, setTimePickerCollapsed] = useState(true);
 
   const metadataFields = useMemo(() => category?.metadataFields ?? [], [category?.metadataFields]);

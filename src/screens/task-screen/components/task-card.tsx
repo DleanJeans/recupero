@@ -38,7 +38,7 @@ function TaskCardComponent({ task, behavior, selectedDate, onToggle, onEdit, onR
 
   const handlePlay = () => {
     if (!behavior || !canTrack) return;
-    startTimer(behavior.id);
+    startTimer(behavior.id, Date.now(), task.title);
     navigation.navigate('Timer');
   };
 
