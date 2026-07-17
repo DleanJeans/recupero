@@ -26,6 +26,7 @@ export interface CuesStore {
   updatePlace: (id: string, updates: Partial<SavedPlaceInput>) => void;
   removePlace: (id: string) => void;
   logMood: (mood: MoodId, note?: string) => string;
+  updateMoodNote: (id: string, note?: string) => void;
   addActivityEvent: (event: CueActivityInput) => string;
 }
 
@@ -86,6 +87,10 @@ export const useCuesStore = create<CuesStore>()(
         }));
         return id;
       },
+      updateMoodNote: (id, note) =>
+        set(state => ({
+          moodLogs: state.moodLogs.map(log => (log.id === id ? { ...log, note: note?.trim() || undefined } : log)),
+        })),
       addActivityEvent: event => {
         const id = uuidv4();
         set(state => ({
