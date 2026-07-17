@@ -1,6 +1,11 @@
 import type { BehaviorEntry } from '../src/types/behavior';
 import type { Cue } from '../src/types/cue';
-import { getCueTriggerLabel, getMoodSuggestedBehaviorIds } from '../src/utils/cue-utils';
+import {
+  createDefaultCueTrigger,
+  getCueTriggerLabel,
+  getMoodSuggestedBehaviorIds,
+  isCueTriggerComplete,
+} from '../src/utils/cue-utils';
 
 const behavior = {
   id: 'walk',
@@ -50,5 +55,11 @@ describe('cue utils', () => {
     ];
 
     expect(getMoodSuggestedBehaviorIds('stressed', cues)).toEqual(['walk']);
+  });
+
+  it('creates valid defaults without inventing required references', () => {
+    expect(createDefaultCueTrigger('location')).toEqual({ type: 'location', placeId: '', direction: 'enter' });
+    expect(isCueTriggerComplete(createDefaultCueTrigger('location'))).toBe(false);
+    expect(isCueTriggerComplete({ type: 'mood', moods: ['good'] })).toBe(true);
   });
 });

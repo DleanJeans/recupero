@@ -71,3 +71,42 @@ export function getCurrentMood(moodLogs: MoodLog[]): MoodLog | undefined {
     undefined,
   );
 }
+
+interface DefaultCueTriggerOptions {
+  placeId?: string;
+  behaviorId?: string;
+  now?: Date;
+}
+
+export function createDefaultCueTrigger(
+  type: CueTriggerType,
+  { placeId = '', behaviorId = '', now = new Date() }: DefaultCueTriggerOptions = {},
+): CueTrigger {
+  if (type === 'location') return { type, placeId, direction: 'enter' };
+  if (type === 'habit') return { type, behaviorId };
+  if (type === 'mood') return { type, moods: [] };
+  return {
+    type,
+    mode: 'simple',
+    at: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+    repeatDays: [0, 1, 2, 3, 4, 5, 6],
+  };
+}
+
+export function isCueTriggerComplete(trigger: CueTrigger): boolean {
+  if (trigger.type === 'location') return trigger.placeId.length > 0;
+  if (trigger.type === 'habit') return trigger.behaviorId.length > 0;
+  if (trigger.type === 'mood') return trigger.moods.length > 0;
+  if (trigger.mode === 'simple') return /^([01]\d|2[0-3]):[0-5]\d$/.test(trigger.at) && trigger.repeatDays.length > 0;
+  if (trigger.pattern === 'afterBehavior') return trigger.behaviorId.length > 0 && trigger.delayMin >= 0;
+  return true;
+}
+
+export function dateFromCueTime(at: string): Date {
+  const [hour = 0, minute = 0] = at.split(':').map(Number);
+  return new Date(2000, 0, 1, hour, minute);
+}
+
+export function cueTimeFromDate(date: Date): string {
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
