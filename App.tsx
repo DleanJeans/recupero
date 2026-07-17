@@ -15,9 +15,15 @@ import { useDeferredBottomNavNavigation } from './src/hooks/use-deferred-bottom-
 import { BehaviorFormScreen } from './src/screens/behavior-form-screen';
 import { BehaviorScreen } from './src/screens/behavior-screen';
 import { CategoryFormScreen } from './src/screens/category-form-screen';
+import { CueActivityScreen } from './src/screens/cue-activity-screen';
+import { CueFormScreen } from './src/screens/cue-form-screen';
+import { CuesScreen } from './src/screens/cues-screen';
 import { DayScreen } from './src/screens/day-screen';
 import { HomeScreen } from './src/screens/home-screen';
+import { LocationEditScreen } from './src/screens/location-edit-screen';
 import { MoneyLogScreen } from './src/screens/money-log-screen';
+import { MoodLogScreen } from './src/screens/mood-log-screen';
+import { SavedPlacesScreen } from './src/screens/saved-places-screen';
 import { SettingsScreen } from './src/screens/settings-screen';
 import { ShopScreen } from './src/screens/shop-screen';
 import { TaskScreen } from './src/screens/task-screen';
@@ -42,6 +48,12 @@ const linking = {
       CategoryForm: 'category-form',
       Shop: 'shop',
       MoneyLog: 'money-log',
+      Cues: 'cues',
+      CueForm: 'cues/form',
+      CueActivity: 'cues/activity',
+      SavedPlaces: 'cues/places',
+      LocationEdit: 'cues/places/edit',
+      MoodLog: 'cues/mood',
     },
   },
 };
@@ -141,6 +153,30 @@ export default function App() {
                   <Stack.Screen
                     name="Settings"
                     component={SettingsScreen}
+                  />
+                  <Stack.Screen
+                    name="Cues"
+                    component={CuesScreen}
+                  />
+                  <Stack.Screen
+                    name="CueForm"
+                    component={CueFormScreen}
+                  />
+                  <Stack.Screen
+                    name="CueActivity"
+                    component={CueActivityScreen}
+                  />
+                  <Stack.Screen
+                    name="SavedPlaces"
+                    component={SavedPlacesScreen}
+                  />
+                  <Stack.Screen
+                    name="LocationEdit"
+                    component={LocationEditScreen}
+                  />
+                  <Stack.Screen
+                    name="MoodLog"
+                    component={MoodLogScreen}
                   />
                 </Stack.Navigator>
                 {pendingRouteName != null && (
