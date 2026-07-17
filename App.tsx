@@ -32,7 +32,7 @@ import type { RootStackParamList } from './src/types/navigation';
 import { Colors } from './src/utils/colors';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-const BOTTOM_NAV_ROUTES = new Set<string>(['Home', 'Timer', 'Day', 'Tasks']);
+const BOTTOM_NAV_ROUTES = new Set<string>(['Home', 'Cues', 'Timer', 'Day', 'Tasks']);
 
 const linking = {
   prefixes: ['exp+recupero://'],

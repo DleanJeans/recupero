@@ -41,11 +41,6 @@ export function HomeHeader({ showXp, onToggleXp, isSearching, onSearchPress }: H
             accessibilityLabel={isSearching ? 'Close search' : 'Search'}
           />
           <HeaderIcon
-            name="radio-outline"
-            onPress={() => navigation.navigate('Cues')}
-            accessibilityLabel="Cues"
-          />
-          <HeaderIcon
             name="settings-outline"
             onPress={() => navigation.navigate('Settings')}
             accessibilityLabel="Settings"
