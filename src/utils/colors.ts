@@ -72,4 +72,10 @@ export const Colors = {
     filled: '#fbbf24',
     empty: '#3a3a3a',
   },
+
+  // ── Cue Triggers ──
+  cue: {
+    location: '#5aa9f0',
+    mood: '#b98cf0',
+  },
 } as const;
