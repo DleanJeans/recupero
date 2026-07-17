@@ -27,4 +27,10 @@ export type RootStackParamList = {
   Shop: undefined;
   MoneyLog: undefined;
   Settings: undefined;
+  Cues: undefined;
+  CueForm: { cueId?: string } | undefined;
+  CueActivity: undefined;
+  SavedPlaces: undefined;
+  LocationEdit: { placeId?: string } | undefined;
+  MoodLog: undefined;
 };
