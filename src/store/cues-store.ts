@@ -67,7 +67,15 @@ export const useCuesStore = create<CuesStore>()(
             return updates.isHome ? { ...place, isHome: false } : place;
           }),
         })),
-      removePlace: id => set(state => ({ places: state.places.filter(place => place.id !== id) })),
+      removePlace: id =>
+        set(state => ({
+          places: state.places.filter(place => place.id !== id),
+          cues: state.cues.map(cue => {
+            const triggers = [cue.trigger, ...(cue.conditions ?? [])];
+            const referencesPlace = triggers.some(trigger => trigger.type === 'location' && trigger.placeId === id);
+            return referencesPlace ? { ...cue, enabled: false } : cue;
+          }),
+        })),
       logMood: (mood, note) => {
         const id = uuidv4();
         const ts = Date.now();
