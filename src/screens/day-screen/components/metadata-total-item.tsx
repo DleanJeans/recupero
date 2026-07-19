@@ -24,8 +24,10 @@ export function MetadataTotalItem({ item, expanded, onPress }: MetadataTotalItem
     );
   }
 
-  const progressRatio = Math.min(item.value / item.goal!, 1);
-  const percent = Math.round(progressRatio * 100);
+  const currentValue = Math.max(item.value, 0);
+  const progressTotal = Math.max(currentValue, item.goal!);
+  const goalPercent = (Math.min(currentValue, item.goal!) / progressTotal) * 100;
+  const hasExceededGoal = currentValue > item.goal!;
   const content = (
     <>
       <View style={styles.metadataGoalHeader}>
@@ -43,7 +45,16 @@ export function MetadataTotalItem({ item, expanded, onPress }: MetadataTotalItem
         </View>
       </View>
       <View style={styles.metadataProgressTrack}>
-        <View style={[styles.metadataProgressFill, { width: `${percent}%` }]} />
+        <View style={[styles.metadataProgressSegment, { width: `${goalPercent}%` }]} />
+        {hasExceededGoal && (
+          <View
+            style={[
+              styles.metadataProgressSegment,
+              styles.metadataProgressExceeded,
+              { width: `${100 - goalPercent}%` },
+            ]}
+          />
+        )}
       </View>
     </>
   );
@@ -117,15 +128,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   metadataProgressTrack: {
+    flexDirection: 'row',
     height: 6,
     borderRadius: 3,
     backgroundColor: Colors.bg.input,
     overflow: 'hidden',
   },
-  metadataProgressFill: {
+  metadataProgressSegment: {
     height: '100%',
-    borderRadius: 3,
     backgroundColor: Colors.type.desirable,
+  },
+  metadataProgressExceeded: {
+    backgroundColor: Colors.star.filled,
   },
   metadataRow: {
     flexDirection: 'row',
