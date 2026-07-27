@@ -1,0 +1,21 @@
+diff --git a/android/src/debug/java/expo/modules/devlauncher/launcher/DevLauncherRecentlyOpenedAppsRegistry.kt b/android/src/debug/java/expo/modules/devlauncher/launcher/DevLauncherRecentlyOpenedAppsRegistry.kt
+index ad21086a1a65058ab54e8dff4232b652baebf1ba..53334c1ebb8b1381ec238a2bc636fb4c13944fad 100644
+--- a/android/src/debug/java/expo/modules/devlauncher/launcher/DevLauncherRecentlyOpenedAppsRegistry.kt
++++ b/android/src/debug/java/expo/modules/devlauncher/launcher/DevLauncherRecentlyOpenedAppsRegistry.kt
+@@ -90,13 +90,9 @@ class DevLauncherRecentlyOpenedAppsRegistry(context: Context) {
+   }
+
+   fun getMostRecentApp(): DevLauncherAppEntry? {
+-    val recentlyOpenedApps = getRecentlyOpenedApps()
+-
+-    return if (recentlyOpenedApps.isNotEmpty()) {
+-      recentlyOpenedApps.maxByOrNull { it.timestamp }
+-    } else {
+-      null
+-    }
++    return getRecentlyOpenedApps()
++      .filter { it.isEASUpdate == true }
++      .maxByOrNull { it.timestamp }
+   }
+
+   fun clearRegistry() {

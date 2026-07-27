@@ -11,6 +11,8 @@ const bundleId = `${baseId}${bundleSuffix}`;
 
 const plugins: NonNullable<ExpoConfig['plugins']> = [
   './plugins/with-loading-splash',
+  'expo-font',
+  'expo-splash-screen',
   'expo-sharing',
   '@react-native-community/datetimepicker',
   [
