@@ -27,6 +27,7 @@ export function MetadataTotalItem({ item, expanded, contributions, onPress, styl
 
   return (
     <Animated.View
+      collapsable={false}
       layout={CARD_LAYOUT}
       style={style}
     >
