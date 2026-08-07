@@ -29,10 +29,10 @@ export function MetadataTotalCard({ item, expanded, contributions, onPress, styl
     <Animated.View
       collapsable={false}
       layout={CARD_LAYOUT}
-      style={style}
+      style={[styles.tile, expanded && styles.tileExpanded, style]}
     >
       <Pressable
-        style={({ pressed }) => [styles.tile, expanded && styles.tileExpanded, pressed && styles.tilePressed]}
+        style={({ pressed }) => [styles.tileContent, pressed && styles.tilePressed]}
         accessible
         accessibilityRole="button"
         accessibilityState={{ expanded }}
@@ -69,7 +69,6 @@ export function MetadataTotalCard({ item, expanded, contributions, onPress, styl
         <Text style={styles.percentage}>{percentage}%</Text>
         {expanded && (
           <Animated.View
-            layout={CARD_LAYOUT}
             entering={FadeInDown.duration(180)}
             exiting={FadeOutUp.duration(140)}
           >
@@ -87,6 +86,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border.default,
     borderRadius: 16,
+    overflow: 'hidden',
+  },
+  tileContent: {
     paddingHorizontal: 14,
     paddingVertical: 13,
     gap: 7,
