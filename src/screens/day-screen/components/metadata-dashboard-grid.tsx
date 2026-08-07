@@ -21,14 +21,22 @@ export function MetadataDashboardGrid({
   contributionsByGoal,
   onToggle,
 }: MetadataDashboardGridProps) {
+  const expandedIndex = expandedKey ? items.findIndex(item => getTotalKey(item) === expandedKey) : -1;
+  const hasOrphanBeforeExpanded = expandedIndex > 0 && expandedIndex % 2 === 1;
+  const unexpandedCountAfterExpanded = expandedIndex >= 0 ? items.length - expandedIndex - 1 : 0;
+  const hasOrphanAfterExpanded = unexpandedCountAfterExpanded % 2 === 1;
+
   return (
     <Animated.View
       layout={LinearTransition.duration(200)}
       style={styles.grid}
     >
-      {items.map(item => {
+      {items.map((item, index) => {
         const key = getTotalKey(item);
         const expanded = key === expandedKey;
+        const orphan =
+          (hasOrphanBeforeExpanded && index === expandedIndex - 1) ||
+          (hasOrphanAfterExpanded && index === items.length - 1);
         return (
           <MetadataTotalItem
             key={key}
@@ -36,7 +44,7 @@ export function MetadataDashboardGrid({
             expanded={expanded}
             contributions={contributionsByGoal.get(key) ?? []}
             onPress={() => onToggle(key)}
-            style={expanded ? styles.fullWidth : styles.halfWidth}
+            style={expanded || orphan ? styles.fullWidth : styles.halfWidth}
           />
         );
       })}
