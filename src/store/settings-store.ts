@@ -14,6 +14,8 @@ interface SettingsStore {
   setHidePrivate: (v: boolean) => void;
   hideCategoryNames: boolean;
   setHideCategoryNames: (v: boolean) => void;
+  showXp: boolean;
+  setShowXp: (v: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -23,10 +25,12 @@ export const useSettingsStore = create<SettingsStore>()(
       dayCutoffHour: 0,
       hidePrivate: false,
       hideCategoryNames: false,
+      showXp: true,
       setTimeFormat: format => set({ timeFormat: format }),
       setDayCutoffHour: hour => set({ dayCutoffHour: normalizeDayCutoffHour(hour) }),
       setHidePrivate: v => set({ hidePrivate: v }),
       setHideCategoryNames: v => set({ hideCategoryNames: v }),
+      setShowXp: v => set({ showXp: v }),
     }),
     {
       name: 'recupero-settings',

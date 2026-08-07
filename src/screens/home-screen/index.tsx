@@ -28,6 +28,8 @@ export function HomeScreen() {
   const categories = useBehaviorStore(s => s.categories);
   const tasks = useBehaviorStore(s => s.tasks);
   const hidePrivate = useSettingsStore(s => s.hidePrivate);
+  const showXp = useSettingsStore(s => s.showXp);
+  const setShowXp = useSettingsStore(s => s.setShowXp);
   const homeSelectedCategoryId = useScreenUiStore(s => s.homeSelectedCategoryId);
   const setHomeSelectedCategoryId = useScreenUiStore(s => s.setHomeSelectedCategoryId);
   const {
@@ -80,7 +82,6 @@ export function HomeScreen() {
     return result;
   }, [behaviors, listCooldownSelected, cooldownSortTick, listCategoryId, hidePrivate, searchQuery]);
 
-  const [showXp, setShowXp] = useState(true);
   const addBehaviorDefaultCategoryId = cooldownSelected ? undefined : (selectedCategoryId ?? undefined);
   const motionEnabled = useAfterInteractionsFlag([behaviors, isSearching, searchQuery, showXp]);
 
@@ -91,7 +92,7 @@ export function HomeScreen() {
     >
       <HomeHeader
         showXp={showXp}
-        onToggleXp={() => setShowXp(v => !v)}
+        onToggleXp={() => setShowXp(!showXp)}
         isSearching={isSearching}
         onSearchPress={() => {
           if (isSearching) {
