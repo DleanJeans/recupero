@@ -60,12 +60,22 @@ export function MetadataTotalCard({ item, expanded, contributions, onPress, styl
           <Text style={styles.goalValue}>/{item.goal}</Text>
           {item.unit ? <Text style={styles.unit}> {item.unit}</Text> : null}
         </Text>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressSegment, { width: `${goalPercent}%` }]} />
+        <Animated.View
+          collapsable={false}
+          layout={CARD_LAYOUT}
+          style={styles.progressTrack}
+        >
+          <Animated.View
+            layout={CARD_LAYOUT}
+            style={[styles.progressSegment, { width: `${goalPercent}%` }]}
+          />
           {overflowPercent > 0 && (
-            <View style={[styles.progressSegment, styles.progressExceeded, { width: `${overflowPercent}%` }]} />
+            <Animated.View
+              layout={CARD_LAYOUT}
+              style={[styles.progressSegment, styles.progressExceeded, { width: `${overflowPercent}%` }]}
+            />
           )}
-        </View>
+        </Animated.View>
         <Text style={styles.percentage}>{percentage}%</Text>
         {expanded && (
           <Animated.View
