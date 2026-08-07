@@ -49,23 +49,21 @@ export function DayTabSelector({ selectedTab, onSelect, counts }: DayTabSelector
 const styles = StyleSheet.create({
   tabs: {
     flexDirection: 'row',
+    gap: 8,
     marginHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 4,
-    padding: 3,
-    borderRadius: 12,
-    backgroundColor: Colors.bg.input,
-    gap: 3,
+    marginTop: 6,
+    marginBottom: 10,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 36,
-    borderRadius: 9,
+    minHeight: 46,
+    borderRadius: 13,
+    backgroundColor: Colors.bg.card,
   },
   selectedTab: {
-    backgroundColor: Colors.bg.card,
+    backgroundColor: Colors.bg.elevated,
   },
   tabContent: {
     flexDirection: 'row',

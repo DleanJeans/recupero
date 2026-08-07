@@ -1,163 +1,138 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
+import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
 import { Text } from '../../../components/text';
-import type { DailyMetadataTotal } from '../../../utils/behavior-utils';
+import type { DailyMetadataContribution, DailyMetadataTotal } from '../../../utils/behavior-utils';
 import { Colors } from '../../../utils/colors';
+import { GoalContributionList } from './goal-contribution-list';
 
 interface MetadataTotalItemProps {
   item: DailyMetadataTotal;
-  expanded?: boolean;
-  onPress?: () => void;
+  expanded: boolean;
+  contributions: DailyMetadataContribution[];
+  onPress: () => void;
+  style?: StyleProp<ViewStyle>;
 }
 
-export function MetadataTotalItem({ item, expanded, onPress }: MetadataTotalItemProps) {
-  const hasGoal = item.goal != null && Number.isFinite(item.goal) && item.goal > 0;
-  if (!hasGoal) {
-    return (
-      <View style={styles.metadataRow}>
-        <Text style={styles.metadataLabel}>{item.label}</Text>
-        <View style={styles.metadataValueRow}>
-          <Text style={styles.metadataValue}>{item.value}</Text>
-          {item.unit ? <Text style={styles.metadataUnit}>{item.unit}</Text> : null}
-        </View>
-      </View>
-    );
-  }
-
+export function MetadataTotalItem({ item, expanded, contributions, onPress, style }: MetadataTotalItemProps) {
   const currentValue = Math.max(item.value, 0);
-  const progressTotal = Math.max(currentValue, item.goal!);
-  const goalPercent = (Math.min(currentValue, item.goal!) / progressTotal) * 100;
-  const hasExceededGoal = currentValue > item.goal!;
-  const content = (
-    <>
-      <View style={styles.metadataGoalHeader}>
+  const goal = item.goal ?? 0;
+  const progressTotal = Math.max(currentValue, goal);
+  const goalPercent = progressTotal > 0 ? (Math.min(currentValue, goal) / progressTotal) * 100 : 0;
+  const overflowPercent = currentValue > goal ? ((currentValue - goal) / progressTotal) * 100 : 0;
+  const percentage = goal > 0 ? Math.round((currentValue / goal) * 100) : 0;
+
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.tile, expanded && styles.tileExpanded, pressed && styles.tilePressed, style]}
+      accessible
+      accessibilityRole="button"
+      accessibilityState={{ expanded }}
+      accessibilityLabel={`${item.label}: ${item.value} of ${item.goal} daily goal`}
+      onPress={onPress}
+    >
+      <View style={styles.tileHeader}>
         <Text
-          style={styles.metadataGoalLabel}
+          style={styles.label}
           numberOfLines={1}
         >
           {item.label}
         </Text>
-        <View style={styles.metadataValueRow}>
-          <Text style={styles.metadataGoalValue}>
-            {item.value}/{item.goal}
-          </Text>
-          {item.unit ? <Text style={styles.metadataUnit}>{item.unit}</Text> : null}
-        </View>
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={17}
+          color={Colors.text.faint}
+        />
       </View>
-      <View style={styles.metadataProgressTrack}>
-        <View style={[styles.metadataProgressSegment, { width: `${goalPercent}%` }]} />
-        {hasExceededGoal && (
-          <View
-            style={[
-              styles.metadataProgressSegment,
-              styles.metadataProgressExceeded,
-              { width: `${100 - goalPercent}%` },
-            ]}
-          />
+      <Text
+        selectable
+        style={styles.bigValue}
+      >
+        {item.value}
+        <Text style={styles.goalValue}>/{item.goal}</Text>
+        {item.unit ? <Text style={styles.unit}> {item.unit}</Text> : null}
+      </Text>
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressSegment, { width: `${goalPercent}%` }]} />
+        {overflowPercent > 0 && (
+          <View style={[styles.progressSegment, styles.progressExceeded, { width: `${overflowPercent}%` }]} />
         )}
       </View>
-    </>
-  );
-
-  if (onPress) {
-    return (
-      <Pressable
-        style={[styles.metadataGoalRow, expanded && styles.metadataGoalRowExpanded]}
-        accessible
-        accessibilityRole="button"
-        accessibilityState={{ expanded: !!expanded }}
-        accessibilityLabel={`${item.label}: ${item.value} of ${item.goal} daily goal`}
-        onPress={onPress}
-      >
-        {content}
-      </Pressable>
-    );
-  }
-
-  return (
-    <View
-      style={styles.metadataGoalRow}
-      accessible
-      accessibilityLabel={`${item.label}: ${item.value} of ${item.goal} daily goal`}
-    >
-      {content}
-    </View>
+      <Text style={styles.percentage}>{percentage}%</Text>
+      {expanded && (
+        <Animated.View
+          entering={FadeInDown.duration(180)}
+          exiting={FadeOutUp.duration(140)}
+        >
+          <GoalContributionList contributions={contributions} />
+        </Animated.View>
+      )}
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  metadataGoalRow: {
-    width: '100%',
+  tile: {
     backgroundColor: Colors.bg.card,
     borderWidth: 1,
-    borderColor: 'transparent',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    gap: 8,
+    borderColor: Colors.border.default,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    gap: 7,
   },
-  metadataGoalRowExpanded: {
+  tileExpanded: {
     borderColor: Colors.border.light,
   },
-  metadataGoalHeader: {
+  tilePressed: {
+    backgroundColor: Colors.bg.elevated,
+  },
+  tileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: 8,
   },
-  metadataGoalLabel: {
+  label: {
     color: Colors.text.muted,
-    fontSize: 12,
-    fontWeight: '600',
     flex: 1,
-  },
-  metadataGoalValue: {
-    color: Colors.text.primary,
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
+  },
+  bigValue: {
+    color: Colors.text.primary,
+    fontSize: 20,
+    fontWeight: '800',
     fontVariant: ['tabular-nums'],
   },
-  metadataValueRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 4,
-  },
-  metadataUnit: {
-    color: Colors.text.muted,
-    fontSize: 11,
+  goalValue: {
+    color: Colors.text.faint,
+    fontSize: 12,
     fontWeight: '600',
   },
-  metadataProgressTrack: {
+  unit: {
+    color: Colors.text.faint,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  progressTrack: {
     flexDirection: 'row',
-    height: 6,
+    height: 8,
     borderRadius: 3,
     backgroundColor: Colors.bg.input,
     overflow: 'hidden',
   },
-  metadataProgressSegment: {
+  progressSegment: {
     height: '100%',
     backgroundColor: Colors.type.desirable,
   },
-  metadataProgressExceeded: {
+  progressExceeded: {
     backgroundColor: Colors.star.filled,
   },
-  metadataRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bg.card,
-    borderRadius: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    gap: 6,
-  },
-  metadataLabel: {
-    color: Colors.text.muted,
+  percentage: {
+    color: Colors.type.desirable,
     fontSize: 12,
-    fontWeight: '500',
-  },
-  metadataValue: {
-    color: Colors.text.primary,
-    fontSize: 14,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },

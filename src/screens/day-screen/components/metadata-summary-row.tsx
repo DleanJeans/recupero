@@ -1,20 +1,15 @@
 import React from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
-import Animated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
 import type { DailyMetadataContribution, DailyMetadataTotal } from '../../../utils/behavior-utils';
 import { Colors } from '../../../utils/colors';
-import { GoalContributionList } from './goal-contribution-list';
-import { MetadataTotalItem } from './metadata-total-item';
+import { MetadataDashboardGrid } from './metadata-dashboard-grid';
+import { MetadataHeroRow } from './metadata-hero-row';
 
 interface MetadataSummaryRowProps {
   totals: DailyMetadataTotal[];
   contributions: DailyMetadataContribution[];
 }
-
-const GOAL_EXPAND_ENTERING = FadeInDown.duration(180);
-const GOAL_EXPAND_EXITING = FadeOutUp.duration(140);
-const GOAL_EXPAND_LAYOUT = LinearTransition.duration(200);
 
 function getTotalKey(item: DailyMetadataTotal): string {
   return `${item.categoryId}:${item.fieldKey}`;
@@ -58,6 +53,7 @@ export function MetadataSummaryRow({ totals, contributions }: MetadataSummaryRow
       style={styles.scrollView}
       contentContainerStyle={[styles.metadataSection, totals.length === 0 && styles.emptyContainer]}
       showsVerticalScrollIndicator={false}
+      contentInsetAdjustmentBehavior="automatic"
     >
       {totals.length === 0 ? (
         <Text style={styles.empty}>No metadata for this date.</Text>
@@ -68,58 +64,30 @@ export function MetadataSummaryRow({ totals, contributions }: MetadataSummaryRow
             const metadata = group.items.filter(item => !hasGoal(item));
 
             return (
-              <Animated.View
+              <View
                 key={group.categoryId}
-                layout={GOAL_EXPAND_LAYOUT}
                 style={styles.metadataGroup}
               >
                 <Text style={styles.metadataGroupTitle}>{group.categoryName}</Text>
                 {metadata.length > 0 && (
-                  <Animated.View
-                    layout={GOAL_EXPAND_LAYOUT}
-                    style={styles.metadataGroupItems}
-                  >
+                  <View style={styles.metadataGroupItems}>
                     {metadata.map(item => (
-                      <MetadataTotalItem
+                      <MetadataHeroRow
                         key={getTotalKey(item)}
                         item={item}
                       />
                     ))}
-                  </Animated.View>
+                  </View>
                 )}
                 {goals.length > 0 && (
-                  <Animated.View
-                    layout={GOAL_EXPAND_LAYOUT}
-                    style={styles.goalItems}
-                  >
-                    {goals.map(item => {
-                      const key = getTotalKey(item);
-                      const expanded = expandedGoalKey === key;
-                      return (
-                        <Animated.View
-                          key={key}
-                          layout={GOAL_EXPAND_LAYOUT}
-                          style={styles.goalItem}
-                        >
-                          <MetadataTotalItem
-                            item={item}
-                            expanded={expanded}
-                            onPress={() => setExpandedGoalKey(expanded ? undefined : key)}
-                          />
-                          {expanded && (
-                            <Animated.View
-                              entering={GOAL_EXPAND_ENTERING}
-                              exiting={GOAL_EXPAND_EXITING}
-                            >
-                              <GoalContributionList contributions={contributionsByGoal.get(key) ?? []} />
-                            </Animated.View>
-                          )}
-                        </Animated.View>
-                      );
-                    })}
-                  </Animated.View>
+                  <MetadataDashboardGrid
+                    items={goals}
+                    expandedKey={expandedGoalKey}
+                    contributionsByGoal={contributionsByGoal}
+                    onToggle={key => setExpandedGoalKey(expandedGoalKey === key ? undefined : key)}
+                  />
                 )}
-              </Animated.View>
+              </View>
             );
           })}
         </>
@@ -134,7 +102,7 @@ const styles = StyleSheet.create({
   },
   metadataSection: {
     gap: 18,
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     paddingBottom: 32,
   },
   emptyContainer: {
@@ -148,7 +116,7 @@ const styles = StyleSheet.create({
     padding: 48,
   },
   metadataGroup: {
-    gap: 8,
+    gap: 10,
   },
   metadataGroupTitle: {
     color: Colors.text.faint,
@@ -157,15 +125,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  goalItems: {
-    gap: 8,
-  },
-  goalItem: {
-    gap: 8,
-  },
   metadataGroupItems: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
   },
 });

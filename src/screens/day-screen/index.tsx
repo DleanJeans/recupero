@@ -23,7 +23,7 @@ import { getThresholds, getTotalStarsForDate } from '../../utils/star-utils';
 import { getTaskStarsForDate } from '../../utils/task-utils';
 import { formatDuration } from '../../utils/time-utils';
 import { DateNavigationRow } from '../components/date-navigation-row';
-import { SummaryRow } from '../components/summary-row';
+import { DayStatsStrip } from './components/day-stats-strip';
 import { type DayTab, DayTabSelector } from './components/day-tab-selector';
 import { LogList } from './components/log-list';
 import { MetadataSummaryRow } from './components/metadata-summary-row';
@@ -139,7 +139,7 @@ export function DayScreen() {
       edges={['top', 'left', 'right']}
     >
       <View style={styles.header}>
-        <ScreenTitle>Day</ScreenTitle>
+        <ScreenTitle style={styles.headerTitle}>Day</ScreenTitle>
         <MoneyBalance />
       </View>
 
@@ -167,7 +167,7 @@ export function DayScreen() {
         />
       ) : (
         <>
-          <SummaryRow items={summaryItems} />
+          <DayStatsStrip items={summaryItems} />
           <LogList
             entries={dayLogs}
             selectedDate={selectedDate}
@@ -191,6 +191,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 10,
+    paddingBottom: 6,
+  },
+  headerTitle: {
+    fontSize: 24,
+    paddingHorizontal: 0,
   },
 });
