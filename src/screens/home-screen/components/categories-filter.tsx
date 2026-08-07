@@ -33,6 +33,11 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
     setChipWidths({});
   }, [hideNames]);
 
+  const handleChipLayout = (key: string, event: LayoutChangeEvent) => {
+    const { width } = event.nativeEvent.layout;
+    setChipWidths(current => (current[key] === width ? current : { ...current, [key]: width }));
+  };
+
   const { behaviorCounts, allCount } = useMemo(() => computeBehaviorCounts(behaviors), [behaviors]);
   const visibleCategories = useMemo(() => {
     if (expanded || categories.length <= COLLAPSED_CATEGORY_LIMIT) return categories;
@@ -94,7 +99,10 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
       </View>
 
       <View
-        onLayout={(event: LayoutChangeEvent) => setGridWidth(event.nativeEvent.layout.width)}
+        onLayout={(event: LayoutChangeEvent) => {
+          const { width } = event.nativeEvent.layout;
+          setGridWidth(width);
+        }}
         style={[styles.grid, hideNames && !expanded && styles.gridIconOnly]}
       >
         <CategoryChip
@@ -102,7 +110,7 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
           count={allCount}
           active={selectedCategoryId === null}
           iconOnly={hideNames}
-          onLayout={event => setChipWidths(current => ({ ...current, all: event.nativeEvent.layout.width }))}
+          onLayout={event => handleChipLayout('all', event)}
           onPress={() => onSelectCategory(null)}
         />
         {(hideNames && !expanded ? iconOnlyCategories : visibleCategories).map(category => (
@@ -113,9 +121,7 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
             count={behaviorCounts[category.id] ?? 0}
             active={selectedCategoryId === category.id}
             iconOnly={hideNames}
-            onLayout={event =>
-              setChipWidths(current => ({ ...current, [category.id]: event.nativeEvent.layout.width }))
-            }
+            onLayout={event => handleChipLayout(category.id, event)}
             onPress={() => onSelectCategory(category.id)}
             onLongPress={() => handleCategoryLongPress(category)}
           />
