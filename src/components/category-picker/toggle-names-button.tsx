@@ -10,19 +10,20 @@ export function ToggleNamesButton() {
   const setHideNames = useSettingsStore(s => s.setHideCategoryNames);
   return (
     <CategoryBarChip
+      active={hideNames}
       onPress={() => setHideNames(!hideNames)}
-      style={styles.button}
+      style={[styles.button, hideNames && styles.buttonActive]}
       accessibilityLabel={hideNames ? 'Show category names' : 'Hide category names'}
     >
       <View style={styles.iconWrap}>
         <Ionicons
           name="text-outline"
           size={18}
-          color={Colors.text.muted}
+          color={hideNames ? Colors.type.desirable : Colors.text.muted}
         />
         {hideNames && (
-          <View style={styles.strikethrough}>
-            <View style={styles.strikethroughInner} />
+          <View style={[styles.strikethrough, styles.strikethroughActive]}>
+            <View style={[styles.strikethroughInner, styles.strikethroughInnerActive]} />
           </View>
         )}
       </View>
@@ -32,7 +33,15 @@ export function ToggleNamesButton() {
 
 const styles = StyleSheet.create({
   button: {
-    paddingHorizontal: 8,
+    width: 30,
+    height: 30,
+    padding: 6,
+    borderWidth: 1,
+    borderColor: Colors.border.default,
+  },
+  buttonActive: {
+    backgroundColor: 'rgba(74, 222, 128, 0.12)',
+    borderColor: 'rgba(74, 222, 128, 0.4)',
   },
   iconWrap: {
     width: 18,
@@ -47,6 +56,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg.card,
     transform: [{ rotate: '-45deg' }],
   },
+  strikethroughActive: {
+    backgroundColor: 'rgba(74, 222, 128, 0.12)',
+  },
   strikethroughInner: {
     height: 1.5,
     backgroundColor: Colors.text.muted,
@@ -55,5 +67,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     borderRadius: 2,
+  },
+  strikethroughInnerActive: {
+    backgroundColor: Colors.type.desirable,
   },
 });

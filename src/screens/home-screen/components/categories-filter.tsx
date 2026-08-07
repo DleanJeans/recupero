@@ -1,9 +1,12 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import type { LayoutChangeEvent } from 'react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { ToggleNamesButton } from '../../../components/category-picker/toggle-names-button';
 import { Text } from '../../../components/text';
 import { useBehaviorStore } from '../../../store/behavior-store';
+import { useSettingsStore } from '../../../store/settings-store';
 import type { Category } from '../../../types/behavior';
 import type { RootStackParamList } from '../../../types/navigation';
 import { computeBehaviorCounts } from '../../../utils/behavior-counts';
@@ -21,7 +24,14 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
   const navigation = useNavigation<NavigationProp>();
   const categories = useBehaviorStore(s => s.categories);
   const behaviors = useBehaviorStore(s => s.behaviors);
+  const hideNames = useSettingsStore(s => s.hideCategoryNames);
   const [expanded, setExpanded] = useState(false);
+  const [gridWidth, setGridWidth] = useState(0);
+  const [chipWidths, setChipWidths] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    setChipWidths({});
+  }, [hideNames]);
 
   const { behaviorCounts, allCount } = useMemo(() => computeBehaviorCounts(behaviors), [behaviors]);
   const visibleCategories = useMemo(() => {
@@ -35,6 +45,29 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
     return visible;
   }, [categories, expanded, selectedCategoryId]);
 
+  const iconOnlyCategories = useMemo(() => {
+    if (!hideNames || expanded || gridWidth <= 0 || chipWidths.all == null) return categories;
+    if (categories.some(category => chipWidths[category.id] == null)) return categories;
+
+    const gap = 9;
+    const visible: Category[] = [];
+    let usedWidth = chipWidths.all;
+
+    for (const category of categories) {
+      const width = chipWidths[category.id];
+      if (width == null || usedWidth + gap + width > gridWidth) break;
+      visible.push(category);
+      usedWidth += gap + width;
+    }
+
+    const selected = categories.find(category => category.id === selectedCategoryId);
+    if (selected && !visible.some(category => category.id === selected.id) && visible.length > 0) {
+      visible.splice(visible.length - 1, 1, selected);
+    }
+
+    return visible;
+  }, [categories, chipWidths, expanded, gridWidth, hideNames, selectedCategoryId]);
+
   const handleCategoryLongPress = (category: Category) => {
     navigation.navigate('CategoryForm', { categoryId: category.id });
   };
@@ -44,7 +77,10 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.label}>Categories</Text>
+        <View style={styles.headerTitle}>
+          <ToggleNamesButton />
+          <Text style={styles.label}>Categories</Text>
+        </View>
         {canExpand && (
           <Pressable
             accessibilityRole="button"
@@ -57,20 +93,29 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
         )}
       </View>
 
-      <View style={styles.grid}>
+      <View
+        onLayout={(event: LayoutChangeEvent) => setGridWidth(event.nativeEvent.layout.width)}
+        style={[styles.grid, hideNames && !expanded && styles.gridIconOnly]}
+      >
         <CategoryChip
           label="All"
           count={allCount}
           active={selectedCategoryId === null}
+          iconOnly={hideNames}
+          onLayout={event => setChipWidths(current => ({ ...current, all: event.nativeEvent.layout.width }))}
           onPress={() => onSelectCategory(null)}
         />
-        {visibleCategories.map(category => (
+        {(hideNames && !expanded ? iconOnlyCategories : visibleCategories).map(category => (
           <CategoryChip
             key={category.id}
             icon={category.emoji}
             label={category.name}
             count={behaviorCounts[category.id] ?? 0}
             active={selectedCategoryId === category.id}
+            iconOnly={hideNames}
+            onLayout={event =>
+              setChipWidths(current => ({ ...current, [category.id]: event.nativeEvent.layout.width }))
+            }
             onPress={() => onSelectCategory(category.id)}
             onLongPress={() => handleCategoryLongPress(category)}
           />
@@ -82,25 +127,39 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
 
 interface CategoryChipProps {
   icon?: string;
+  iconOnly?: boolean;
   label: string;
   count: number;
   active: boolean;
   onPress: () => void;
   onLongPress?: () => void;
+  onLayout?: (event: LayoutChangeEvent) => void;
 }
 
-function CategoryChip({ icon, label, count, active, onPress, onLongPress }: CategoryChipProps) {
+function CategoryChip({
+  icon,
+  iconOnly = false,
+  label,
+  count,
+  active,
+  onPress,
+  onLongPress,
+  onLayout,
+}: CategoryChipProps) {
   return (
     <Pressable
       accessibilityLabel={`${label}, ${count} behaviors`}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
       onLongPress={onLongPress}
+      onLayout={onLayout}
       onPress={onPress}
       style={({ pressed }) => [styles.chip, active && styles.chipActive, pressed && styles.chipPressed]}
     >
-      {icon && <Text style={[styles.icon, !active && styles.iconInactive]}>{icon}</Text>}
-      <Text style={[styles.chipLabel, active ? styles.chipLabelActive : styles.chipLabelInactive]}>{label}</Text>
+      {(icon || iconOnly) && <Text style={[styles.icon, !active && styles.iconInactive]}>{icon || '▦'}</Text>}
+      {!iconOnly && (
+        <Text style={[styles.chipLabel, active ? styles.chipLabelActive : styles.chipLabelInactive]}>{label}</Text>
+      )}
       <Text style={[styles.count, active ? styles.countActive : styles.countInactive]}>{count}</Text>
     </Pressable>
   );
@@ -117,6 +176,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 2,
     paddingBottom: 2,
+  },
+  headerTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   label: {
     color: Colors.text.faint,
@@ -139,6 +203,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 9,
+  },
+  gridIconOnly: {
+    flexWrap: 'nowrap',
+    overflow: 'hidden',
   },
   chip: {
     minHeight: 40,
