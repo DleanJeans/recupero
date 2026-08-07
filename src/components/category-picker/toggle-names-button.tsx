@@ -36,6 +36,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     padding: 6,
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: Colors.border.default,
   },
