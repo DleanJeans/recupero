@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 import type { BehaviorEntry, BehaviorType } from '../types/behavior';
 import { getBehaviorTypeColor } from '../utils/behavior-type-utils';
 import { Colors } from '../utils/colors';
@@ -27,6 +27,7 @@ const DECAY_COLOR: Record<BehaviorType, string> = {
 const STRIPE_ANIMATION_MIN_DURATION_MS = 2 * 60 * MS_PER_MINUTE;
 
 export function DecayBar({ behavior, motionEnabled = true, now = Date.now(), variant = 'bar' }: Props) {
+  const [showLabel, setShowLabel] = useState(false);
   const decay = getTimeUntilNextDecay(behavior, now);
   if (!decay) return null;
   const { daysLeft, everyDays } = decay;
@@ -40,14 +41,22 @@ export function DecayBar({ behavior, motionEnabled = true, now = Date.now(), var
 
   if (variant === 'pill') {
     return (
-      <View style={[styles.pill, { backgroundColor: `${color}24` }]}>
+      <Pressable
+        style={[styles.pill, { backgroundColor: `${color}24` }]}
+        onPress={() => setShowLabel(visible => !visible)}
+        accessibilityRole="button"
+        accessibilityLabel={`Decays in ${formatDuration(daysLeft * MS_PER_DAY)}`}
+      >
         <Ionicons
           name="trending-down"
           size={14}
           color={color}
         />
-        <Text style={[styles.pillLabel, { color }]}>{formatDuration(daysLeft * MS_PER_DAY)}</Text>
-      </View>
+        <Text style={[styles.pillLabel, { color }]}>
+          {showLabel && 'Decays in '}
+          {formatDuration(daysLeft * MS_PER_DAY)}
+        </Text>
+      </Pressable>
     );
   }
 

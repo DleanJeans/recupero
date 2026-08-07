@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { BehaviorEntry } from '../types/behavior';
 import { Colors } from '../utils/colors';
 import { getCooldownColor, isCooldownActive } from '../utils/cooldown-utils';
@@ -19,6 +19,8 @@ interface Props {
 }
 
 export function CooldownBar({ behavior, motionEnabled = true, now = Date.now(), variant = 'bar' }: Props) {
+  const [showLabel, setShowLabel] = useState(false);
+
   if (!isCooldownActive(behavior) || !behavior.lastTimestamp) {
     if (variant === 'pill') return null;
     return (
@@ -41,15 +43,21 @@ export function CooldownBar({ behavior, motionEnabled = true, now = Date.now(), 
     const remainingLabel = formatDuration(roundedRemainingMs);
 
     return (
-      <View style={[styles.pill, { backgroundColor: `${color}24` }]}>
+      <Pressable
+        style={[styles.pill, { backgroundColor: `${color}24` }]}
+        onPress={() => setShowLabel(visible => !visible)}
+        accessibilityRole="button"
+        accessibilityLabel={`Cooldown: ${remainingLabel}`}
+      >
         <CooldownIcon
           size={14}
           color={color}
         />
         <Text style={[styles.pillLabel, { color }]}>
+          {showLabel && 'Cooldown: '}
           {remainingLabel === Label.JUST_NOW ? 'Ready' : `${remainingLabel} left`}
         </Text>
-      </View>
+      </Pressable>
     );
   }
 

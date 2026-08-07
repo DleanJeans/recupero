@@ -333,7 +333,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 10,
+    columnGap: 8,
+    rowGap: 6,
     marginTop: 4,
   },
 });
