@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import type { DailyMetadataContribution, DailyMetadataTotal } from '../../../utils/behavior-utils';
-import { MetadataTotalItem } from './metadata-total-item';
+import { MetadataTotalCard } from './metadata-total-card';
 
 interface MetadataDashboardGridProps {
   items: DailyMetadataTotal[];
@@ -38,7 +38,7 @@ export function MetadataDashboardGrid({
           (hasOrphanBeforeExpanded && index === expandedIndex - 1) ||
           (hasOrphanAfterExpanded && index === items.length - 1);
         return (
-          <MetadataTotalItem
+          <MetadataTotalCard
             key={key}
             item={item}
             expanded={expanded}

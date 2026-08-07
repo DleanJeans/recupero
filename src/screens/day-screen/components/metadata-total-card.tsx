@@ -7,7 +7,7 @@ import type { DailyMetadataContribution, DailyMetadataTotal } from '../../../uti
 import { Colors } from '../../../utils/colors';
 import { GoalContributionList } from './goal-contribution-list';
 
-interface MetadataTotalItemProps {
+interface MetadataTotalCardProps {
   item: DailyMetadataTotal;
   expanded: boolean;
   contributions: DailyMetadataContribution[];
@@ -17,7 +17,7 @@ interface MetadataTotalItemProps {
 
 const CARD_LAYOUT = LinearTransition.duration(220);
 
-export function MetadataTotalItem({ item, expanded, contributions, onPress, style }: MetadataTotalItemProps) {
+export function MetadataTotalCard({ item, expanded, contributions, onPress, style }: MetadataTotalCardProps) {
   const currentValue = Math.max(item.value, 0);
   const goal = item.goal ?? 0;
   const progressTotal = Math.max(currentValue, goal);
