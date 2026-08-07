@@ -42,6 +42,7 @@ interface Props {
   starMotionEnabled?: boolean;
   now?: number;
   inlineElapsedWhenNoCooldown?: boolean;
+  presentation?: 'default' | 'home-card';
 }
 
 /** Body for the home card and the BehaviorDetails/BehaviorLog headers:
@@ -60,6 +61,7 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
   starMotionEnabled = false,
   now,
   inlineElapsedWhenNoCooldown = false,
+  presentation = 'default',
 }: Props) {
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const [tick, setTick] = useState(0);
@@ -73,6 +75,7 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
   }, [now]);
 
   const isHeader = titleSize === 'header';
+  const isHomeCard = presentation === 'home-card';
   const effectiveXp = useMemo(
     () => getEffectiveXp(behavior, resolvedNow, dayCutoffHour),
     [behavior, dayCutoffHour, resolvedNow, tick],
@@ -100,38 +103,48 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
   }, [behavior, dayCutoffHour, starTargetDate, todayStr]);
 
   const elapsedOnly = inlineElapsedWhenNoCooldown && !isCooldownActive(behavior);
+  const inlineElapsed =
+    isHomeCard || elapsedOnly ? (
+      <View style={styles.inlineElapsed}>
+        <BehaviorElapsed
+          behavior={behavior}
+          now={resolvedNow}
+        />
+      </View>
+    ) : undefined;
 
   return (
-    <View style={styles.body}>
-      <View style={styles.iconColumn}>
-        <BehaviorIcon
-          behavior={behavior}
-          size={isHeader ? 24 : 32}
-        />
+    <View style={[styles.body, isHomeCard && styles.cardBody]}>
+      <View style={[styles.iconColumn, isHomeCard && styles.cardIconColumn]}>
+        {isHomeCard ? (
+          <View style={styles.cardIconShell}>
+            <BehaviorIcon
+              behavior={behavior}
+              size={26}
+            />
+          </View>
+        ) : (
+          <BehaviorIcon
+            behavior={behavior}
+            size={isHeader ? 24 : 32}
+          />
+        )}
         <StarRow
           behavior={behavior}
           dateStr={starTargetDate}
-          size={11}
+          size={isHomeCard ? 13 : 11}
           motionEnabled={starMotionEnabled}
         />
         {starLogCountSummary && <Text style={styles.starLogCount}>{starLogCountSummary}</Text>}
       </View>
-      <View style={styles.info}>
+      <View style={[styles.info, isHomeCard && styles.cardInfo]}>
         <BehaviorTitle
           behavior={behavior}
           showCategory={showCategory}
           titleOverride={titleOverride}
           titleSize={isHeader ? 'header' : 'card'}
-          inlineElapsed={
-            elapsedOnly ? (
-              <View style={styles.inlineElapsed}>
-                <BehaviorElapsed
-                  behavior={behavior}
-                  now={resolvedNow}
-                />
-              </View>
-            ) : undefined
-          }
+          presentation={presentation}
+          inlineElapsed={inlineElapsed}
         />
         {behavior.xpEnabled && (
           <XPBar
@@ -142,21 +155,46 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
             motionEnabled={xpMotionEnabled}
           />
         )}
-        {!elapsedOnly && (
-          <View style={styles.elapsedRow}>
-            <CooldownBar
-              behavior={behavior}
-              motionEnabled={motionEnabled}
-              now={resolvedNow}
-            />
-          </View>
-        )}
-        {behavior.xpEnabled && behavior.xpDecay && effectiveXp > 0 && (
-          <DecayBar
-            behavior={behavior}
-            motionEnabled={motionEnabled}
-            now={resolvedNow}
-          />
+        {isHomeCard ? (
+          (isCooldownActive(behavior) || (behavior.xpEnabled && behavior.xpDecay && effectiveXp > 0)) && (
+            <View style={styles.cardStatusRow}>
+              {isCooldownActive(behavior) && (
+                <CooldownBar
+                  behavior={behavior}
+                  motionEnabled={motionEnabled}
+                  now={resolvedNow}
+                  variant="pill"
+                />
+              )}
+              {behavior.xpEnabled && behavior.xpDecay && effectiveXp > 0 && (
+                <DecayBar
+                  behavior={behavior}
+                  motionEnabled={motionEnabled}
+                  now={resolvedNow}
+                  variant="pill"
+                />
+              )}
+            </View>
+          )
+        ) : (
+          <>
+            {!elapsedOnly && (
+              <View style={styles.elapsedRow}>
+                <CooldownBar
+                  behavior={behavior}
+                  motionEnabled={motionEnabled}
+                  now={resolvedNow}
+                />
+              </View>
+            )}
+            {behavior.xpEnabled && behavior.xpDecay && effectiveXp > 0 && (
+              <DecayBar
+                behavior={behavior}
+                motionEnabled={motionEnabled}
+                now={resolvedNow}
+              />
+            )}
+          </>
         )}
       </View>
     </View>
@@ -168,11 +206,19 @@ interface BehaviorTitleProps {
   showCategory?: boolean;
   titleOverride?: string;
   titleSize?: 'card' | 'header';
+  presentation?: 'default' | 'home-card';
   /** When provided, rendered on the same line as the card-variant name. */
   inlineElapsed?: React.ReactNode;
 }
 
-function BehaviorTitle({ behavior, showCategory, titleOverride, titleSize = 'card', inlineElapsed }: BehaviorTitleProps) {
+function BehaviorTitle({
+  behavior,
+  showCategory,
+  titleOverride,
+  titleSize = 'card',
+  presentation = 'default',
+  inlineElapsed,
+}: BehaviorTitleProps) {
   const name = titleOverride ?? behavior.name;
   if (titleSize === 'header') {
     return (
@@ -192,8 +238,8 @@ function BehaviorTitle({ behavior, showCategory, titleOverride, titleSize = 'car
     );
   }
   return (
-    <View style={styles.nameRow}>
-      <Text style={styles.name}>{name}</Text>
+    <View style={[styles.nameRow, presentation === 'home-card' && styles.cardNameRow]}>
+      <Text style={[styles.name, presentation === 'home-card' && styles.cardName]}>{name}</Text>
       {showCategory && <CategoryEmoji behavior={behavior} />}
       {!behavior.xpEnabled && <Text style={styles.logCount}>×{behavior.logs.length}</Text>}
       {inlineElapsed}
@@ -208,22 +254,49 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
+  cardBody: {
+    gap: 13,
+  },
   iconColumn: {
     alignItems: 'center',
     gap: 5,
   },
+  cardIconColumn: {
+    width: 46,
+    gap: 6,
+  },
+  cardIconShell: {
+    width: 46,
+    height: 46,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.bg.input,
+    borderRadius: 13,
+  },
   info: {
     flex: 1,
+  },
+  cardInfo: {
+    minWidth: 0,
+    gap: 1,
   },
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
+  cardNameRow: {
+    minWidth: 0,
+  },
   name: {
     color: Colors.text.primary,
     fontSize: 16,
     fontWeight: '600',
+  },
+  cardName: {
+    flexShrink: 1,
+    fontSize: 17,
+    fontWeight: '700',
   },
   headerTitle: {
     paddingHorizontal: 0,
@@ -255,5 +328,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     marginTop: 2,
+  },
+  cardStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 4,
   },
 });

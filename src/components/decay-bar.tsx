@@ -13,6 +13,7 @@ interface Props {
   behavior: BehaviorEntry;
   motionEnabled?: boolean;
   now?: number;
+  variant?: 'bar' | 'pill';
 }
 
 /** Decay color reflects whether decay is "good" or "bad" for the behavior type:
@@ -25,7 +26,7 @@ const DECAY_COLOR: Record<BehaviorType, string> = {
 };
 const STRIPE_ANIMATION_MIN_DURATION_MS = 2 * 60 * MS_PER_MINUTE;
 
-export function DecayBar({ behavior, motionEnabled = true, now = Date.now() }: Props) {
+export function DecayBar({ behavior, motionEnabled = true, now = Date.now(), variant = 'bar' }: Props) {
   const decay = getTimeUntilNextDecay(behavior, now);
   if (!decay) return null;
   const { daysLeft, everyDays } = decay;
@@ -36,6 +37,19 @@ export function DecayBar({ behavior, motionEnabled = true, now = Date.now() }: P
   const color = DECAY_COLOR[behavior.type ?? 'neutral'];
   const timeUntilNextDecayMs = daysLeft * MS_PER_DAY;
   const stripeMotionEnabled = motionEnabled && timeUntilNextDecayMs > STRIPE_ANIMATION_MIN_DURATION_MS;
+
+  if (variant === 'pill') {
+    return (
+      <View style={[styles.pill, { backgroundColor: `${color}24` }]}>
+        <Ionicons
+          name="trending-down"
+          size={14}
+          color={color}
+        />
+        <Text style={[styles.pillLabel, { color }]}>{formatDuration(daysLeft * MS_PER_DAY)}</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.row}>
@@ -61,6 +75,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     marginTop: 4,
+  },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
+    borderRadius: 9,
+  },
+  pillLabel: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   label: {
     fontSize: 10,

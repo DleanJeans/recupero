@@ -5,6 +5,7 @@ import { type GestureResponderEvent, type LayoutChangeEvent, Pressable, StyleShe
 import { BehaviorSummary } from '../../../components/behavior-summary';
 import type { BehaviorEntry } from '../../../types/behavior';
 import type { RootStackParamList } from '../../../types/navigation';
+import { getBehaviorTypeColor } from '../../../utils/behavior-type-utils';
 import { Colors } from '../../../utils/colors';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -76,8 +77,14 @@ export const BehaviorCard = React.memo(function BehaviorCard({
     [refreshBounds],
   );
 
+  const accentColor = getBehaviorTypeColor(behavior.type);
+
   return (
     <View style={styles.card}>
+      <View
+        pointerEvents="none"
+        style={[styles.accent, { backgroundColor: accentColor }]}
+      />
       <Pressable
         ref={pressableRef}
         style={styles.content}
@@ -92,6 +99,7 @@ export const BehaviorCard = React.memo(function BehaviorCard({
           motionEnabled={motionEnabled}
           xpMotionEnabled={false}
           now={now}
+          presentation="home-card"
           inlineElapsedWhenNoCooldown
         />
       </Pressable>
@@ -101,16 +109,31 @@ export const BehaviorCard = React.memo(function BehaviorCard({
 
 const styles = StyleSheet.create({
   card: {
+    position: 'relative',
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.bg.card,
-    borderRadius: 12,
-    marginVertical: 6,
-    overflow: 'hidden',
+    borderColor: Colors.border.default,
+    borderRadius: 18,
+    borderWidth: 1,
+    marginBottom: 11,
     marginHorizontal: 16,
+    overflow: 'hidden',
+  },
+  accent: {
+    position: 'absolute',
+    left: 8,
+    top: 12,
+    bottom: 12,
+    width: 4,
+    borderRadius: 4,
   },
   content: {
     flex: 1,
-    padding: 16,
+    minWidth: 0,
+    paddingTop: 14,
+    paddingRight: 14,
+    paddingBottom: 14,
+    paddingLeft: 20,
   },
 });
