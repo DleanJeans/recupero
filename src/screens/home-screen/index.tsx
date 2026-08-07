@@ -16,10 +16,10 @@ import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import { getCooldownBehaviors, isCooldownCategoryFilterId } from '../../utils/cooldown-filter';
 import { BehaviorList } from './components/behavior-list';
+import { BehaviorTypeXPPanel } from './components/behavior-type-xp-panel';
 import { CategoryXPBar } from './components/category-xp-bar';
 import { HomeHeader } from './components/home-header';
 import { HomeSearchBar } from './components/home-search-bar';
-import { TypeXPBar } from './components/type-xp-bar';
 
 export function HomeScreen() {
   useBackGuard();
@@ -114,7 +114,7 @@ export function HomeScreen() {
         />
       ) : (
         showXp && (
-          <TypeXPBar
+          <BehaviorTypeXPPanel
             selectedCategoryId={renderedSummaryCategoryId}
             motionEnabled={motionEnabled}
           />

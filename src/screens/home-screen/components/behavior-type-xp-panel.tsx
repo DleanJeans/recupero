@@ -21,7 +21,7 @@ interface Props {
   selectedCategoryId: string | null;
   motionEnabled?: boolean;
 }
-export function TypeXPBar({ selectedCategoryId, motionEnabled = true }: Props) {
+export function BehaviorTypeXPPanel({ selectedCategoryId, motionEnabled = true }: Props) {
   const behaviors = useBehaviorStore(s => s.behaviors);
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
 
