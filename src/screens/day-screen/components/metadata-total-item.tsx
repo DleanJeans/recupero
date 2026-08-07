@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
-import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';
 import { Text } from '../../../components/text';
 import type { DailyMetadataContribution, DailyMetadataTotal } from '../../../utils/behavior-utils';
 import { Colors } from '../../../utils/colors';
@@ -15,6 +15,8 @@ interface MetadataTotalItemProps {
   style?: StyleProp<ViewStyle>;
 }
 
+const CARD_LAYOUT = LinearTransition.duration(220);
+
 export function MetadataTotalItem({ item, expanded, contributions, onPress, style }: MetadataTotalItemProps) {
   const currentValue = Math.max(item.value, 0);
   const goal = item.goal ?? 0;
@@ -24,51 +26,57 @@ export function MetadataTotalItem({ item, expanded, contributions, onPress, styl
   const percentage = goal > 0 ? Math.round((currentValue / goal) * 100) : 0;
 
   return (
-    <Pressable
-      style={({ pressed }) => [styles.tile, expanded && styles.tileExpanded, pressed && styles.tilePressed, style]}
-      accessible
-      accessibilityRole="button"
-      accessibilityState={{ expanded }}
-      accessibilityLabel={`${item.label}: ${item.value} of ${item.goal} daily goal`}
-      onPress={onPress}
+    <Animated.View
+      layout={CARD_LAYOUT}
+      style={style}
     >
-      <View style={styles.tileHeader}>
-        <Text
-          style={styles.label}
-          numberOfLines={1}
-        >
-          {item.label}
-        </Text>
-        <Ionicons
-          name={expanded ? 'chevron-up' : 'chevron-down'}
-          size={17}
-          color={Colors.text.faint}
-        />
-      </View>
-      <Text
-        selectable
-        style={styles.bigValue}
+      <Pressable
+        style={({ pressed }) => [styles.tile, expanded && styles.tileExpanded, pressed && styles.tilePressed]}
+        accessible
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        accessibilityLabel={`${item.label}: ${item.value} of ${item.goal} daily goal`}
+        onPress={onPress}
       >
-        {item.value}
-        <Text style={styles.goalValue}>/{item.goal}</Text>
-        {item.unit ? <Text style={styles.unit}> {item.unit}</Text> : null}
-      </Text>
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressSegment, { width: `${goalPercent}%` }]} />
-        {overflowPercent > 0 && (
-          <View style={[styles.progressSegment, styles.progressExceeded, { width: `${overflowPercent}%` }]} />
-        )}
-      </View>
-      <Text style={styles.percentage}>{percentage}%</Text>
-      {expanded && (
-        <Animated.View
-          entering={FadeInDown.duration(180)}
-          exiting={FadeOutUp.duration(140)}
+        <View style={styles.tileHeader}>
+          <Text
+            style={styles.label}
+            numberOfLines={1}
+          >
+            {item.label}
+          </Text>
+          <Ionicons
+            name={expanded ? 'chevron-up' : 'chevron-down'}
+            size={17}
+            color={Colors.text.faint}
+          />
+        </View>
+        <Text
+          selectable
+          style={styles.bigValue}
         >
-          <GoalContributionList contributions={contributions} />
-        </Animated.View>
-      )}
-    </Pressable>
+          {item.value}
+          <Text style={styles.goalValue}>/{item.goal}</Text>
+          {item.unit ? <Text style={styles.unit}> {item.unit}</Text> : null}
+        </Text>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressSegment, { width: `${goalPercent}%` }]} />
+          {overflowPercent > 0 && (
+            <View style={[styles.progressSegment, styles.progressExceeded, { width: `${overflowPercent}%` }]} />
+          )}
+        </View>
+        <Text style={styles.percentage}>{percentage}%</Text>
+        {expanded && (
+          <Animated.View
+            layout={CARD_LAYOUT}
+            entering={FadeInDown.duration(180)}
+            exiting={FadeOutUp.duration(140)}
+          >
+            <GoalContributionList contributions={contributions} />
+          </Animated.View>
+        )}
+      </Pressable>
+    </Animated.View>
   );
 }
 
