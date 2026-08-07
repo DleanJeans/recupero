@@ -82,7 +82,7 @@ export function HomeScreen() {
 
   const [showXp, setShowXp] = useState(true);
   const addBehaviorDefaultCategoryId = cooldownSelected ? undefined : (selectedCategoryId ?? undefined);
-  const motionEnabled = useAfterInteractionsFlag([behaviors, selectedCategoryId, isSearching, searchQuery, showXp]);
+  const motionEnabled = useAfterInteractionsFlag([behaviors, isSearching, searchQuery, showXp]);
 
   return (
     <SafeAreaView
