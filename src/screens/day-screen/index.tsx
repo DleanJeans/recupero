@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { MoneyBalance } from '../../components/money-balance';
 import { SafeAreaView } from '../../components/safe-area-view';
@@ -24,7 +24,7 @@ import { getTaskStarsForDate } from '../../utils/task-utils';
 import { formatDuration } from '../../utils/time-utils';
 import { DateNavigationRow } from '../components/date-navigation-row';
 import { DayStatsStrip } from './components/day-stats-strip';
-import { type DayTab, DayTabSelector } from './components/day-tab-selector';
+import { DayTabSelector } from './components/day-tab-selector';
 import { LogList } from './components/log-list';
 import { MetadataSummaryRow } from './components/metadata-summary-row';
 
@@ -36,6 +36,8 @@ export function DayScreen() {
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const dayScreenSelectedDate = useScreenUiStore(s => s.dayScreenSelectedDate);
   const setDayScreenSelectedDate = useScreenUiStore(s => s.setDayScreenSelectedDate);
+  const selectedTab = useScreenUiStore(s => s.dayScreenSelectedTab);
+  const setSelectedTab = useScreenUiStore(s => s.setDayScreenSelectedTab);
 
   const todayStr = toDateString(new Date(), dayCutoffHour);
   const selectedDate = dayScreenSelectedDate ?? todayStr;
@@ -45,8 +47,6 @@ export function DayScreen() {
     },
     [setDayScreenSelectedDate],
   );
-  const [selectedTab, setSelectedTab] = useState<DayTab>('logs');
-
   useEffect(() => {
     if (selectedDate > todayStr) {
       setSelectedDate(todayStr);

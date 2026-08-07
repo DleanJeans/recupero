@@ -1,9 +1,10 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
+import type { DayTab } from '../../../store/screen-ui-store';
 import { Colors } from '../../../utils/colors';
 
-export type DayTab = 'logs' | 'metadata';
+export type { DayTab } from '../../../store/screen-ui-store';
 
 interface DayTabSelectorProps {
   selectedTab: DayTab;
