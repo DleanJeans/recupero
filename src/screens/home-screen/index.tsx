@@ -3,7 +3,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Button } from '../../components/button';
-import { CategoryFilter } from '../../components/category-filter';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text } from '../../components/text';
 import { useAfterInteractionsFlag } from '../../hooks/use-after-interactions-flag';
@@ -17,6 +16,7 @@ import { Colors } from '../../utils/colors';
 import { getCooldownBehaviors, isCooldownCategoryFilterId } from '../../utils/cooldown-filter';
 import { BehaviorList } from './components/behavior-list';
 import { BehaviorTypeXPPanel } from './components/behavior-type-xp-panel';
+import { CategoriesFilter } from './components/categories-filter';
 import { CategoryXPBar } from './components/category-xp-bar';
 import { HomeHeader } from './components/home-header';
 import { HomeSearchBar } from './components/home-search-bar';
@@ -121,7 +121,7 @@ export function HomeScreen() {
         )
       )}
 
-      <CategoryFilter
+      <CategoriesFilter
         selectedCategoryId={selectedCategoryId}
         onSelectCategory={handleSelectCategory}
       />
