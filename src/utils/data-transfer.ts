@@ -1,26 +1,47 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { useBehaviorStore } from '../store/behavior-store';
+import { useCuesStore } from '../store/cues-store';
+import { useSettingsStore } from '../store/settings-store';
+import { useShopStore } from '../store/shop-store';
 
-const STORAGE_KEYS = { behaviors: 'recupero-behaviors', settings: 'recupero-settings', shop: 'recupero-shop' } as const;
+const STORAGE_KEYS = {
+  behaviors: 'recupero-behaviors',
+  settings: 'recupero-settings',
+  shop: 'recupero-shop',
+  cues: 'recupero-cues',
+} as const;
 
 interface ExportData {
-  version: 1;
+  version: 1 | 2;
   exportedAt: string;
   behaviors: string | null;
   settings: string | null;
   shop?: string | null;
+  cues?: string | null;
+}
+
+function isPersistedStore(value: string | null | undefined): value is string {
+  if (!value) return false;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return typeof parsed === 'object' && parsed !== null && 'state' in parsed && typeof parsed.state === 'object';
+  } catch {
+    return false;
+  }
 }
 
 export async function exportToFile(): Promise<{ success: boolean; message: string }> {
   try {
-    const [behaviors, settings, shop] = await Promise.all([
+    const [behaviors, settings, shop, cues] = await Promise.all([
       AsyncStorage.getItem(STORAGE_KEYS.behaviors),
       AsyncStorage.getItem(STORAGE_KEYS.settings),
       AsyncStorage.getItem(STORAGE_KEYS.shop),
+      AsyncStorage.getItem(STORAGE_KEYS.cues),
     ]);
 
-    const data: ExportData = { version: 1, exportedAt: new Date().toISOString(), behaviors, settings, shop };
+    const data: ExportData = { version: 2, exportedAt: new Date().toISOString(), behaviors, settings, shop, cues };
 
     const json = JSON.stringify(data, null, 2);
     const filename = `recupero-backup-${new Date().toISOString().slice(0, 10)}.json`;
@@ -44,25 +65,29 @@ export async function importFromFile(fileUri: string): Promise<{ success: boolea
     const file = new File(fileUri);
     const json = await file.text();
 
-    const data = JSON.parse(json) as ExportData;
+    const data = JSON.parse(json) as Partial<ExportData>;
 
-    if (!data.version || !data.behaviors) {
+    if ((data.version !== 1 && data.version !== 2) || !isPersistedStore(data.behaviors)) {
       return { success: false, message: 'Invalid format — export from Recupero first' };
     }
 
-    const operations: Promise<void>[] = [];
-
-    if (data.behaviors) {
-      operations.push(AsyncStorage.setItem(STORAGE_KEYS.behaviors, data.behaviors));
-    }
-    if (data.settings) {
-      operations.push(AsyncStorage.setItem(STORAGE_KEYS.settings, data.settings));
-    }
-    if (data.shop) {
-      operations.push(AsyncStorage.setItem(STORAGE_KEYS.shop, data.shop));
+    const entries = [
+      [STORAGE_KEYS.behaviors, data.behaviors],
+      ...(data.settings == null ? [] : [[STORAGE_KEYS.settings, data.settings]]),
+      ...(data.shop == null ? [] : [[STORAGE_KEYS.shop, data.shop]]),
+      ...(data.cues == null ? [] : [[STORAGE_KEYS.cues, data.cues]]),
+    ] as Array<[string, string]>;
+    if (entries.some(([, value]) => !isPersistedStore(value))) {
+      return { success: false, message: 'Invalid format — export from Recupero first' };
     }
 
-    await Promise.all(operations);
+    await AsyncStorage.multiSet(entries);
+    await Promise.all([
+      useBehaviorStore.persist.rehydrate(),
+      useSettingsStore.persist.rehydrate(),
+      useShopStore.persist.rehydrate(),
+      useCuesStore.persist.rehydrate(),
+    ]);
 
     const behaviorState = data.behaviors ? JSON.parse(data.behaviors).state : null;
     const behaviorCount = behaviorState?.behaviors?.length ?? 0;
