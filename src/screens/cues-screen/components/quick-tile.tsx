@@ -18,6 +18,9 @@ export function QuickTile({ type, title, subtitle, onPress }: QuickTileProps) {
     <Pressable
       style={({ pressed }) => [styles.tile, pressed && styles.pressed]}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}, ${subtitle}`}
+      accessibilityHint={`Open ${title.toLowerCase()}.`}
     >
       <CueTriggerIcon type={type} />
       <View style={styles.copy}>
