@@ -2,7 +2,11 @@ import type { ExpoConfig } from 'expo/config';
 
 type Variant = 'development' | 'preview' | 'production';
 
-const variant: Variant = (process.env.APP_VARIANT as Variant) || 'development';
+const rawVariant = process.env.APP_VARIANT;
+if (rawVariant != null && rawVariant !== 'development' && rawVariant !== 'preview' && rawVariant !== 'production') {
+  throw new Error(`Unknown APP_VARIANT: ${rawVariant}`);
+}
+const variant: Variant = (rawVariant as Variant) || 'development';
 
 const isDev = variant === 'development';
 const bundleSuffix = isDev ? '.dev' : variant === 'preview' ? '.preview' : '';
