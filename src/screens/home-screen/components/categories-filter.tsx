@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -13,7 +13,6 @@ import type { RootStackParamList } from '../../../types/navigation';
 import { computeBehaviorCounts } from '../../../utils/behavior-counts';
 import { Colors } from '../../../utils/colors';
 
-const COLLAPSED_CATEGORY_LIMIT = 2;
 const CATEGORY_GRID_ANIMATION_DURATION = 240;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -41,35 +40,20 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
     height: gridHeight.value || undefined,
   }));
 
-  useEffect(() => {
-    setChipWidths({});
-  }, [hideNames]);
-
   const handleChipLayout = (key: string, event: LayoutChangeEvent) => {
     const { width } = event.nativeEvent.layout;
     setChipWidths(current => (current[key] === width ? current : { ...current, [key]: width }));
   };
 
   const { behaviorCounts, allCount } = useMemo(() => computeBehaviorCounts(behaviors), [behaviors]);
-  const visibleCategories = useMemo(() => {
-    if (renderExpanded || categories.length <= COLLAPSED_CATEGORY_LIMIT) return categories;
-
-    const visible = categories.slice(0, COLLAPSED_CATEGORY_LIMIT);
-    const selected = categories.find(category => category.id === selectedCategoryId);
-    if (selected && !visible.some(category => category.id === selected.id)) {
-      visible.splice(COLLAPSED_CATEGORY_LIMIT - 1, 1, selected);
+  const collapsedCategories = useMemo(() => {
+    if (gridWidth <= 0 || chipWidths.all == null || categories.some(category => chipWidths[category.id] == null)) {
+      return categories;
     }
-    return visible;
-  }, [categories, renderExpanded, selectedCategoryId]);
-
-  const iconOnlyCategories = useMemo(() => {
-    if (!hideNames || renderExpanded || gridWidth <= 0 || chipWidths.all == null) return categories;
-    if (categories.some(category => chipWidths[category.id] == null)) return categories;
 
     const gap = 9;
     const visible: Category[] = [];
     let usedWidth = chipWidths.all;
-
     for (const category of categories) {
       const width = chipWidths[category.id];
       if (width == null || usedWidth + gap + width > gridWidth) break;
@@ -79,17 +63,26 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
 
     const selected = categories.find(category => category.id === selectedCategoryId);
     if (selected && !visible.some(category => category.id === selected.id) && visible.length > 0) {
-      visible.splice(visible.length - 1, 1, selected);
+      const lastVisible = visible[visible.length - 1];
+      const lastWidth = chipWidths[lastVisible.id];
+      const selectedWidth = chipWidths[selected.id];
+      if (lastWidth != null && selectedWidth != null && usedWidth - lastWidth + selectedWidth <= gridWidth) {
+        visible.splice(visible.length - 1, 1, selected);
+      }
     }
 
     return visible;
-  }, [categories, chipWidths, gridWidth, hideNames, renderExpanded, selectedCategoryId]);
+  }, [categories, chipWidths, gridWidth, selectedCategoryId]);
+
+  const visibleCategories = renderExpanded ? categories : collapsedCategories;
 
   const handleCategoryLongPress = (category: Category) => {
     navigation.navigate('CategoryForm', { categoryId: category.id });
   };
 
-  const canExpand = categories.length > COLLAPSED_CATEGORY_LIMIT;
+  const collapsedLayoutMeasured =
+    gridWidth > 0 && chipWidths.all != null && categories.every(category => chipWidths[category.id] != null);
+  const canExpand = collapsedLayoutMeasured ? categories.length > collapsedCategories.length : categories.length > 0;
 
   const finishCollapse = (transitionId: number) => {
     if (transitionIdRef.current === transitionId && !expandedRef.current) {
@@ -157,7 +150,7 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
               gridHeight.value = withTiming(height, { duration: CATEGORY_GRID_ANIMATION_DURATION });
             }
           }}
-          style={[styles.grid, hideNames && !renderExpanded && styles.gridIconOnly]}
+          style={styles.grid}
         >
           <CategoryChip
             label="All"
@@ -167,7 +160,7 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
             onLayout={event => handleChipLayout('all', event)}
             onPress={() => onSelectCategory(null)}
           />
-          {(hideNames && !renderExpanded ? iconOnlyCategories : visibleCategories).map(category => (
+          {visibleCategories.map(category => (
             <CategoryChip
               key={category.id}
               icon={category.emoji}
@@ -261,6 +254,7 @@ const styles = StyleSheet.create({
   },
   gridViewport: {
     overflow: 'hidden',
+    width: '100%',
   },
   header: {
     flexDirection: 'row',
@@ -296,10 +290,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     flexShrink: 0,
     gap: 9,
-  },
-  gridIconOnly: {
-    flexWrap: 'nowrap',
-    overflow: 'hidden',
+    width: '100%',
   },
   chip: {
     minHeight: 40,
