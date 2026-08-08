@@ -25,6 +25,9 @@ export function SelectPill({
     <Pressable
       style={({ pressed }) => [styles.btn, style, active && activeBtnStyle, pressed && { opacity: 0.7 }]}
       onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: active }}
     >
       <Text style={[styles.text, textStyle, active && activeTextStyle]}>{label}</Text>
     </Pressable>
@@ -33,8 +36,9 @@ export function SelectPill({
 
 const styles = StyleSheet.create({
   btn: {
+    minHeight: 44,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 8,
     alignItems: 'center',
   },
   text: {
