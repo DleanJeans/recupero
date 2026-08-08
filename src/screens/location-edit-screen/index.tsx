@@ -130,6 +130,7 @@ export function LocationEditScreen() {
             value={isHome}
             accent={Colors.cue.location}
             onValueChange={setIsHome}
+            accessibilityLabel="Set as Home"
           />
         </View>
 

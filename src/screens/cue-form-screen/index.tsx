@@ -156,6 +156,7 @@ export function CueFormScreen() {
                 accent={getCueAccent(trigger.type)}
                 onValueChange={() => undefined}
                 disabled
+                accessibilityLabel="Push notifications unavailable"
               />
             </View>
           </View>

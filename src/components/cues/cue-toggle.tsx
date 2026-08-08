@@ -7,14 +7,22 @@ interface CueToggleProps {
   accent?: string;
   onValueChange: (value: boolean) => void;
   disabled?: boolean;
+  accessibilityLabel?: string;
 }
 
-export function CueToggle({ value, accent = Colors.type.desirable, onValueChange, disabled = false }: CueToggleProps) {
+export function CueToggle({
+  value,
+  accent = Colors.type.desirable,
+  onValueChange,
+  disabled = false,
+  accessibilityLabel,
+}: CueToggleProps) {
   return (
     <Switch
       value={value}
       onValueChange={onValueChange}
       disabled={disabled}
+      accessibilityLabel={accessibilityLabel}
       trackColor={{ false: Colors.border.default, true: accent }}
       thumbColor={Colors.text.primary}
     />

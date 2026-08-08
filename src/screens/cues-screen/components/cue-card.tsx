@@ -86,6 +86,7 @@ export function CueCard({ cue }: CueCardProps) {
           value={cue.enabled}
           accent={accent}
           onValueChange={() => toggleCue(cue.id)}
+          accessibilityLabel={`Enable ${triggerLabel} cue`}
         />
       </View>
     </Pressable>
