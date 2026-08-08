@@ -101,15 +101,45 @@ export function getStarMoneyMultiplierForLog(behavior: BehaviorEntry, log: LogEn
   return multiplier != null && Number.isFinite(multiplier) && multiplier >= 0 ? multiplier : 1;
 }
 
+function getStarMoneyMultipliers(behavior: BehaviorEntry, dayCutoffHour: number): Map<string, number> {
+  const thresholds = getThresholds(behavior);
+  const multipliers = new Map<string, number>();
+  if (!thresholds) return multipliers;
+
+  const groups = new Map<string, Array<{ item: LogEntry; index: number }>>();
+  behavior.logs.forEach((item, index) => {
+    const dateStr = toDateString(new Date(item.timestamp), dayCutoffHour);
+    const { start, end } = getPeriodRange(getStarPeriod(behavior), dateStr);
+    const key = `${start}:${end}`;
+    const group = groups.get(key) ?? [];
+    group.push({ item, index });
+    groups.set(key, group);
+  });
+
+  for (const group of groups.values()) {
+    group.sort((a, b) => a.item.timestamp - b.item.timestamp || a.index - b.index);
+    group.forEach(({ item }, index) => {
+      const previousStars = getEarnedStars(index, thresholds);
+      const earnedStars = getEarnedStars(index + 1, thresholds);
+      if (earnedStars <= previousStars) {
+        multipliers.set(item.id, 1);
+        return;
+      }
+      const multiplier = behavior.starMoneyMultipliers?.[earnedStars - 1];
+      multipliers.set(item.id, multiplier != null && Number.isFinite(multiplier) && multiplier >= 0 ? multiplier : 1);
+    });
+  }
+  return multipliers;
+}
+
 export function getBehaviorMoney(behavior: BehaviorEntry, dayCutoffHour = 0): number {
   if (behavior.moneyReward == null || behavior.type === 'neutral') return 0;
 
   const durationBased = behavior.durationXpEnabled === true;
+  const starMoneyMultipliers = getStarMoneyMultipliers(behavior, dayCutoffHour);
   const total = behavior.logs.reduce(
     (sum, log) =>
-      sum +
-      getMoneyRewardForLog(log, behavior.moneyReward, durationBased) *
-        getStarMoneyMultiplierForLog(behavior, log, dayCutoffHour),
+      sum + getMoneyRewardForLog(log, behavior.moneyReward, durationBased) * (starMoneyMultipliers.get(log.id) ?? 1),
     0,
   );
   return behavior.type === 'undesirable' ? -total : total;
@@ -176,10 +206,12 @@ export function getMoneyLogTransactions(
   for (const behavior of behaviors) {
     if (behavior.moneyReward == null || behavior.type === 'neutral') continue;
 
+    const starMoneyMultipliers = getStarMoneyMultipliers(behavior, dayCutoffHour);
+
     for (const log of behavior.logs) {
       const reward =
         getMoneyRewardForLog(log, behavior.moneyReward, behavior.durationXpEnabled === true) *
-        getStarMoneyMultiplierForLog(behavior, log, dayCutoffHour);
+        (starMoneyMultipliers.get(log.id) ?? 1);
       const amount = behavior.type === 'undesirable' ? -reward : reward;
       if (amount === 0) continue;
 
