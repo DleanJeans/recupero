@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useSettingsStore } from '../store/settings-store';
@@ -10,8 +10,21 @@ export function ConfettiOverlay() {
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const [confettiKey, setConfettiKey] = useState(0);
   const [visible, setVisible] = useState(false);
+  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
   const seeded = useRef(false);
   const lastLevels = useRef<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled().then(enabled => {
+      if (mounted) setReduceMotionEnabled(enabled);
+    });
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotionEnabled);
+    return () => {
+      mounted = false;
+      subscription.remove();
+    };
+  }, []);
 
   // Seed with behavior levels on first real render
   useEffect(() => {
@@ -48,7 +61,7 @@ export function ConfettiOverlay() {
     }
   }, [behaviors, dayCutoffHour, trigger]);
 
-  if (!visible) return null;
+  if (!visible || reduceMotionEnabled) return null;
 
   return (
     <View
