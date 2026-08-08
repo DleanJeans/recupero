@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, type StyleProp, StyleSheet, type ViewStyle } from 'react-native';
 import type { EmojiType } from 'rn-emoji-keyboard';
 import EmojiKeyboard from 'rn-emoji-keyboard';
 import { Colors } from '../utils/colors';
@@ -39,9 +39,10 @@ interface Props {
   onPick?: () => void;
   /** Called when the emoji keyboard opens or closes. */
   onOpenChange?: (open: boolean) => void;
+  style?: StyleProp<ViewStyle>;
 }
 
-export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChange }: Props) {
+export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChange, style }: Props) {
   const [open, setOpen] = useState(false);
 
   const suggestedEmoji = useMemo(() => {
@@ -72,7 +73,7 @@ export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChang
   return (
     <>
       <Pressable
-        style={styles.input}
+        style={[styles.input, style]}
         onPress={handlePress}
       >
         {value ? (

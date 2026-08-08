@@ -9,12 +9,6 @@ import { CalculationPill } from './calculation-pill';
 
 const METADATA_FIELD_ROW_LAYOUT = LinearTransition.duration(220);
 
-export const MetadataFieldColumnFlex = {
-  label: 4,
-  dailyGoal: 2,
-  unit: 1,
-} as const;
-
 interface MetadataFieldRowProps {
   field: MetadataField;
   index: number;
@@ -25,6 +19,7 @@ interface MetadataFieldRowProps {
   onCalculationChange: (index: number, calculation: MetadataFieldCalculation) => void;
   onMove: (index: number, offset: number) => void;
   onRemove: (index: number) => void;
+  isSorting: boolean;
 }
 
 export function MetadataFieldRow({
@@ -37,6 +32,7 @@ export function MetadataFieldRow({
   onCalculationChange,
   onMove,
   onRemove,
+  isSorting,
 }: MetadataFieldRowProps) {
   return (
     <Animated.View
@@ -82,41 +78,42 @@ export function MetadataFieldRow({
               onPress={() => onCalculationChange(index, 'amount')}
             />
             <CalculationPill
-              label="Per 100 Amount"
+              label="Per 100"
               active={field.calculation === 'per100'}
               onPress={() => onCalculationChange(index, 'per100')}
-              flex={1.8}
             />
           </View>
         </View>
       </View>
       <View style={styles.actions}>
-        <View style={styles.reorderButtons}>
-          <Pressable
-            accessibilityLabel={`Move ${field.label || 'field'} up`}
-            disabled={index === 0}
-            onPress={() => onMove(index, -1)}
-            style={styles.actionButton}
-          >
-            <Ionicons
-              name="chevron-up"
-              size={17}
-              color={index === 0 ? Colors.text.faint : Colors.text.light}
-            />
-          </Pressable>
-          <Pressable
-            accessibilityLabel={`Move ${field.label || 'field'} down`}
-            disabled={isLast}
-            onPress={() => onMove(index, 1)}
-            style={styles.actionButton}
-          >
-            <Ionicons
-              name="chevron-down"
-              size={17}
-              color={isLast ? Colors.text.faint : Colors.text.light}
-            />
-          </Pressable>
-        </View>
+        {isSorting && (
+          <View style={styles.reorderButtons}>
+            <Pressable
+              accessibilityLabel={`Move ${field.label || 'field'} up`}
+              disabled={index === 0}
+              onPress={() => onMove(index, -1)}
+              style={styles.actionButton}
+            >
+              <Ionicons
+                name="chevron-up"
+                size={17}
+                color={index === 0 ? Colors.text.faint : Colors.text.light}
+              />
+            </Pressable>
+            <Pressable
+              accessibilityLabel={`Move ${field.label || 'field'} down`}
+              disabled={isLast}
+              onPress={() => onMove(index, 1)}
+              style={styles.actionButton}
+            >
+              <Ionicons
+                name="chevron-down"
+                size={17}
+                color={isLast ? Colors.text.faint : Colors.text.light}
+              />
+            </Pressable>
+          </View>
+        )}
         <Pressable
           accessibilityLabel={`Remove ${field.label || 'field'}`}
           onPress={() => onRemove(index)}
@@ -137,41 +134,52 @@ const styles = StyleSheet.create({
   fieldRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 6,
+    gap: 9,
+    backgroundColor: Colors.bg.card,
+    borderWidth: 1,
+    borderColor: Colors.border.default,
+    borderRadius: 14,
+    padding: 11,
   },
   fieldInputs: {
     flex: 1,
-    gap: 6,
+    gap: 9,
   },
   inputRow: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 9,
   },
   fieldInput: {
+    height: 46,
     backgroundColor: Colors.bg.input,
     color: Colors.text.primary,
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    fontSize: 13,
+    borderRadius: 11,
+    paddingHorizontal: 12,
+    paddingVertical: 0,
+    fontSize: 15,
+    fontWeight: '600',
+    minWidth: 0,
   },
   labelInput: {
-    flex: MetadataFieldColumnFlex.label,
+    flex: 1,
   },
   dailyGoalInput: {
-    flex: MetadataFieldColumnFlex.dailyGoal,
+    width: 92,
+    textAlign: 'center',
   },
   unitInput: {
-    flex: MetadataFieldColumnFlex.unit,
+    width: 56,
+    textAlign: 'center',
   },
   controlsRow: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 0,
   },
   actions: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 2,
+    paddingTop: 8,
   },
   reorderButtons: {
     flexDirection: 'column',
@@ -182,9 +190,9 @@ const styles = StyleSheet.create({
   calculationRow: {
     flex: 1,
     flexDirection: 'row',
-    borderRadius: 6,
+    backgroundColor: Colors.bg.primary,
+    borderRadius: 11,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Colors.border.default,
+    padding: 3,
   },
 });

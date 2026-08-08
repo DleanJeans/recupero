@@ -19,6 +19,7 @@ interface LogRewardPreviewProps {
   undesirable?: boolean;
   decayed?: boolean;
   animate?: boolean;
+  variant?: 'default' | 'pill';
 }
 
 export const REWARD_ANIMATION_MS = 850;
@@ -32,6 +33,7 @@ export function LogRewardPreview({
   undesirable = false,
   decayed = false,
   animate = false,
+  variant = 'default',
 }: LogRewardPreviewProps) {
   const progress = useSharedValue(0);
 
@@ -49,24 +51,34 @@ export function LogRewardPreview({
   const showMoneyMultiplier =
     money != null && moneyOriginal != null && moneyMultiplier != null && moneyMultiplier !== 1;
   const moneyStyle = money != null && money < 0 ? styles.penalty : styles.money;
+  const isPillVariant = variant === 'pill';
+  const wrapReward = (content: React.ReactNode, positive: boolean) =>
+    isPillVariant ? (
+      <View style={[styles.pill, positive ? styles.pillPositive : styles.pillPenalty]}>{content}</View>
+    ) : (
+      content
+    );
 
   return (
     <Animated.View style={[styles.container, animate && animatedStyle]}>
-      {xp != null && (
-        <Text style={[styles.reward, undesirable ? styles.penalty : styles.xp, decayed && styles.decayed]}>
-          +{xp} XP
-        </Text>
-      )}
+      {xp != null &&
+        wrapReward(
+          <Text style={[styles.reward, undesirable ? styles.penalty : styles.xp, decayed && styles.decayed]}>
+            +{xp} XP
+          </Text>,
+          !undesirable,
+        )}
       {money != null &&
-        (showMoneyMultiplier ? (
-          <View style={styles.moneyMultiplierRow}>
-            <Text style={[styles.reward, styles.originalMoney, moneyStyle]}>{formatSignedVnd(moneyOriginal)}</Text>
-            <Text style={[styles.reward, styles.moneyMultiplier]}>×{moneyMultiplier}</Text>
-            <Text style={[styles.reward, moneyStyle]}>{formatSignedVnd(money)}</Text>
-          </View>
-        ) : (
-          <Text style={[styles.reward, moneyStyle]}>{formatSignedVnd(money)}</Text>
-        ))}
+        (showMoneyMultiplier
+          ? wrapReward(
+              <View style={styles.moneyMultiplierRow}>
+                <Text style={[styles.reward, styles.originalMoney, moneyStyle]}>{formatSignedVnd(moneyOriginal)}</Text>
+                <Text style={[styles.reward, styles.moneyMultiplier]}>×{moneyMultiplier}</Text>
+                <Text style={[styles.reward, moneyStyle]}>{formatSignedVnd(money)}</Text>
+              </View>,
+              money >= 0,
+            )
+          : wrapReward(<Text style={[styles.reward, moneyStyle]}>{formatSignedVnd(money)}</Text>, money >= 0))}
     </Animated.View>
   );
 }
@@ -97,6 +109,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  pill: {
+    minHeight: 30,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  pillPositive: {
+    backgroundColor: 'rgba(74, 222, 128, 0.14)',
+  },
+  pillPenalty: {
+    backgroundColor: 'rgba(248, 113, 113, 0.14)',
   },
   originalMoney: {
     opacity: 0.65,

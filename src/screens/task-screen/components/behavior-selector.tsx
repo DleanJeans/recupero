@@ -14,6 +14,7 @@ interface BehaviorSelectorProps {
   emptyMessage?: string;
   onQueryChange: (query: string) => void;
   onSelect: (behaviorId: string | undefined) => void;
+  appearance?: 'default' | 'timer';
 }
 
 export function BehaviorSelector({
@@ -24,6 +25,7 @@ export function BehaviorSelector({
   emptyMessage = 'No behaviors available.',
   onQueryChange,
   onSelect,
+  appearance = 'default',
 }: BehaviorSelectorProps) {
   const filteredBehaviors = useMemo(() => {
     const trimmed = query.trim().toLowerCase();
@@ -39,20 +41,22 @@ export function BehaviorSelector({
     }
   }, [onSelect, selectedBehaviorId, selectedIsVisible]);
 
+  const isTimerAppearance = appearance === 'timer';
+
   if (behaviors.length === 0) {
-    return <Text style={styles.emptyInline}>{emptyMessage}</Text>;
+    return <Text style={[styles.emptyInline, isTimerAppearance && styles.timerEmptyInline]}>{emptyMessage}</Text>;
   }
 
   return (
     <View style={styles.behaviorPicker}>
-      <View style={styles.behaviorSearchWrap}>
+      <View style={[styles.behaviorSearchWrap, isTimerAppearance && styles.timerBehaviorSearchWrap]}>
         <Ionicons
           name="search-outline"
           size={17}
           color={Colors.text.faint}
         />
         <TextInput
-          style={styles.behaviorSearchInput}
+          style={[styles.behaviorSearchInput, isTimerAppearance && styles.timerBehaviorSearchInput]}
           placeholder="Search behaviors"
           placeholderTextColor={Colors.text.faint}
           value={query}
@@ -77,8 +81,8 @@ export function BehaviorSelector({
       </View>
 
       <ScrollView
-        style={styles.behaviorList}
-        contentContainerStyle={styles.behaviorListContent}
+        style={[styles.behaviorList, isTimerAppearance && styles.timerBehaviorList]}
+        contentContainerStyle={[styles.behaviorListContent, isTimerAppearance && styles.timerBehaviorListContent]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={filteredBehaviors.length > 4}
       >
@@ -92,7 +96,8 @@ export function BehaviorSelector({
                 key={behavior.id}
                 style={({ pressed }) => [
                   styles.behaviorRow,
-                  active && styles.behaviorRowActive,
+                  isTimerAppearance && styles.timerBehaviorRow,
+                  active && (isTimerAppearance ? styles.timerBehaviorRowActive : styles.behaviorRowActive),
                   pressed && styles.pressed,
                 ]}
                 onPress={() => onSelect(active ? undefined : behavior.id)}
@@ -102,23 +107,45 @@ export function BehaviorSelector({
                   size={22}
                 />
                 <Text
-                  style={[styles.behaviorRowText, active && styles.behaviorRowTextActive]}
+                  style={[
+                    styles.behaviorRowText,
+                    isTimerAppearance && styles.timerBehaviorRowText,
+                    active && styles.behaviorRowTextActive,
+                  ]}
                   numberOfLines={1}
                 >
                   {behavior.name}
                 </Text>
-                {active && (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={18}
-                    color={Colors.text.primary}
-                  />
+                {isTimerAppearance ? (
+                  <TimerRadio active={active} />
+                ) : (
+                  active && (
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={18}
+                      color={Colors.text.primary}
+                    />
+                  )
                 )}
               </Pressable>
             );
           })
         )}
       </ScrollView>
+    </View>
+  );
+}
+
+function TimerRadio({ active }: { active: boolean }) {
+  return (
+    <View style={[styles.timerRadio, active && styles.timerRadioActive]}>
+      {active && (
+        <Ionicons
+          name="checkmark"
+          size={13}
+          color={Colors.bg.primary}
+        />
+      )}
     </View>
   );
 }
@@ -137,6 +164,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 0,
   },
+  timerBehaviorSearchWrap: {
+    height: 52,
+    backgroundColor: Colors.bg.card,
+    borderWidth: 1,
+    borderColor: Colors.border.default,
+    borderRadius: 14,
+    paddingHorizontal: 15,
+  },
   behaviorSearchInput: {
     flex: 1,
     height: 44,
@@ -144,11 +179,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     paddingVertical: 0,
   },
+  timerBehaviorSearchInput: {
+    height: 52,
+    fontSize: 16,
+  },
   behaviorList: {
     maxHeight: 220,
   },
   behaviorListContent: {
     gap: 6,
+  },
+  timerBehaviorList: {
+    maxHeight: 360,
+  },
+  timerBehaviorListContent: {
+    gap: 10,
   },
   behaviorRow: {
     flexDirection: 'row',
@@ -161,9 +206,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 10,
   },
+  timerBehaviorRow: {
+    gap: 13,
+    backgroundColor: Colors.bg.card,
+    borderColor: Colors.border.default,
+    borderRadius: 14,
+    paddingHorizontal: 15,
+    paddingVertical: 15,
+  },
   behaviorRowActive: {
     borderColor: Colors.text.light,
     backgroundColor: Colors.bg.elevated,
+  },
+  timerBehaviorRowActive: {
+    borderColor: Colors.type.desirable,
+    backgroundColor: 'rgba(74, 222, 128, 0.08)',
   },
   behaviorRowText: {
     color: Colors.text.light,
@@ -174,10 +231,33 @@ const styles = StyleSheet.create({
   behaviorRowTextActive: {
     color: Colors.text.primary,
   },
+  timerBehaviorRowText: {
+    color: Colors.text.primary,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  timerRadio: {
+    width: 22,
+    height: 22,
+    borderWidth: 2,
+    borderColor: Colors.text.faint,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  timerRadioActive: {
+    borderColor: Colors.type.desirable,
+    backgroundColor: Colors.type.desirable,
+  },
   emptyInline: {
     color: Colors.text.faint,
     fontSize: 13,
     paddingVertical: 8,
+  },
+  timerEmptyInline: {
+    paddingHorizontal: 4,
+    lineHeight: 20,
   },
   pressed: {
     opacity: 0.72,

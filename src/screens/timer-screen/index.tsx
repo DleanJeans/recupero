@@ -1,26 +1,17 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { BehaviorIcon } from '../../components/behavior-icon';
-import { Button } from '../../components/button';
-import { LogRewardPreview } from '../../components/log-reward-preview';
 import { MoneyBalance } from '../../components/money-balance';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
-import { Text } from '../../components/text';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useSettingsStore } from '../../store/settings-store';
 import { useTimerStore } from '../../store/timer-store';
-import type { BehaviorEntry } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
-import { getMoneyRewardForLog, getStarMoneyMultiplierForLog } from '../../utils/money-utils';
-import { formatStopwatchDuration } from '../../utils/stopwatch-utils';
-import { formatTime } from '../../utils/time-utils';
-import { getTimerXp } from '../../utils/xp-utils';
-import { TaskComposer } from '../task-screen/components/task-composer';
+import { TimerPicker } from './components/timer-picker';
+import { TimerRunningPanel } from './components/timer-running-panel';
 
 export function TimerScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -152,7 +143,7 @@ export function TimerScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {lockedBehavior ? (
-          <TimerPanel
+          <TimerRunningPanel
             behavior={lockedBehavior}
             elapsedMs={elapsedMs}
             isRunning={isRunning}
@@ -173,230 +164,24 @@ export function TimerScreen() {
               <MoneyBalance />
             </View>
 
-            <TaskComposer
-              title=""
-              behaviorQuery={behaviorQuery}
-              stars={0}
+            <TimerPicker
               behaviors={availableBehaviors}
+              behaviorQuery={behaviorQuery}
               selectedBehaviorId={selectedBehaviorId}
-              onTitleChange={() => {}}
               onBehaviorQueryChange={setBehaviorQuery}
-              onStarsChange={() => {}}
               onBehaviorSelect={setSelectedBehaviorId}
-              onAdd={handleContinue}
-              onCancel={() => {
-                setBehaviorQuery('');
-                setSelectedBehaviorId(undefined);
-              }}
-              submitLabel="Continue"
-              showTitleInput={false}
-              showStarPicker={false}
-              showCancelButton={false}
-              showAllBehaviorsWhenSearchEmpty
-              emptyBehaviorMessage={
-                "No Timed behaviors available.\nTurn on Track XP and Track duration for XP\nin a behavior's settings to use it here."
-              }
-              showSubmitButton={availableBehaviors.length > 0}
-              canSubmit={selectedBehaviorId != null}
-            />
-
-            <Button
-              variant="secondary"
-              onPress={() =>
+              onContinue={handleContinue}
+              onAddNewTimedBehavior={() =>
                 navigation.navigate('BehaviorForm', {
                   defaultXpEnabled: true,
                   defaultDurationXpEnabled: true,
                 })
               }
-            >
-              + Add new timed behavior
-            </Button>
+            />
           </>
         )}
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-interface TimerPanelProps {
-  behavior: BehaviorEntry;
-  elapsedMs: number;
-  isRunning: boolean;
-  hasStarted: boolean;
-  hasStopped: boolean;
-  startTimestamp: number | undefined;
-  dayCutoffHour: number;
-  onBack: () => void;
-  onStart: () => void;
-  onStop: () => void;
-  onResume: () => void;
-  onRewindStart: () => void;
-}
-
-function TimerPanel({
-  behavior,
-  elapsedMs,
-  isRunning,
-  hasStarted,
-  hasStopped,
-  startTimestamp,
-  dayCutoffHour,
-  onBack,
-  onStart,
-  onStop,
-  onResume,
-  onRewindStart,
-}: TimerPanelProps) {
-  const category = useBehaviorStore(
-    useCallback(
-      state => (behavior.categoryId ? state.categories.find(item => item.id === behavior.categoryId) : undefined),
-      [behavior.categoryId],
-    ),
-  );
-  const rewardLog =
-    startTimestamp == null
-      ? undefined
-      : {
-          id: 'timer-preview',
-          timestamp: startTimestamp,
-          endTimestamp: startTimestamp + elapsedMs,
-        };
-  const rewardXp = isRunning && behavior.xpEnabled ? getTimerXp(elapsedMs) : undefined;
-  const rewardMoneyOriginal =
-    isRunning && rewardLog && behavior.moneyReward != null && behavior.type !== 'neutral'
-      ? getMoneyRewardForLog(rewardLog, behavior.moneyReward, true) * (behavior.type === 'undesirable' ? -1 : 1)
-      : undefined;
-  const rewardMoneyMultiplier =
-    rewardLog == null || rewardMoneyOriginal == null
-      ? undefined
-      : getStarMoneyMultiplierForLog(behavior, rewardLog, dayCutoffHour);
-  const rewardMoney =
-    rewardMoneyOriginal == null || rewardMoneyMultiplier == null
-      ? undefined
-      : rewardMoneyOriginal * rewardMoneyMultiplier;
-
-  return (
-    <>
-      <View style={styles.timerHeader}>
-        <Button
-          variant="icon"
-          onPress={onBack}
-          accessibilityLabel="Back to behavior picker"
-        >
-          <Ionicons
-            name="chevron-back"
-            size={28}
-            color={Colors.text.primary}
-          />
-        </Button>
-        <ScreenTitle>Timer</ScreenTitle>
-        <MoneyBalance />
-      </View>
-
-      <View style={styles.lockedBehaviorCard}>
-        <BehaviorIcon
-          behavior={behavior}
-          size={34}
-        />
-        <View style={styles.lockedBehaviorText}>
-          {category && (
-            <View style={styles.categoryRow}>
-              <Text style={styles.categoryEmoji}>{category.emoji}</Text>
-              <Text style={styles.categoryName}>{category.name}</Text>
-            </View>
-          )}
-          <Text
-            style={styles.lockedBehaviorName}
-            numberOfLines={1}
-          >
-            {behavior.name}
-          </Text>
-          <Text style={styles.lockedBehaviorStatus}>{isRunning ? 'Running' : hasStarted ? 'Paused' : 'Ready'}</Text>
-        </View>
-      </View>
-
-      <View style={styles.stopwatchPanel}>
-        <Text style={styles.stopwatchValue}>{formatStopwatchDuration(elapsedMs)}</Text>
-        {startTimestamp != null && (
-          <View style={styles.startedRow}>
-            <Text style={styles.stopwatchCaption}>{`Started at ${formatTime(startTimestamp)}`}</Text>
-            <Button
-              variant="secondary"
-              onPress={onRewindStart}
-              accessibilityLabel="Move start time back 1 minute"
-              style={styles.rewindButton}
-            >
-              -1 min
-            </Button>
-          </View>
-        )}
-        {(rewardXp != null || rewardMoney != null) && (
-          <LogRewardPreview
-            xp={rewardXp}
-            money={rewardMoney}
-            moneyOriginal={rewardMoneyOriginal}
-            moneyMultiplier={rewardMoneyMultiplier}
-            undesirable={behavior.type === 'undesirable'}
-          />
-        )}
-        <View style={styles.timerActions}>
-          {hasStopped ? (
-            <>
-              <Button
-                variant="secondary"
-                onPress={onStart}
-                accessibilityLabel="Restart"
-                style={styles.timerActionButton}
-              >
-                <Ionicons
-                  name="refresh"
-                  size={22}
-                  color={Colors.text.light}
-                />
-              </Button>
-              <Button
-                variant="secondary"
-                onPress={onResume}
-                accessibilityLabel="Resume"
-                style={styles.timerActionButton}
-              >
-                <Ionicons
-                  name="play"
-                  size={22}
-                  color={Colors.text.light}
-                />
-              </Button>
-              <Button
-                variant="primary"
-                onPress={onStop}
-                style={styles.timerActionButton}
-              >
-                Log
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="secondary"
-                onPress={onStart}
-                disabled={isRunning}
-                style={styles.timerActionButton}
-              >
-                {hasStarted ? 'Restart' : 'Start'}
-              </Button>
-              <Button
-                variant="primary"
-                onPress={onStop}
-                disabled={!hasStarted}
-                style={styles.timerActionButton}
-              >
-                Stop
-              </Button>
-            </>
-          )}
-        </View>
-      </View>
-    </>
   );
 }
 
@@ -416,82 +201,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
-  },
-  timerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginLeft: -8,
-  },
-  lockedBehaviorCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: Colors.bg.card,
-    borderRadius: 12,
-    padding: 14,
-  },
-  lockedBehaviorText: {
-    flex: 1,
-    gap: 2,
-  },
-  categoryRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 5,
-  },
-  categoryEmoji: {
-    fontSize: 14,
-  },
-  categoryName: {
-    color: Colors.text.muted,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  lockedBehaviorName: {
-    color: Colors.text.primary,
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  lockedBehaviorStatus: {
-    color: Colors.text.muted,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  stopwatchPanel: {
-    alignItems: 'center',
-    backgroundColor: Colors.bg.card,
-    borderRadius: 12,
-    padding: 18,
-    gap: 18,
-  },
-  stopwatchValue: {
-    color: Colors.text.primary,
-    fontSize: 48,
-    fontWeight: '800',
-    fontVariant: ['tabular-nums'],
-  },
-  stopwatchCaption: {
-    color: Colors.text.muted,
-    fontSize: 13,
-    fontWeight: '600',
-    fontVariant: ['tabular-nums'],
-  },
-  startedRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: -10,
-  },
-  rewindButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  timerActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  timerActionButton: {
-    flex: 1,
   },
 });

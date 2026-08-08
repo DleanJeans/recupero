@@ -135,7 +135,7 @@ export function CategoryFormScreen() {
       <FabButtonRow>
         {isEditing && (
           <Button
-            variant="danger"
+            variant="icon"
             onPress={handleDelete}
             style={styles.deleteButton}
             accessibilityLabel="Delete category"
@@ -143,13 +143,13 @@ export function CategoryFormScreen() {
             <Ionicons
               name="trash-outline"
               size={20}
-              color={Colors.text.primary}
+              color={Colors.type.undesirable}
             />
           </Button>
         )}
         {isEditing && (
           <Button
-            variant="secondary"
+            variant="icon"
             onPress={handleUndo}
             disabled={!hasChanges}
             style={styles.undoButton}
@@ -158,7 +158,7 @@ export function CategoryFormScreen() {
             <Ionicons
               name="arrow-undo"
               size={20}
-              color={Colors.text.light}
+              color={Colors.text.muted}
             />
           </Button>
         )}
@@ -186,8 +186,9 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 2,
     paddingHorizontal: 8,
-    paddingBottom: 8,
+    paddingBottom: 10,
   },
   content: {
     paddingHorizontal: 16,
@@ -195,24 +196,25 @@ const styles = StyleSheet.create({
     paddingBottom: 112,
   },
   deleteButton: {
-    width: 52,
-    height: 52,
+    width: 60,
+    height: 54,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: 14,
+    backgroundColor: '#3a1518',
   },
   undoButton: {
-    width: 52,
-    height: 52,
+    width: 60,
+    height: 54,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: 14,
+    backgroundColor: Colors.bg.input,
   },
   saveButton: {
     flex: 1,
-    justifyContent: 'center',
-    minHeight: 52,
-    borderRadius: 12,
+    minHeight: 54,
+    borderRadius: 14,
   },
   emptyText: {
     color: Colors.text.faint,

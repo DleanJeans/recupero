@@ -6,7 +6,7 @@ import type { MetadataField, MetadataFieldCalculation } from '../../../types/beh
 import { Colors } from '../../../utils/colors';
 import { sanitizeDecimalInput } from '../../../utils/metadata-calculation-utils';
 import { Text } from '../../text';
-import { MetadataFieldColumnFlex, MetadataFieldRow } from './metadata-field-row';
+import { MetadataFieldRow } from './metadata-field-row';
 
 interface Props {
   categoryId?: string;
@@ -19,6 +19,7 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
   const [localFields, setLocalFields] = useState<MetadataField[]>(() => fields);
   const latestRef = useRef(localFields);
   latestRef.current = localFields;
+  const [isSorting, setIsSorting] = useState(false);
   const behaviors = useBehaviorStore(state => state.behaviors);
   const categoryBehaviors = useMemo(
     () => (categoryId ? behaviors.filter(behavior => behavior.categoryId === categoryId) : []),
@@ -138,29 +139,37 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
     <View style={styles.section}>
       <View style={styles.header}>
         <Text style={styles.headerLabel}>Track numeric values</Text>
-        <Pressable
-          onPress={handleAddField}
-          style={styles.addBtn}
-        >
-          <Ionicons
-            name="add-circle-outline"
-            size={18}
-            color={Colors.text.light}
-          />
-          <Text style={styles.addLabel}>Add field</Text>
-        </Pressable>
-      </View>
-
-      {localFields.length > 0 && (
-        <View style={styles.fieldsHeaderRow}>
-          <View style={styles.fieldsHeaderLabels}>
-            <Text style={[styles.fieldHeaderLabel, styles.nameHeaderLabel]}>Name</Text>
-            <Text style={[styles.fieldHeaderLabel, styles.dailyGoalHeaderLabel]}>Daily Goal</Text>
-            <Text style={[styles.fieldHeaderLabel, styles.unitHeaderLabel]}>Unit</Text>
-          </View>
-          <View style={styles.actionsHeaderSpacer} />
+        <View style={styles.headerActions}>
+          {localFields.length > 0 && (
+            <Pressable
+              onPress={() => setIsSorting(value => !value)}
+              style={styles.addBtn}
+              accessibilityRole="button"
+              accessibilityLabel={isSorting ? 'Done sorting fields' : 'Sort fields'}
+            >
+              <Ionicons
+                name={isSorting ? 'checkmark-circle-outline' : 'reorder-three-outline'}
+                size={19}
+                color={isSorting ? Colors.type.desirable : Colors.text.light}
+              />
+              <Text style={[styles.addLabel, isSorting && styles.sortingLabel]}>{isSorting ? 'Done' : 'Sort'}</Text>
+            </Pressable>
+          )}
+          <Pressable
+            onPress={handleAddField}
+            style={styles.addBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Add metadata field"
+          >
+            <Ionicons
+              name="add-outline"
+              size={19}
+              color={Colors.text.light}
+            />
+            <Text style={styles.addLabel}>Add field</Text>
+          </Pressable>
         </View>
-      )}
+      </View>
 
       {localFields.map((field, index) => (
         <MetadataFieldRow
@@ -174,6 +183,7 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
           onCalculationChange={handleCalculationChange}
           onMove={handleMoveField}
           onRemove={handleRemoveField}
+          isSorting={isSorting}
         />
       ))}
     </View>
@@ -191,6 +201,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
   headerLabel: {
     color: Colors.text.faint,
     fontSize: 11,
@@ -204,36 +219,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   addLabel: {
-    color: Colors.text.light,
-    fontSize: 12,
-    fontWeight: '600',
+    color: Colors.text.muted,
+    fontSize: 14,
+    fontWeight: '700',
   },
-  fieldsHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: -3,
-  },
-  fieldsHeaderLabels: {
-    flex: 1,
-    flexDirection: 'row',
-    gap: 6,
-  },
-  fieldHeaderLabel: {
-    color: Colors.text.faint,
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  nameHeaderLabel: {
-    flex: MetadataFieldColumnFlex.label,
-    textAlign: 'center',
-  },
-  dailyGoalHeaderLabel: {
-    flex: MetadataFieldColumnFlex.dailyGoal,
-  },
-  unitHeaderLabel: {
-    flex: MetadataFieldColumnFlex.unit,
-  },
-  actionsHeaderSpacer: {
-    width: 76,
+  sortingLabel: {
+    color: Colors.type.desirable,
   },
 });

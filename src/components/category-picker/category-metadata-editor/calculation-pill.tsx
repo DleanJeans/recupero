@@ -26,7 +26,10 @@ export function CalculationPill({ label, active, onPress, flex = 1 }: Calculatio
 
 const styles = StyleSheet.create({
   calculationPill: {
-    paddingVertical: 5,
+    minHeight: 34,
+    borderRadius: 9,
+    justifyContent: 'center',
+    paddingVertical: 0,
   },
   calculationPillActive: {
     backgroundColor: Colors.text.light,
