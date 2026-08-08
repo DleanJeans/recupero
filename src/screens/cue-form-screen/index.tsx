@@ -39,7 +39,6 @@ export function CueFormScreen() {
   const [conditions, setConditions] = useState<CueTrigger[]>(existingCue?.conditions ?? []);
   const [combiner, setCombiner] = useState<'AND' | 'OR'>(existingCue?.combiner ?? 'AND');
   const [behaviorIds, setBehaviorIds] = useState<string[]>(existingCue?.behaviorIds ?? []);
-  const [notifyPush, setNotifyPush] = useState(existingCue?.notify.push ?? true);
 
   const changeTriggerType = (type: CueTriggerType) => {
     setTrigger(createDefaultCueTrigger(type, defaultOptions));
@@ -66,7 +65,7 @@ export function CueFormScreen() {
       conditions: conditions.length > 0 ? conditions : undefined,
       combiner: conditions.length > 0 ? combiner : undefined,
       behaviorIds,
-      notify: { push: notifyPush },
+      notify: { push: false },
     };
     if (existingCue) updateCue(existingCue.id, input);
     else addCue(input);
@@ -150,12 +149,13 @@ export function CueFormScreen() {
             <View style={styles.notifyRow}>
               <View style={styles.notifyCopy}>
                 <Text style={styles.notifyTitle}>Send push notification</Text>
-                <Text style={styles.notifyDetail}>The engine will use this after native setup.</Text>
+                <Text style={styles.notifyDetail}>Push reminders are unavailable in this build.</Text>
               </View>
               <CueToggle
-                value={notifyPush}
+                value={false}
                 accent={getCueAccent(trigger.type)}
-                onValueChange={setNotifyPush}
+                onValueChange={() => undefined}
+                disabled
               />
             </View>
           </View>

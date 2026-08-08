@@ -44,6 +44,7 @@ export function CuesScreen() {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.content}
       >
+        <Text style={styles.notice}>Automatic cue triggers and push reminders are unavailable in this build.</Text>
         <View style={styles.quickRow}>
           <QuickTile
             type="location"
@@ -67,7 +68,7 @@ export function CuesScreen() {
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>No cues yet</Text>
             <Text style={styles.emptyBody}>
-              Create a trigger that suggests the right behaviour at the right moment.
+              Save cue rules for manual suggestions. Automatic triggers are not available yet.
             </Text>
           </View>
         ) : (
@@ -115,6 +116,14 @@ const styles = StyleSheet.create({
   quickRow: {
     flexDirection: 'row',
     gap: 10,
+  },
+  notice: {
+    color: Colors.text.muted,
+    backgroundColor: Colors.bg.card,
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 12,
+    lineHeight: 17,
   },
   group: {
     gap: 8,
