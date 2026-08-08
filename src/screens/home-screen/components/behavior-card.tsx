@@ -77,6 +77,14 @@ export const BehaviorCard = React.memo(function BehaviorCard({
     [refreshBounds],
   );
 
+  const handleAccessibilityAction = useCallback(
+    (event: { nativeEvent: { actionName: string } }) => {
+      if (event.nativeEvent.actionName === 'view-details') goToMode('details');
+      if (event.nativeEvent.actionName === 'log-behavior') goToMode('log');
+    },
+    [goToMode],
+  );
+
   const accentColor = getBehaviorTypeColor(behavior.type);
 
   return (
@@ -91,6 +99,14 @@ export const BehaviorCard = React.memo(function BehaviorCard({
         onPress={handlePress}
         onLayout={handleLayout}
         onPressIn={refreshBounds}
+        accessibilityRole="button"
+        accessibilityLabel={behavior.name}
+        accessibilityHint="Choose View details or Log behavior from accessibility actions."
+        accessibilityActions={[
+          { name: 'view-details', label: 'View details' },
+          { name: 'log-behavior', label: 'Log behavior' },
+        ]}
+        onAccessibilityAction={handleAccessibilityAction}
       >
         <BehaviorSummary
           behavior={behavior}
