@@ -238,7 +238,7 @@ export function getMoneyLogTransactions(
     if (!isOneOffTask(task)) continue;
 
     for (const completedDate of task.completedDates) {
-      const timestamp = timestampForTaskDate(completedDate, dayCutoffHour);
+      const timestamp = task.completedAtByDate?.[completedDate] ?? timestampForTaskDate(completedDate, dayCutoffHour);
       events.push({
         timestamp,
         order: order++,

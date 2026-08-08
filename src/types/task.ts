@@ -9,6 +9,7 @@ export interface TaskEntry {
   source?: TaskSource;
   behaviorId?: string;
   completedDates: string[];
+  completedAtByDate?: Record<string, number>;
   completionLogIds?: Record<string, string>;
   createdAt: number;
   archived?: boolean;

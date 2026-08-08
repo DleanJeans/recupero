@@ -252,6 +252,17 @@ describe('money-utils', () => {
     });
   });
 
+  it('uses the stored completion timestamp for task transactions', () => {
+    const task = makeTask({
+      completedDates: ['2024-01-01'],
+      completedAtByDate: { '2024-01-01': 1_234 },
+    });
+
+    const transactions = getMoneyLogTransactions([], [], [task]);
+
+    expect(transactions[0]).toMatchObject({ completedAt: 1_234 });
+  });
+
   it('formats Vietnamese dong with the ₫ symbol', () => {
     expect(formatVnd(5_000)).toBe('5,000 ₫');
   });

@@ -291,6 +291,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               source: input.source,
               behaviorId: input.behaviorId,
               completedDates: [],
+              completedAtByDate: undefined,
               createdAt: Date.now(),
             },
           ],
@@ -323,15 +324,21 @@ export const useBehaviorStore = create<BehaviorStore>()(
             if (t.id !== taskId) return t;
             if (wasComplete) {
               const { [dateStr]: _removedLogId, ...remainingLogIds } = t.completionLogIds ?? {};
+              const { [dateStr]: _removedCompletedAt, ...remainingCompletedAt } = t.completedAtByDate ?? {};
               return {
                 ...t,
                 completedDates: t.completedDates.filter(date => date !== dateStr),
+                completedAtByDate: Object.keys(remainingCompletedAt).length > 0 ? remainingCompletedAt : undefined,
                 completionLogIds: Object.keys(remainingLogIds).length > 0 ? remainingLogIds : undefined,
               };
             }
             return {
               ...t,
               completedDates: [...t.completedDates, dateStr],
+              completedAtByDate: {
+                ...(t.completedAtByDate ?? {}),
+                [dateStr]: taskTimestamp,
+              },
               completionLogIds: logIdToAdd
                 ? {
                     ...(t.completionLogIds ?? {}),
