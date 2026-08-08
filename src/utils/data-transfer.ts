@@ -81,13 +81,32 @@ export async function importFromFile(fileUri: string): Promise<{ success: boolea
       return { success: false, message: 'Invalid format — export from Recupero first' };
     }
 
-    await AsyncStorage.multiSet(entries);
-    await Promise.all([
-      useBehaviorStore.persist.rehydrate(),
-      useSettingsStore.persist.rehydrate(),
-      useShopStore.persist.rehydrate(),
-      useCuesStore.persist.rehydrate(),
-    ]);
+    const previousEntries = await AsyncStorage.multiGet(entries.map(([key]) => key));
+    try {
+      await AsyncStorage.multiSet(entries);
+      await Promise.all([
+        useBehaviorStore.persist.rehydrate(),
+        useSettingsStore.persist.rehydrate(),
+        useShopStore.persist.rehydrate(),
+        useCuesStore.persist.rehydrate(),
+      ]);
+    } catch (error) {
+      try {
+        const previousValues = previousEntries.filter(([, value]) => value != null) as Array<[string, string]>;
+        const missingKeys = previousEntries.filter(([, value]) => value == null).map(([key]) => key);
+        if (previousValues.length > 0) await AsyncStorage.multiSet(previousValues);
+        if (missingKeys.length > 0) await AsyncStorage.multiRemove(missingKeys);
+        await Promise.all([
+          useBehaviorStore.persist.rehydrate(),
+          useSettingsStore.persist.rehydrate(),
+          useShopStore.persist.rehydrate(),
+          useCuesStore.persist.rehydrate(),
+        ]);
+      } catch {
+        // Preserve the original import error; the caller still receives failure.
+      }
+      throw error;
+    }
 
     const behaviorState = data.behaviors ? JSON.parse(data.behaviors).state : null;
     const behaviorCount = behaviorState?.behaviors?.length ?? 0;
