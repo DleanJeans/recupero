@@ -43,10 +43,10 @@ export const BehaviorList = React.memo(function BehaviorList({
           ? [{ title: COOLDOWN_FILTER_LABEL, data: behaviors }]
           : []
         : groupBehaviorsByRecency(behaviors, dayCutoffHour),
-    [behaviors, cooldownSelected, dayCutoffHour],
+    [behaviors, cooldownSelected, dayCutoffHour, now],
   );
-  const todayStr = useMemo(() => toDateString(new Date(), dayCutoffHour), [dayCutoffHour]);
-  const yesterdayStr = useMemo(() => toDateString(yesterday(new Date(), dayCutoffHour)), [dayCutoffHour]);
+  const todayStr = useMemo(() => toDateString(new Date(now), dayCutoffHour), [dayCutoffHour, now]);
+  const yesterdayStr = useMemo(() => toDateString(yesterday(new Date(now), dayCutoffHour)), [dayCutoffHour, now]);
   const dateForSection = useCallback(
     (title: string): string | undefined => {
       if (title === Label.TODAY) return todayStr;
