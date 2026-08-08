@@ -1,8 +1,9 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { ToggleNamesButton } from '../../../components/category-picker/toggle-names-button';
 import { Text } from '../../../components/text';
 import { useBehaviorStore } from '../../../store/behavior-store';
@@ -13,6 +14,7 @@ import { computeBehaviorCounts } from '../../../utils/behavior-counts';
 import { Colors } from '../../../utils/colors';
 
 const COLLAPSED_CATEGORY_LIMIT = 2;
+const CATEGORY_GRID_ANIMATION_DURATION = 240;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface Props {
@@ -26,8 +28,18 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
   const behaviors = useBehaviorStore(s => s.behaviors);
   const hideNames = useSettingsStore(s => s.hideCategoryNames);
   const [expanded, setExpanded] = useState(false);
+  const [renderExpanded, setRenderExpanded] = useState(false);
   const [gridWidth, setGridWidth] = useState(0);
   const [chipWidths, setChipWidths] = useState<Record<string, number>>({});
+  const gridHeight = useSharedValue(0);
+  const gridAnimationTarget = useSharedValue(0);
+  const collapsedGridHeight = useSharedValue(0);
+  const expandedGridHeight = useSharedValue(0);
+  const expandedRef = useRef(false);
+  const transitionIdRef = useRef(0);
+  const animatedGridStyle = useAnimatedStyle(() => ({
+    height: gridHeight.value || undefined,
+  }));
 
   useEffect(() => {
     setChipWidths({});
@@ -40,7 +52,7 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
 
   const { behaviorCounts, allCount } = useMemo(() => computeBehaviorCounts(behaviors), [behaviors]);
   const visibleCategories = useMemo(() => {
-    if (expanded || categories.length <= COLLAPSED_CATEGORY_LIMIT) return categories;
+    if (renderExpanded || categories.length <= COLLAPSED_CATEGORY_LIMIT) return categories;
 
     const visible = categories.slice(0, COLLAPSED_CATEGORY_LIMIT);
     const selected = categories.find(category => category.id === selectedCategoryId);
@@ -48,10 +60,10 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
       visible.splice(COLLAPSED_CATEGORY_LIMIT - 1, 1, selected);
     }
     return visible;
-  }, [categories, expanded, selectedCategoryId]);
+  }, [categories, renderExpanded, selectedCategoryId]);
 
   const iconOnlyCategories = useMemo(() => {
-    if (!hideNames || expanded || gridWidth <= 0 || chipWidths.all == null) return categories;
+    if (!hideNames || renderExpanded || gridWidth <= 0 || chipWidths.all == null) return categories;
     if (categories.some(category => chipWidths[category.id] == null)) return categories;
 
     const gap = 9;
@@ -71,13 +83,48 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
     }
 
     return visible;
-  }, [categories, chipWidths, expanded, gridWidth, hideNames, selectedCategoryId]);
+  }, [categories, chipWidths, gridWidth, hideNames, renderExpanded, selectedCategoryId]);
 
   const handleCategoryLongPress = (category: Category) => {
     navigation.navigate('CategoryForm', { categoryId: category.id });
   };
 
   const canExpand = categories.length > COLLAPSED_CATEGORY_LIMIT;
+
+  const finishCollapse = (transitionId: number) => {
+    if (transitionIdRef.current === transitionId && !expandedRef.current) {
+      setRenderExpanded(false);
+    }
+  };
+
+  const handleToggleExpanded = () => {
+    const nextExpanded = !expandedRef.current;
+    expandedRef.current = nextExpanded;
+    const transitionId = transitionIdRef.current + 1;
+    transitionIdRef.current = transitionId;
+    setExpanded(nextExpanded);
+
+    if (nextExpanded) {
+      setRenderExpanded(true);
+      const targetHeight = expandedGridHeight.value;
+      if (targetHeight > 0) {
+        gridAnimationTarget.value = targetHeight;
+        gridHeight.value = withTiming(targetHeight, { duration: CATEGORY_GRID_ANIMATION_DURATION });
+      }
+      return;
+    }
+
+    const targetHeight = collapsedGridHeight.value;
+    if (targetHeight <= 0) {
+      setRenderExpanded(false);
+      return;
+    }
+
+    gridAnimationTarget.value = targetHeight;
+    gridHeight.value = withTiming(targetHeight, { duration: CATEGORY_GRID_ANIMATION_DURATION }, finished => {
+      if (finished) runOnJS(finishCollapse)(transitionId);
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -87,49 +134,75 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
           <Text style={styles.label}>Categories</Text>
         </View>
         {canExpand && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ expanded }}
-            onPress={() => setExpanded(value => !value)}
-            style={styles.toggleButton}
-          >
-            <Text style={styles.toggleLabel}>{expanded ? 'Show less ▲' : 'Show more ▼'}</Text>
-          </Pressable>
+          <CategoryExpandButton
+            expanded={expanded}
+            onPress={handleToggleExpanded}
+          />
         )}
       </View>
 
-      <View
-        onLayout={(event: LayoutChangeEvent) => {
-          const { width } = event.nativeEvent.layout;
-          setGridWidth(width);
-        }}
-        style={[styles.grid, hideNames && !expanded && styles.gridIconOnly]}
-      >
-        <CategoryChip
-          label="All"
-          count={allCount}
-          active={selectedCategoryId === null}
-          iconOnly={hideNames}
-          onLayout={event => handleChipLayout('all', event)}
-          onPress={() => onSelectCategory(null)}
-        />
-        {(hideNames && !expanded ? iconOnlyCategories : visibleCategories).map(category => (
+      <Animated.View style={[styles.gridViewport, animatedGridStyle]}>
+        <View
+          onLayout={(event: LayoutChangeEvent) => {
+            const { height, width } = event.nativeEvent.layout;
+            setGridWidth(width);
+
+            const measuredHeight = renderExpanded ? expandedGridHeight : collapsedGridHeight;
+            measuredHeight.value = height;
+            if (gridHeight.value === 0) {
+              gridHeight.value = height;
+              gridAnimationTarget.value = height;
+            } else if (gridAnimationTarget.value !== height) {
+              gridAnimationTarget.value = height;
+              gridHeight.value = withTiming(height, { duration: CATEGORY_GRID_ANIMATION_DURATION });
+            }
+          }}
+          style={[styles.grid, hideNames && !renderExpanded && styles.gridIconOnly]}
+        >
           <CategoryChip
-            key={category.id}
-            icon={category.emoji}
-            label={category.name}
-            count={behaviorCounts[category.id] ?? 0}
-            active={selectedCategoryId === category.id}
+            label="All"
+            count={allCount}
+            active={selectedCategoryId === null}
             iconOnly={hideNames}
-            onLayout={event => handleChipLayout(category.id, event)}
-            onPress={() => onSelectCategory(category.id)}
-            onLongPress={() => handleCategoryLongPress(category)}
+            onLayout={event => handleChipLayout('all', event)}
+            onPress={() => onSelectCategory(null)}
           />
-        ))}
-      </View>
+          {(hideNames && !renderExpanded ? iconOnlyCategories : visibleCategories).map(category => (
+            <CategoryChip
+              key={category.id}
+              icon={category.emoji}
+              label={category.name}
+              count={behaviorCounts[category.id] ?? 0}
+              active={selectedCategoryId === category.id}
+              iconOnly={hideNames}
+              onLayout={event => handleChipLayout(category.id, event)}
+              onPress={() => onSelectCategory(category.id)}
+              onLongPress={() => handleCategoryLongPress(category)}
+            />
+          ))}
+        </View>
+      </Animated.View>
     </View>
   );
 });
+
+interface CategoryExpandButtonProps {
+  expanded: boolean;
+  onPress: () => void;
+}
+
+function CategoryExpandButton({ expanded, onPress }: CategoryExpandButtonProps) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ expanded }}
+      onPress={onPress}
+      style={styles.toggleButton}
+    >
+      <Text style={styles.toggleLabel}>{expanded ? 'Show less ▲' : 'Show more ▼'}</Text>
+    </Pressable>
+  );
+}
 
 interface CategoryChipProps {
   icon?: string;
@@ -186,6 +259,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 8,
   },
+  gridViewport: {
+    overflow: 'hidden',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -218,6 +294,7 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    flexShrink: 0,
     gap: 9,
   },
   gridIconOnly: {
