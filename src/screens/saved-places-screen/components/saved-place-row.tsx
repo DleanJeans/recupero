@@ -15,6 +15,9 @@ export function SavedPlaceRow({ place, onPress }: SavedPlaceRowProps) {
     <Pressable
       style={({ pressed }) => [styles.row, place.isHome && styles.homeRow, pressed && styles.pressed]}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${place.isHome ? 'Home, ' : ''}${place.name}, ${place.radiusM} meter radius`}
+      accessibilityHint="Double tap to edit this saved place."
     >
       <View style={[styles.icon, place.isHome && styles.homeIcon]}>
         <Text style={styles.emoji}>{place.isHome ? '🏠' : '📍'}</Text>
