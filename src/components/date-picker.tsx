@@ -41,6 +41,9 @@ export function DatePicker({ selectedDate, maxDate, minDate, dayMetrics, dayMetr
       <Pressable
         style={styles.dateField}
         onPress={() => setOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel={`Selected date: ${formatDateDisplay(selectedDate)}`}
+        accessibilityHint="Double tap to open the calendar."
       >
         <View style={styles.dateTextGroup}>
           <Text style={styles.dateFieldText}>{formatDateDisplay(selectedDate)}</Text>
