@@ -39,6 +39,9 @@ export function MoodSuggestions({ mood }: MoodSuggestionsProps) {
               key={behavior.id}
               style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
               onPress={() => navigation.navigate('BehaviorLog', { behaviorId: behavior.id, initialMode: 'log' })}
+              accessibilityRole="button"
+              accessibilityLabel={`Log ${behavior.name}`}
+              accessibilityHint="Double tap to open the behavior log."
             >
               <BehaviorIcon
                 behavior={behavior}
