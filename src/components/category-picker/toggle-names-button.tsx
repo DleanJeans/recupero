@@ -19,7 +19,7 @@ export function ToggleNamesButton() {
         <Ionicons
           name="text-outline"
           size={18}
-          color={hideNames ? Colors.type.desirable : Colors.text.muted}
+          color={Colors.text.muted}
         />
         {hideNames && (
           <View style={[styles.strikethrough, styles.strikethroughActive]}>
@@ -35,18 +35,19 @@ const styles = StyleSheet.create({
   button: {
     width: 30,
     height: 30,
-    padding: 6,
+    padding: 5,
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: Colors.border.default,
   },
   buttonActive: {
-    backgroundColor: 'rgba(74, 222, 128, 0.12)',
-    borderColor: 'rgba(74, 222, 128, 0.4)',
+    backgroundColor: Colors.bg.input,
+    borderColor: Colors.border.light,
   },
   iconWrap: {
     width: 18,
     height: 18,
+    flexShrink: 0,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -58,7 +59,7 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '-45deg' }],
   },
   strikethroughActive: {
-    backgroundColor: 'rgba(74, 222, 128, 0.12)',
+    backgroundColor: Colors.bg.input,
   },
   strikethroughInner: {
     height: 1.5,
@@ -70,6 +71,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   strikethroughInnerActive: {
-    backgroundColor: Colors.type.desirable,
+    backgroundColor: Colors.text.muted,
   },
 });
