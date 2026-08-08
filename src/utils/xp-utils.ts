@@ -187,11 +187,33 @@ export function getHighestEffectiveXp(behavior: BehaviorEntry, now: number = Dat
   const sorted = getChronologicalLogs(behavior.logs);
   if (behavior.xpDecay.unit !== 'hours') {
     let highestXp = getEffectiveXp(behavior, now, dayCutoffHour);
-    for (let i = 0; i < sorted.length; i++) {
-      highestXp = Math.max(
-        highestXp,
-        getEffectiveXp({ ...behavior, logs: sorted.slice(0, i + 1) }, getLogEndTimestamp(sorted[i]), dayCutoffHour),
-      );
+    const everyDays = decayEveryInDays(1, behavior.xpDecay.unit);
+    const firstPeriod = decayPeriodIndex(getLogStartTimestamp(sorted[0]), everyDays, dayCutoffHour);
+    const prefixXp = [0];
+    let currentPeriod = firstPeriod;
+    let currentPeriodCount = 0;
+    let protectedPreviousCount = 0;
+    let failedPeriods = 0;
+
+    for (const log of sorted) {
+      const period = decayPeriodIndex(getLogStartTimestamp(log), everyDays, dayCutoffHour);
+      if (period !== currentPeriod) {
+        const missingPeriods = Math.max(0, period - currentPeriod - 1);
+        failedPeriods += missingPeriods + (currentPeriodCount < behavior.xpDecay.every ? 1 : 0);
+        protectedPreviousCount =
+          missingPeriods === 0 && currentPeriodCount >= behavior.xpDecay.every
+            ? currentPeriodCount + protectedPreviousCount
+            : 0;
+        currentPeriod = period;
+        currentPeriodCount = 0;
+      }
+
+      currentPeriodCount += 1;
+      prefixXp.push(prefixXp[prefixXp.length - 1] + getLogXp(log));
+      const protectedCount = currentPeriodCount + protectedPreviousCount;
+      const decayedCount = Math.min(prefixXp.length - 1 - protectedCount, failedPeriods);
+      const effectiveXp = prefixXp[prefixXp.length - 1] - prefixXp[decayedCount];
+      highestXp = Math.max(highestXp, effectiveXp);
     }
     return highestXp;
   }
