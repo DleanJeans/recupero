@@ -53,7 +53,7 @@ export function BehaviorFormScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'BehaviorForm'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { behaviorId, defaultCategoryId, defaultXpEnabled, defaultDurationXpEnabled, selectedCategoryId } =
-    route.params;
+    route.params ?? {};
 
   const behavior = useBehaviorStore(
     useCallback(state => (behaviorId ? state.behaviors.find(b => b.id === behaviorId) : undefined), [behaviorId]),

@@ -1,4 +1,4 @@
-import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
+import { type LinkingOptions, NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import 'expo-dev-client';
 import React, { useCallback, useState } from 'react';
@@ -34,7 +34,7 @@ import { Colors } from './src/utils/colors';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const BOTTOM_NAV_ROUTES = new Set<string>(['Home', 'Cues', 'Timer', 'Day', 'Tasks']);
 
-const linking = {
+const linking: LinkingOptions<RootStackParamList> = {
   prefixes: ['exp+recupero://'],
   config: {
     screens: {
@@ -42,7 +42,6 @@ const linking = {
       Timer: 'timer',
       Day: 'day',
       Tasks: 'tasks',
-      BehaviorDetails: 'behavior/:behaviorId',
       BehaviorLog: 'behavior-log/:behaviorId',
       BehaviorForm: 'behavior-form',
       CategoryForm: 'category-form',
