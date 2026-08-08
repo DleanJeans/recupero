@@ -290,9 +290,18 @@ export const useBehaviorStore = create<BehaviorStore>()(
           ],
         })),
       updateTask: (taskId, updates) =>
-        set(state => ({
-          tasks: (state.tasks ?? []).map(task => (task.id === taskId ? { ...task, ...updates } : task)),
-        })),
+        set(state => {
+          const task = (state.tasks ?? []).find(candidate => candidate.id === taskId);
+          if (!task) return state;
+
+          const safeUpdates =
+            task.completedDates.length > 0 ? { ...updates, behaviorId: task.behaviorId, source: task.source } : updates;
+          return {
+            tasks: (state.tasks ?? []).map(candidate =>
+              candidate.id === taskId ? { ...candidate, ...safeUpdates } : candidate,
+            ),
+          };
+        }),
       toggleTaskCompletion: (taskId, dateStr) =>
         set(state => {
           const task = (state.tasks ?? []).find(t => t.id === taskId);
@@ -367,9 +376,30 @@ export const useBehaviorStore = create<BehaviorStore>()(
           return { tasks, behaviors };
         }),
       removeTask: taskId =>
-        set(state => ({
-          tasks: (state.tasks ?? []).filter(task => task.id !== taskId),
-        })),
+        set(state => {
+          const task = (state.tasks ?? []).find(candidate => candidate.id === taskId);
+          if (!task) return state;
+
+          const completionLogIds = new Set(Object.values(task.completionLogIds ?? {}));
+          const behaviors =
+            completionLogIds.size === 0
+              ? state.behaviors
+              : state.behaviors.map(behavior => {
+                  const logs = behavior.logs.filter(log => !completionLogIds.has(log.id));
+                  return logs.length === behavior.logs.length
+                    ? behavior
+                    : {
+                        ...behavior,
+                        logs,
+                        lastTimestamp: logs.length > 0 ? Math.max(...logs.map(log => getLogEndTimestamp(log))) : null,
+                      };
+                });
+
+          return {
+            tasks: (state.tasks ?? []).filter(candidate => candidate.id !== taskId),
+            behaviors,
+          };
+        }),
       updateLog: (behaviorId, logId, timestamp, metadata, endTimestamp) =>
         set(state => ({
           behaviors: state.behaviors.map(b =>
