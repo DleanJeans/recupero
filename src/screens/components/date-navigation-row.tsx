@@ -32,6 +32,8 @@ export function DateNavigationRow({
         onPress={onPrevious}
         style={styles.arrowBtn}
         hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel="Previous day"
       >
         <Ionicons
           name="chevron-back"
@@ -55,6 +57,9 @@ export function DateNavigationRow({
         style={[styles.arrowBtn, nextDisabled && styles.arrowDisabled]}
         hitSlop={8}
         disabled={nextDisabled}
+        accessibilityRole="button"
+        accessibilityLabel="Next day"
+        accessibilityState={{ disabled: nextDisabled }}
       >
         <Ionicons
           name="chevron-forward"
