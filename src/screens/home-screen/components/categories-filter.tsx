@@ -162,7 +162,17 @@ function CategoryChip({
       onPress={onPress}
       style={({ pressed }) => [styles.chip, active && styles.chipActive, pressed && styles.chipPressed]}
     >
-      {(icon || iconOnly) && <Text style={[styles.icon, !active && styles.iconInactive]}>{icon || '▦'}</Text>}
+      {(icon || iconOnly) && (
+        <Text
+          style={
+            icon
+              ? [styles.icon, !active && styles.iconInactive]
+              : [styles.chipLabel, active ? styles.chipLabelActive : styles.chipLabelInactive]
+          }
+        >
+          {icon ?? label}
+        </Text>
+      )}
       {!iconOnly && (
         <Text style={[styles.chipLabel, active ? styles.chipLabelActive : styles.chipLabelInactive]}>{label}</Text>
       )}
