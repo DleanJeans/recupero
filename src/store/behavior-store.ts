@@ -12,6 +12,7 @@ import {
 } from '../utils/metadata-calculation-utils';
 import { DEFAULT_MONEY_REWARD } from '../utils/money-utils';
 import { isTaskCompleteOnDate, timestampForTaskDate } from '../utils/task-utils';
+import { useCuesStore } from './cues-store';
 import { useSettingsStore } from './settings-store';
 
 interface BehaviorStore {
@@ -185,10 +186,15 @@ export const useBehaviorStore = create<BehaviorStore>()(
           }),
         })),
       removeBehavior: id =>
-        set(state => ({
-          behaviors: state.behaviors.filter(t => t.id !== id),
-          tasks: (state.tasks ?? []).map(task => (task.behaviorId === id ? { ...task, behaviorId: undefined } : task)),
-        })),
+        set(state => {
+          useCuesStore.getState().removeBehaviorReferences(id);
+          return {
+            behaviors: state.behaviors.filter(t => t.id !== id),
+            tasks: (state.tasks ?? []).map(task =>
+              task.behaviorId === id ? { ...task, behaviorId: undefined } : task,
+            ),
+          };
+        }),
       removeLog: (behaviorId, logId) =>
         set(state => ({
           behaviors: state.behaviors.map(b =>

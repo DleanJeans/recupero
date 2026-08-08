@@ -22,6 +22,7 @@ export interface CuesStore {
   updateCue: (id: string, updates: Partial<CueInput>) => void;
   removeCue: (id: string) => void;
   toggleCue: (id: string) => void;
+  removeBehaviorReferences: (behaviorId: string) => void;
   addPlace: (place: SavedPlaceInput) => string;
   updatePlace: (id: string, updates: Partial<SavedPlaceInput>) => void;
   removePlace: (id: string) => void;
@@ -50,6 +51,21 @@ export const useCuesStore = create<CuesStore>()(
       toggleCue: id =>
         set(state => ({
           cues: state.cues.map(cue => (cue.id === id ? { ...cue, enabled: !cue.enabled } : cue)),
+        })),
+      removeBehaviorReferences: behaviorId =>
+        set(state => ({
+          cues: state.cues.map(cue => {
+            const triggers = [cue.trigger, ...(cue.conditions ?? [])];
+            const referencesBehavior =
+              cue.behaviorIds.includes(behaviorId) ||
+              triggers.some(
+                trigger =>
+                  (trigger.type === 'habit' ||
+                    (trigger.type === 'time' && trigger.mode === 'auto' && trigger.pattern === 'afterBehavior')) &&
+                  trigger.behaviorId === behaviorId,
+              );
+            return referencesBehavior ? { ...cue, enabled: false } : cue;
+          }),
         })),
       addPlace: place => {
         const id = uuidv4();
