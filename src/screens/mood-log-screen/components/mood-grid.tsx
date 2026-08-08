@@ -20,6 +20,9 @@ export function MoodGrid({ selectedMood, onSelect }: MoodGridProps) {
             key={option.id}
             style={({ pressed }) => [styles.tile, selected && styles.selectedTile, pressed && styles.pressed]}
             onPress={() => onSelect(option.id)}
+            accessibilityRole="radio"
+            accessibilityLabel={option.label}
+            accessibilityState={{ selected }}
           >
             <Text style={styles.emoji}>{option.emoji}</Text>
             <Text style={[styles.label, selected && styles.selectedLabel]}>{option.label}</Text>
