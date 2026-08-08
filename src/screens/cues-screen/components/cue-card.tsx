@@ -32,6 +32,9 @@ export function CueCard({ cue }: CueCardProps) {
     <Pressable
       style={({ pressed }) => [styles.card, !cue.enabled && styles.disabled, pressed && styles.pressed]}
       onPress={() => navigation.navigate('CueForm', { cueId: cue.id })}
+      accessibilityRole="button"
+      accessibilityLabel={`${triggerLabel}. Suggests ${getCueBehaviorLabel(cue.behaviorIds, behaviors)}`}
+      accessibilityHint="Double tap to edit this cue."
     >
       <CueTriggerIcon type={cue.trigger.type} />
       <View style={styles.body}>
