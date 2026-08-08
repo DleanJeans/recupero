@@ -33,6 +33,9 @@ export function TriggerTypeGrid({ value, onChange }: TriggerTypeGridProps) {
               pressed && styles.pressed,
             ]}
             onPress={() => onChange(type)}
+            accessibilityRole="radio"
+            accessibilityLabel={LABELS[type]}
+            accessibilityState={{ selected }}
           >
             <CueTriggerIcon type={type} />
             <Text style={[styles.label, selected && styles.selectedLabel]}>{LABELS[type]}</Text>
