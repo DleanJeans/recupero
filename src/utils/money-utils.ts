@@ -178,12 +178,15 @@ export function getMoneyBalance(
   tasks: ReadonlyArray<TaskEntry> = [],
   dayCutoffHour = 0,
 ): number {
-  return Math.max(
-    0,
-    getTotalMoneyEarned(behaviors, tasks, dayCutoffHour) -
-      getTotalMoneyPenalties(behaviors, dayCutoffHour) -
-      getTotalMoneySpent(purchases),
-  );
+  let earned = tasks.reduce((total, task) => total + getTaskMoney(task), 0);
+  let penalties = 0;
+  for (const behavior of behaviors) {
+    const amount = getBehaviorMoney(behavior, dayCutoffHour);
+    if (amount >= 0) earned += amount;
+    else penalties -= amount;
+  }
+
+  return Math.max(0, earned - penalties - getTotalMoneySpent(purchases));
 }
 
 export function getMoneyLogTransactions(
