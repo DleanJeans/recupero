@@ -62,6 +62,9 @@ export function CheckboxRow({
         style={({ pressed }) => [styles.row, disabled && styles.disabled, pressed && styles.pressed, style]}
         onPress={onToggle}
         disabled={disabled}
+        accessibilityRole="checkbox"
+        accessibilityLabel={label}
+        accessibilityState={{ checked, disabled }}
       >
         {icon}
         {labelStack}
@@ -76,6 +79,9 @@ export function CheckboxRow({
           style={({ pressed }) => [styles.toggleInCard, pressed && styles.pressed]}
           onPress={onToggle}
           disabled={disabled}
+          accessibilityRole="checkbox"
+          accessibilityLabel={label}
+          accessibilityState={{ checked, disabled }}
         >
           {icon}
           {labelStack}
@@ -90,6 +96,9 @@ export function CheckboxRow({
       style={({ pressed }) => [styles.cardSolo, disabled && styles.disabled, pressed && styles.pressed, style]}
       onPress={onToggle}
       disabled={disabled}
+      accessibilityRole="checkbox"
+      accessibilityLabel={label}
+      accessibilityState={{ checked, disabled }}
     >
       {icon}
       {labelStack}

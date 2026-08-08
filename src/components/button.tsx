@@ -1,5 +1,12 @@
 import React from 'react';
-import { type GestureResponderEvent, Pressable, type StyleProp, StyleSheet, type ViewStyle } from 'react-native';
+import {
+  type AccessibilityState,
+  type GestureResponderEvent,
+  Pressable,
+  type StyleProp,
+  StyleSheet,
+  type ViewStyle,
+} from 'react-native';
 import { Colors } from '../utils/colors';
 import { Text } from './text';
 
@@ -18,6 +25,8 @@ interface Props {
   onLongPress?: (event: GestureResponderEvent) => void;
   disabled?: boolean;
   accessibilityLabel?: string;
+  accessibilityHint?: string;
+  accessibilityState?: AccessibilityState;
 }
 
 const PRESSED_OPACITY: Record<Variant, number> = {
@@ -49,6 +58,8 @@ export function Button({
   onLongPress,
   disabled,
   accessibilityLabel,
+  accessibilityHint,
+  accessibilityState,
 }: Props) {
   const isText = typeof children === 'string';
   return (
@@ -57,6 +68,7 @@ export function Button({
         commonStyles.base,
         baseStyles[variant],
         variant !== 'icon' && !fab && sizeStyles[size],
+        variant === 'icon' && iconStyles.hitTarget,
         fab && buttonStyles.fab,
         active && activeStyles[variant],
         pressed && pressedStyle(variant),
@@ -66,7 +78,10 @@ export function Button({
       onPress={onPress}
       onLongPress={onLongPress}
       disabled={disabled}
+      accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled, selected: active, ...accessibilityState }}
     >
       {isText ? (
         <Text style={[commonTextStyles.base, textStyles[variant], active && textActiveStyles[variant]]}>
@@ -82,6 +97,10 @@ export function Button({
 
 const commonStyles = StyleSheet.create({
   base: { borderRadius: 8, alignItems: 'center', position: 'relative' },
+});
+
+const iconStyles = StyleSheet.create({
+  hitTarget: { minWidth: 44, minHeight: 44 },
 });
 
 const baseStyles = StyleSheet.create({
