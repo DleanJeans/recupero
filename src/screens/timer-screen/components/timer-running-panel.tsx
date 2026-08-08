@@ -364,6 +364,8 @@ const styles = StyleSheet.create({
   primaryAction: {
     minHeight: 56,
     borderRadius: 15,
+    justifyContent: 'center',
+    paddingVertical: 0,
     width: '100%',
   },
   secondaryActions: {
@@ -374,5 +376,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 54,
     borderRadius: 15,
+    justifyContent: 'center',
+    paddingVertical: 0,
   },
 });

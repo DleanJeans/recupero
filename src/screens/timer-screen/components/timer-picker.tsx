@@ -64,14 +64,18 @@ export function TimerPicker({
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     gap: 16,
   },
   actions: {
     gap: 10,
+    marginTop: 'auto',
   },
   continueButton: {
     minHeight: 56,
     borderRadius: 15,
+    justifyContent: 'center',
+    paddingVertical: 0,
     width: '100%',
   },
   addButton: {
@@ -79,5 +83,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     width: '100%',
     backgroundColor: Colors.bg.input,
+    justifyContent: 'center',
+    paddingVertical: 0,
   },
 });

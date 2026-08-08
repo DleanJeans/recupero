@@ -191,6 +191,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg.primary,
   },
   content: {
+    flexGrow: 1,
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 32,
