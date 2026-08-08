@@ -34,11 +34,15 @@ export function LocationEditScreen() {
       Alert.alert('Name this place', 'Add a short name before saving the geofence.');
       return;
     }
+    if (!existingPlace) {
+      Alert.alert('Map selection unavailable', 'Location cues are not available until native map support is enabled.');
+      return;
+    }
     const input = {
       name: name.trim(),
       address: address.trim() || undefined,
-      lat: existingPlace?.lat ?? 10.7769,
-      lng: existingPlace?.lng ?? 106.7009,
+      lat: existingPlace.lat,
+      lng: existingPlace.lng,
       radiusM,
       isHome,
     };

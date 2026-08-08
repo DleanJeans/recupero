@@ -19,34 +19,6 @@ const plugins: NonNullable<ExpoConfig['plugins']> = [
   'expo-splash-screen',
   'expo-sharing',
   '@react-native-community/datetimepicker',
-  [
-    'react-native-maps',
-    {
-      // Required for Android (Google Maps). iOS uses Apple Maps by default — no key needed.
-      googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY ?? '',
-    },
-  ],
-  // Cues · location trigger: registers foreground/background location permissions,
-  // iOS usage descriptions, and Android background-mode entry. The actual engine
-  // (geofence registration, task definitions) is in src/utils/cue-engine.ts.
-  [
-    'expo-location',
-    {
-      locationAlwaysAndWhenInUsePermission:
-        'Recupero uses your location to remind you to log behaviours when you arrive at or leave a saved place.',
-      isAndroidBackgroundLocationEnabled: true,
-      isIosBackgroundLocationEnabled: true,
-      isAndroidForegroundServiceEnabled: true,
-    },
-  ],
-  // Cues · notification nudge: local notifications for time / habit / mood / location cues.
-  [
-    'expo-notifications',
-    {
-      // iOS — the OS displays this when asking for notification permission.
-      // Android 13+ uses the runtime permission; no extra config needed here.
-    },
-  ],
 ];
 
 if (isDev) {
@@ -65,14 +37,6 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: bundleId,
-    // iOS shows the NS*UsageDescription strings in the OS permission prompt.
-    // expo-location injects its own (locationAlwaysAndWhenInUsePermission above),
-    // but expo-notifications requires this one to be set explicitly.
-    infoPlist: {
-      NSUserNotificationUsageDescription:
-        'Recupero sends gentle nudges when a cue fires (e.g. entering a saved place, or at your scheduled time).',
-      UIBackgroundModes: ['location'],
-    },
   },
   android: {
     adaptiveIcon: {
