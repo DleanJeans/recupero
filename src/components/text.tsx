@@ -27,7 +27,7 @@ function isEmojiOnly(text: unknown): boolean {
   const stripped = text.replace(/\s+/g, '');
   if (!stripped) return false;
   // Walk every grapheme cluster so ZWJ sequences count as one segment.
-  for (const seg of stripped.matchAll(/\p{RI}\p{RI}|./gus)) {
+  for (const seg of stripped.matchAll(/\p{RI}\p{RI}|./gsu)) {
     if (!EMOJI_CODEPOINT.test(seg[0])) return false;
   }
   return true;

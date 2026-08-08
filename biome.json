@@ -27,6 +27,6 @@
     }
   },
   "files": {
-    "includes": ["**", "!node_modules/**", "!android/**", "!build/**", "!.expo/**"]
+    "includes": ["**", "!node_modules/**", "!android/**", "!build/**", "!.expo/**", "!profiling/**"]
   }
 }
