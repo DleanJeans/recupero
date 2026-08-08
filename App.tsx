@@ -1,7 +1,7 @@
 import { type LinkingOptions, NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import 'expo-dev-client';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -11,7 +11,6 @@ import { ConfettiOverlay } from './src/components/confetti-overlay';
 import { Text } from './src/components/text';
 import { useAppFonts } from './src/hooks/use-app-fonts';
 import { useDeferredBottomNavNavigation } from './src/hooks/use-deferred-bottom-nav-navigation';
-
 import { BehaviorFormScreen } from './src/screens/behavior-form-screen';
 import { BehaviorScreen } from './src/screens/behavior-screen';
 import { CategoryFormScreen } from './src/screens/category-form-screen';
@@ -28,11 +27,17 @@ import { SettingsScreen } from './src/screens/settings-screen';
 import { ShopScreen } from './src/screens/shop-screen';
 import { TaskScreen } from './src/screens/task-screen';
 import { TimerScreen } from './src/screens/timer-screen';
+import { useBehaviorStore } from './src/store/behavior-store';
+import { useCuesStore } from './src/store/cues-store';
+import { useSettingsStore } from './src/store/settings-store';
+import { useShopStore } from './src/store/shop-store';
+import { useTimerStore } from './src/store/timer-store';
 import type { RootStackParamList } from './src/types/navigation';
 import { Colors } from './src/utils/colors';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const BOTTOM_NAV_ROUTES = new Set<string>(['Home', 'Cues', 'Timer', 'Day', 'Tasks']);
+const PERSISTED_STORES = [useBehaviorStore, useCuesStore, useSettingsStore, useShopStore, useTimerStore];
 
 const linking: LinkingOptions<RootStackParamList> = {
   prefixes: ['exp+recupero://'],
@@ -63,9 +68,17 @@ function isBottomNavRoute(routeName: string | undefined): routeName is BottomNav
 
 export default function App() {
   const fontsReady = useAppFonts();
+  const [storesReady, setStoresReady] = useState(() => PERSISTED_STORES.every(store => store.persist.hasHydrated()));
   const navigationRef = useNavigationContainerRef<RootStackParamList>();
   const [activeRouteName, setActiveRouteName] = useState<string | undefined>();
   const { pendingRouteName, deferNavigation, completeNavigation } = useDeferredBottomNavNavigation<BottomNavRoute>();
+
+  useEffect(() => {
+    const checkStoresReady = () => setStoresReady(PERSISTED_STORES.every(store => store.persist.hasHydrated()));
+    const unsubscribers = PERSISTED_STORES.map(store => store.persist.onFinishHydration(checkStoresReady));
+    checkStoresReady();
+    return () => unsubscribers.forEach(unsubscribe => unsubscribe());
+  }, []);
 
   const syncActiveRoute = useCallback(() => {
     const routeName = navigationRef.getCurrentRoute()?.name;
@@ -85,7 +98,7 @@ export default function App() {
     [deferNavigation, navigationRef],
   );
 
-  if (!fontsReady) return null;
+  if (!fontsReady || !storesReady) return null;
 
   return (
     <GestureHandlerRootView
