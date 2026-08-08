@@ -24,6 +24,9 @@ export function UnitDropdown<V extends string>({ value, options, onChange }: Uni
       <Pressable
         style={styles.unitButton}
         onPress={() => setOpen(o => !o)}
+        accessibilityRole="button"
+        accessibilityLabel={`Unit: ${value}`}
+        accessibilityState={{ expanded: open }}
       >
         <Text style={styles.unitText}>{value}</Text>
         <Text style={styles.chevron}>▼</Text>
@@ -44,6 +47,9 @@ export function UnitDropdown<V extends string>({ value, options, onChange }: Uni
                   pressed && { opacity: 0.6 },
                 ]}
                 onPress={() => handleSelect(opt)}
+                accessibilityRole="radio"
+                accessibilityLabel={opt}
+                accessibilityState={{ selected: opt === value }}
               >
                 <Text style={[styles.pickerOptionText, opt === value && styles.pickerOptionTextActive]}>{opt}</Text>
               </Pressable>
