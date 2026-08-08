@@ -15,7 +15,7 @@ jobs:
   eas:
     uses: DleanJeans/expo-workflows/.github/workflows/eas.yml@main
     with:
-      app-name: recupero
+      app-name: recupero-dev
       expo-project-slug: recupero
       ota-label: send ota
     secrets:

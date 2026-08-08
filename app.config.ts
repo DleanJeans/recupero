@@ -51,7 +51,7 @@ if (isDev) {
 }
 
 const config: ExpoConfig = {
-  name: 'Recupero',
+  name: isDev ? 'Recupero Dev' : 'Recupero',
   slug: 'recupero',
   version: '1.0.0',
   orientation: 'portrait',
