@@ -160,7 +160,12 @@ export function TimerScreen() {
         ) : (
           <>
             <View style={styles.header}>
-              <ScreenTitle>Timer</ScreenTitle>
+              <View
+                pointerEvents="none"
+                style={styles.headerTitleWrap}
+              >
+                <ScreenTitle style={styles.headerTitle}>Timer</ScreenTitle>
+              </View>
               <MoneyBalance />
             </View>
 
@@ -202,5 +207,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
+    minHeight: 44,
+    position: 'relative',
+  },
+  headerTitle: {
+    textAlign: 'center',
+    paddingHorizontal: 0,
+  },
+  headerTitleWrap: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
