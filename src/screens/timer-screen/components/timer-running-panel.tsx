@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { BehaviorIcon } from '../../../components/behavior-icon';
 import { Button } from '../../../components/button';
 import { LogRewardPreview } from '../../../components/log-reward-preview';
@@ -165,8 +166,19 @@ interface TimerRingProps {
 }
 
 function TimerRing({ elapsedMs, startTimestamp, onRewindStart }: TimerRingProps) {
+  const rotation = useSharedValue(0);
+
+  useEffect(() => {
+    rotation.value = withTiming((elapsedMs / 60_000) * 360, { duration: 900 });
+  }, [elapsedMs, rotation]);
+
+  const progressStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+
   return (
     <View style={styles.timerRing}>
+      <Animated.View style={[styles.timerRingProgress, progressStyle]} />
       <View style={styles.timerRingHole}>
         <Text style={styles.timerValue}>{formatStopwatchDuration(elapsedMs)}</Text>
         {startTimestamp != null && (
@@ -316,10 +328,20 @@ const styles = StyleSheet.create({
     borderRadius: 113,
     borderWidth: 8,
     borderColor: Colors.bg.input,
-    borderTopColor: Colors.type.desirable,
-    borderRightColor: Colors.type.desirable,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  timerRingProgress: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    borderRadius: 113,
+    borderWidth: 8,
+    borderColor: 'transparent',
+    borderTopColor: Colors.type.desirable,
+    borderRightColor: Colors.type.desirable,
   },
   timerRingHole: {
     width: 202,
