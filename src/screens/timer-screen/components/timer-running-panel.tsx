@@ -268,6 +268,7 @@ function TimerActions({ hasStarted, hasStopped, isRunning, onStart, onStop, onRe
 
 const styles = StyleSheet.create({
   panel: {
+    flex: 1,
     gap: 16,
   },
   header: {
@@ -334,6 +335,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   hero: {
+    flex: 1,
     alignItems: 'center',
     gap: 20,
     paddingTop: 8,
@@ -398,6 +400,7 @@ const styles = StyleSheet.create({
   actions: {
     alignSelf: 'stretch',
     gap: 11,
+    marginTop: 'auto',
   },
   primaryAction: {
     minHeight: 56,
