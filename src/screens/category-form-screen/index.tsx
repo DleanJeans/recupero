@@ -214,6 +214,8 @@ const styles = StyleSheet.create({
   saveButton: {
     flex: 1,
     minHeight: 54,
+    justifyContent: 'center',
+    paddingVertical: 0,
     borderRadius: 14,
   },
   emptyText: {

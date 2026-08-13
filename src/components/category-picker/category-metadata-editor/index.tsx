@@ -155,19 +155,6 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
               <Text style={[styles.addLabel, isSorting && styles.sortingLabel]}>{isSorting ? 'Done' : 'Sort'}</Text>
             </Pressable>
           )}
-          <Pressable
-            onPress={handleAddField}
-            style={styles.addBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Add metadata field"
-          >
-            <Ionicons
-              name="add-outline"
-              size={19}
-              color={Colors.text.light}
-            />
-            <Text style={styles.addLabel}>Add field</Text>
-          </Pressable>
         </View>
       </View>
 
@@ -186,6 +173,20 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
           isSorting={isSorting}
         />
       ))}
+
+      <Pressable
+        onPress={handleAddField}
+        style={[styles.addBtn, styles.addFieldBtn]}
+        accessibilityRole="button"
+        accessibilityLabel="Add metadata field"
+      >
+        <Ionicons
+          name="add-outline"
+          size={19}
+          color={Colors.text.light}
+        />
+        <Text style={styles.addLabel}>Add field</Text>
+      </Pressable>
     </View>
   );
 }
@@ -217,6 +218,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  addFieldBtn: {
+    alignSelf: 'center',
   },
   addLabel: {
     color: Colors.text.muted,
