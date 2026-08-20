@@ -7,7 +7,6 @@ import { Colors } from '../../../utils/colors';
 import {
   formatMetadataAmountBasis,
   formatMetadataFieldLabel,
-  formatMetadataRateUnit,
   getAmountMetadataFields,
   getCalculatedMetadataFields,
   getManualMetadataFields,
@@ -96,7 +95,7 @@ export function BehaviorMetadataEditor({
               field={field}
               value={defaults[field.key] ?? ''}
               label={field.label}
-              unitLabel={formatMetadataRateUnit({ field, amountField: selectedAmountField, separator: '\n' })}
+              unitLabel={field.unit}
               onChange={onChange}
             />
           ))}
