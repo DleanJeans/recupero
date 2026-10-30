@@ -13,6 +13,7 @@ import {
   getSelectedAmountMetadataField,
 } from '../../../utils/metadata-calculation-utils';
 import { MetadataDefaultInput } from './metadata-default-input';
+import { NutritionUrlImport } from './nutrition-url-import';
 
 interface BehaviorMetadataEditorProps {
   categoryId: string | undefined;
@@ -89,6 +90,11 @@ export function BehaviorMetadataEditor({
       {calculatedFields.length > 0 && (
         <>
           <Text style={styles.label}>Rates per {formatMetadataAmountBasis(selectedAmountField)}</Text>
+          <NutritionUrlImport
+            fields={fields}
+            amountField={selectedAmountField}
+            onChange={onChange}
+          />
           {calculatedFields.map((field: MetadataField) => (
             <MetadataDefaultInput
               key={field.key}
