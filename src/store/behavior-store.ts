@@ -2,10 +2,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { AppUsageSession } from '../types/app-usage';
-import type { AutoTrackApp, BehaviorEntry, BehaviorType, Category, MetadataField, StarPeriod } from '../types/behavior';
+import type { AppUsageSession, SiteSession } from '../types/app-usage';
+import type {
+  AutoTrackApp,
+  AutoTrackSite,
+  BehaviorEntry,
+  BehaviorType,
+  Category,
+  MetadataField,
+  StarPeriod,
+} from '../types/behavior';
 import type { AddTaskInput, TaskEntry } from '../types/task';
-import { mergeAppSessionsIntoLogs } from '../utils/app-usage-utils';
+import { mergeTrackedSessionsIntoLogs, siteMatchesDomain } from '../utils/app-usage-utils';
 import { getLogEndTimestamp } from '../utils/log-utils';
 import {
   getLoggableDefaultMetadata,
@@ -46,6 +54,7 @@ interface BehaviorStore {
     hideTotalXp?: true,
     moneyReward?: BehaviorEntry['moneyReward'],
     autoTrackApp?: AutoTrackApp,
+    autoTrackSite?: AutoTrackSite,
   ) => void;
   updateBehaviorCooldown: (behaviorId: string, cooldownMinutes: number) => void;
   updateBehavior: (
@@ -76,10 +85,11 @@ interface BehaviorStore {
       hideTotalXp?: true;
       moneyReward?: BehaviorEntry['moneyReward'];
       autoTrackApp?: AutoTrackApp | undefined;
+      autoTrackSite?: AutoTrackSite | undefined;
     },
   ) => void;
-  /** Turns app usage sessions into logs for behaviors that auto-track those apps, then marks them synced. */
-  applyAppUsageSessions: (sessions: AppUsageSession[], syncedUntil: number) => void;
+  /** Turns app sessions and Firefox site visits into logs for behaviors that auto-track them, then marks them synced. */
+  applyAppUsageSessions: (appSessions: AppUsageSession[], siteSessions: SiteSession[], syncedUntil: number) => void;
   logBehavior: (
     id: string,
     timestamp?: number,
@@ -136,6 +146,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
         hideTotalXp,
         moneyReward,
         autoTrackApp,
+        autoTrackSite,
       ) =>
         set(state => ({
           behaviors: [
@@ -165,6 +176,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               hideTotalXp,
               moneyReward,
               autoTrackApp,
+              autoTrackSite,
             },
           ],
         })),
@@ -193,21 +205,31 @@ export const useBehaviorStore = create<BehaviorStore>()(
             };
           }),
         })),
-      applyAppUsageSessions: (sessions, syncedUntil) =>
+      applyAppUsageSessions: (appSessions, siteSessions, syncedUntil) =>
         set(state => ({
           behaviors: state.behaviors.map(b => {
-            const tracked = b.autoTrackApp;
-            if (!tracked) return b;
-            const appSessions = sessions.filter(session => session.packageName === tracked.packageName);
-            const merged = mergeAppSessionsIntoLogs(b.logs, appSessions, tracked.syncedUntil, uuidv4);
-            const lastTimestamp = merged.changed
-              ? Math.max(b.lastTimestamp ?? 0, ...merged.logs.map(log => getLogEndTimestamp(log)))
-              : b.lastTimestamp;
+            const { autoTrackApp: app, autoTrackSite: site } = b;
+            if (!app && !site) return b;
+            let logs = b.logs;
+            if (app) {
+              const sessions = appSessions.filter(session => session.packageName === app.packageName);
+              logs = mergeTrackedSessionsIntoLogs(logs, sessions, app.syncedUntil, uuidv4).logs;
+            }
+            if (site) {
+              const sessions = siteSessions.filter(session => siteMatchesDomain(session.host, site.domain));
+              logs = mergeTrackedSessionsIntoLogs(logs, sessions, site.syncedUntil, uuidv4, {
+                source: 'site-visit',
+              }).logs;
+            }
             return {
               ...b,
-              lastTimestamp,
-              logs: merged.logs,
-              autoTrackApp: { ...tracked, syncedUntil: Math.max(tracked.syncedUntil, syncedUntil) },
+              lastTimestamp:
+                logs === b.logs
+                  ? b.lastTimestamp
+                  : Math.max(b.lastTimestamp ?? 0, ...logs.map(log => getLogEndTimestamp(log))),
+              logs,
+              autoTrackApp: app && { ...app, syncedUntil: Math.max(app.syncedUntil, syncedUntil) },
+              autoTrackSite: site && { ...site, syncedUntil: Math.max(site.syncedUntil, syncedUntil) },
             };
           }),
         })),

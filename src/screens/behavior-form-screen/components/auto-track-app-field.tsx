@@ -16,7 +16,7 @@ interface AutoTrackAppFieldProps {
 }
 
 export function AutoTrackAppField({ enabled, app, onToggle, onAppChange }: AutoTrackAppFieldProps) {
-  const granted = useAppUsagePermission();
+  const { usageAccess: granted } = useAppUsagePermission();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   if (!AppUsage) return null;

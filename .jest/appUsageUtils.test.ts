@@ -4,9 +4,13 @@ import {
   APP_USAGE_LOOKBACK_MS,
   APP_USAGE_MAX_WINDOW_MS,
   buildAppSessions,
+  buildSiteSessions,
   getAppUsageQueryStart,
   getAutoTrackApp,
-  mergeAppSessionsIntoLogs,
+  getAutoTrackSite,
+  mergeTrackedSessionsIntoLogs,
+  normalizeSiteDomain,
+  siteMatchesDomain,
 } from '../src/utils/app-usage-utils';
 
 const MIN = 60_000;
@@ -56,13 +60,13 @@ describe('buildAppSessions', () => {
   });
 });
 
-describe('mergeAppSessionsIntoLogs', () => {
+describe('mergeTrackedSessionsIntoLogs', () => {
   it('adds sessions after syncedUntil as auto logs and skips short ones', () => {
-    const { logs, changed } = mergeAppSessionsIntoLogs(
+    const { logs, changed } = mergeTrackedSessionsIntoLogs(
       [],
       [
-        { packageName: 'ig', start: 0, end: 5 * MIN },
-        { packageName: 'ig', start: 10 * MIN, end: 10 * MIN + 30_000 },
+        { start: 0, end: 5 * MIN },
+        { start: 10 * MIN, end: 10 * MIN + 30_000 },
       ],
       0,
       createId,
@@ -73,43 +77,28 @@ describe('mergeAppSessionsIntoLogs', () => {
   });
 
   it('skips sessions that ended before the last sync, so deleted logs stay deleted', () => {
-    const { logs, changed } = mergeAppSessionsIntoLogs(
-      [],
-      [{ packageName: 'ig', start: 0, end: 5 * MIN }],
-      5 * MIN,
-      createId,
-    );
+    const { logs, changed } = mergeTrackedSessionsIntoLogs([], [{ start: 0, end: 5 * MIN }], 5 * MIN, createId);
     expect(changed).toBe(false);
     expect(logs).toEqual([]);
   });
 
   it('extends an overlapping auto log instead of duplicating it', () => {
     const existing: LogEntry[] = [{ id: 'a', timestamp: 0, endTimestamp: 5 * MIN, source: 'app-usage' }];
-    const { logs, changed } = mergeAppSessionsIntoLogs(
-      existing,
-      [{ packageName: 'ig', start: 0, end: 9 * MIN }],
-      5 * MIN,
-      createId,
-    );
+    const { logs, changed } = mergeTrackedSessionsIntoLogs(existing, [{ start: 0, end: 9 * MIN }], 5 * MIN, createId);
     expect(changed).toBe(true);
     expect(logs).toEqual([{ id: 'a', timestamp: 0, endTimestamp: 9 * MIN, source: 'app-usage' }]);
   });
 
   it('is a no-op when re-syncing the same session', () => {
     const existing: LogEntry[] = [{ id: 'a', timestamp: 0, endTimestamp: 9 * MIN, source: 'app-usage' }];
-    const result = mergeAppSessionsIntoLogs(existing, [{ packageName: 'ig', start: 0, end: 9 * MIN }], 0, createId);
+    const result = mergeTrackedSessionsIntoLogs(existing, [{ start: 0, end: 9 * MIN }], 0, createId);
     expect(result.changed).toBe(false);
     expect(result.logs).toBe(existing);
   });
 
   it('never merges into manual logs', () => {
     const existing: LogEntry[] = [{ id: 'm', timestamp: 0, endTimestamp: 5 * MIN }];
-    const { logs } = mergeAppSessionsIntoLogs(
-      existing,
-      [{ packageName: 'ig', start: 2 * MIN, end: 8 * MIN }],
-      0,
-      createId,
-    );
+    const { logs } = mergeTrackedSessionsIntoLogs(existing, [{ start: 2 * MIN, end: 8 * MIN }], 0, createId);
     expect(logs).toHaveLength(2);
     expect(logs[0]).toBe(existing[0]);
   });
@@ -141,5 +130,80 @@ describe('getAutoTrackApp', () => {
   it('keeps sync progress when the app is unchanged', () => {
     const saved = { packageName: 'ig', label: 'Instagram', syncedUntil: now - MIN };
     expect(getAutoTrackApp({ packageName: 'ig', label: 'Instagram' }, saved, 0, now)).toEqual(saved);
+  });
+});
+
+describe('normalizeSiteDomain', () => {
+  it('reduces URLs and address bar text to a bare host', () => {
+    expect(normalizeSiteDomain('https://www.YouTube.com/watch?v=1')).toBe('youtube.com');
+    expect(normalizeSiteDomain('m.reddit.com/r/all')).toBe('m.reddit.com');
+    expect(normalizeSiteDomain(' youtube.com ')).toBe('youtube.com');
+    expect(normalizeSiteDomain('localhost:8080')).toBe('');
+    expect(normalizeSiteDomain('Search or enter address')).toBe('');
+  });
+});
+
+describe('siteMatchesDomain', () => {
+  it('matches the site and its subdomains only', () => {
+    expect(siteMatchesDomain('youtube.com', 'youtube.com')).toBe(true);
+    expect(siteMatchesDomain('m.youtube.com', 'youtube.com')).toBe(true);
+    expect(siteMatchesDomain('notyoutube.com', 'youtube.com')).toBe(false);
+  });
+});
+
+describe('buildSiteSessions', () => {
+  const firefox = (start: number, end: number) => ({
+    packageName: 'org.mozilla.firefox',
+    start: start * MIN,
+    end: end * MIN,
+  });
+  const mark = (minute: number, host: string) => ({ timestamp: minute * MIN, host });
+
+  it('splits a Firefox session at each site change', () => {
+    expect(buildSiteSessions([firefox(0, 30)], [mark(0, 'youtube.com'), mark(10, 'reddit.com')])).toEqual([
+      { host: 'youtube.com', start: 0, end: 10 * MIN },
+      { host: 'reddit.com', start: 10 * MIN, end: 30 * MIN },
+    ]);
+  });
+
+  it('carries the last site into a later session and ignores other apps', () => {
+    expect(
+      buildSiteSessions([{ packageName: 'ig', start: 0, end: 5 * MIN }, firefox(20, 25)], [mark(1, 'youtube.com')]),
+    ).toEqual([{ host: 'youtube.com', start: 20 * MIN, end: 25 * MIN }]);
+  });
+
+  it('drops time on pages with no site and time with no marks at all', () => {
+    expect(buildSiteSessions([firefox(0, 30)], [mark(5, ''), mark(10, 'youtube.com'), mark(20, '')])).toEqual([
+      { host: 'youtube.com', start: 10 * MIN, end: 20 * MIN },
+    ]);
+  });
+
+  it('joins visits to the same site across a short Firefox break', () => {
+    expect(
+      buildSiteSessions([firefox(0, 10), { ...firefox(10, 20), start: 10 * MIN + 20_000 }], [mark(0, 'x.com')]),
+    ).toEqual([{ host: 'x.com', start: 0, end: 20 * MIN }]);
+  });
+});
+
+describe('mergeTrackedSessionsIntoLogs with site visits', () => {
+  it('tags site logs and keeps them apart from app logs', () => {
+    const existing: LogEntry[] = [{ id: 'a', timestamp: 0, endTimestamp: 5 * MIN, source: 'app-usage' }];
+    const { logs } = mergeTrackedSessionsIntoLogs(existing, [{ start: 0, end: 5 * MIN }], 0, createId, {
+      source: 'site-visit',
+    });
+    expect(logs).toHaveLength(2);
+    expect(logs[1]).toMatchObject({ source: 'site-visit', timestamp: 0, endTimestamp: 5 * MIN });
+  });
+});
+
+describe('getAutoTrackSite', () => {
+  const now = new Date(2026, 9, 31, 14, 0).getTime();
+
+  it('starts a new site today and keeps progress for the same site', () => {
+    const fresh = getAutoTrackSite('youtube.com', undefined, 0, now);
+    expect(fresh).toEqual({ domain: 'youtube.com', syncedUntil: new Date(2026, 9, 31).getTime() });
+    const saved = { domain: 'youtube.com', syncedUntil: now };
+    expect(getAutoTrackSite('youtube.com', saved, 0, now)).toBe(saved);
+    expect(getAutoTrackSite(undefined, saved, 0, now)).toBeUndefined();
   });
 });

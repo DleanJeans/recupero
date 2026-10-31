@@ -43,6 +43,8 @@ yarn-error.*
 test-results.xml
 
 android/
+# Local Expo modules keep their native code in modules/<name>/android
+!modules/*/android/
 ios/
 .atl/
 builds/

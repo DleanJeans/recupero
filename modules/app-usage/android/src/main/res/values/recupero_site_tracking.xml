@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recupero_site_tracking_label">Recupero website tracking</string>
+    <string name="recupero_site_tracking_description">Reads only the website name in Firefox\'s address bar so Recupero can log time spent on the sites you choose. Nothing else on screen is read or stored, and nothing leaves your phone.</string>
+</resources>

@@ -22,7 +22,7 @@ import { useSettingsStore } from '../../store/settings-store';
 import type { BehaviorEntry, BehaviorType } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { syncAppUsage } from '../../utils/app-usage-sync';
-import { getAutoTrackApp } from '../../utils/app-usage-utils';
+import { getAutoTrackApp, getAutoTrackSite, normalizeSiteDomain } from '../../utils/app-usage-utils';
 import { Colors } from '../../utils/colors';
 import {
   getAmountMetadataFields,
@@ -31,6 +31,7 @@ import {
 } from '../../utils/metadata-calculation-utils';
 import { getMoneyRewardAmount, parseVndInput, sanitizeVndInput } from '../../utils/money-utils';
 import { AutoTrackAppField } from './components/auto-track-app-field';
+import { AutoTrackSiteField } from './components/auto-track-site-field';
 import { BehaviorMetadataEditor } from './components/behavior-metadata-editor';
 import { BehaviorTypePicker } from './components/behavior-type-picker';
 import type { CooldownUnit } from './components/cooldown-input';
@@ -114,14 +115,25 @@ export function BehaviorFormScreen() {
   const [autoTrackPick, setAutoTrackPick] = useState<{ packageName: string; label: string } | undefined>(
     () => behavior?.autoTrackApp,
   );
-  const handleAutoTrackAppChange = (app: { packageName: string; label: string }) => {
-    setAutoTrackPick(app);
+  const [siteTrackEnabled, setSiteTrackEnabled] = useState(() => behavior?.autoTrackSite != null);
+  const [siteDomain, setSiteDomain] = useState(() => behavior?.autoTrackSite?.domain ?? '');
+  const enableDurationXp = () => {
     // Auto-tracked logs are timed sessions, so default to XP per minute.
     if (!xpEnabled) {
       setXpEnabled(true);
       setDurationXpEnabled(true);
     }
   };
+  const handleAutoTrackAppChange = (app: { packageName: string; label: string }) => {
+    setAutoTrackPick(app);
+    enableDurationXp();
+  };
+  const handleSiteTrackToggle = () => {
+    if (!siteTrackEnabled) enableDurationXp();
+    setSiteTrackEnabled(v => !v);
+  };
+  const normalizedSiteDomain = siteTrackEnabled ? normalizeSiteDomain(siteDomain) : '';
+  const siteDomainInvalid = siteTrackEnabled && !normalizedSiteDomain;
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const moneyRewardDurationBased = xpEnabled && durationXpEnabled;
   const handleDurationXpToggle = () => {
@@ -221,6 +233,8 @@ export function BehaviorFormScreen() {
     setMetadataAmountFieldKey(behavior.metadataAmountFieldKey);
     setAutoTrackEnabled(behavior.autoTrackApp != null);
     setAutoTrackPick(behavior.autoTrackApp);
+    setSiteTrackEnabled(behavior.autoTrackSite != null);
+    setSiteDomain(behavior.autoTrackSite?.domain ?? '');
   }, [behavior]);
 
   useEffect(() => {
@@ -294,7 +308,8 @@ export function BehaviorFormScreen() {
       starPeriodChanged ||
       xpDecayChanged ||
       (autoTrackEnabled && autoTrackPick ? autoTrackPick.packageName : undefined) !==
-        behavior.autoTrackApp?.packageName);
+        behavior.autoTrackApp?.packageName ||
+      (normalizedSiteDomain || undefined) !== behavior.autoTrackSite?.domain);
 
   const isDirty = isEdit ? !!hasChanges : name.trim().length > 0 || icon.trim().length > 0;
 
@@ -325,7 +340,7 @@ export function BehaviorFormScreen() {
       return;
     }
     setStarValidationError(null);
-    if (moneyRewardInputInvalid) return;
+    if (moneyRewardInputInvalid || siteDomainInvalid) return;
     if (starMoneyMultipliersInvalid) {
       setStarMoneyMultiplierValidationError(parsedMultipliers.error);
       return;
@@ -342,6 +357,11 @@ export function BehaviorFormScreen() {
     const autoTrackApp = getAutoTrackApp(
       autoTrackEnabled ? autoTrackPick : undefined,
       behavior?.autoTrackApp,
+      useSettingsStore.getState().dayCutoffHour,
+    );
+    const autoTrackSite = getAutoTrackSite(
+      normalizedSiteDomain || undefined,
+      behavior?.autoTrackSite,
       useSettingsStore.getState().dayCutoffHour,
     );
     if (isEdit && behavior) {
@@ -367,6 +387,7 @@ export function BehaviorFormScreen() {
         hideTotalXp: xpEnabled && hideTotalXp ? true : undefined,
         moneyReward: moneyRewardConfig,
         autoTrackApp,
+        autoTrackSite,
       });
     } else {
       addBehavior(
@@ -390,9 +411,10 @@ export function BehaviorFormScreen() {
         xpEnabled && hideTotalXp ? true : undefined,
         moneyRewardConfig,
         autoTrackApp,
+        autoTrackSite,
       );
     }
-    if (autoTrackApp) syncAppUsage();
+    if (autoTrackApp || autoTrackSite) syncAppUsage();
     savedRef.current = true;
     navigation.goBack();
   };
@@ -494,6 +516,13 @@ export function BehaviorFormScreen() {
             onAppChange={handleAutoTrackAppChange}
           />
 
+          <AutoTrackSiteField
+            enabled={siteTrackEnabled}
+            domain={siteDomain}
+            onToggle={handleSiteTrackToggle}
+            onDomainChange={setSiteDomain}
+          />
+
           <CheckboxRow
             label="Track XP"
             hint="Show level, XP bar, and decay"
@@ -572,8 +601,12 @@ export function BehaviorFormScreen() {
           onPress={handleSave}
           disabled={
             isEdit
-              ? !hasChanges || moneyRewardInputInvalid || starMoneyMultipliersInvalid
-              : !name.trim() || !icon.trim() || moneyRewardInputInvalid || starMoneyMultipliersInvalid
+              ? !hasChanges || moneyRewardInputInvalid || starMoneyMultipliersInvalid || siteDomainInvalid
+              : !name.trim() ||
+                !icon.trim() ||
+                moneyRewardInputInvalid ||
+                starMoneyMultipliersInvalid ||
+                siteDomainInvalid
           }
         >
           {isEdit ? 'Save' : 'Add'}

@@ -25,7 +25,7 @@ export interface LogEntry {
   source?: LogSource;
 }
 
-export type LogSource = 'app-usage';
+export type LogSource = 'app-usage' | 'site-visit';
 
 /** Automatic logging from Android app usage (screen time). */
 export interface AutoTrackApp {
@@ -33,6 +33,14 @@ export interface AutoTrackApp {
   /** App name shown in the form, saved so it survives the app being uninstalled. */
   label: string;
   /** Usage that ended at or before this time has already been turned into logs. */
+  syncedUntil: number;
+}
+
+/** Automatic logging of time spent on a website in Firefox for Android. */
+export interface AutoTrackSite {
+  /** Site such as "youtube.com". Subdomains (m.youtube.com) count too. */
+  domain: string;
+  /** Visits that ended at or before this time have already been turned into logs. */
   syncedUntil: number;
 }
 
@@ -95,6 +103,8 @@ export interface BehaviorEntry {
   xpDecay?: { every: number; unit: XpDecayUnit };
   /** Opt-in automatic logging of time spent in an Android app. Undefined = feature off. */
   autoTrackApp?: AutoTrackApp;
+  /** Opt-in automatic logging of time spent on a website in Firefox. Undefined = feature off. */
+  autoTrackSite?: AutoTrackSite;
 }
 
 export type XpDecayUnit = 'hours' | 'days' | 'weeks' | 'months';

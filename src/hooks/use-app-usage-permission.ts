@@ -1,15 +1,24 @@
 import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
-import { hasAppUsagePermission } from '../utils/app-usage-sync';
+import { hasAppUsagePermission, isSiteTrackingEnabled } from '../utils/app-usage-sync';
 
-/** Whether usage access is granted, re-checked when the user returns from system settings. */
-export function useAppUsagePermission(): boolean {
-  const [granted, setGranted] = useState(hasAppUsagePermission);
+interface AppUsagePermissions {
+  usageAccess: boolean;
+  siteTracking: boolean;
+}
+
+function readPermissions(): AppUsagePermissions {
+  return { usageAccess: hasAppUsagePermission(), siteTracking: isSiteTrackingEnabled() };
+}
+
+/** Usage access and website tracking (accessibility) state, re-checked when the user returns from settings. */
+export function useAppUsagePermission(): AppUsagePermissions {
+  const [permissions, setPermissions] = useState(readPermissions);
   useEffect(() => {
     const subscription = AppState.addEventListener('change', state => {
-      if (state === 'active') setGranted(hasAppUsagePermission());
+      if (state === 'active') setPermissions(readPermissions());
     });
     return () => subscription.remove();
   }, []);
-  return granted;
+  return permissions;
 }
