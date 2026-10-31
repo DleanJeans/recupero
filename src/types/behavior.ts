@@ -21,6 +21,27 @@ export interface LogEntry {
   /** End of a timed session. Undefined for legacy/instant logs. */
   endTimestamp?: number;
   metadata?: Record<string, string | number>;
+  /** Set on logs created by automatic tracking. Undefined for manual logs. */
+  source?: LogSource;
+}
+
+export type LogSource = 'app-usage' | 'site-visit';
+
+/** Automatic logging from Android app usage (screen time). */
+export interface AutoTrackApp {
+  packageName: string;
+  /** App name shown in the form, saved so it survives the app being uninstalled. */
+  label: string;
+  /** Usage that ended at or before this time has already been turned into logs. */
+  syncedUntil: number;
+}
+
+/** Automatic logging of time spent on a website in Firefox for Android. */
+export interface AutoTrackSite {
+  /** Site such as "youtube.com". Subdomains (m.youtube.com) count too. */
+  domain: string;
+  /** Visits that ended at or before this time have already been turned into logs. */
+  syncedUntil: number;
 }
 
 export type BehaviorType = 'undesirable' | 'neutral' | 'desirable';
@@ -80,6 +101,10 @@ export interface BehaviorEntry {
    *  with fewer than `every` logs. For hours, lose 1 log every `every` elapsed hours.
    *  Undefined = feature off. Ignored at runtime when `xpEnabled` is off. */
   xpDecay?: { every: number; unit: XpDecayUnit };
+  /** Opt-in automatic logging of time spent in an Android app. Undefined = feature off. */
+  autoTrackApp?: AutoTrackApp;
+  /** Opt-in automatic logging of time spent on a website in Firefox. Undefined = feature off. */
+  autoTrackSite?: AutoTrackSite;
 }
 
 export type XpDecayUnit = 'hours' | 'days' | 'weeks' | 'months';
