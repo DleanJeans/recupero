@@ -18,8 +18,11 @@ import { useStarMoneyMultipliersForm } from '../../hooks/use-star-money-multipli
 import { useStarThresholdsForm } from '../../hooks/use-star-thresholds-form';
 import { useXPDecayForm } from '../../hooks/use-xp-decay-form';
 import { useBehaviorStore } from '../../store/behavior-store';
+import { useSettingsStore } from '../../store/settings-store';
 import type { BehaviorEntry, BehaviorType } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
+import { syncAppUsage } from '../../utils/app-usage-sync';
+import { getAutoTrackApp } from '../../utils/app-usage-utils';
 import { Colors } from '../../utils/colors';
 import {
   getAmountMetadataFields,
@@ -27,6 +30,7 @@ import {
   parseDecimalInput,
 } from '../../utils/metadata-calculation-utils';
 import { getMoneyRewardAmount, parseVndInput, sanitizeVndInput } from '../../utils/money-utils';
+import { AutoTrackAppField } from './components/auto-track-app-field';
 import { BehaviorMetadataEditor } from './components/behavior-metadata-editor';
 import { BehaviorTypePicker } from './components/behavior-type-picker';
 import type { CooldownUnit } from './components/cooldown-input';
@@ -106,6 +110,18 @@ export function BehaviorFormScreen() {
   const [metadataAmountFieldKey, setMetadataAmountFieldKey] = useState<string | undefined>(
     () => behavior?.metadataAmountFieldKey,
   );
+  const [autoTrackEnabled, setAutoTrackEnabled] = useState(() => behavior?.autoTrackApp != null);
+  const [autoTrackPick, setAutoTrackPick] = useState<{ packageName: string; label: string } | undefined>(
+    () => behavior?.autoTrackApp,
+  );
+  const handleAutoTrackAppChange = (app: { packageName: string; label: string }) => {
+    setAutoTrackPick(app);
+    // Auto-tracked logs are timed sessions, so default to XP per minute.
+    if (!xpEnabled) {
+      setXpEnabled(true);
+      setDurationXpEnabled(true);
+    }
+  };
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const moneyRewardDurationBased = xpEnabled && durationXpEnabled;
   const handleDurationXpToggle = () => {
@@ -203,6 +219,8 @@ export function BehaviorFormScreen() {
       Object.fromEntries(Object.entries(behavior.defaultMetadata ?? {}).map(([k, v]) => [k, String(v)])),
     );
     setMetadataAmountFieldKey(behavior.metadataAmountFieldKey);
+    setAutoTrackEnabled(behavior.autoTrackApp != null);
+    setAutoTrackPick(behavior.autoTrackApp);
   }, [behavior]);
 
   useEffect(() => {
@@ -274,7 +292,9 @@ export function BehaviorFormScreen() {
         getSelectedAmountMetadataField(metadataFields, behavior.metadataAmountFieldKey)?.key ||
       starThresholdsChanged ||
       starPeriodChanged ||
-      xpDecayChanged);
+      xpDecayChanged ||
+      (autoTrackEnabled && autoTrackPick ? autoTrackPick.packageName : undefined) !==
+        behavior.autoTrackApp?.packageName);
 
   const isDirty = isEdit ? !!hasChanges : name.trim().length > 0 || icon.trim().length > 0;
 
@@ -319,6 +339,11 @@ export function BehaviorFormScreen() {
         .map(([k, v]) => [k, parseDecimalInput(v)] as const)
         .filter((entry): entry is readonly [string, number] => entry[1] != null && entry[1] !== 0),
     );
+    const autoTrackApp = getAutoTrackApp(
+      autoTrackEnabled ? autoTrackPick : undefined,
+      behavior?.autoTrackApp,
+      useSettingsStore.getState().dayCutoffHour,
+    );
     if (isEdit && behavior) {
       updateBehavior(behavior.id, {
         name: trimmed,
@@ -341,6 +366,7 @@ export function BehaviorFormScreen() {
         durationXpEnabled: xpEnabled && durationXpEnabled ? true : undefined,
         hideTotalXp: xpEnabled && hideTotalXp ? true : undefined,
         moneyReward: moneyRewardConfig,
+        autoTrackApp,
       });
     } else {
       addBehavior(
@@ -363,8 +389,10 @@ export function BehaviorFormScreen() {
         xpEnabled && durationXpEnabled ? true : undefined,
         xpEnabled && hideTotalXp ? true : undefined,
         moneyRewardConfig,
+        autoTrackApp,
       );
     }
+    if (autoTrackApp) syncAppUsage();
     savedRef.current = true;
     navigation.goBack();
   };
@@ -457,6 +485,13 @@ export function BehaviorFormScreen() {
             onToggle={handleStarsToggle}
             onInputChange={handleStarInputChange}
             onPeriodChange={handleStarPeriodChange}
+          />
+
+          <AutoTrackAppField
+            enabled={autoTrackEnabled}
+            app={autoTrackPick}
+            onToggle={() => setAutoTrackEnabled(v => !v)}
+            onAppChange={handleAutoTrackAppChange}
           />
 
           <CheckboxRow

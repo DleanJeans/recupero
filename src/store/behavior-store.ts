@@ -2,8 +2,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { BehaviorEntry, BehaviorType, Category, MetadataField, StarPeriod } from '../types/behavior';
+import type { AppUsageSession } from '../types/app-usage';
+import type { AutoTrackApp, BehaviorEntry, BehaviorType, Category, MetadataField, StarPeriod } from '../types/behavior';
 import type { AddTaskInput, TaskEntry } from '../types/task';
+import { mergeAppSessionsIntoLogs } from '../utils/app-usage-utils';
 import { getLogEndTimestamp } from '../utils/log-utils';
 import {
   getLoggableDefaultMetadata,
@@ -43,6 +45,7 @@ interface BehaviorStore {
     durationXpEnabled?: true,
     hideTotalXp?: true,
     moneyReward?: BehaviorEntry['moneyReward'],
+    autoTrackApp?: AutoTrackApp,
   ) => void;
   updateBehaviorCooldown: (behaviorId: string, cooldownMinutes: number) => void;
   updateBehavior: (
@@ -72,8 +75,11 @@ interface BehaviorStore {
       durationXpEnabled?: true;
       hideTotalXp?: true;
       moneyReward?: BehaviorEntry['moneyReward'];
+      autoTrackApp?: AutoTrackApp | undefined;
     },
   ) => void;
+  /** Turns app usage sessions into logs for behaviors that auto-track those apps, then marks them synced. */
+  applyAppUsageSessions: (sessions: AppUsageSession[], syncedUntil: number) => void;
   logBehavior: (
     id: string,
     timestamp?: number,
@@ -129,6 +135,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
         durationXpEnabled,
         hideTotalXp,
         moneyReward,
+        autoTrackApp,
       ) =>
         set(state => ({
           behaviors: [
@@ -157,6 +164,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               durationXpEnabled,
               hideTotalXp,
               moneyReward,
+              autoTrackApp,
             },
           ],
         })),
@@ -182,6 +190,24 @@ export const useBehaviorStore = create<BehaviorStore>()(
                   metadata,
                 },
               ],
+            };
+          }),
+        })),
+      applyAppUsageSessions: (sessions, syncedUntil) =>
+        set(state => ({
+          behaviors: state.behaviors.map(b => {
+            const tracked = b.autoTrackApp;
+            if (!tracked) return b;
+            const appSessions = sessions.filter(session => session.packageName === tracked.packageName);
+            const merged = mergeAppSessionsIntoLogs(b.logs, appSessions, tracked.syncedUntil, uuidv4);
+            const lastTimestamp = merged.changed
+              ? Math.max(b.lastTimestamp ?? 0, ...merged.logs.map(log => getLogEndTimestamp(log)))
+              : b.lastTimestamp;
+            return {
+              ...b,
+              lastTimestamp,
+              logs: merged.logs,
+              autoTrackApp: { ...tracked, syncedUntil: Math.max(tracked.syncedUntil, syncedUntil) },
             };
           }),
         })),
