@@ -6,6 +6,12 @@ on:
   pull_request:
     types: labeled
   workflow_dispatch:
+    inputs:
+      profile:
+        description: EAS build profile to build
+        type: choice
+        options: [development, preview, production]
+        default: development
 
 permissions:
   contents: write
@@ -18,5 +24,6 @@ jobs:
       app-name: recupero-dev
       expo-project-slug: recupero
       ota-label: send ota
+      profile: ${{ inputs.profile || '' }}
     secrets:
       expo-token: ${{ secrets.EXPO_TOKEN }}
