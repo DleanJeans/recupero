@@ -28,6 +28,7 @@ export function MoneyBalance({ disabled = false }: MoneyBalanceProps) {
   const tasks = useBehaviorStore(state => state.tasks);
   const purchases = useShopStore(state => state.purchases);
   const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
+  const moneyRewardsEnabled = useSettingsStore(state => state.moneyRewardsEnabled);
   const balance = useMemo(
     () => getMoneyBalance(behaviors, purchases, tasks, dayCutoffHour),
     [behaviors, dayCutoffHour, purchases, tasks],
@@ -107,6 +108,8 @@ export function MoneyBalance({ disabled = false }: MoneyBalanceProps) {
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
+
+  if (!moneyRewardsEnabled) return null;
 
   return (
     <Pressable

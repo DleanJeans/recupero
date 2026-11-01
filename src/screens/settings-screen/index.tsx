@@ -6,6 +6,7 @@ import { ScreenTitle } from '../../components/screen-title';
 import { Colors } from '../../utils/colors';
 import { DataTransferSection } from './components/data-transfer-section';
 import { DayCutoffPicker } from './components/day-cutoff-picker';
+import { MoneyRewardsSection } from './components/money-rewards-section';
 import { PrivateBehaviorSection } from './components/private-behavior-section';
 import { TimeFormatPicker } from './components/time-format-picker';
 
@@ -19,6 +20,7 @@ export function SettingsScreen() {
 
       <TimeFormatPicker />
       <DayCutoffPicker />
+      <MoneyRewardsSection />
       <PrivateBehaviorSection />
       <DataTransferSection />
     </SafeAreaView>

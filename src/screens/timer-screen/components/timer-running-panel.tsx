@@ -9,6 +9,7 @@ import { MoneyBalance } from '../../../components/money-balance';
 import { ScreenTitle } from '../../../components/screen-title';
 import { Text } from '../../../components/text';
 import { useBehaviorStore } from '../../../store/behavior-store';
+import { useSettingsStore } from '../../../store/settings-store';
 import type { BehaviorEntry, Category } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 import { getMoneyRewardForLog, getStarMoneyMultiplierForLog } from '../../../utils/money-utils';
@@ -48,6 +49,7 @@ export function TimerRunningPanel({
   const category = useBehaviorStore(state =>
     behavior.categoryId ? state.categories.find(item => item.id === behavior.categoryId) : undefined,
   );
+  const moneyRewardsEnabled = useSettingsStore(state => state.moneyRewardsEnabled);
   const rewardLog =
     startTimestamp == null
       ? undefined
@@ -58,7 +60,7 @@ export function TimerRunningPanel({
         };
   const rewardXp = isRunning && behavior.xpEnabled ? getTimerXp(elapsedMs) : undefined;
   const rewardMoneyOriginal =
-    isRunning && rewardLog && behavior.moneyReward != null && behavior.type !== 'neutral'
+    moneyRewardsEnabled && isRunning && rewardLog && behavior.moneyReward != null && behavior.type !== 'neutral'
       ? getMoneyRewardForLog(rewardLog, behavior.moneyReward, true) * (behavior.type === 'undesirable' ? -1 : 1)
       : undefined;
   const rewardMoneyMultiplier =

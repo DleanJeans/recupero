@@ -30,6 +30,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
 }: Props) {
   const timeFormat = useSettingsStore(state => state.timeFormat);
   const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
+  const moneyRewardsEnabled = useSettingsStore(state => state.moneyRewardsEnabled);
   const timeText = useMemo(
     () => formatTimeRange(log.timestamp, log.endTimestamp, timeFormat === '12h'),
     [log.endTimestamp, log.timestamp, timeFormat],
@@ -39,7 +40,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
   const durationText = useMemo(() => (isRange ? formatDuration(getLogDurationMs(log)) : undefined), [log, isRange]);
   const xp = behavior.xpEnabled ? getLogXp(log) : undefined;
   const moneyOriginal =
-    behavior.moneyReward != null && behavior.type !== 'neutral'
+    moneyRewardsEnabled && behavior.moneyReward != null && behavior.type !== 'neutral'
       ? getMoneyRewardForLog(log, behavior.moneyReward, behavior.durationXpEnabled === true) *
         (behavior.type === 'undesirable' ? -1 : 1)
       : undefined;

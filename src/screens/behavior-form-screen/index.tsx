@@ -85,6 +85,7 @@ export function BehaviorFormScreen() {
     behavior ? behavior.durationXpEnabled === true : defaultDurationXpEnabled === true,
   );
   const [hideTotalXp, setHideTotalXp] = useState(() => behavior?.hideTotalXp === true);
+  const moneyRewardsEnabled = useSettingsStore(s => s.moneyRewardsEnabled);
   const [moneyReward, setMoneyReward] = useState(() => behavior?.type !== 'neutral' && behavior?.moneyReward != null);
   const [moneyRewardAmount, setMoneyRewardAmount] = useState(() =>
     String(
@@ -557,34 +558,36 @@ export function BehaviorFormScreen() {
             )}
           </CheckboxRow>
 
-          <CheckboxRow
-            label={type === 'undesirable' ? 'Money penalty' : 'Reward money'}
-            hint={type === 'neutral' ? 'Neutral logs do not change money' : undefined}
-            checked={moneyRewardEnabled}
-            disabled={type === 'neutral'}
-            onToggle={handleMoneyRewardToggle}
-          >
-            {moneyRewardEnabled && (
-              <View style={styles.moneyOptions}>
-                <MoneyRewardInput
-                  value={moneyRewardAmount}
-                  rateLabel={moneyRewardDurationBased ? 'per minute' : 'per log'}
-                  negative={type === 'undesirable'}
-                  onChangeText={value => {
-                    setMoneyRewardAmountTouched(true);
-                    setMoneyRewardAmount(sanitizeVndInput(value));
-                  }}
-                />
-                {starsEnabled && (
-                  <StarMoneyMultipliersFormField
-                    inputs={starMoneyMultiplierInputs}
-                    validationError={starMoneyMultiplierValidationError ?? parsedMultipliers.error}
-                    onInputChange={handleStarMoneyMultiplierInputChange}
+          {moneyRewardsEnabled && (
+            <CheckboxRow
+              label={type === 'undesirable' ? 'Money penalty' : 'Reward money'}
+              hint={type === 'neutral' ? 'Neutral logs do not change money' : undefined}
+              checked={moneyRewardEnabled}
+              disabled={type === 'neutral'}
+              onToggle={handleMoneyRewardToggle}
+            >
+              {moneyRewardEnabled && (
+                <View style={styles.moneyOptions}>
+                  <MoneyRewardInput
+                    value={moneyRewardAmount}
+                    rateLabel={moneyRewardDurationBased ? 'per minute' : 'per log'}
+                    negative={type === 'undesirable'}
+                    onChangeText={value => {
+                      setMoneyRewardAmountTouched(true);
+                      setMoneyRewardAmount(sanitizeVndInput(value));
+                    }}
                   />
-                )}
-              </View>
-            )}
-          </CheckboxRow>
+                  {starsEnabled && (
+                    <StarMoneyMultipliersFormField
+                      inputs={starMoneyMultiplierInputs}
+                      validationError={starMoneyMultiplierValidationError ?? parsedMultipliers.error}
+                      onInputChange={handleStarMoneyMultiplierInputChange}
+                    />
+                  )}
+                </View>
+              )}
+            </CheckboxRow>
+          )}
 
           <CheckboxRow
             label="Private"

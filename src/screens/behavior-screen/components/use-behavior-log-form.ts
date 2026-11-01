@@ -76,6 +76,7 @@ export function useBehaviorLogForm({
   const updateLog = useBehaviorStore(state => state.updateLog);
   const removeLog = useBehaviorStore(state => state.removeLog);
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
+  const moneyRewardsEnabled = useSettingsStore(s => s.moneyRewardsEnabled);
 
   const nowRef = useRef(new Date());
   const todayStr = toDateString(nowRef.current, dayCutoffHour);
@@ -328,7 +329,7 @@ export function useBehaviorLogForm({
   };
   const earnedXp = showTimeRange ? getLogXp(rewardLog) : XP_PER_LOG;
   const originalMoneyRewardAmount =
-    behavior.moneyReward == null || behavior.type === 'neutral'
+    !moneyRewardsEnabled || behavior.moneyReward == null || behavior.type === 'neutral'
       ? undefined
       : getMoneyRewardForLog(rewardLog, behavior.moneyReward, behavior.durationXpEnabled === true) *
         (behavior.type === 'undesirable' ? -1 : 1);
