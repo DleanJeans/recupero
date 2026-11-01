@@ -3,9 +3,9 @@ import { type GestureResponderEvent, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 
-const MIN_RADIUS = 50;
-const MAX_RADIUS = 1000;
-const RADIUS_STEP = 25;
+const MIN_RADIUS = 1;
+const MAX_RADIUS = 500;
+const RADIUS_STEP = 1;
 const THUMB_SIZE = 24;
 
 interface RadiusSliderProps {
@@ -73,7 +73,7 @@ export function RadiusSlider({ value, onChange }: RadiusSliderProps) {
       </View>
       <View style={styles.range}>
         <Text style={styles.rangeText}>{MIN_RADIUS} m</Text>
-        <Text style={styles.rangeText}>1 km</Text>
+        <Text style={styles.rangeText}>{MAX_RADIUS} m</Text>
       </View>
     </View>
   );

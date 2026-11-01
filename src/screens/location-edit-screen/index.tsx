@@ -28,7 +28,7 @@ export function LocationEditScreen() {
   const removePlace = useCuesStore(state => state.removePlace);
   const [name, setName] = useState(existingPlace?.name ?? '');
   const [address, setAddress] = useState(existingPlace?.address ?? '');
-  const [radiusM, setRadiusM] = useState(existingPlace?.radiusM ?? 150);
+  const [radiusM, setRadiusM] = useState(existingPlace?.radiusM ?? 30);
   const [isHome, setIsHome] = useState(existingPlace?.isHome ?? false);
   const [point, setPoint] = useState<GeoPoint | null>(
     existingPlace ? { lat: existingPlace.lat, lng: existingPlace.lng } : null,

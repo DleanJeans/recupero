@@ -24,7 +24,7 @@ interface GeocodedAddressParts {
 const METERS_PER_DEGREE_LAT = 111_320;
 /** How many radii of padding to show around the geofence circle. */
 const RADIUS_VIEW_FACTOR = 3;
-const MIN_SPAN_M = 300;
+const MIN_SPAN_M = 150;
 
 /** Map region centered on a point, zoomed so the geofence circle fits with padding. */
 export function regionForGeofence(point: GeoPoint, radiusM: number): MapRegion {

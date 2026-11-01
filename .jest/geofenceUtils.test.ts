@@ -11,7 +11,7 @@ describe('geofence utils', () => {
 
   it('keeps a minimum span for small radii and widens longitude away from the equator', () => {
     const region = regionForGeofence({ lat: 60, lng: 0 }, 10);
-    expect(region.latitudeDelta).toBeCloseTo(300 / 111_320);
+    expect(region.latitudeDelta).toBeCloseTo(150 / 111_320);
     expect(region.longitudeDelta).toBeCloseTo(region.latitudeDelta * 2);
   });
 
