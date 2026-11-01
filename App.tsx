@@ -10,6 +10,7 @@ import { BottomNav, type BottomNavRoute } from './src/components/bottom-nav';
 import { ConfettiOverlay } from './src/components/confetti-overlay';
 import { Text } from './src/components/text';
 import { useAppFonts } from './src/hooks/use-app-fonts';
+import { useAppUsageSync } from './src/hooks/use-app-usage-sync';
 import { useDeferredBottomNavNavigation } from './src/hooks/use-deferred-bottom-nav-navigation';
 import { BehaviorFormScreen } from './src/screens/behavior-form-screen';
 import { BehaviorScreen } from './src/screens/behavior-screen';
@@ -72,6 +73,7 @@ export default function App() {
   const navigationRef = useNavigationContainerRef<RootStackParamList>();
   const [activeRouteName, setActiveRouteName] = useState<string | undefined>();
   const { pendingRouteName, deferNavigation, completeNavigation } = useDeferredBottomNavNavigation<BottomNavRoute>();
+  useAppUsageSync(storesReady);
 
   useEffect(() => {
     const checkStoresReady = () => setStoresReady(PERSISTED_STORES.every(store => store.persist.hasHydrated()));

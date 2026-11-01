@@ -1,0 +1,31 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Usage access is granted by the user in system settings, not at install time. -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- Lets the app picker list launchable apps on Android 11+ package visibility. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
+    <application>
+        <!-- Reads the site name in Firefox's address bar for website auto-tracking. Off until the user enables it. -->
+        <service
+            android:name="expo.modules.appusage.SiteTrackingService"
+            android:exported="true"
+            android:label="@string/recupero_site_tracking_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/recupero_site_tracking_service" />
+        </service>
+    </application>
+</manifest>
