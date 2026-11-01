@@ -27,6 +27,8 @@ export interface LogEntry {
   source?: LogSource;
   /** Cues (place, mood, body sensation) that led to this log. Undefined when none were picked. */
   cues?: CueRef[];
+  /** Shared by logs saved together with habit stacking. Undefined for logs saved on their own. */
+  stackId?: string;
 }
 
 export type LogSource = 'app-usage' | 'site-visit';

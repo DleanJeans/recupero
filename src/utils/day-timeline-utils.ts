@@ -8,12 +8,9 @@ export type DayTimelineItem =
   | { kind: 'mood'; key: string; timestamp: number; log: MoodLog }
   | { kind: 'body'; key: string; timestamp: number; log: BodySensationLog };
 
-/**
- * Habit-stacked logs are saved as separate LogEntries with identical start and end times,
- * so logs sharing both are treated as one stack.
- */
+/** Habit-stacked logs are separate LogEntries sharing a stackId; every other log stands alone. */
 function getStackKey(entry: DayLogEntry): string {
-  return `${entry.log.timestamp}:${entry.log.endTimestamp ?? ''}`;
+  return entry.log.stackId ? `stack:${entry.log.stackId}` : `log:${entry.log.id}`;
 }
 
 export function buildDayTimeline(

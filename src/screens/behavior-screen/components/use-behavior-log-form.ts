@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Keyboard } from 'react-native';
+import { v4 as uuidv4 } from 'uuid';
 import { type MoneyRewardPreview, REWARD_ANIMATION_MS } from '../../../components/log-reward-preview';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useCuesStore } from '../../../store/cues-store';
@@ -378,7 +379,8 @@ export function useBehaviorLogForm({
       return;
     }
 
-    logBehavior(behaviorId, startTimestamp, metadataOrUndefined, saveEndTimestamp, selectedCues);
+    const stackId = stackedLogs.length > 0 ? uuidv4() : undefined;
+    logBehavior(behaviorId, startTimestamp, metadataOrUndefined, saveEndTimestamp, selectedCues, stackId);
     // Habit stack: every stacked behaviour shares the time, cues and notes, with its own metadata.
     for (const stacked of stackedLogs) {
       const stackedBehavior = allBehaviors.find(b => b.id === stacked.behaviorId);
@@ -396,6 +398,7 @@ export function useBehaviorLogForm({
         }),
         saveEndTimestamp,
         selectedCues,
+        stackId,
       );
     }
 

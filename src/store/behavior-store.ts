@@ -97,6 +97,8 @@ interface BehaviorStore {
     metadata?: Record<string, string | number>,
     endTimestamp?: number,
     cues?: CueRef[],
+    /** Links logs saved together with habit stacking. */
+    stackId?: string,
   ) => void;
   removeBehavior: (id: string) => void;
   removeLog: (behaviorId: string, logId: string) => void;
@@ -184,7 +186,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
             },
           ],
         })),
-      logBehavior: (id, timestamp, metadata = {}, endTimestamp, cues) =>
+      logBehavior: (id, timestamp, metadata = {}, endTimestamp, cues, stackId) =>
         set(state => ({
           behaviors: state.behaviors.map(t => {
             if (t.id !== id) return t;
@@ -205,6 +207,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
                   endTimestamp,
                   metadata,
                   ...(cues && cues.length > 0 ? { cues } : {}),
+                  ...(stackId ? { stackId } : {}),
                 },
               ],
             };
