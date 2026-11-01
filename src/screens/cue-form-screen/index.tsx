@@ -166,7 +166,6 @@ export function CueFormScreen() {
 
         <Button
           variant="primary"
-          style={styles.saveButton}
           onPress={handleSave}
         >
           Save cue
@@ -210,5 +209,4 @@ const styles = StyleSheet.create({
   notifyCopy: { flex: 1, gap: 2 },
   notifyTitle: { color: Colors.text.primary, fontSize: 14, fontWeight: '600' },
   notifyDetail: { color: Colors.text.faint, fontSize: 11, lineHeight: 16 },
-  saveButton: { borderRadius: 999 },
 });

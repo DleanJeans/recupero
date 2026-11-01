@@ -12,7 +12,7 @@ import { Text, TextInput } from '../../components/text';
 import { useCuesStore } from '../../store/cues-store';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
-import type { GeoPoint } from '../../utils/geofence-utils';
+import { clampGeofenceRadius, type GeoPoint } from '../../utils/geofence-utils';
 import { geocodeAddress, getCurrentPoint, reverseGeocodePoint } from '../../utils/location-utils';
 import { GeofenceMap } from './components/geofence-map';
 import { RadiusSlider } from './components/radius-slider';
@@ -30,7 +30,7 @@ export function LocationEditScreen() {
   const removePlace = useCuesStore(state => state.removePlace);
   const [name, setName] = useState(existingPlace?.name ?? '');
   const [address, setAddress] = useState(existingPlace?.address ?? '');
-  const [radiusM, setRadiusM] = useState(existingPlace?.radiusM ?? 30);
+  const [radiusM, setRadiusM] = useState(clampGeofenceRadius(existingPlace?.radiusM ?? 20));
   const [isHome, setIsHome] = useState(existingPlace?.isHome ?? false);
   const [point, setPoint] = useState<GeoPoint | null>(
     existingPlace ? { lat: existingPlace.lat, lng: existingPlace.lng } : null,
@@ -206,7 +206,6 @@ export function LocationEditScreen() {
 
         <Button
           variant="primary"
-          style={styles.saveButton}
           onPress={handleSave}
         >
           Save location
@@ -267,5 +266,4 @@ const styles = StyleSheet.create({
   homeCopy: { flex: 1, gap: 2 },
   homeTitle: { color: Colors.text.primary, fontSize: 14, fontWeight: '700' },
   homeDetail: { color: Colors.text.faint, fontSize: 11, lineHeight: 16 },
-  saveButton: { borderRadius: 999 },
 });

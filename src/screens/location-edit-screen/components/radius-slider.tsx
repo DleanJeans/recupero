@@ -1,12 +1,22 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useRef, useState } from 'react';
 import { type GestureResponderEvent, StyleSheet, View } from 'react-native';
+import { Button } from '../../../components/button';
 import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
+import {
+  clampGeofenceRadius,
+  MAX_GEOFENCE_RADIUS_M,
+  MIN_GEOFENCE_RADIUS_M,
+  radiusToSliderRatio,
+  sliderRatioToRadius,
+  stepGeofenceRadius,
+} from '../../../utils/geofence-utils';
 
-const MIN_RADIUS = 1;
-const MAX_RADIUS = 500;
-const RADIUS_STEP = 1;
 const THUMB_SIZE = 24;
+/** Labels under the log-scale track, placed at their real positions. */
+const TICKS = [1, 10, 50, 200];
+const TICK_LABEL_WIDTH = 40;
 
 interface RadiusSliderProps {
   value: number;
@@ -17,15 +27,15 @@ export function RadiusSlider({ value, onChange }: RadiusSliderProps) {
   const sliderRef = useRef<View>(null);
   const [trackX, setTrackX] = useState(0);
   const [trackWidth, setTrackWidth] = useState(0);
-  const normalized = Math.max(MIN_RADIUS, Math.min(MAX_RADIUS, value));
-  const progress = (normalized - MIN_RADIUS) / (MAX_RADIUS - MIN_RADIUS);
+  const [tickWidth, setTickWidth] = useState(0);
+  const normalized = clampGeofenceRadius(value);
+  const progress = radiusToSliderRatio(normalized);
   const thumbLeft = trackWidth > 0 ? progress * trackWidth - THUMB_SIZE / 2 : -THUMB_SIZE / 2;
 
   const updateFromX = useCallback(
     (x: number) => {
       if (trackWidth <= 0) return;
-      const ratio = Math.max(0, Math.min(1, x / trackWidth));
-      const next = Math.round((MIN_RADIUS + ratio * (MAX_RADIUS - MIN_RADIUS)) / RADIUS_STEP) * RADIUS_STEP;
+      const next = sliderRatioToRadius(x / trackWidth);
       if (next !== value) onChange(next);
     },
     [onChange, trackWidth, value],
@@ -45,7 +55,33 @@ export function RadiusSlider({ value, onChange }: RadiusSliderProps) {
     <View style={styles.container}>
       <View style={styles.valueRow}>
         <Text style={styles.label}>Geofence radius</Text>
-        <Text style={styles.value}>{normalized} m</Text>
+        <View style={styles.stepper}>
+          <Button
+            variant="icon"
+            onPress={() => onChange(stepGeofenceRadius(normalized, -1))}
+            disabled={normalized <= MIN_GEOFENCE_RADIUS_M}
+            accessibilityLabel="Decrease radius"
+          >
+            <Ionicons
+              name="remove-circle-outline"
+              size={26}
+              color={Colors.cue.location}
+            />
+          </Button>
+          <Text style={styles.value}>{normalized} m</Text>
+          <Button
+            variant="icon"
+            onPress={() => onChange(stepGeofenceRadius(normalized, 1))}
+            disabled={normalized >= MAX_GEOFENCE_RADIUS_M}
+            accessibilityLabel="Increase radius"
+          >
+            <Ionicons
+              name="add-circle-outline"
+              size={26}
+              color={Colors.cue.location}
+            />
+          </Button>
+        </View>
       </View>
       <View
         ref={sliderRef}
@@ -53,11 +89,15 @@ export function RadiusSlider({ value, onChange }: RadiusSliderProps) {
         accessible
         accessibilityRole="adjustable"
         accessibilityLabel="Geofence radius"
-        accessibilityValue={{ min: MIN_RADIUS, max: MAX_RADIUS, now: normalized, text: `${normalized} metres` }}
+        accessibilityValue={{
+          min: MIN_GEOFENCE_RADIUS_M,
+          max: MAX_GEOFENCE_RADIUS_M,
+          now: normalized,
+          text: `${normalized} metres`,
+        }}
         accessibilityActions={[{ name: 'decrement' }, { name: 'increment' }]}
         onAccessibilityAction={event => {
-          const delta = event.nativeEvent.actionName === 'increment' ? RADIUS_STEP : -RADIUS_STEP;
-          onChange(Math.max(MIN_RADIUS, Math.min(MAX_RADIUS, normalized + delta)));
+          onChange(stepGeofenceRadius(normalized, event.nativeEvent.actionName === 'increment' ? 1 : -1));
         }}
         onLayout={measure}
         onStartShouldSetResponder={() => true}
@@ -71,9 +111,26 @@ export function RadiusSlider({ value, onChange }: RadiusSliderProps) {
         </View>
         <View style={[styles.thumb, { left: thumbLeft }]} />
       </View>
-      <View style={styles.range}>
-        <Text style={styles.rangeText}>{MIN_RADIUS} m</Text>
-        <Text style={styles.rangeText}>{MAX_RADIUS} m</Text>
+      <View
+        style={styles.range}
+        onLayout={event => setTickWidth(event.nativeEvent.layout.width)}
+      >
+        {TICKS.map((tick, index) => {
+          const isLast = index === TICKS.length - 1;
+          const left = radiusToSliderRatio(tick) * tickWidth;
+          return (
+            <Text
+              key={tick}
+              style={[
+                styles.rangeText,
+                isLast ? { right: 0 } : { left: index === 0 ? 0 : left - TICK_LABEL_WIDTH / 2 },
+                index > 0 && !isLast && styles.centeredTick,
+              ]}
+            >
+              {tick} m
+            </Text>
+          );
+        })}
       </View>
     </View>
   );
@@ -83,7 +140,14 @@ const styles = StyleSheet.create({
   container: { gap: 1, backgroundColor: Colors.bg.card, borderRadius: 12, padding: 13 },
   valueRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   label: { color: Colors.text.secondary, fontSize: 14, fontWeight: '600' },
-  value: { color: Colors.cue.location, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  value: {
+    minWidth: 52,
+    textAlign: 'center',
+    color: Colors.cue.location,
+    fontSize: 15,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+  },
   hitArea: { height: 44, justifyContent: 'center' },
   track: { height: 6, borderRadius: 3, overflow: 'hidden', backgroundColor: Colors.bg.input },
   fill: { height: '100%', backgroundColor: Colors.cue.location },
@@ -96,6 +160,8 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: Colors.bg.card,
   },
-  range: { flexDirection: 'row', justifyContent: 'space-between' },
-  rangeText: { color: Colors.text.faint, fontSize: 11, fontWeight: '600' },
+  stepper: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  range: { height: 16 },
+  rangeText: { position: 'absolute', color: Colors.text.faint, fontSize: 11, fontWeight: '600' },
+  centeredTick: { width: TICK_LABEL_WIDTH, textAlign: 'center' },
 });

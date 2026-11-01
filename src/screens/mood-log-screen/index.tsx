@@ -79,7 +79,6 @@ export function MoodLogScreen() {
 
         <Button
           variant="primary"
-          style={styles.doneButton}
           onPress={handleDone}
         >
           Done
@@ -104,5 +103,4 @@ const styles = StyleSheet.create({
     padding: 13,
     fontSize: 14,
   },
-  doneButton: { borderRadius: 999 },
 });

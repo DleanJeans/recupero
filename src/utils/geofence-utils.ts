@@ -55,3 +55,40 @@ export function formatGeocodedAddress(address: GeocodedAddressParts): string {
 export function formatCoordinate(point: GeoPoint): string {
   return `${point.lat.toFixed(5)}, ${point.lng.toFixed(5)}`;
 }
+
+export const MIN_GEOFENCE_RADIUS_M = 1;
+/** Large building / small campus. Bigger areas are better split into several places. */
+export const MAX_GEOFENCE_RADIUS_M = 200;
+const FINE_STEP_LIMIT_M = 50;
+
+export function clampGeofenceRadius(radiusM: number): number {
+  return Math.max(MIN_GEOFENCE_RADIUS_M, Math.min(MAX_GEOFENCE_RADIUS_M, radiusM));
+}
+
+/** 1 m steps for small radii, 5 m steps above 50 m. */
+export function roundGeofenceRadius(radiusM: number): number {
+  const step = radiusM < FINE_STEP_LIMIT_M ? 1 : 5;
+  return clampGeofenceRadius(Math.round(radiusM / step) * step);
+}
+
+/**
+ * Log-scale slider mapping: equal slider distance = equal ratio change, so
+ * 10→20 m gets as much travel as 100→200 m.
+ */
+export function radiusToSliderRatio(radiusM: number): number {
+  const clamped = clampGeofenceRadius(radiusM);
+  return Math.log(clamped / MIN_GEOFENCE_RADIUS_M) / Math.log(MAX_GEOFENCE_RADIUS_M / MIN_GEOFENCE_RADIUS_M);
+}
+
+export function sliderRatioToRadius(ratio: number): number {
+  const clampedRatio = Math.max(0, Math.min(1, ratio));
+  const raw = MIN_GEOFENCE_RADIUS_M * (MAX_GEOFENCE_RADIUS_M / MIN_GEOFENCE_RADIUS_M) ** clampedRatio;
+  return roundGeofenceRadius(raw);
+}
+
+/** Next radius for the −/+ buttons: 1 m below 50 m, 5 m above. */
+export function stepGeofenceRadius(radiusM: number, direction: 1 | -1): number {
+  const current = clampGeofenceRadius(radiusM);
+  const step = direction > 0 ? (current < FINE_STEP_LIMIT_M ? 1 : 5) : current <= FINE_STEP_LIMIT_M ? 1 : 5;
+  return roundGeofenceRadius(current + step * direction);
+}
