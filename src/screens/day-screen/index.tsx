@@ -7,6 +7,7 @@ import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { useDeferredComputation } from '../../hooks/use-deferred-computation';
 import { useBehaviorStore } from '../../store/behavior-store';
+import { useCuesStore } from '../../store/cues-store';
 import { useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
 import type { RootStackParamList } from '../../types/navigation';
@@ -18,6 +19,7 @@ import {
 import { getCalendarStarMetrics } from '../../utils/calendar-metrics';
 import { Colors } from '../../utils/colors';
 import { toDateString } from '../../utils/date-utils';
+import { buildDayTimeline } from '../../utils/day-timeline-utils';
 import { getLogEndTimestamp } from '../../utils/log-utils';
 import { getThresholds, getTotalStarsForDate } from '../../utils/star-utils';
 import { getTaskStarsForDate } from '../../utils/task-utils';
@@ -33,6 +35,8 @@ export function DayScreen() {
   const behaviors = useBehaviorStore(s => s.behaviors);
   const categories = useBehaviorStore(s => s.categories);
   const tasks = useBehaviorStore(s => s.tasks);
+  const moodLogs = useCuesStore(s => s.moodLogs);
+  const bodyLogs = useCuesStore(s => s.bodyLogs);
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const dayScreenSelectedDate = useScreenUiStore(s => s.dayScreenSelectedDate);
   const setDayScreenSelectedDate = useScreenUiStore(s => s.setDayScreenSelectedDate);
@@ -57,6 +61,12 @@ export function DayScreen() {
   const dayLogs = useMemo(() => {
     return getBehaviorLogsForDate(behaviors, selectedDate, dayCutoffHour);
   }, [behaviors, dayCutoffHour, selectedDate]);
+
+  // Behaviour logs (stacks grouped) interleaved with mood and body check-ins
+  const timelineItems = useMemo(
+    () => buildDayTimeline(dayLogs, moodLogs, bodyLogs, selectedDate, dayCutoffHour),
+    [bodyLogs, dayCutoffHour, dayLogs, moodLogs, selectedDate],
+  );
 
   // Total entry count
   const totalEntries = dayLogs.length;
@@ -169,7 +179,7 @@ export function DayScreen() {
         <>
           <DayStatsStrip items={summaryItems} />
           <LogList
-            entries={dayLogs}
+            items={timelineItems}
             selectedDate={selectedDate}
             categories={categories}
             onEditLog={handleEditLog}

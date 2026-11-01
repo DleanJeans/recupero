@@ -2,19 +2,21 @@ import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
 import type { Category } from '../../../types/behavior';
-import type { DayLogEntry } from '../../../utils/behavior-utils';
 import { Colors } from '../../../utils/colors';
+import type { DayTimelineItem } from '../../../utils/day-timeline-utils';
 import { formatDuration, MS_PER_MINUTE } from '../../../utils/time-utils';
 import { DayLogCard } from './day-log-card';
+import { StackedLogGroup } from './stacked-log-group';
+import { StateLogCard } from './state-log-card';
 
 interface LogListProps {
-  entries: DayLogEntry[];
+  items: DayTimelineItem[];
   selectedDate: string;
   categories: Category[];
   onEditLog: (behaviorId: string, logId: string) => void;
 }
 
-export function LogList({ entries, selectedDate, categories, onEditLog }: LogListProps) {
+export function LogList({ items, selectedDate, categories, onEditLog }: LogListProps) {
   return (
     <ScrollView
       style={styles.scrollView}
@@ -22,15 +24,15 @@ export function LogList({ entries, selectedDate, categories, onEditLog }: LogLis
       showsVerticalScrollIndicator={false}
       contentInsetAdjustmentBehavior="automatic"
     >
-      {entries.length === 0 ? (
+      {items.length === 0 ? (
         <Text style={styles.empty}>No logs for this date.</Text>
       ) : (
-        entries.map((entry, index) => {
-          const previousEntry = entries[index - 1];
-          const gap = previousEntry ? previousEntry.log.timestamp - entry.log.timestamp : 0;
+        items.map((item, index) => {
+          const previousItem = items[index - 1];
+          const gap = previousItem ? previousItem.timestamp - item.timestamp : 0;
           const showGap = gap >= MS_PER_MINUTE;
           return (
-            <React.Fragment key={entry.log.id}>
+            <React.Fragment key={item.key}>
               {showGap && (
                 <View style={styles.gapRow}>
                   <View style={styles.gapDot} />
@@ -38,12 +40,31 @@ export function LogList({ entries, selectedDate, categories, onEditLog }: LogLis
                   <View style={styles.gapDot} />
                 </View>
               )}
-              <DayLogCard
-                entry={entry}
-                selectedDate={selectedDate}
-                categories={categories}
-                onEditLog={onEditLog}
-              />
+              {item.kind === 'mood' ? (
+                <StateLogCard
+                  kind="mood"
+                  log={item.log}
+                />
+              ) : item.kind === 'body' ? (
+                <StateLogCard
+                  kind="body"
+                  log={item.log}
+                />
+              ) : item.entries.length > 1 ? (
+                <StackedLogGroup
+                  entries={item.entries}
+                  selectedDate={selectedDate}
+                  categories={categories}
+                  onEditLog={onEditLog}
+                />
+              ) : (
+                <DayLogCard
+                  entry={item.entries[0]}
+                  selectedDate={selectedDate}
+                  categories={categories}
+                  onEditLog={onEditLog}
+                />
+              )}
             </React.Fragment>
           );
         })
