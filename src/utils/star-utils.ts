@@ -52,6 +52,28 @@ export function getNextStarThreshold(logCount: number, thresholds: readonly (num
   return configuredThresholds.find(threshold => logCount < threshold) ?? configuredThresholds.at(-1);
 }
 
+/** "Today: 2/3"-style label for the next star threshold, or null when the
+ *  behavior has no thresholds. `targetDateStr` picks the star period;
+ *  the period prefix only shows when the last log falls in the current one. */
+export function getStarLogCountSummary(
+  behavior: BehaviorEntry,
+  targetDateStr: string,
+  todayStr: string,
+  dayCutoffHour: number,
+): string | null {
+  const thresholds = getThresholds(behavior);
+  if (!thresholds) return null;
+  const starPeriod = getStarPeriod(behavior);
+  const logCount = getLogCountForPeriod(behavior, starPeriod, targetDateStr, dayCutoffHour);
+  const nextThreshold = getNextStarThreshold(logCount, thresholds);
+  if (nextThreshold == null) return null;
+  const lastLogDateStr =
+    behavior.lastTimestamp == null ? null : toDateString(new Date(behavior.lastTimestamp), dayCutoffHour);
+  const periodLabel = getStarPeriodLogCountLabel(starPeriod, lastLogDateStr, todayStr);
+  const progressLabel = `${logCount}/${nextThreshold}`;
+  return periodLabel ? `${periodLabel}: ${progressLabel}` : progressLabel;
+}
+
 /** Number of stars earned (0..3) given a log count and the
  *  behavior's thresholds. A null at index 0 or 1 is a placeholder:
  *  it fills when the first non-null threshold to its right is met.

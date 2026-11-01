@@ -6,13 +6,7 @@ import { getBehaviorTypeColor } from '../utils/behavior-type-utils';
 import { Colors } from '../utils/colors';
 import { isCooldownActive } from '../utils/cooldown-utils';
 import { toDateString } from '../utils/date-utils';
-import {
-  getLogCountForPeriod,
-  getNextStarThreshold,
-  getStarPeriod,
-  getStarPeriodLogCountLabel,
-  getThresholds,
-} from '../utils/star-utils';
+import { getStarLogCountSummary } from '../utils/star-utils';
 import { getEffectiveXp } from '../utils/xp-utils';
 import { AutoFitHeaderTitle } from './auto-fit-header-title';
 import { BehaviorElapsed } from './behavior-elapsed';
@@ -86,21 +80,10 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
     [dayCutoffHour, resolvedNow, tick],
   );
   const starTargetDate = dateStr ?? todayStr;
-  const starLogCountSummary = useMemo(() => {
-    const thresholds = getThresholds(behavior);
-    if (!thresholds) return null;
-
-    const starPeriod = getStarPeriod(behavior);
-    const logCount = getLogCountForPeriod(behavior, starPeriod, starTargetDate, dayCutoffHour);
-    const nextThreshold = getNextStarThreshold(logCount, thresholds);
-    if (nextThreshold == null) return null;
-
-    const lastLogDateStr =
-      behavior.lastTimestamp == null ? null : toDateString(new Date(behavior.lastTimestamp), dayCutoffHour);
-    const periodLabel = getStarPeriodLogCountLabel(starPeriod, lastLogDateStr, todayStr);
-    const progressLabel = `${logCount}/${nextThreshold}`;
-    return periodLabel ? `${periodLabel}: ${progressLabel}` : progressLabel;
-  }, [behavior, dayCutoffHour, starTargetDate, todayStr]);
+  const starLogCountSummary = useMemo(
+    () => getStarLogCountSummary(behavior, starTargetDate, todayStr, dayCutoffHour),
+    [behavior, dayCutoffHour, starTargetDate, todayStr],
+  );
 
   const elapsedOnly = inlineElapsedWhenNoCooldown && !isCooldownActive(behavior);
   const inlineElapsed =
