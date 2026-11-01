@@ -4,7 +4,7 @@ import { type MoneyRewardPreview, REWARD_ANIMATION_MS } from '../../../component
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useCuesStore } from '../../../store/cues-store';
 import { useSettingsStore } from '../../../store/settings-store';
-import type { BehaviorEntry, LogEntry, MetadataField } from '../../../types/behavior';
+import type { BehaviorEntry, LogEntry } from '../../../types/behavior';
 import type { CueRef } from '../../../types/cue';
 import { placeCueRef } from '../../../utils/cue-utils';
 import { toDateString } from '../../../utils/date-utils';
@@ -18,13 +18,17 @@ import {
 } from '../../../utils/log-utils';
 import {
   buildCalculatedMetadata,
+  buildLogMetadata,
   type DailyGoalProgress,
-  formatMetadataFieldLabel,
+  getBehaviorAmountField,
+  getBehaviorMetadataFields,
   getCalculatedMetadataFields,
   getDailyGoalProgress,
+  getInitialLogMetadataValues,
   getManualMetadataFields,
   getSelectedAmountMetadataField,
   parseDecimalInput,
+  type StackedLog,
 } from '../../../utils/metadata-calculation-utils';
 import { getMoneyRewardForLog, getStarMoneyMultiplierForLog } from '../../../utils/money-utils';
 import { formatDuration } from '../../../utils/time-utils';
@@ -150,15 +154,51 @@ export function useBehaviorLogForm({
         const value = existingLog.metadata[field.key];
         if (value != null) values[field.key] = String(value);
       }
-    } else if (behavior.defaultMetadata) {
-      const defaultMetadataFields = amountField ? [amountField, ...manualMetadataFields] : manualMetadataFields;
-      for (const field of defaultMetadataFields) {
-        const value = behavior.defaultMetadata[field.key];
-        if (value != null) values[field.key] = String(value);
-      }
+    } else {
+      Object.assign(values, getInitialLogMetadataValues(metadataFields, amountField, behavior.defaultMetadata));
     }
     return values;
   });
+  const categories = useBehaviorStore(state => state.categories);
+  /** Other behaviours logged together with this one (habit stacking). New logs only. */
+  const [stackedLogs, setStackedLogs] = useState<StackedLog[]>([]);
+  const addStackedBehavior = useCallback(
+    (stackedBehaviorId: string) => {
+      const stackedBehavior = allBehaviors.find(b => b.id === stackedBehaviorId);
+      if (!stackedBehavior) return;
+      setStackedLogs(current => {
+        if (stackedBehaviorId === behaviorId || current.some(item => item.behaviorId === stackedBehaviorId)) {
+          return current;
+        }
+        const fields = getBehaviorMetadataFields(stackedBehavior, categories);
+        const values = getInitialLogMetadataValues(
+          fields,
+          getBehaviorAmountField(stackedBehavior, fields),
+          stackedBehavior.defaultMetadata,
+        );
+        return [...current, { behaviorId: stackedBehaviorId, metadataValues: values }];
+      });
+    },
+    [allBehaviors, behaviorId, categories],
+  );
+  const removeStackedBehavior = useCallback((stackedBehaviorId: string) => {
+    setStackedLogs(current => current.filter(item => item.behaviorId !== stackedBehaviorId));
+  }, []);
+  const setStackedMetadataValues = useCallback(
+    (stackedBehaviorId: string, update: React.SetStateAction<Record<string, string>>) => {
+      setStackedLogs(current =>
+        current.map(item =>
+          item.behaviorId === stackedBehaviorId
+            ? {
+                ...item,
+                metadataValues: typeof update === 'function' ? update(item.metadataValues) : update,
+              }
+            : item,
+        ),
+      );
+    },
+    [],
+  );
   const calculatedMetadataValues = useMemo(() => {
     if (!amountField) return {};
     const amountValue = metadataValues[amountField.key];
@@ -323,28 +363,13 @@ export function useBehaviorLogForm({
     const startTimestamp = Math.min(rawStartTimestamp, endTimestamp);
     const saveEndTimestamp = showTimeRange ? endTimestamp : undefined;
 
-    const metadata: Record<string, string | number> = {};
-    if (notes.trim()) metadata.notes = notes.trim();
-    const metadataInputFields: MetadataField[] = amountField ? [amountField, ...manualMetadataFields] : metadataFields;
-    for (const field of metadataInputFields) {
-      const value = metadataValues[field.key];
-      const parsed = value === undefined ? undefined : parseDecimalInput(value);
-      if (parsed != null) {
-        metadata[field.key] = parsed;
-      }
-    }
-    if (amountField) {
-      Object.assign(metadata, calculatedMetadataValues);
-      for (const field of calculatedMetadataFields) {
-        if (metadata[field.key] != null) continue;
-        const value = metadataValues[field.key];
-        const parsed = value === undefined ? undefined : parseDecimalInput(value);
-        if (parsed != null) {
-          metadata[field.key] = parsed;
-        }
-      }
-    }
-    const metadataOrUndefined = Object.keys(metadata).length > 0 ? metadata : undefined;
+    const metadataOrUndefined = buildLogMetadata({
+      fields: metadataFields,
+      amountField,
+      values: metadataValues,
+      defaultMetadata: behavior.defaultMetadata,
+      notes,
+    });
 
     if (editLogId) {
       updateLog(behaviorId, editLogId, startTimestamp, metadataOrUndefined, saveEndTimestamp, selectedCues);
@@ -353,6 +378,25 @@ export function useBehaviorLogForm({
     }
 
     logBehavior(behaviorId, startTimestamp, metadataOrUndefined, saveEndTimestamp, selectedCues);
+    // Habit stack: every stacked behaviour shares the time, cues and notes, with its own metadata.
+    for (const stacked of stackedLogs) {
+      const stackedBehavior = allBehaviors.find(b => b.id === stacked.behaviorId);
+      if (!stackedBehavior) continue;
+      const stackedFields = getBehaviorMetadataFields(stackedBehavior, categories);
+      logBehavior(
+        stacked.behaviorId,
+        startTimestamp,
+        buildLogMetadata({
+          fields: stackedFields,
+          amountField: getBehaviorAmountField(stackedBehavior, stackedFields),
+          values: stacked.metadataValues,
+          defaultMetadata: stackedBehavior.defaultMetadata,
+          notes,
+        }),
+        saveEndTimestamp,
+        selectedCues,
+      );
+    }
 
     const delay = hasReward ? REWARD_ANIMATION_MS : 0;
     if (delay > 0) {
@@ -373,17 +417,17 @@ export function useBehaviorLogForm({
       onSaved();
     }, delay);
   }, [
+    allBehaviors,
     amountField,
+    behavior.defaultMetadata,
     behaviorId,
-    calculatedMetadataFields,
-    calculatedMetadataValues,
+    categories,
     editLogId,
     endHour,
     endMinute,
     endSecond,
     dayCutoffHour,
     logBehavior,
-    manualMetadataFields,
     maxTimestampForDate,
     metadataFields,
     metadataValues,
@@ -393,6 +437,7 @@ export function useBehaviorLogForm({
     selectedDate,
     showSeconds,
     showTimeRange,
+    stackedLogs,
     startHour,
     startMinute,
     startSecond,
@@ -443,6 +488,7 @@ export function useBehaviorLogForm({
   );
 
   return {
+    addStackedBehavior,
     amountField,
     applyEndSeconds,
     applyStartSeconds,
@@ -469,16 +515,19 @@ export function useBehaviorLogForm({
     notesRef,
     pending,
     progressByField,
+    removeStackedBehavior,
     renderTimePicker,
     selectedCues,
     selectedDate,
     setMetadataValues,
     setNotes,
     setSelectedDate,
+    setStackedMetadataValues,
     showTimeRange,
     showSeconds,
     startHour,
     startMinute,
+    stackedLogs,
     startSecond,
     todayStr,
     toggleCue,

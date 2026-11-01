@@ -22,6 +22,7 @@ export function BehaviorLogActions({ form }: Props) {
     moneyRewardMultiplier,
     moneyRewardOriginalAmount,
     pending,
+    stackedLogs,
   } = form;
 
   return (
@@ -64,6 +65,8 @@ export function BehaviorLogActions({ form }: Props) {
             />
           ) : editLogId ? (
             'Save'
+          ) : stackedLogs.length > 0 ? (
+            `Log ${stackedLogs.length + 1}`
           ) : (
             'Log'
           )}

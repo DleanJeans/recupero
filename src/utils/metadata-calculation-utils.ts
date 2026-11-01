@@ -257,3 +257,80 @@ export function getDailyGoalProgress({
 
   return { current, after, goal, deltaPercent };
 }
+
+/** Text-input values a new log form starts with: the behaviour's defaults for the amount and manual fields. */
+export function getInitialLogMetadataValues(
+  fields: MetadataField[],
+  amountField: MetadataField | undefined,
+  defaultMetadata: Record<string, number> | undefined,
+): Record<string, string> {
+  const values: Record<string, string> = {};
+  if (!defaultMetadata) return values;
+  const manualFields = getManualMetadataFields(fields);
+  for (const field of amountField ? [amountField, ...manualFields] : manualFields) {
+    const value = defaultMetadata[field.key];
+    if (value != null) values[field.key] = String(value);
+  }
+  return values;
+}
+
+interface BuildLogMetadataParams {
+  fields: MetadataField[];
+  amountField?: MetadataField;
+  values: Record<string, string>;
+  defaultMetadata?: Record<string, number>;
+  notes?: string;
+}
+
+/** Turns log form inputs into the metadata saved on a LogEntry (per-100 fields are calculated from the amount). */
+export function buildLogMetadata({
+  fields,
+  amountField,
+  values,
+  defaultMetadata,
+  notes,
+}: BuildLogMetadataParams): Record<string, string | number> | undefined {
+  const metadata: Record<string, string | number> = {};
+  const trimmedNotes = notes?.trim();
+  if (trimmedNotes) metadata.notes = trimmedNotes;
+  const parse = (field: MetadataField) => {
+    const value = values[field.key];
+    return value === undefined ? undefined : parseDecimalInput(value);
+  };
+  const inputFields = amountField ? [amountField, ...getManualMetadataFields(fields)] : fields;
+  for (const field of inputFields) {
+    const parsed = parse(field);
+    if (parsed != null) metadata[field.key] = parsed;
+  }
+  if (amountField) {
+    const amountValue = values[amountField.key];
+    if (amountValue !== undefined && amountValue !== '') {
+      Object.assign(metadata, buildCalculatedMetadata(fields, defaultMetadata, parseDecimalInput(amountValue)));
+    }
+    for (const field of getCalculatedMetadataFields(fields)) {
+      if (metadata[field.key] != null) continue;
+      const parsed = parse(field);
+      if (parsed != null) metadata[field.key] = parsed;
+    }
+  }
+  return Object.keys(metadata).length > 0 ? metadata : undefined;
+}
+
+/** A behaviour logged together with the one the log form is open for (habit stacking). */
+export interface StackedLog {
+  behaviorId: string;
+  /** Metadata text-input values, keyed by field key. */
+  metadataValues: Record<string, string>;
+}
+
+export function getBehaviorMetadataFields(
+  behavior: BehaviorEntry,
+  categories: { id: string; metadataFields?: MetadataField[] }[],
+): MetadataField[] {
+  if (!behavior.categoryId) return [];
+  return categories.find(category => category.id === behavior.categoryId)?.metadataFields ?? [];
+}
+
+export function getBehaviorAmountField(behavior: BehaviorEntry, fields: MetadataField[]): MetadataField | undefined {
+  return getSelectedAmountMetadataField(fields, behavior.metadataAmountFieldKey, behavior.metadataQuantityUnit);
+}

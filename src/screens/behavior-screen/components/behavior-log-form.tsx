@@ -10,6 +10,7 @@ import { formatMetadataFieldLabel, getMetadataFieldCalculation } from '../../../
 import { formatDuration } from '../../../utils/time-utils';
 import { CalculatedMetadataFields } from './calculated-metadata-fields';
 import { MetadataInputRow } from './metadata-input-row';
+import { StackedBehaviorsSection } from './stacked-behaviors-section';
 import type { BehaviorLogFormModel } from './use-behavior-log-form';
 
 interface Props {
@@ -26,6 +27,7 @@ export function BehaviorLogForm({ form }: Props) {
     calculatedMetadataFields,
     calculatedMetadataValues,
     durationMs,
+    editLogId,
     endHour,
     endMinute,
     endSecond,
@@ -160,7 +162,17 @@ export function BehaviorLogForm({ form }: Props) {
             })}
           </View>
 
-          <Text style={[styles.sectionLabel, metadataFields.length > 0 && styles.cuesLabelAfterMetadata]}>Cues</Text>
+          {!editLogId && (
+            <View style={metadataFields.length > 0 && styles.stackAfterMetadata}>
+              <StackedBehaviorsSection form={form} />
+            </View>
+          )}
+
+          <Text
+            style={[styles.sectionLabel, metadataFields.length > 0 && !!editLogId && styles.cuesLabelAfterMetadata]}
+          >
+            Cues
+          </Text>
           <View style={styles.cuePicker}>
             <CuePicker
               selected={selectedCues}
@@ -292,6 +304,9 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   cuesLabelAfterMetadata: {
+    marginTop: 20,
+  },
+  stackAfterMetadata: {
     marginTop: 20,
   },
   cuePicker: {
