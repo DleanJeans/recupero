@@ -37,8 +37,11 @@ if (!process.env.GOOGLE_MAPS_API_KEY) {
   console.warn('GOOGLE_MAPS_API_KEY is not set: the location cue map will render blank on Android.');
 }
 
+// Every variant needs the bigger Gradle heap/Metaspace and no daemon: without it, release builds
+// run out of Metaspace in the Kotlin/KSP tasks and the leftover daemon keeps `eas build --local` hanging.
+plugins.push('./plugins/withJVMMemory');
+
 if (isDev) {
-  plugins.push('./plugins/withJVMMemory');
   plugins.push(['expo-dev-client', { launchMode: 'most-recent' }]);
 }
 
