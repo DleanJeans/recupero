@@ -10,6 +10,13 @@ export async function getCurrentPoint(): Promise<GeoPoint | null> {
   return { lat: position.coords.latitude, lng: position.coords.longitude };
 }
 
+/** Device position without prompting: null unless location permission was already granted. */
+export async function getCurrentPointIfPermitted(): Promise<GeoPoint | null> {
+  const { status } = await Location.getForegroundPermissionsAsync();
+  if (status !== 'granted') return null;
+  return getCurrentPoint();
+}
+
 export async function geocodeAddress(query: string): Promise<GeoPoint | null> {
   const results = await Location.geocodeAsync(query);
   const first = results[0];

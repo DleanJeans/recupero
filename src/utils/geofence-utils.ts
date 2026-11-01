@@ -92,3 +92,24 @@ export function stepGeofenceRadius(radiusM: number, direction: 1 | -1): number {
   const step = direction > 0 ? (current < FINE_STEP_LIMIT_M ? 1 : 5) : current <= FINE_STEP_LIMIT_M ? 1 : 5;
   return roundGeofenceRadius(current + step * direction);
 }
+
+const EARTH_RADIUS_M = 6_371_000;
+
+/** Great-circle distance between two points, in metres. */
+export function distanceMeters(a: GeoPoint, b: GeoPoint): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * EARTH_RADIUS_M * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+/** The closest place whose geofence contains the point, if any. */
+export function findPlaceAtPoint<T extends GeoPoint & { radiusM: number }>(places: T[], point: GeoPoint): T | undefined {
+  let best: { place: T; distance: number } | undefined;
+  for (const place of places) {
+    const distance = distanceMeters(place, point);
+    if (distance <= place.radiusM && (!best || distance < best.distance)) best = { place, distance };
+  }
+  return best?.place;
+}

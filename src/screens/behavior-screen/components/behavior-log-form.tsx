@@ -160,7 +160,7 @@ export function BehaviorLogForm({ form }: Props) {
             })}
           </View>
 
-          <Text style={styles.sectionLabel}>Cues</Text>
+          <Text style={[styles.sectionLabel, metadataFields.length > 0 && styles.cuesLabelAfterMetadata]}>Cues</Text>
           <View style={styles.cuePicker}>
             <CuePicker
               selected={selectedCues}
@@ -290,6 +290,9 @@ const styles = StyleSheet.create({
   bodyContent: {
     paddingHorizontal: 16,
     paddingBottom: 120,
+  },
+  cuesLabelAfterMetadata: {
+    marginTop: 20,
   },
   cuePicker: {
     marginBottom: 20,

@@ -1,5 +1,7 @@
 import {
   clampGeofenceRadius,
+  distanceMeters,
+  findPlaceAtPoint,
   formatCoordinate,
   formatGeocodedAddress,
   radiusToSliderRatio,
@@ -80,5 +82,20 @@ describe('geofence radius slider', () => {
     expect(stepGeofenceRadius(55, -1)).toBe(50);
     expect(stepGeofenceRadius(1, -1)).toBe(1);
     expect(stepGeofenceRadius(200, 1)).toBe(200);
+  });
+});
+
+describe('findPlaceAtPoint', () => {
+  const cafe = { id: 'cafe', lat: 10.7769, lng: 106.7009, radiusM: 30 };
+  const gym = { id: 'gym', lat: 10.7772, lng: 106.7009, radiusM: 100 };
+
+  it('measures roughly 33 m for 0.0003 degrees of latitude', () => {
+    expect(distanceMeters(cafe, gym)).toBeGreaterThan(32);
+    expect(distanceMeters(cafe, gym)).toBeLessThan(35);
+  });
+
+  it('picks the closest place whose radius contains the point', () => {
+    expect(findPlaceAtPoint([gym, cafe], { lat: 10.7769, lng: 106.7009 })?.id).toBe('cafe');
+    expect(findPlaceAtPoint([cafe], { lat: 10.78, lng: 106.7009 })).toBeUndefined();
   });
 });

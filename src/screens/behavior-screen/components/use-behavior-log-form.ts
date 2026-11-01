@@ -2,10 +2,14 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Alert, Keyboard } from 'react-native';
 import { type MoneyRewardPreview, REWARD_ANIMATION_MS } from '../../../components/log-reward-preview';
 import { useBehaviorStore } from '../../../store/behavior-store';
+import { useCuesStore } from '../../../store/cues-store';
 import { useSettingsStore } from '../../../store/settings-store';
 import type { BehaviorEntry, LogEntry, MetadataField } from '../../../types/behavior';
 import type { CueRef } from '../../../types/cue';
+import { placeCueRef } from '../../../utils/cue-utils';
 import { toDateString } from '../../../utils/date-utils';
+import { findPlaceAtPoint } from '../../../utils/geofence-utils';
+import { getCurrentPointIfPermitted } from '../../../utils/location-utils';
 import {
   getDayMaxTimestamp,
   getDefaultTimedLogStartTimestamp,
@@ -105,11 +109,30 @@ export function useBehaviorLogForm({
   const [selectedCues, setSelectedCues] = useState<CueRef[]>(() =>
     existingLog ? (existingLog.cues ?? []) : (initialCues ?? []),
   );
-  const toggleCue = useCallback(
-    (ref: CueRef) =>
-      setSelectedCues(current => (current.includes(ref) ? current.filter(item => item !== ref) : [...current, ref])),
-    [],
-  );
+  /** Set once the user taps a place cue, so the automatic place pick never overrides their choice. */
+  const placeCueTouchedRef = useRef(false);
+  const toggleCue = useCallback((ref: CueRef) => {
+    if (ref.startsWith('place:')) placeCueTouchedRef.current = true;
+    setSelectedCues(current => (current.includes(ref) ? current.filter(item => item !== ref) : [...current, ref]));
+  }, []);
+  const places = useCuesStore(state => state.places);
+  // New logs: pre-select the saved place the phone is currently inside (only if location is already allowed).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only check the location once, when the form opens
+  useEffect(() => {
+    if (existingLog || places.length === 0) return;
+    let cancelled = false;
+    getCurrentPointIfPermitted()
+      .then(point => {
+        const place = point ? findPlaceAtPoint(places, point) : undefined;
+        if (cancelled || !place || placeCueTouchedRef.current) return;
+        const ref = placeCueRef(place.id);
+        setSelectedCues(current => (current.includes(ref) ? current : [...current, ref]));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [timePickerCollapsed, setTimePickerCollapsed] = useState(true);
 
   const metadataFields = useMemo(() => category?.metadataFields ?? [], [category?.metadataFields]);
