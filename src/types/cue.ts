@@ -4,6 +4,14 @@ export type MoodId = 'great' | 'good' | 'okay' | 'stressed' | 'low' | 'tired';
 
 export type BodySensationId = 'pee' | 'hungry' | 'thirsty' | 'tired' | 'sleepy' | 'aches';
 
+/**
+ * Something that prompted a behaviour log: a saved place, a mood, or a body sensation.
+ * Stored on LogEntry.cues as `place:<placeId>`, `mood:<MoodId>` or `body:<BodySensationId>`.
+ */
+export type CueRef = `place:${string}` | `mood:${MoodId}` | `body:${BodySensationId}`;
+
+export type CueSourceKind = 'place' | 'mood' | 'body';
+
 export type CueTrigger =
   | { type: 'location'; placeId: string; direction: 'enter' | 'exit' }
   | { type: 'time'; mode: 'simple'; at: string; repeatDays: number[] }

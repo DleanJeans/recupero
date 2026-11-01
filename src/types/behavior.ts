@@ -1,3 +1,5 @@
+import type { CueRef } from './cue';
+
 export type MetadataFieldCalculation = 'manual' | 'amount' | 'per100';
 
 export interface MetadataField {
@@ -23,6 +25,8 @@ export interface LogEntry {
   metadata?: Record<string, string | number>;
   /** Set on logs created by automatic tracking. Undefined for manual logs. */
   source?: LogSource;
+  /** Cues (place, mood, body sensation) that led to this log. Undefined when none were picked. */
+  cues?: CueRef[];
 }
 
 export type LogSource = 'app-usage' | 'site-visit';

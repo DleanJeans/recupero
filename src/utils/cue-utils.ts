@@ -3,6 +3,8 @@ import type {
   BodySensationId,
   BodySensationLog,
   Cue,
+  CueRef,
+  CueSourceKind,
   CueTrigger,
   CueTriggerType,
   MoodId,
@@ -10,6 +12,7 @@ import type {
   SavedPlace,
 } from '../types/cue';
 import { Colors } from './colors';
+import { getLogXp } from './xp-utils';
 
 export const MOOD_OPTIONS: ReadonlyArray<{ id: MoodId; emoji: string; label: string }> = [
   { id: 'great', emoji: '😄', label: 'Great' },
@@ -159,4 +162,67 @@ export function dateFromCueTime(at: string): Date {
 
 export function cueTimeFromDate(date: Date): string {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+export function placeCueRef(placeId: string): CueRef {
+  return `place:${placeId}`;
+}
+
+export function moodCueRef(mood: MoodId): CueRef {
+  return `mood:${mood}`;
+}
+
+export function bodyCueRef(sensation: BodySensationId): CueRef {
+  return `body:${sensation}`;
+}
+
+export interface CueSource {
+  ref: CueRef;
+  kind: CueSourceKind;
+  label: string;
+  emoji?: string;
+}
+
+/** Every cue a log can be attached to: saved places, then moods, then body sensations. */
+export function getCueSources(places: SavedPlace[]): CueSource[] {
+  return [
+    ...places.map(place => ({ ref: placeCueRef(place.id), kind: 'place' as const, label: place.name })),
+    ...MOOD_OPTIONS.map(option => ({
+      ref: moodCueRef(option.id),
+      kind: 'mood' as const,
+      label: option.label,
+      emoji: option.emoji,
+    })),
+    ...BODY_SENSATION_OPTIONS.map(option => ({
+      ref: bodyCueRef(option.id),
+      kind: 'body' as const,
+      label: option.label,
+      emoji: option.emoji,
+    })),
+  ];
+}
+
+export interface CueXpStats {
+  xp: number;
+  logCount: number;
+}
+
+/** XP and log count earned by behaviours logged with each cue. A log with two cues counts toward both. */
+export function getCueXpStats(behaviors: BehaviorEntry[]): Map<CueRef, CueXpStats> {
+  const stats = new Map<CueRef, CueXpStats>();
+  for (const behavior of behaviors) {
+    for (const log of behavior.logs) {
+      if (!log.cues) continue;
+      const xp = getLogXp(log);
+      for (const ref of new Set(log.cues)) {
+        const current = stats.get(ref) ?? { xp: 0, logCount: 0 };
+        stats.set(ref, { xp: current.xp + xp, logCount: current.logCount + 1 });
+      }
+    }
+  }
+  return stats;
+}
+
+export function cueKindToTriggerType(kind: CueSourceKind): Extract<CueTriggerType, 'location' | 'mood' | 'body'> {
+  return kind === 'place' ? 'location' : kind;
 }

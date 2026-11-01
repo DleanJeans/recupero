@@ -9,7 +9,7 @@ import { useCuesStore } from '../../../store/cues-store';
 import type { MoodId } from '../../../types/cue';
 import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
-import { getMoodOption, getMoodSuggestedBehaviorIds } from '../../../utils/cue-utils';
+import { getMoodOption, getMoodSuggestedBehaviorIds, moodCueRef } from '../../../utils/cue-utils';
 
 interface MoodSuggestionsProps {
   mood: MoodId;
@@ -31,14 +31,20 @@ export function MoodSuggestions({ mood }: MoodSuggestionsProps) {
         Because you feel {moodOption.emoji} {moodOption.label}, Recupero suggests
       </Text>
       {suggested.length === 0 ? (
-        <Text style={styles.empty}>No enabled cues match this mood yet.</Text>
+        <Text style={styles.empty}>No reminders match this mood yet.</Text>
       ) : (
         <View style={styles.chips}>
           {suggested.map(behavior => (
             <Pressable
               key={behavior.id}
               style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
-              onPress={() => navigation.navigate('BehaviorLog', { behaviorId: behavior.id, initialMode: 'log' })}
+              onPress={() =>
+                navigation.navigate('BehaviorLog', {
+                  behaviorId: behavior.id,
+                  initialMode: 'log',
+                  initialCues: [moodCueRef(mood)],
+                })
+              }
               accessibilityRole="button"
               accessibilityLabel={`Log ${behavior.name}`}
               accessibilityHint="Double tap to open the behavior log."

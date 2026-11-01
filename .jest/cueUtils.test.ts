@@ -3,7 +3,9 @@ import type { Cue } from '../src/types/cue';
 import {
   createDefaultCueTrigger,
   getBodySuggestedBehaviorIds,
+  getCueSources,
   getCueTriggerLabel,
+  getCueXpStats,
   getMoodSuggestedBehaviorIds,
   getRecentBodySensation,
   isCueTriggerComplete,
@@ -101,5 +103,31 @@ describe('cue utils', () => {
     ];
     expect(getRecentBodySensation(logs, now)?.id).toBe('new');
     expect(getRecentBodySensation([logs[0]], now)).toBeUndefined();
+  });
+});
+
+describe('cue XP', () => {
+  const place = { id: 'gym', name: 'Gym', lat: 0, lng: 0, radiusM: 100, isHome: false };
+
+  it('lists saved places, then moods, then body sensations', () => {
+    const sources = getCueSources([place]);
+    expect(sources[0]).toMatchObject({ ref: 'place:gym', kind: 'place', label: 'Gym' });
+    expect(sources.filter(source => source.kind === 'mood')).toHaveLength(6);
+    expect(sources.filter(source => source.kind === 'body')).toHaveLength(6);
+  });
+
+  it('sums log XP for every cue attached to a log', () => {
+    const logged: BehaviorEntry = {
+      ...behavior,
+      logs: [
+        { id: 'a', timestamp: 0, cues: ['place:gym', 'mood:stressed'] },
+        { id: 'b', timestamp: 0, endTimestamp: 30 * 60 * 1000, cues: ['place:gym'] },
+        { id: 'c', timestamp: 0 },
+      ],
+    };
+    const stats = getCueXpStats([logged]);
+    expect(stats.get('place:gym')).toEqual({ xp: 35, logCount: 2 });
+    expect(stats.get('mood:stressed')).toEqual({ xp: 5, logCount: 1 });
+    expect(stats.get('body:pee')).toBeUndefined();
   });
 });

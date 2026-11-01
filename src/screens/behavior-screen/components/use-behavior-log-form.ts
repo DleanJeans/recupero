@@ -4,6 +4,7 @@ import { type MoneyRewardPreview, REWARD_ANIMATION_MS } from '../../../component
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useSettingsStore } from '../../../store/settings-store';
 import type { BehaviorEntry, LogEntry, MetadataField } from '../../../types/behavior';
+import type { CueRef } from '../../../types/cue';
 import { toDateString } from '../../../utils/date-utils';
 import {
   getDayMaxTimestamp,
@@ -31,6 +32,7 @@ export interface BehaviorLogFormProps {
   behavior: BehaviorEntry;
   editLogId?: string;
   initialNotes?: string;
+  initialCues?: CueRef[];
   timerStartTimestamp?: number;
   timerEndTimestamp?: number;
   onSaved: () => void;
@@ -41,6 +43,7 @@ export function useBehaviorLogForm({
   behavior,
   editLogId,
   initialNotes,
+  initialCues,
   timerStartTimestamp,
   timerEndTimestamp,
   onSaved,
@@ -99,6 +102,14 @@ export function useBehaviorLogForm({
     hasTimerRange || existingLog?.endTimestamp != null || (!existingLog && behavior.durationXpEnabled === true);
   const notesRef = useRef<import('react-native').TextInput>(null);
   const [notes, setNotes] = useState(String(existingLog?.metadata?.notes ?? initialNotes ?? ''));
+  const [selectedCues, setSelectedCues] = useState<CueRef[]>(() =>
+    existingLog ? (existingLog.cues ?? []) : (initialCues ?? []),
+  );
+  const toggleCue = useCallback(
+    (ref: CueRef) =>
+      setSelectedCues(current => (current.includes(ref) ? current.filter(item => item !== ref) : [...current, ref])),
+    [],
+  );
   const [timePickerCollapsed, setTimePickerCollapsed] = useState(true);
 
   const metadataFields = useMemo(() => category?.metadataFields ?? [], [category?.metadataFields]);
@@ -313,12 +324,12 @@ export function useBehaviorLogForm({
     const metadataOrUndefined = Object.keys(metadata).length > 0 ? metadata : undefined;
 
     if (editLogId) {
-      updateLog(behaviorId, editLogId, startTimestamp, metadataOrUndefined, saveEndTimestamp);
+      updateLog(behaviorId, editLogId, startTimestamp, metadataOrUndefined, saveEndTimestamp, selectedCues);
       onSaved();
       return;
     }
 
-    logBehavior(behaviorId, startTimestamp, metadataOrUndefined, saveEndTimestamp);
+    logBehavior(behaviorId, startTimestamp, metadataOrUndefined, saveEndTimestamp, selectedCues);
 
     const delay = hasReward ? REWARD_ANIMATION_MS : 0;
     if (delay > 0) {
@@ -355,6 +366,7 @@ export function useBehaviorLogForm({
     metadataValues,
     notes,
     onSaved,
+    selectedCues,
     selectedDate,
     showSeconds,
     showTimeRange,
@@ -435,6 +447,7 @@ export function useBehaviorLogForm({
     pending,
     progressByField,
     renderTimePicker,
+    selectedCues,
     selectedDate,
     setMetadataValues,
     setNotes,
@@ -445,6 +458,7 @@ export function useBehaviorLogForm({
     startMinute,
     startSecond,
     todayStr,
+    toggleCue,
   };
 }
 

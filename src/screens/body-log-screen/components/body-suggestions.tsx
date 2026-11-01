@@ -9,7 +9,7 @@ import { useCuesStore } from '../../../store/cues-store';
 import type { BodySensationId } from '../../../types/cue';
 import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
-import { getBodySensationOption, getBodySuggestedBehaviorIds } from '../../../utils/cue-utils';
+import { bodyCueRef, getBodySensationOption, getBodySuggestedBehaviorIds } from '../../../utils/cue-utils';
 
 interface BodySuggestionsProps {
   sensation: BodySensationId;
@@ -31,14 +31,20 @@ export function BodySuggestions({ sensation }: BodySuggestionsProps) {
         {option.emoji} {option.label}. Recupero suggests
       </Text>
       {suggested.length === 0 ? (
-        <Text style={styles.empty}>No enabled cues match this sensation yet.</Text>
+        <Text style={styles.empty}>No reminders match this sensation yet.</Text>
       ) : (
         <View style={styles.chips}>
           {suggested.map(behavior => (
             <Pressable
               key={behavior.id}
               style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
-              onPress={() => navigation.navigate('BehaviorLog', { behaviorId: behavior.id, initialMode: 'log' })}
+              onPress={() =>
+                navigation.navigate('BehaviorLog', {
+                  behaviorId: behavior.id,
+                  initialMode: 'log',
+                  initialCues: [bodyCueRef(sensation)],
+                })
+              }
               accessibilityRole="button"
               accessibilityLabel={`Log ${behavior.name}`}
               accessibilityHint="Double tap to open the behavior log."

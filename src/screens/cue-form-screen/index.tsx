@@ -95,7 +95,7 @@ export function CueFormScreen() {
       edges={['top', 'left', 'right']}
     >
       <CueScreenHeader
-        title={existingCue ? 'Edit cue' : 'New cue'}
+        title={existingCue ? 'Edit reminder' : 'New reminder'}
         showBalance={false}
       />
       <ScrollView

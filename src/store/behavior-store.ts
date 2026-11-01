@@ -12,6 +12,7 @@ import type {
   MetadataField,
   StarPeriod,
 } from '../types/behavior';
+import type { CueRef } from '../types/cue';
 import type { AddTaskInput, TaskEntry } from '../types/task';
 import { mergeTrackedSessionsIntoLogs, siteMatchesDomain } from '../utils/app-usage-utils';
 import { getLogEndTimestamp } from '../utils/log-utils';
@@ -95,6 +96,7 @@ interface BehaviorStore {
     timestamp?: number,
     metadata?: Record<string, string | number>,
     endTimestamp?: number,
+    cues?: CueRef[],
   ) => void;
   removeBehavior: (id: string) => void;
   removeLog: (behaviorId: string, logId: string) => void;
@@ -104,6 +106,8 @@ interface BehaviorStore {
     timestamp: number,
     metadata?: Record<string, string | number>,
     endTimestamp?: number,
+    /** Omit to keep the log's cues; pass [] to clear them. */
+    cues?: CueRef[],
   ) => void;
   getBehaviorLogs: (behaviorId: string) => BehaviorEntry['logs'];
   addCategory: (name: string, emoji: string, metadataFields?: MetadataField[]) => void;
@@ -180,7 +184,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
             },
           ],
         })),
-      logBehavior: (id, timestamp, metadata = {}, endTimestamp) =>
+      logBehavior: (id, timestamp, metadata = {}, endTimestamp, cues) =>
         set(state => ({
           behaviors: state.behaviors.map(t => {
             if (t.id !== id) return t;
@@ -200,6 +204,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
                   timestamp: newTimestamp,
                   endTimestamp,
                   metadata,
+                  ...(cues && cues.length > 0 ? { cues } : {}),
                 },
               ],
             };
@@ -461,7 +466,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
             behaviors,
           };
         }),
-      updateLog: (behaviorId, logId, timestamp, metadata, endTimestamp) =>
+      updateLog: (behaviorId, logId, timestamp, metadata, endTimestamp, cues) =>
         set(state => ({
           behaviors: state.behaviors.map(b =>
             b.id === behaviorId
@@ -474,6 +479,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
                           timestamp,
                           endTimestamp,
                           metadata: metadata ?? log.metadata,
+                          cues: cues === undefined ? log.cues : cues.length > 0 ? cues : undefined,
                         }
                       : log,
                   ),

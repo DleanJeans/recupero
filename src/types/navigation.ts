@@ -1,3 +1,5 @@
+import type { CueRef } from './cue';
+
 export type RootStackParamList = {
   Home: undefined;
   Timer: undefined;
@@ -12,6 +14,8 @@ export type RootStackParamList = {
     initialNotes?: string;
     timerStartTimestamp?: number;
     timerEndTimestamp?: number;
+    /** Cues to pre-select on a new log, e.g. the mood that suggested this behaviour. */
+    initialCues?: CueRef[];
   };
   BehaviorForm: {
     behaviorId?: string;

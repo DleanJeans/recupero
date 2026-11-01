@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
 import { Button } from '../../../components/button';
+import { CuePicker } from '../../../components/cues/cue-picker';
 import { DatePicker } from '../../../components/date-picker';
 import { Text, TextInput } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
@@ -36,6 +37,7 @@ export function BehaviorLogForm({ form }: Props) {
     notesRef,
     progressByField,
     renderTimePicker,
+    selectedCues,
     selectedDate,
     setMetadataValues,
     setNotes,
@@ -46,6 +48,7 @@ export function BehaviorLogForm({ form }: Props) {
     startMinute,
     startSecond,
     todayStr,
+    toggleCue,
   } = form;
 
   return (
@@ -155,6 +158,14 @@ export function BehaviorLogForm({ form }: Props) {
                 />
               );
             })}
+          </View>
+
+          <Text style={styles.sectionLabel}>Cues</Text>
+          <View style={styles.cuePicker}>
+            <CuePicker
+              selected={selectedCues}
+              onToggle={toggleCue}
+            />
           </View>
 
           <Text style={styles.sectionLabel}>Notes</Text>
@@ -279,6 +290,9 @@ const styles = StyleSheet.create({
   bodyContent: {
     paddingHorizontal: 16,
     paddingBottom: 120,
+  },
+  cuePicker: {
+    marginBottom: 20,
   },
   notesInput: {
     minHeight: 120,
