@@ -14,7 +14,7 @@ function entry(id: string, timestamp: number, endTimestamp?: number, stackId?: s
 describe('buildDayTimeline', () => {
   it('groups logs sharing a stack id into one stack', () => {
     const items = buildDayTimeline(
-      [entry('a', day, day + HOUR, 's1'), entry('b', day, day + HOUR, 's1'), entry('c', day)],
+      [entry('a', day, day + HOUR, 's1'), entry('b', day, day + HOUR, 's1'), entry('c', day + 2 * HOUR)],
       [],
       [],
       '2026-11-01',
@@ -24,8 +24,22 @@ describe('buildDayTimeline', () => {
     expect(stacked).toBeDefined();
   });
 
-  it('keeps logs that only share a time apart', () => {
-    const items = buildDayTimeline([entry('a', day, day + HOUR), entry('b', day, day + HOUR)], [], [], '2026-11-01');
+  it('auto-stacks manual logs started within 3 minutes of the previous one', () => {
+    const MIN = 60 * 1000;
+    const items = buildDayTimeline(
+      [entry('a', day), entry('b', day + 2 * MIN), entry('c', day + 5 * MIN), entry('d', day + 9 * MIN)],
+      [],
+      [],
+      '2026-11-01',
+    );
+    const sizes = items.map(item => (item.kind === 'behavior' ? item.entries.length : 0));
+    expect(sizes).toEqual([1, 3]);
+  });
+
+  it('does not auto-stack auto-tracked logs', () => {
+    const tracked = entry('app', day + 60 * 1000);
+    tracked.log.source = 'app-usage';
+    const items = buildDayTimeline([entry('a', day), tracked], [], [], '2026-11-01');
     expect(items).toHaveLength(2);
   });
 
