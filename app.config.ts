@@ -19,7 +19,14 @@ const plugins: NonNullable<ExpoConfig['plugins']> = [
   'expo-splash-screen',
   'expo-sharing',
   '@react-native-community/datetimepicker',
+  ['expo-location', { locationWhenInUsePermission: 'Recupero uses your location to place pins for location cues.' }],
+  // Google Maps SDK key (Android). Set GOOGLE_MAPS_API_KEY in .env or as an EAS environment variable.
+  ['react-native-maps', { androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY }],
 ];
+
+if (!process.env.GOOGLE_MAPS_API_KEY) {
+  console.warn('GOOGLE_MAPS_API_KEY is not set: the location cue map will render blank on Android.');
+}
 
 if (isDev) {
   plugins.push('./plugins/withJVMMemory');

@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { Button } from '../../components/button';
 import { CueScreenHeader } from '../../components/cues/cue-screen-header';
 import { CueToggle } from '../../components/cues/cue-toggle';
@@ -11,7 +11,9 @@ import { Text, TextInput } from '../../components/text';
 import { useCuesStore } from '../../store/cues-store';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
-import { GeofenceMapPlaceholder } from './components/geofence-map-placeholder';
+import type { GeoPoint } from '../../utils/geofence-utils';
+import { geocodeAddress, getCurrentPoint, reverseGeocodePoint } from '../../utils/location-utils';
+import { GeofenceMap } from './components/geofence-map';
 import { RadiusSlider } from './components/radius-slider';
 
 type LocationEditRoute = NativeStackScreenProps<RootStackParamList, 'LocationEdit'>['route'];
@@ -28,21 +30,73 @@ export function LocationEditScreen() {
   const [address, setAddress] = useState(existingPlace?.address ?? '');
   const [radiusM, setRadiusM] = useState(existingPlace?.radiusM ?? 150);
   const [isHome, setIsHome] = useState(existingPlace?.isHome ?? false);
+  const [point, setPoint] = useState<GeoPoint | null>(
+    existingPlace ? { lat: existingPlace.lat, lng: existingPlace.lng } : null,
+  );
+  const [isLocating, setIsLocating] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  /** Latest pin request; stale reverse-geocode results are ignored. */
+  const pinRequestId = useRef(0);
+
+  const dropPin = async (next: GeoPoint, fillAddress: boolean) => {
+    const requestId = ++pinRequestId.current;
+    setPoint(next);
+    if (!fillAddress) return;
+    try {
+      const resolved = await reverseGeocodePoint(next);
+      if (resolved && requestId === pinRequestId.current) setAddress(resolved);
+    } catch {
+      // Reverse geocoding is best-effort; the pin is what matters.
+    }
+  };
+
+  const handleLocateMe = async (silent = false) => {
+    setIsLocating(true);
+    try {
+      const current = await getCurrentPoint();
+      if (current) await dropPin(current, true);
+      else if (!silent) Alert.alert('Location unavailable', 'Allow location access, or tap the map to drop a pin.');
+    } catch {
+      if (!silent) Alert.alert('Location unavailable', 'Could not get your position. Tap the map to drop a pin.');
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only center on the user once, for new places
+  useEffect(() => {
+    if (!existingPlace) handleLocateMe(true);
+  }, []);
+
+  const handleSearch = async () => {
+    const query = address.trim();
+    if (!query) return;
+    setIsSearching(true);
+    try {
+      const found = await geocodeAddress(query);
+      if (found) await dropPin(found, false);
+      else Alert.alert('No match', `Couldn't find "${query}". Try a fuller address, or tap the map.`);
+    } catch {
+      Alert.alert('Search failed', 'Check your connection, or tap the map to drop a pin.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const handleSave = () => {
     if (!name.trim()) {
       Alert.alert('Name this place', 'Add a short name before saving the geofence.');
       return;
     }
-    if (!existingPlace) {
-      Alert.alert('Map selection unavailable', 'Location cues are not available until native map support is enabled.');
+    if (!point) {
+      Alert.alert('Pick a spot', 'Search for an address or tap the map to drop a pin.');
       return;
     }
     const input = {
       name: name.trim(),
       address: address.trim() || undefined,
-      lat: existingPlace.lat,
-      lng: existingPlace.lng,
+      lat: point.lat,
+      lng: point.lng,
       radiusM,
       isHome,
     };
@@ -93,10 +147,24 @@ export function LocationEditScreen() {
             placeholder="Search address or place"
             placeholderTextColor={Colors.text.faint}
             returnKeyType="search"
+            onSubmitEditing={handleSearch}
+            editable={!isSearching}
           />
+          {isSearching && (
+            <ActivityIndicator
+              size="small"
+              color={Colors.text.faint}
+            />
+          )}
         </View>
 
-        <GeofenceMapPlaceholder radiusM={radiusM} />
+        <GeofenceMap
+          point={point}
+          radiusM={radiusM}
+          isLocating={isLocating}
+          onChangePoint={next => dropPin(next, true)}
+          onLocateMe={() => handleLocateMe()}
+        />
 
         <View style={styles.fieldCard}>
           <Text style={styles.fieldLabel}>Name</Text>
