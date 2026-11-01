@@ -3,6 +3,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../../components/button';
 import { CueScreenHeader } from '../../components/cues/cue-screen-header';
 import { CueToggle } from '../../components/cues/cue-toggle';
@@ -19,6 +20,7 @@ import { RadiusSlider } from './components/radius-slider';
 type LocationEditRoute = NativeStackScreenProps<RootStackParamList, 'LocationEdit'>['route'];
 
 export function LocationEditScreen() {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<LocationEditRoute>();
   const placeId = route.params?.placeId;
@@ -131,7 +133,7 @@ export function LocationEditScreen() {
       />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: 32 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.searchBar}>

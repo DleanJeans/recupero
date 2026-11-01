@@ -2,6 +2,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../../components/button';
 import { CueBehaviorPicker } from '../../components/cues/cue-behavior-picker';
 import { CueScreenHeader } from '../../components/cues/cue-screen-header';
@@ -22,6 +23,7 @@ import { TriggerTypeGrid } from './components/trigger-type-grid';
 type CueFormRoute = NativeStackScreenProps<RootStackParamList, 'CueForm'>['route'];
 
 export function CueFormScreen() {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<CueFormRoute>();
   const cueId = route.params?.cueId;
@@ -98,7 +100,7 @@ export function CueFormScreen() {
       />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: 32 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.section}>

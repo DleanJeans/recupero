@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CueScreenHeader } from '../../components/cues/cue-screen-header';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text } from '../../components/text';
@@ -11,6 +12,7 @@ import { DateNavigationRow } from '../components/date-navigation-row';
 import { ActivityDayGroup } from './components/activity-day-group';
 
 export function CueActivityScreen() {
+  const insets = useSafeAreaInsets();
   const activity = useCuesStore(state => state.activity);
   const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
   const today = toDateString(new Date(), dayCutoffHour);
@@ -39,7 +41,7 @@ export function CueActivityScreen() {
       />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: 32 + insets.bottom }]}
       >
         {events.length > 0 ? (
           <ActivityDayGroup

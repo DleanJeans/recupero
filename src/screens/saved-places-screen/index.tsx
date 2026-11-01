@@ -3,6 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CueScreenHeader } from '../../components/cues/cue-screen-header';
 import { CueSectionLabel } from '../../components/cues/cue-section-label';
 import { SafeAreaView } from '../../components/safe-area-view';
@@ -13,6 +14,7 @@ import { Colors } from '../../utils/colors';
 import { SavedPlaceRow } from './components/saved-place-row';
 
 export function SavedPlacesScreen() {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const places = useCuesStore(state => state.places);
   const sortedPlaces = useMemo(
@@ -30,7 +32,7 @@ export function SavedPlacesScreen() {
       <CueScreenHeader title="Saved places" />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: 32 + insets.bottom }]}
       >
         {home && (
           <View style={styles.section}>
