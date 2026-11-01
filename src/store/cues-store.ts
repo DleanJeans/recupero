@@ -138,12 +138,14 @@ export const useCuesStore = create<CuesStore>()(
     {
       name: 'recupero-cues',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 1,
-      migrate: persistedState => {
+      version: 2,
+      migrate: (persistedState, version) => {
         const state = persistedState as Partial<CuesStore>;
+        // v1 → v2: push was a disabled toggle before reminders could fire, so turn it on for existing reminders.
+        const cues = (state.cues ?? []).map(cue => (version < 2 ? { ...cue, notify: { push: true } } : cue));
         return {
           ...state,
-          cues: state.cues ?? [],
+          cues,
           places: state.places ?? [],
           moodLogs: state.moodLogs ?? [],
           bodyLogs: state.bodyLogs ?? [],

@@ -16,6 +16,8 @@ import type { CueTrigger, CueTriggerType } from '../../types/cue';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import { createDefaultCueTrigger, getCueAccent, isCueTriggerComplete } from '../../utils/cue-utils';
+import { requestReminderPermissions } from '../../utils/reminder-permissions';
+import { canTriggerFireAutomatically, GEOFENCE_MIN_RADIUS_M } from '../../utils/reminder-utils';
 import { AdditionalConditionsEditor } from './components/additional-conditions-editor';
 import { TriggerEditor } from './components/trigger-editor';
 import { TriggerTypeGrid } from './components/trigger-type-grid';
@@ -41,12 +43,24 @@ export function CueFormScreen() {
   const [conditions, setConditions] = useState<CueTrigger[]>(existingCue?.conditions ?? []);
   const [combiner, setCombiner] = useState<'AND' | 'OR'>(existingCue?.combiner ?? 'AND');
   const [behaviorIds, setBehaviorIds] = useState<string[]>(existingCue?.behaviorIds ?? []);
+  const [push, setPush] = useState(existingCue?.notify.push ?? true);
+  const canNotify = canTriggerFireAutomatically(trigger);
+  const triggerPlace = trigger.type === 'location' ? places.find(place => place.id === trigger.placeId) : undefined;
+  const notifyDetail = !canNotify
+    ? trigger.type === 'time'
+      ? 'Wake-up detection is not automatic yet, so this one only shows as a suggestion.'
+      : 'Shows as a suggestion when you log this, no notification needed.'
+    : triggerPlace && triggerPlace.radiusM < GEOFENCE_MIN_RADIUS_M
+      ? `Android can't reliably detect ${triggerPlace.radiusM} m, so the notification uses a ${GEOFENCE_MIN_RADIUS_M} m area around ${triggerPlace.name}. Log tagging still uses ${triggerPlace.radiusM} m.`
+      : trigger.type === 'location'
+        ? 'Notifies you in the background, even when Recupero is closed.'
+        : 'Sends a notification you can tap to log.';
 
   const changeTriggerType = (type: CueTriggerType) => {
     setTrigger(createDefaultCueTrigger(type, defaultOptions));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!isCueTriggerComplete(trigger)) {
       Alert.alert('Finish the trigger', 'Choose all required trigger details before saving.');
       return;
@@ -67,11 +81,20 @@ export function CueFormScreen() {
       conditions: conditions.length > 0 ? conditions : undefined,
       combiner: conditions.length > 0 ? combiner : undefined,
       behaviorIds,
-      notify: { push: false },
+      notify: { push },
     };
     if (existingCue) updateCue(existingCue.id, input);
     else addCue(input);
     navigation.goBack();
+    if (push && input.enabled && canNotify) {
+      const missing = await requestReminderPermissions([trigger]);
+      if (missing.length > 0) {
+        Alert.alert(
+          'Reminder saved',
+          'It won\'t notify you until you allow the missing permission. You can do this from the Reminders tab.',
+        );
+      }
+    }
   };
 
   const handleDelete = () => {
@@ -151,14 +174,14 @@ export function CueFormScreen() {
             <View style={styles.notifyRow}>
               <View style={styles.notifyCopy}>
                 <Text style={styles.notifyTitle}>Send push notification</Text>
-                <Text style={styles.notifyDetail}>Push reminders are unavailable in this build.</Text>
+                <Text style={styles.notifyDetail}>{notifyDetail}</Text>
               </View>
               <CueToggle
-                value={false}
+                value={canNotify && push}
                 accent={getCueAccent(trigger.type)}
-                onValueChange={() => undefined}
-                disabled
-                accessibilityLabel="Push notifications unavailable"
+                onValueChange={setPush}
+                disabled={!canNotify}
+                accessibilityLabel="Send push notification"
               />
             </View>
           </View>

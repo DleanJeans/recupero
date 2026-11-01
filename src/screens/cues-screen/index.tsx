@@ -26,6 +26,7 @@ import {
 import { ActivityPreview } from './components/activity-preview';
 import { CueCard } from './components/cue-card';
 import { CueSourceRow } from './components/cue-source-row';
+import { ReminderStatusNotice } from './components/reminder-status-notice';
 
 type CuesTab = 'cues' | 'reminders';
 
@@ -194,14 +195,14 @@ function RemindersTab() {
 
   return (
     <>
-      <Text style={styles.notice}>Automatic triggers and push reminders are unavailable in this build.</Text>
+      <ReminderStatusNotice />
 
       {cues.length === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyTitle}>No reminders yet</Text>
           <Text style={styles.emptyBody}>
-            Save reminders that suggest behaviours for a place, time, habit, mood or body sensation. Automatic
-            triggers are not available yet.
+            Save reminders that suggest behaviours for a place, time, habit, mood or body sensation. Place, time
+            and habit reminders notify you when they fire.
           </Text>
         </View>
       ) : (

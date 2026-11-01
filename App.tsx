@@ -12,6 +12,7 @@ import { Text } from './src/components/text';
 import { useAppFonts } from './src/hooks/use-app-fonts';
 import { useAppUsageSync } from './src/hooks/use-app-usage-sync';
 import { useDeferredBottomNavNavigation } from './src/hooks/use-deferred-bottom-nav-navigation';
+import { useReminderEngine } from './src/hooks/use-reminder-engine';
 import { BehaviorFormScreen } from './src/screens/behavior-form-screen';
 import { BehaviorScreen } from './src/screens/behavior-screen';
 import { BodyLogScreen } from './src/screens/body-log-screen';
@@ -76,6 +77,7 @@ export default function App() {
   const [activeRouteName, setActiveRouteName] = useState<string | undefined>();
   const { pendingRouteName, deferNavigation, completeNavigation } = useDeferredBottomNavNavigation<BottomNavRoute>();
   useAppUsageSync(storesReady);
+  useReminderEngine(storesReady, navigationRef);
 
   useEffect(() => {
     const checkStoresReady = () => setStoresReady(PERSISTED_STORES.every(store => store.persist.hasHydrated()));
