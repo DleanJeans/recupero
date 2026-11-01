@@ -22,7 +22,14 @@ const cue = (id: string, trigger: CueTrigger, overrides: Partial<Cue> = {}): Cue
   ...overrides,
 });
 
-const place = (id: string, radiusM: number): SavedPlace => ({ id, name: `Place ${id}`, lat: 10, lng: 20, radiusM, isHome: false });
+const place = (id: string, radiusM: number): SavedPlace => ({
+  id,
+  name: `Place ${id}`,
+  lat: 10,
+  lng: 20,
+  radiusM,
+  isHome: false,
+});
 
 const behavior = (id: string, name: string, logs: LogEntry[] = []) => ({ id, name, logs }) as unknown as BehaviorEntry;
 
@@ -32,7 +39,13 @@ describe('canTriggerFireAutomatically', () => {
     expect(canTriggerFireAutomatically({ type: 'time', mode: 'simple', at: '08:00', repeatDays: [1] })).toBe(true);
     expect(canTriggerFireAutomatically({ type: 'habit', behaviorId: 'b' })).toBe(true);
     expect(
-      canTriggerFireAutomatically({ type: 'time', mode: 'auto', pattern: 'afterBehavior', behaviorId: 'b', delayMin: 5 }),
+      canTriggerFireAutomatically({
+        type: 'time',
+        mode: 'auto',
+        pattern: 'afterBehavior',
+        behaviorId: 'b',
+        delayMin: 5,
+      }),
     ).toBe(true);
     expect(canTriggerFireAutomatically({ type: 'time', mode: 'auto', pattern: 'wakeup' })).toBe(false);
     expect(canTriggerFireAutomatically({ type: 'mood', moods: ['low'] })).toBe(false);
@@ -42,12 +55,18 @@ describe('canTriggerFireAutomatically', () => {
 
 describe('getTimeReminderSchedules', () => {
   it('uses one daily trigger when every day is selected', () => {
-    const schedules = getTimeReminderSchedules([cue('c', { type: 'time', mode: 'simple', at: '07:30', repeatDays: [0, 1, 2, 3, 4, 5, 6] })]);
-    expect(schedules).toEqual([{ identifier: 'reminder-time:c:daily', cueId: 'c', weekday: null, hour: 7, minute: 30 }]);
+    const schedules = getTimeReminderSchedules([
+      cue('c', { type: 'time', mode: 'simple', at: '07:30', repeatDays: [0, 1, 2, 3, 4, 5, 6] }),
+    ]);
+    expect(schedules).toEqual([
+      { identifier: 'reminder-time:c:daily', cueId: 'c', weekday: null, hour: 7, minute: 30 },
+    ]);
   });
 
   it('maps Sunday-first days to expo weekdays (1 = Sunday)', () => {
-    const schedules = getTimeReminderSchedules([cue('c', { type: 'time', mode: 'simple', at: '21:05', repeatDays: [6, 1] })]);
+    const schedules = getTimeReminderSchedules([
+      cue('c', { type: 'time', mode: 'simple', at: '21:05', repeatDays: [6, 1] }),
+    ]);
     expect(schedules.map(s => s.weekday)).toEqual([2, 7]);
     expect(schedules[0]).toMatchObject({ hour: 21, minute: 5 });
   });

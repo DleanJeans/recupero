@@ -201,8 +201,8 @@ function RemindersTab() {
         <View style={styles.emptyCard}>
           <Text style={styles.emptyTitle}>No reminders yet</Text>
           <Text style={styles.emptyBody}>
-            Save reminders that suggest behaviours for a place, time, habit, mood or body sensation. Place, time
-            and habit reminders notify you when they fire.
+            Save reminders that suggest behaviours for a place, time, habit, mood or body sensation. Place, time and
+            habit reminders notify you when they fire.
           </Text>
         </View>
       ) : (

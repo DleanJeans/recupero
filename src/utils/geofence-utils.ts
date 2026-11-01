@@ -105,7 +105,10 @@ export function distanceMeters(a: GeoPoint, b: GeoPoint): number {
 }
 
 /** The closest place whose geofence contains the point, if any. */
-export function findPlaceAtPoint<T extends GeoPoint & { radiusM: number }>(places: T[], point: GeoPoint): T | undefined {
+export function findPlaceAtPoint<T extends GeoPoint & { radiusM: number }>(
+  places: T[],
+  point: GeoPoint,
+): T | undefined {
   let best: { place: T; distance: number } | undefined;
   for (const place of places) {
     const distance = distanceMeters(place, point);

@@ -5,7 +5,11 @@ import { useBehaviorStore } from '../store/behavior-store';
 import { useCuesStore } from '../store/cues-store';
 import type { RootStackParamList } from '../types/navigation';
 import { syncReminderGeofences } from '../utils/reminder-geofencing';
-import { scheduleDelayedReminder, setupReminderNotifications, syncTimeReminders } from '../utils/reminder-notifications';
+import {
+  scheduleDelayedReminder,
+  setupReminderNotifications,
+  syncTimeReminders,
+} from '../utils/reminder-notifications';
 import {
   getNewlyLoggedBehaviors,
   getReminderScheduleSignature,

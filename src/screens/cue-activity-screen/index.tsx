@@ -52,7 +52,9 @@ export function CueActivityScreen() {
         ) : (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>No activity this day</Text>
-            <Text style={styles.emptyBody}>Location transitions, mood changes and body sensations will appear here.</Text>
+            <Text style={styles.emptyBody}>
+              Location transitions, mood changes and body sensations will appear here.
+            </Text>
           </View>
         )}
       </ScrollView>

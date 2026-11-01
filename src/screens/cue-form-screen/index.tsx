@@ -91,7 +91,7 @@ export function CueFormScreen() {
       if (missing.length > 0) {
         Alert.alert(
           'Reminder saved',
-          'It won\'t notify you until you allow the missing permission. You can do this from the Reminders tab.',
+          "It won't notify you until you allow the missing permission. You can do this from the Reminders tab.",
         );
       }
     }

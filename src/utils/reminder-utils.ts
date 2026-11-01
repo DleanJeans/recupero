@@ -132,8 +132,7 @@ export function getNewlyLoggedBehaviors(
   return next.flatMap(behavior =>
     behavior.logs
       .filter(
-        log =>
-          !previousIds.has(log.id) && log.source == null && now - getLogEndTimestamp(log) <= FRESH_LOG_WINDOW_MS,
+        log => !previousIds.has(log.id) && log.source == null && now - getLogEndTimestamp(log) <= FRESH_LOG_WINDOW_MS,
       )
       .map(log => ({ behaviorId: behavior.id, log })),
   );
@@ -165,12 +164,19 @@ export function getReminderNotificationContent(
         : `Try ${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}.`;
   const actions =
     suggested.length > 1
-      ? suggested.slice(0, MAX_NOTIFICATION_ACTIONS).map(behavior => ({ id: `log:${behavior.id}`, title: behavior.name }))
+      ? suggested
+          .slice(0, MAX_NOTIFICATION_ACTIONS)
+          .map(behavior => ({ id: `log:${behavior.id}`, title: behavior.name }))
       : [];
   return {
     title,
     body,
-    data: { kind: 'reminder', cueId: cue.id, behaviorIds: suggested.map(behavior => behavior.id), cueRef: getReminderCueRef(cue) },
+    data: {
+      kind: 'reminder',
+      cueId: cue.id,
+      behaviorIds: suggested.map(behavior => behavior.id),
+      cueRef: getReminderCueRef(cue),
+    },
     actions,
   };
 }
