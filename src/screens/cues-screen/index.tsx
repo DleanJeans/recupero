@@ -11,7 +11,13 @@ import { useCuesStore } from '../../store/cues-store';
 import type { CueTriggerType } from '../../types/cue';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
-import { CUE_TRIGGER_TYPES, getCurrentMood, getMoodOption } from '../../utils/cue-utils';
+import {
+  CUE_TRIGGER_TYPES,
+  getBodySensationOption,
+  getCurrentMood,
+  getMoodOption,
+  getRecentBodySensation,
+} from '../../utils/cue-utils';
 import { ActivityPreview } from './components/activity-preview';
 import { CueCard } from './components/cue-card';
 import { QuickTile } from './components/quick-tile';
@@ -21,6 +27,7 @@ const TRIGGER_LABELS: Record<CueTriggerType, string> = {
   time: 'Time',
   habit: 'Habit',
   mood: 'Mood',
+  body: 'Body',
 };
 
 export function CuesScreen() {
@@ -29,6 +36,8 @@ export function CuesScreen() {
   const places = useCuesStore(state => state.places);
   const moodLogs = useCuesStore(state => state.moodLogs);
   const currentMood = getCurrentMood(moodLogs);
+  const bodyLogs = useCuesStore(state => state.bodyLogs);
+  const recentBody = getRecentBodySensation(bodyLogs);
   const groupedCues = useMemo(
     () => CUE_TRIGGER_TYPES.map(type => ({ type, cues: cues.filter(cue => cue.trigger.type === type) })),
     [cues],
@@ -61,6 +70,16 @@ export function CuesScreen() {
                 : 'Not set'
             }
             onPress={() => navigation.navigate('MoodLog')}
+          />
+          <QuickTile
+            type="body"
+            title="Body"
+            subtitle={
+              recentBody
+                ? `${getBodySensationOption(recentBody.sensation).emoji} ${getBodySensationOption(recentBody.sensation).label}`
+                : 'How do you feel?'
+            }
+            onPress={() => navigation.navigate('BodyLog')}
           />
         </View>
 
@@ -115,6 +134,7 @@ const styles = StyleSheet.create({
   },
   quickRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
   },
   notice: {

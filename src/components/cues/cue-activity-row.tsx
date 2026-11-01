@@ -3,9 +3,16 @@ import { StyleSheet, View } from 'react-native';
 import { useCuesStore } from '../../store/cues-store';
 import type { CueActivityEvent } from '../../types/cue';
 import { Colors } from '../../utils/colors';
-import { getMoodOption } from '../../utils/cue-utils';
+import { getBodySensationOption, getMoodOption } from '../../utils/cue-utils';
 import { formatTime } from '../../utils/time-utils';
 import { Text } from '../text';
+
+const TITLES: Record<CueActivityEvent['kind'], string> = {
+  enter: 'Arrived',
+  exit: 'Left',
+  mood: 'Mood set',
+  body: 'Body sensation',
+};
 
 interface CueActivityRowProps {
   event: CueActivityEvent;
@@ -14,9 +21,11 @@ interface CueActivityRowProps {
 export function CueActivityRow({ event }: CueActivityRowProps) {
   const place = useCuesStore(state => state.places.find(item => item.id === event.placeId));
   const mood = event.mood ? getMoodOption(event.mood) : undefined;
-  const icon = mood?.emoji ?? (place?.isHome ? '🏠' : '📍');
-  const title = event.kind === 'mood' ? 'Mood set' : event.kind === 'enter' ? 'Arrived' : 'Left';
-  const detail = mood?.label ?? place?.name ?? 'Unknown place';
+  const sensation = event.sensation ? getBodySensationOption(event.sensation) : undefined;
+  const option = mood ?? sensation;
+  const icon = option?.emoji ?? (place?.isHome ? '🏠' : '📍');
+  const title = TITLES[event.kind];
+  const detail = option?.label ?? place?.name ?? 'Unknown place';
 
   return (
     <View style={styles.row}>

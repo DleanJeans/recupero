@@ -7,7 +7,7 @@ import type { CueTriggerType } from '../../../types/cue';
 import { Colors } from '../../../utils/colors';
 
 interface QuickTileProps {
-  type: Extract<CueTriggerType, 'location' | 'mood'>;
+  type: Extract<CueTriggerType, 'location' | 'mood' | 'body'>;
   title: string;
   subtitle: string;
   onPress: () => void;
@@ -43,7 +43,8 @@ export function QuickTile({ type, title, subtitle, onPress }: QuickTileProps) {
 
 const styles = StyleSheet.create({
   tile: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: '40%',
     minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',

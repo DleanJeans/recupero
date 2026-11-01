@@ -33,7 +33,7 @@ export function ActivityPreview() {
       </Pressable>
       <View style={styles.card}>
         {recent.length === 0 ? (
-          <Text style={styles.empty}>Location and mood changes will appear here.</Text>
+          <Text style={styles.empty}>Location, mood and body changes will appear here.</Text>
         ) : (
           recent.map(event => (
             <CueActivityRow

@@ -1,5 +1,14 @@
 import type { BehaviorEntry } from '../types/behavior';
-import type { Cue, CueTrigger, CueTriggerType, MoodId, MoodLog, SavedPlace } from '../types/cue';
+import type {
+  BodySensationId,
+  BodySensationLog,
+  Cue,
+  CueTrigger,
+  CueTriggerType,
+  MoodId,
+  MoodLog,
+  SavedPlace,
+} from '../types/cue';
 import { Colors } from './colors';
 
 export const MOOD_OPTIONS: ReadonlyArray<{ id: MoodId; emoji: string; label: string }> = [
@@ -11,10 +20,26 @@ export const MOOD_OPTIONS: ReadonlyArray<{ id: MoodId; emoji: string; label: str
   { id: 'tired', emoji: '😴', label: 'Tired' },
 ];
 
-export const CUE_TRIGGER_TYPES: CueTriggerType[] = ['location', 'time', 'habit', 'mood'];
+export const BODY_SENSATION_OPTIONS: ReadonlyArray<{ id: BodySensationId; emoji: string; label: string }> = [
+  { id: 'pee', emoji: '🚽', label: 'Need to pee' },
+  { id: 'hungry', emoji: '🍽️', label: 'Hungry' },
+  { id: 'thirsty', emoji: '💧', label: 'Thirsty' },
+  { id: 'tired', emoji: '🥱', label: 'Tired' },
+  { id: 'sleepy', emoji: '😴', label: 'Sleepy' },
+  { id: 'aches', emoji: '🤕', label: 'Aches' },
+];
+
+/** A body sensation counts as "current" for this long after it was logged. */
+export const BODY_SENSATION_FRESH_MS = 2 * 60 * 60 * 1000;
+
+export const CUE_TRIGGER_TYPES: CueTriggerType[] = ['location', 'time', 'habit', 'mood', 'body'];
 
 export function getMoodOption(mood: MoodId) {
   return MOOD_OPTIONS.find(option => option.id === mood) ?? MOOD_OPTIONS[2];
+}
+
+export function getBodySensationOption(sensation: BodySensationId) {
+  return BODY_SENSATION_OPTIONS.find(option => option.id === sensation) ?? BODY_SENSATION_OPTIONS[0];
 }
 
 export function getCueAccent(type: CueTriggerType): string {
@@ -42,6 +67,10 @@ export function getCueTriggerLabel(trigger: CueTrigger, places: SavedPlace[], be
     const behavior = behaviors.find(item => item.id === trigger.behaviorId)?.name ?? 'a behaviour';
     return `${trigger.delayMin ? `${trigger.delayMin} min after` : 'After logging'} ${behavior}`;
   }
+  if (trigger.type === 'body') {
+    const labels = trigger.sensations.map(sensation => getBodySensationOption(sensation).label.toLowerCase());
+    return labels.length > 0 ? `When body says ${labels.join(' or ')}` : 'When a body sensation is logged';
+  }
   const labels = trigger.moods.map(mood => getMoodOption(mood).label);
   return labels.length > 0 ? `When feeling ${labels.join(' or ')}` : 'When mood is logged';
 }
@@ -65,6 +94,25 @@ export function getMoodSuggestedBehaviorIds(mood: MoodId, cues: Cue[]): string[]
   return [...new Set(suggested)];
 }
 
+export function getBodySuggestedBehaviorIds(sensation: BodySensationId, cues: Cue[]): string[] {
+  const suggested = cues.flatMap(cue => {
+    if (!cue.enabled) return [];
+    const triggers = [cue.trigger, ...(cue.conditions ?? [])];
+    const matches = triggers.some(trigger => trigger.type === 'body' && trigger.sensations.includes(sensation));
+    return matches ? cue.behaviorIds : [];
+  });
+  return [...new Set(suggested)];
+}
+
+/** Latest body sensation, if it was logged recently enough to still be relevant. */
+export function getRecentBodySensation(bodyLogs: BodySensationLog[], now = Date.now()): BodySensationLog | undefined {
+  const latest = bodyLogs.reduce<BodySensationLog | undefined>(
+    (current, log) => (!current || log.ts > current.ts ? log : current),
+    undefined,
+  );
+  return latest && now - latest.ts <= BODY_SENSATION_FRESH_MS ? latest : undefined;
+}
+
 export function getCurrentMood(moodLogs: MoodLog[]): MoodLog | undefined {
   return moodLogs.reduce<MoodLog | undefined>(
     (latest, log) => (!latest || log.ts > latest.ts ? log : latest),
@@ -85,6 +133,7 @@ export function createDefaultCueTrigger(
   if (type === 'location') return { type, placeId, direction: 'enter' };
   if (type === 'habit') return { type, behaviorId };
   if (type === 'mood') return { type, moods: [] };
+  if (type === 'body') return { type, sensations: [] };
   return {
     type,
     mode: 'simple',
@@ -97,6 +146,7 @@ export function isCueTriggerComplete(trigger: CueTrigger): boolean {
   if (trigger.type === 'location') return trigger.placeId.length > 0;
   if (trigger.type === 'habit') return trigger.behaviorId.length > 0;
   if (trigger.type === 'mood') return trigger.moods.length > 0;
+  if (trigger.type === 'body') return trigger.sensations.length > 0;
   if (trigger.mode === 'simple') return /^([01]\d|2[0-3]):[0-5]\d$/.test(trigger.at) && trigger.repeatDays.length > 0;
   if (trigger.pattern === 'afterBehavior') return trigger.behaviorId.length > 0 && trigger.delayMin >= 0;
   return true;

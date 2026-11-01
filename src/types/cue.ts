@@ -1,6 +1,8 @@
-export type CueTriggerType = 'location' | 'time' | 'habit' | 'mood';
+export type CueTriggerType = 'location' | 'time' | 'habit' | 'mood' | 'body';
 
 export type MoodId = 'great' | 'good' | 'okay' | 'stressed' | 'low' | 'tired';
+
+export type BodySensationId = 'pee' | 'hungry' | 'thirsty' | 'tired' | 'sleepy' | 'aches';
 
 export type CueTrigger =
   | { type: 'location'; placeId: string; direction: 'enter' | 'exit' }
@@ -8,7 +10,8 @@ export type CueTrigger =
   | { type: 'time'; mode: 'auto'; pattern: 'wakeup' }
   | { type: 'time'; mode: 'auto'; pattern: 'afterBehavior'; behaviorId: string; delayMin: number }
   | { type: 'habit'; behaviorId: string; delayMin?: number }
-  | { type: 'mood'; moods: MoodId[] };
+  | { type: 'mood'; moods: MoodId[] }
+  | { type: 'body'; sensations: BodySensationId[] };
 
 export interface Cue {
   id: string;
@@ -38,11 +41,19 @@ export interface MoodLog {
   ts: number;
 }
 
+export interface BodySensationLog {
+  id: string;
+  sensation: BodySensationId;
+  note?: string;
+  ts: number;
+}
+
 export interface CueActivityEvent {
   id: string;
-  kind: 'enter' | 'exit' | 'mood';
+  kind: 'enter' | 'exit' | 'mood' | 'body';
   placeId?: string;
   mood?: MoodId;
+  sensation?: BodySensationId;
   ts: number;
 }
 

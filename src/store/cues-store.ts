@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type {
+  BodySensationId,
+  BodySensationLog,
   Cue,
   CueActivityEvent,
   CueActivityInput,
@@ -17,6 +19,7 @@ export interface CuesStore {
   cues: Cue[];
   places: SavedPlace[];
   moodLogs: MoodLog[];
+  bodyLogs: BodySensationLog[];
   activity: CueActivityEvent[];
   addCue: (cue: CueInput) => string;
   updateCue: (id: string, updates: Partial<CueInput>) => void;
@@ -28,6 +31,8 @@ export interface CuesStore {
   removePlace: (id: string) => void;
   logMood: (mood: MoodId, note?: string) => string;
   updateMoodNote: (id: string, note?: string) => void;
+  logBodySensation: (sensation: BodySensationId, note?: string) => string;
+  updateBodyNote: (id: string, note?: string) => void;
   addActivityEvent: (event: CueActivityInput) => string;
 }
 
@@ -37,6 +42,7 @@ export const useCuesStore = create<CuesStore>()(
       cues: [],
       places: [],
       moodLogs: [],
+      bodyLogs: [],
       activity: [],
       addCue: cue => {
         const id = uuidv4();
@@ -107,6 +113,20 @@ export const useCuesStore = create<CuesStore>()(
         set(state => ({
           moodLogs: state.moodLogs.map(log => (log.id === id ? { ...log, note: note?.trim() || undefined } : log)),
         })),
+      logBodySensation: (sensation, note) => {
+        const id = uuidv4();
+        const ts = Date.now();
+        const activityId = uuidv4();
+        set(state => ({
+          bodyLogs: [...state.bodyLogs, { id, sensation, note: note?.trim() || undefined, ts }],
+          activity: [...state.activity, { id: activityId, kind: 'body', sensation, ts }],
+        }));
+        return id;
+      },
+      updateBodyNote: (id, note) =>
+        set(state => ({
+          bodyLogs: state.bodyLogs.map(log => (log.id === id ? { ...log, note: note?.trim() || undefined } : log)),
+        })),
       addActivityEvent: event => {
         const id = uuidv4();
         set(state => ({
@@ -126,6 +146,7 @@ export const useCuesStore = create<CuesStore>()(
           cues: state.cues ?? [],
           places: state.places ?? [],
           moodLogs: state.moodLogs ?? [],
+          bodyLogs: state.bodyLogs ?? [],
           activity: state.activity ?? [],
         } as CuesStore;
       },

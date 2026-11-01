@@ -77,5 +77,6 @@ export const Colors = {
   cue: {
     location: '#5aa9f0',
     mood: '#b98cf0',
+    body: '#f0936c',
   },
 } as const;

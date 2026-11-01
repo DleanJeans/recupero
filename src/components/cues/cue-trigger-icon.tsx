@@ -9,6 +9,7 @@ const ICONS = {
   time: 'time-outline',
   habit: 'link-outline',
   mood: 'happy-outline',
+  body: 'body-outline',
 } as const;
 
 interface CueTriggerIconProps {

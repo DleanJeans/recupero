@@ -33,4 +33,5 @@ export type RootStackParamList = {
   SavedPlaces: undefined;
   LocationEdit: { placeId?: string } | undefined;
   MoodLog: undefined;
+  BodyLog: undefined;
 };

@@ -14,6 +14,7 @@ import { useAppUsageSync } from './src/hooks/use-app-usage-sync';
 import { useDeferredBottomNavNavigation } from './src/hooks/use-deferred-bottom-nav-navigation';
 import { BehaviorFormScreen } from './src/screens/behavior-form-screen';
 import { BehaviorScreen } from './src/screens/behavior-screen';
+import { BodyLogScreen } from './src/screens/body-log-screen';
 import { CategoryFormScreen } from './src/screens/category-form-screen';
 import { CueActivityScreen } from './src/screens/cue-activity-screen';
 import { CueFormScreen } from './src/screens/cue-form-screen';
@@ -59,6 +60,7 @@ const linking: LinkingOptions<RootStackParamList> = {
       SavedPlaces: 'cues/places',
       LocationEdit: 'cues/places/edit',
       MoodLog: 'cues/mood',
+      BodyLog: 'cues/body',
     },
   },
 };
@@ -191,6 +193,10 @@ export default function App() {
                   <Stack.Screen
                     name="MoodLog"
                     component={MoodLogScreen}
+                  />
+                  <Stack.Screen
+                    name="BodyLog"
+                    component={BodyLogScreen}
                   />
                 </Stack.Navigator>
                 {pendingRouteName != null && (

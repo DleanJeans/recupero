@@ -1,5 +1,6 @@
 import React from 'react';
 import type { CueTrigger } from '../../../types/cue';
+import { BodyTriggerEditor } from './body-trigger-editor';
 import { HabitTriggerEditor } from './habit-trigger-editor';
 import { LocationTriggerEditor } from './location-trigger-editor';
 import { MoodTriggerEditor } from './mood-trigger-editor';
@@ -28,6 +29,13 @@ export function TriggerEditor({ value, onChange }: TriggerEditorProps) {
   if (value.type === 'habit')
     return (
       <HabitTriggerEditor
+        value={value}
+        onChange={onChange}
+      />
+    );
+  if (value.type === 'body')
+    return (
+      <BodyTriggerEditor
         value={value}
         onChange={onChange}
       />
