@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import MapView, { Circle, type LatLng, Marker } from 'react-native-maps';
 import { Text } from '../../../components/text';
@@ -17,10 +17,20 @@ interface GeofenceMapProps {
 
 /** Fallback view (whole world) until we know where to center. */
 const WORLD_REGION = { latitude: 20, longitude: 0, latitudeDelta: 100, longitudeDelta: 100 };
+/** After this long without tiles, tell the user the map is probably not going to load. */
+const SLOW_LOAD_MS = 15_000;
+
+type LoadState = 'loading' | 'slow' | 'loaded';
 
 export function GeofenceMap({ point, radiusM, isLocating, onChangePoint, onLocateMe }: GeofenceMapProps) {
   const mapRef = useRef<MapView>(null);
   const initialRegion = useRef(point ? regionForGeofence(point, radiusM) : WORLD_REGION).current;
+  const [loadState, setLoadState] = useState<LoadState>('loading');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoadState(state => (state === 'loading' ? 'slow' : state)), SLOW_LOAD_MS);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (!point) return;
@@ -45,6 +55,7 @@ export function GeofenceMap({ point, radiusM, isLocating, onChangePoint, onLocat
         toolbarEnabled={false}
         onPress={handleCoordinateEvent}
         onLongPress={handleCoordinateEvent}
+        onMapLoaded={() => setLoadState('loaded')}
       >
         {point && (
           <>
@@ -64,6 +75,32 @@ export function GeofenceMap({ point, radiusM, isLocating, onChangePoint, onLocat
           </>
         )}
       </MapView>
+
+      {loadState !== 'loaded' && (
+        <View
+          style={styles.loadingOverlay}
+          pointerEvents="none"
+        >
+          {loadState === 'loading' ? (
+            <>
+              <ActivityIndicator color={Colors.cue.location} />
+              <Text style={styles.loadingText}>Loading map…</Text>
+            </>
+          ) : (
+            <>
+              <Ionicons
+                name="cloud-offline-outline"
+                size={28}
+                color={Colors.text.faint}
+              />
+              <Text style={styles.loadingText}>Map tiles aren't loading</Text>
+              <Text style={styles.loadingHint}>
+                Check your connection. If it keeps happening, Google is rejecting the Maps API key for this build.
+              </Text>
+            </>
+          )}
+        </View>
+      )}
 
       <View
         style={styles.chip}
@@ -105,6 +142,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border.default,
   },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 24,
+  },
+  loadingText: { color: Colors.text.secondary, fontSize: 13, fontWeight: '700' },
+  loadingHint: { color: Colors.text.faint, fontSize: 11, lineHeight: 16, textAlign: 'center' },
   chip: {
     position: 'absolute',
     top: 12,
