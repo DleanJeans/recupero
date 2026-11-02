@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useCustomCueOptions } from '../../hooks/use-custom-cue-options';
 import { useCuesStore } from '../../store/cues-store';
 import type { CueActivityEvent } from '../../types/cue';
 import { Colors } from '../../utils/colors';
@@ -20,8 +21,9 @@ interface CueActivityRowProps {
 
 export function CueActivityRow({ event }: CueActivityRowProps) {
   const place = useCuesStore(state => state.places.find(item => item.id === event.placeId));
-  const mood = event.mood ? getMoodOption(event.mood) : undefined;
-  const sensation = event.sensation ? getBodySensationOption(event.sensation) : undefined;
+  const custom = useCustomCueOptions();
+  const mood = event.mood ? getMoodOption(event.mood, custom.moods) : undefined;
+  const sensation = event.sensation ? getBodySensationOption(event.sensation, custom.sensations) : undefined;
   const option = mood ?? sensation;
   const icon = option?.emoji ?? (place?.isHome ? '🏠' : '📍');
   const title = TITLES[event.kind];

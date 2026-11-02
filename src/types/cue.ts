@@ -1,8 +1,27 @@
 export type CueTriggerType = 'location' | 'time' | 'habit' | 'mood' | 'body';
 
-export type MoodId = 'great' | 'good' | 'okay' | 'stressed' | 'low' | 'tired';
+export type BuiltInMoodId = 'great' | 'good' | 'okay' | 'stressed' | 'low' | 'tired';
 
-export type BodySensationId = 'pee' | 'hungry' | 'thirsty' | 'tired' | 'sleepy' | 'aches';
+export type BuiltInBodySensationId = 'pee' | 'hungry' | 'thirsty' | 'tired' | 'sleepy' | 'aches';
+
+/** A built-in mood id, or the id of a mood the user added (CustomCueOption.id). */
+export type MoodId = BuiltInMoodId | (string & {});
+
+/** A built-in body sensation id, or the id of a sensation the user added (CustomCueOption.id). */
+export type BodySensationId = BuiltInBodySensationId | (string & {});
+
+/** A mood or body sensation shown as a tile/chip: built-in or added by the user. */
+export interface CueOption {
+  id: string;
+  emoji: string;
+  label: string;
+}
+
+/** Moods and body sensations the user added on top of the built-in ones. */
+export interface CustomCueOptions {
+  moods: CueOption[];
+  sensations: CueOption[];
+}
 
 /**
  * Something that prompted a behaviour log: a saved place, a mood, or a body sensation.

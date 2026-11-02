@@ -1,9 +1,10 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
+import { useCuesStore } from '../../../store/cues-store';
 import type { BodySensationId } from '../../../types/cue';
 import { Colors } from '../../../utils/colors';
-import { BODY_SENSATION_OPTIONS } from '../../../utils/cue-utils';
+import { getBodySensationOptions } from '../../../utils/cue-utils';
 
 interface BodySensationGridProps {
   selected?: BodySensationId;
@@ -11,9 +12,10 @@ interface BodySensationGridProps {
 }
 
 export function BodySensationGrid({ selected, onSelect }: BodySensationGridProps) {
+  const customSensations = useCuesStore(state => state.customSensations);
   return (
     <View style={styles.grid}>
-      {BODY_SENSATION_OPTIONS.map(option => {
+      {getBodySensationOptions(customSensations).map(option => {
         const isSelected = option.id === selected;
         return (
           <Pressable

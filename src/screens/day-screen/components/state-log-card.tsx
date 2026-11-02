@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
+import { useCustomCueOptions } from '../../../hooks/use-custom-cue-options';
 import type { BodySensationLog, MoodLog } from '../../../types/cue';
 import { Colors } from '../../../utils/colors';
 import { getBodySensationOption, getMoodOption } from '../../../utils/cue-utils';
@@ -10,7 +11,11 @@ type StateLogCardProps = { kind: 'mood'; log: MoodLog } | { kind: 'body'; log: B
 
 /** Compact timeline row for a mood check-in or body sensation, tinted with its cue colour. */
 export function StateLogCard(props: StateLogCardProps) {
-  const option = props.kind === 'mood' ? getMoodOption(props.log.mood) : getBodySensationOption(props.log.sensation);
+  const custom = useCustomCueOptions();
+  const option =
+    props.kind === 'mood'
+      ? getMoodOption(props.log.mood, custom.moods)
+      : getBodySensationOption(props.log.sensation, custom.sensations);
   const accent = Colors.cue[props.kind];
   const kindLabel = props.kind === 'mood' ? 'Mood' : 'Body';
   const note = props.log.note;

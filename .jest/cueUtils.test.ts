@@ -1,14 +1,19 @@
 import type { BehaviorEntry } from '../src/types/behavior';
 import type { Cue } from '../src/types/cue';
 import {
+  buildCustomCueOption,
   createDefaultCueTrigger,
+  getBodySensationOption,
   getBodySuggestedBehaviorIds,
   getCueSources,
   getCueTriggerLabel,
   getCueXpStats,
+  getMoodOption,
   getMoodSuggestedBehaviorIds,
   getRecentBodySensation,
+  isCueOptionLabelTaken,
   isCueTriggerComplete,
+  MOOD_OPTIONS,
 } from '../src/utils/cue-utils';
 
 const behavior = {
@@ -129,5 +134,36 @@ describe('cue XP', () => {
     expect(stats.get('place:gym')).toEqual({ xp: 35, logCount: 2 });
     expect(stats.get('mood:stressed')).toEqual({ xp: 5, logCount: 1 });
     expect(stats.get('body:pee')).toBeUndefined();
+  });
+});
+
+describe('custom moods and body sensations', () => {
+  const custom = {
+    moods: [{ id: 'm1', emoji: '😬', label: 'Anxious' }],
+    sensations: [{ id: 's1', emoji: '🥶', label: 'Cold' }],
+  };
+
+  it('lists custom options after the built-in ones', () => {
+    const sources = getCueSources([], custom);
+    const moods = sources.filter(source => source.kind === 'mood');
+    const body = sources.filter(source => source.kind === 'body');
+    expect(moods).toHaveLength(7);
+    expect(moods[6]).toMatchObject({ ref: 'mood:m1', label: 'Anxious', emoji: '😬' });
+    expect(body[6]).toMatchObject({ ref: 'body:s1', label: 'Cold' });
+  });
+
+  it('looks up custom options by id and labels reminders with them', () => {
+    expect(getMoodOption('m1', custom.moods).label).toBe('Anxious');
+    expect(getBodySensationOption('s1', custom.sensations).emoji).toBe('🥶');
+    expect(getCueTriggerLabel({ type: 'mood', moods: ['m1', 'low'] }, [], [], custom)).toBe(
+      'When feeling Anxious or Low',
+    );
+    expect(getCueTriggerLabel({ type: 'body', sensations: ['s1'] }, [], [], custom)).toBe('When body says cold');
+  });
+
+  it('rejects duplicate labels case-insensitively and falls back to a default emoji', () => {
+    expect(isCueOptionLabelTaken(' stressed ', MOOD_OPTIONS)).toBe(true);
+    expect(isCueOptionLabelTaken('Anxious', MOOD_OPTIONS)).toBe(false);
+    expect(buildCustomCueOption('  Anxious ', ' ', '🙂')).toEqual({ label: 'Anxious', emoji: '🙂' });
   });
 });

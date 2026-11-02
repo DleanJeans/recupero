@@ -18,12 +18,13 @@ interface MoodSuggestionsProps {
 export function MoodSuggestions({ mood }: MoodSuggestionsProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const cues = useCuesStore(state => state.cues);
+  const customMoods = useCuesStore(state => state.customMoods);
   const behaviors = useBehaviorStore(state => state.behaviors);
   const suggestedIds = useMemo(() => getMoodSuggestedBehaviorIds(mood, cues), [cues, mood]);
   const suggested = suggestedIds
     .map(id => behaviors.find(behavior => behavior.id === id))
     .filter((behavior): behavior is NonNullable<typeof behavior> => behavior != null);
-  const moodOption = getMoodOption(mood);
+  const moodOption = getMoodOption(mood, customMoods);
 
   return (
     <View style={styles.card}>

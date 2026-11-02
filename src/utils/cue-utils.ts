@@ -2,11 +2,15 @@ import type { BehaviorEntry } from '../types/behavior';
 import type {
   BodySensationId,
   BodySensationLog,
+  BuiltInBodySensationId,
+  BuiltInMoodId,
   Cue,
+  CueOption,
   CueRef,
   CueSourceKind,
   CueTrigger,
   CueTriggerType,
+  CustomCueOptions,
   MoodId,
   MoodLog,
   SavedPlace,
@@ -14,7 +18,7 @@ import type {
 import { Colors } from './colors';
 import { getLogXp } from './xp-utils';
 
-export const MOOD_OPTIONS: ReadonlyArray<{ id: MoodId; emoji: string; label: string }> = [
+export const MOOD_OPTIONS: ReadonlyArray<CueOption & { id: BuiltInMoodId }> = [
   { id: 'great', emoji: '😄', label: 'Great' },
   { id: 'good', emoji: '🙂', label: 'Good' },
   { id: 'okay', emoji: '😐', label: 'Okay' },
@@ -23,7 +27,7 @@ export const MOOD_OPTIONS: ReadonlyArray<{ id: MoodId; emoji: string; label: str
   { id: 'tired', emoji: '😴', label: 'Tired' },
 ];
 
-export const BODY_SENSATION_OPTIONS: ReadonlyArray<{ id: BodySensationId; emoji: string; label: string }> = [
+export const BODY_SENSATION_OPTIONS: ReadonlyArray<CueOption & { id: BuiltInBodySensationId }> = [
   { id: 'pee', emoji: '🚽', label: 'Need to pee' },
   { id: 'hungry', emoji: '🍽️', label: 'Hungry' },
   { id: 'thirsty', emoji: '💧', label: 'Thirsty' },
@@ -37,12 +41,38 @@ export const BODY_SENSATION_FRESH_MS = 2 * 60 * 60 * 1000;
 
 export const CUE_TRIGGER_TYPES: CueTriggerType[] = ['location', 'time', 'habit', 'mood', 'body'];
 
-export function getMoodOption(mood: MoodId) {
-  return MOOD_OPTIONS.find(option => option.id === mood) ?? MOOD_OPTIONS[2];
+export const NO_CUSTOM_CUE_OPTIONS: CustomCueOptions = { moods: [], sensations: [] };
+
+/** Built-in moods followed by the ones the user added. */
+export function getMoodOptions(customMoods: readonly CueOption[] = []): CueOption[] {
+  return [...MOOD_OPTIONS, ...customMoods];
 }
 
-export function getBodySensationOption(sensation: BodySensationId) {
-  return BODY_SENSATION_OPTIONS.find(option => option.id === sensation) ?? BODY_SENSATION_OPTIONS[0];
+/** Built-in body sensations followed by the ones the user added. */
+export function getBodySensationOptions(customSensations: readonly CueOption[] = []): CueOption[] {
+  return [...BODY_SENSATION_OPTIONS, ...customSensations];
+}
+
+export function getMoodOption(mood: MoodId, customMoods: readonly CueOption[] = []): CueOption {
+  return getMoodOptions(customMoods).find(option => option.id === mood) ?? MOOD_OPTIONS[2];
+}
+
+export function getBodySensationOption(
+  sensation: BodySensationId,
+  customSensations: readonly CueOption[] = [],
+): CueOption {
+  return getBodySensationOptions(customSensations).find(option => option.id === sensation) ?? BODY_SENSATION_OPTIONS[0];
+}
+
+/** Builds a new mood/sensation from the add form: trims the label and falls back to a default emoji. */
+export function buildCustomCueOption(label: string, emoji: string, fallbackEmoji: string): Omit<CueOption, 'id'> {
+  return { label: label.trim(), emoji: emoji.trim() || fallbackEmoji };
+}
+
+/** True when the label is empty or matches an existing option (case-insensitive). */
+export function isCueOptionLabelTaken(label: string, options: readonly CueOption[]): boolean {
+  const normalized = label.trim().toLowerCase();
+  return options.some(option => option.label.trim().toLowerCase() === normalized);
 }
 
 export function getCueAccent(type: CueTriggerType): string {
@@ -55,7 +85,12 @@ export function isAutoTimeTrigger(trigger: CueTrigger): boolean {
   return trigger.type === 'time' && trigger.mode === 'auto';
 }
 
-export function getCueTriggerLabel(trigger: CueTrigger, places: SavedPlace[], behaviors: BehaviorEntry[]): string {
+export function getCueTriggerLabel(
+  trigger: CueTrigger,
+  places: SavedPlace[],
+  behaviors: BehaviorEntry[],
+  custom: CustomCueOptions = NO_CUSTOM_CUE_OPTIONS,
+): string {
   if (trigger.type === 'location') {
     const place = places.find(item => item.id === trigger.placeId)?.name ?? 'Unknown place';
     return `${trigger.direction === 'enter' ? 'Enter' : 'Leave'} ${place}`;
@@ -71,10 +106,12 @@ export function getCueTriggerLabel(trigger: CueTrigger, places: SavedPlace[], be
     return `${trigger.delayMin ? `${trigger.delayMin} min after` : 'After logging'} ${behavior}`;
   }
   if (trigger.type === 'body') {
-    const labels = trigger.sensations.map(sensation => getBodySensationOption(sensation).label.toLowerCase());
+    const labels = trigger.sensations.map(sensation =>
+      getBodySensationOption(sensation, custom.sensations).label.toLowerCase(),
+    );
     return labels.length > 0 ? `When body says ${labels.join(' or ')}` : 'When a body sensation is logged';
   }
-  const labels = trigger.moods.map(mood => getMoodOption(mood).label);
+  const labels = trigger.moods.map(mood => getMoodOption(mood, custom.moods).label);
   return labels.length > 0 ? `When feeling ${labels.join(' or ')}` : 'When mood is logged';
 }
 
@@ -184,16 +221,16 @@ export interface CueSource {
 }
 
 /** Every cue a log can be attached to: saved places, then moods, then body sensations. */
-export function getCueSources(places: SavedPlace[]): CueSource[] {
+export function getCueSources(places: SavedPlace[], custom: CustomCueOptions = NO_CUSTOM_CUE_OPTIONS): CueSource[] {
   return [
     ...places.map(place => ({ ref: placeCueRef(place.id), kind: 'place' as const, label: place.name })),
-    ...MOOD_OPTIONS.map(option => ({
+    ...getMoodOptions(custom.moods).map(option => ({
       ref: moodCueRef(option.id),
       kind: 'mood' as const,
       label: option.label,
       emoji: option.emoji,
     })),
-    ...BODY_SENSATION_OPTIONS.map(option => ({
+    ...getBodySensationOptions(custom.sensations).map(option => ({
       ref: bodyCueRef(option.id),
       kind: 'body' as const,
       label: option.label,

@@ -9,6 +9,7 @@ import type {
   CueActivityEvent,
   CueActivityInput,
   CueInput,
+  CueOption,
   MoodId,
   MoodLog,
   SavedPlace,
@@ -21,6 +22,10 @@ export interface CuesStore {
   moodLogs: MoodLog[];
   bodyLogs: BodySensationLog[];
   activity: CueActivityEvent[];
+  /** Moods the user added on top of the built-in ones. */
+  customMoods: CueOption[];
+  /** Body sensations the user added on top of the built-in ones. */
+  customSensations: CueOption[];
   addCue: (cue: CueInput) => string;
   updateCue: (id: string, updates: Partial<CueInput>) => void;
   removeCue: (id: string) => void;
@@ -34,6 +39,8 @@ export interface CuesStore {
   logBodySensation: (sensation: BodySensationId, note?: string) => string;
   updateBodyNote: (id: string, note?: string) => void;
   addActivityEvent: (event: CueActivityInput) => string;
+  addCustomMood: (option: Omit<CueOption, 'id'>) => string;
+  addCustomSensation: (option: Omit<CueOption, 'id'>) => string;
 }
 
 export const useCuesStore = create<CuesStore>()(
@@ -44,6 +51,8 @@ export const useCuesStore = create<CuesStore>()(
       moodLogs: [],
       bodyLogs: [],
       activity: [],
+      customMoods: [],
+      customSensations: [],
       addCue: cue => {
         const id = uuidv4();
         set(state => ({ cues: [...state.cues, { ...cue, id }] }));
@@ -134,6 +143,16 @@ export const useCuesStore = create<CuesStore>()(
         }));
         return id;
       },
+      addCustomMood: option => {
+        const id = uuidv4();
+        set(state => ({ customMoods: [...state.customMoods, { ...option, id }] }));
+        return id;
+      },
+      addCustomSensation: option => {
+        const id = uuidv4();
+        set(state => ({ customSensations: [...state.customSensations, { ...option, id }] }));
+        return id;
+      },
     }),
     {
       name: 'recupero-cues',
@@ -150,6 +169,8 @@ export const useCuesStore = create<CuesStore>()(
           moodLogs: state.moodLogs ?? [],
           bodyLogs: state.bodyLogs ?? [],
           activity: state.activity ?? [],
+          customMoods: state.customMoods ?? [],
+          customSensations: state.customSensations ?? [],
         } as CuesStore;
       },
     },

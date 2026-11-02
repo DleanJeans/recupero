@@ -18,12 +18,13 @@ interface BodySuggestionsProps {
 export function BodySuggestions({ sensation }: BodySuggestionsProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const cues = useCuesStore(state => state.cues);
+  const customSensations = useCuesStore(state => state.customSensations);
   const behaviors = useBehaviorStore(state => state.behaviors);
   const suggestedIds = useMemo(() => getBodySuggestedBehaviorIds(sensation, cues), [cues, sensation]);
   const suggested = suggestedIds
     .map(id => behaviors.find(behavior => behavior.id === id))
     .filter((behavior): behavior is NonNullable<typeof behavior> => behavior != null);
-  const option = getBodySensationOption(sensation);
+  const option = getBodySensationOption(sensation, customSensations);
 
   return (
     <View style={styles.card}>

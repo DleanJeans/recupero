@@ -1,9 +1,10 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
+import { useCuesStore } from '../../../store/cues-store';
 import type { CueTrigger, MoodId } from '../../../types/cue';
 import { Colors } from '../../../utils/colors';
-import { MOOD_OPTIONS } from '../../../utils/cue-utils';
+import { getMoodOptions } from '../../../utils/cue-utils';
 
 type MoodTrigger = Extract<CueTrigger, { type: 'mood' }>;
 
@@ -13,6 +14,7 @@ interface MoodTriggerEditorProps {
 }
 
 export function MoodTriggerEditor({ value, onChange }: MoodTriggerEditorProps) {
+  const customMoods = useCuesStore(state => state.customMoods);
   const toggleMood = (mood: MoodId) => {
     onChange({
       ...value,
@@ -22,7 +24,7 @@ export function MoodTriggerEditor({ value, onChange }: MoodTriggerEditorProps) {
 
   return (
     <View style={styles.chips}>
-      {MOOD_OPTIONS.map(option => {
+      {getMoodOptions(customMoods).map(option => {
         const selected = value.moods.includes(option.id);
         return (
           <Pressable

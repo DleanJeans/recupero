@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
+import { useCustomCueOptions } from '../../../hooks/use-custom-cue-options';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useCuesStore } from '../../../store/cues-store';
 import type { CueTrigger, CueTriggerType } from '../../../types/cue';
@@ -25,6 +26,7 @@ export function AdditionalConditionsEditor({
 }: AdditionalConditionsEditorProps) {
   const behaviors = useBehaviorStore(state => state.behaviors);
   const places = useCuesStore(state => state.places);
+  const custom = useCustomCueOptions();
   const [draft, setDraft] = useState<CueTrigger | null>(null);
 
   const startDraft = (type: CueTriggerType = 'time') => {
@@ -48,7 +50,7 @@ export function AdditionalConditionsEditor({
             style={styles.conditionLabel}
             numberOfLines={2}
           >
-            {getCueTriggerLabel(condition, places, behaviors)}
+            {getCueTriggerLabel(condition, places, behaviors, custom)}
           </Text>
           <Pressable
             hitSlop={8}

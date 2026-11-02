@@ -1,9 +1,10 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
+import { useCuesStore } from '../../../store/cues-store';
 import type { MoodId } from '../../../types/cue';
 import { Colors } from '../../../utils/colors';
-import { MOOD_OPTIONS } from '../../../utils/cue-utils';
+import { getMoodOptions } from '../../../utils/cue-utils';
 
 interface MoodGridProps {
   selectedMood?: MoodId;
@@ -11,9 +12,10 @@ interface MoodGridProps {
 }
 
 export function MoodGrid({ selectedMood, onSelect }: MoodGridProps) {
+  const customMoods = useCuesStore(state => state.customMoods);
   return (
     <View style={styles.grid}>
-      {MOOD_OPTIONS.map(option => {
+      {getMoodOptions(customMoods).map(option => {
         const selected = option.id === selectedMood;
         return (
           <Pressable

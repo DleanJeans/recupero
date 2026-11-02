@@ -7,6 +7,7 @@ import { BehaviorIcon } from '../../../components/behavior-icon';
 import { CueToggle } from '../../../components/cues/cue-toggle';
 import { CueTriggerIcon } from '../../../components/cues/cue-trigger-icon';
 import { Text } from '../../../components/text';
+import { useCustomCueOptions } from '../../../hooks/use-custom-cue-options';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useCuesStore } from '../../../store/cues-store';
 import type { Cue } from '../../../types/cue';
@@ -22,10 +23,11 @@ export function CueCard({ cue }: CueCardProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const behaviors = useBehaviorStore(state => state.behaviors);
   const places = useCuesStore(state => state.places);
+  const custom = useCustomCueOptions();
   const toggleCue = useCuesStore(state => state.toggleCue);
   const firstBehavior = behaviors.find(behavior => behavior.id === cue.behaviorIds[0]);
   const accent = getCueAccent(cue.trigger.type);
-  const triggerLabel = getCueTriggerLabel(cue.trigger, places, behaviors);
+  const triggerLabel = getCueTriggerLabel(cue.trigger, places, behaviors, custom);
   const extraConditions = cue.conditions ?? [];
 
   return (
@@ -57,7 +59,7 @@ export function CueCard({ cue }: CueCardProps) {
               style={styles.condition}
               numberOfLines={1}
             >
-              {getCueTriggerLabel(condition, places, behaviors)}
+              {getCueTriggerLabel(condition, places, behaviors, custom)}
             </Text>
           </View>
         ))}

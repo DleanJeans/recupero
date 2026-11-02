@@ -1,11 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useCustomCueOptions } from '../../hooks/use-custom-cue-options';
 import { useCuesStore } from '../../store/cues-store';
 import type { CueRef, CueSourceKind } from '../../types/cue';
 import { Colors } from '../../utils/colors';
-import { type CueSource, cueKindToTriggerType, getCueAccent, getCueSources } from '../../utils/cue-utils';
+import {
+  bodyCueRef,
+  type CueSource,
+  cueKindToTriggerType,
+  getCueAccent,
+  getCueSources,
+  moodCueRef,
+} from '../../utils/cue-utils';
 import { Text } from '../text';
+import { type AddCueOptionKind, AddCueOptionModal } from './add-cue-option-modal';
 
 const GROUP_LABELS: Record<CueSourceKind, string> = {
   place: 'Place',
@@ -23,12 +32,18 @@ interface CuePickerProps {
 /** Multi-select chips for the cues (places, moods, body sensations) that led to a log. */
 export function CuePicker({ selected, onToggle }: CuePickerProps) {
   const places = useCuesStore(state => state.places);
+  const custom = useCustomCueOptions();
+  const [adding, setAdding] = useState<AddCueOptionKind>();
   const groups = useMemo(() => {
-    const sources = getCueSources(places);
+    const sources = getCueSources(places, custom);
     return GROUP_ORDER.map(kind => ({ kind, sources: sources.filter(source => source.kind === kind) })).filter(
       group => group.sources.length > 0,
     );
-  }, [places]);
+  }, [places, custom]);
+
+  // A mood or sensation added from the log screen is almost always the one that prompted this log, so select it.
+  const handleAdded = (kind: AddCueOptionKind, id: string) =>
+    onToggle(kind === 'mood' ? moodCueRef(id) : bodyCueRef(id));
 
   return (
     <View style={styles.container}>
@@ -47,10 +62,44 @@ export function CuePicker({ selected, onToggle }: CuePickerProps) {
                 onPress={() => onToggle(source.ref)}
               />
             ))}
+            {group.kind !== 'place' ? (
+              <AddChip
+                label={group.kind === 'mood' ? 'New mood' : 'New sensation'}
+                onPress={() => setAdding(group.kind as AddCueOptionKind)}
+              />
+            ) : null}
           </View>
         </View>
       ))}
+      <AddCueOptionModal
+        kind={adding}
+        onClose={() => setAdding(undefined)}
+        onAdded={handleAdded}
+      />
     </View>
+  );
+}
+
+interface AddChipProps {
+  label: string;
+  onPress: () => void;
+}
+
+function AddChip({ label, onPress }: AddChipProps) {
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.chip, styles.addChip, pressed && styles.pressed]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <Ionicons
+        name="add"
+        size={14}
+        color={Colors.text.faint}
+      />
+      <Text style={styles.label}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -111,6 +160,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 11,
     paddingVertical: 6,
   },
+  addChip: { borderStyle: 'dashed', backgroundColor: 'transparent' },
   emoji: { fontSize: 14 },
   label: { color: Colors.text.muted, fontSize: 13, fontWeight: '600', flexShrink: 1 },
   activeLabel: { color: Colors.text.primary },

@@ -1,9 +1,10 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
+import { useCuesStore } from '../../../store/cues-store';
 import type { BodySensationId, CueTrigger } from '../../../types/cue';
 import { Colors } from '../../../utils/colors';
-import { BODY_SENSATION_OPTIONS } from '../../../utils/cue-utils';
+import { getBodySensationOptions } from '../../../utils/cue-utils';
 
 type BodyTrigger = Extract<CueTrigger, { type: 'body' }>;
 
@@ -13,6 +14,7 @@ interface BodyTriggerEditorProps {
 }
 
 export function BodyTriggerEditor({ value, onChange }: BodyTriggerEditorProps) {
+  const customSensations = useCuesStore(state => state.customSensations);
   const toggleSensation = (sensation: BodySensationId) => {
     onChange({
       ...value,
@@ -24,7 +26,7 @@ export function BodyTriggerEditor({ value, onChange }: BodyTriggerEditorProps) {
 
   return (
     <View style={styles.chips}>
-      {BODY_SENSATION_OPTIONS.map(option => {
+      {getBodySensationOptions(customSensations).map(option => {
         const selected = value.sensations.includes(option.id);
         return (
           <Pressable

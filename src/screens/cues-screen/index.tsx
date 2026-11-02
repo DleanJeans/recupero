@@ -1,13 +1,16 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button } from '../../components/button';
+import { type AddCueOptionKind, AddCueOptionModal } from '../../components/cues/add-cue-option-modal';
 import { CueScreenHeader } from '../../components/cues/cue-screen-header';
 import { CueSectionLabel } from '../../components/cues/cue-section-label';
 import { CueSegmentedControl } from '../../components/cues/cue-segmented-control';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text } from '../../components/text';
+import { useCustomCueOptions } from '../../hooks/use-custom-cue-options';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useCuesStore } from '../../store/cues-store';
 import type { CueSourceKind, CueTriggerType } from '../../types/cue';
@@ -77,11 +80,13 @@ function CueSourcesTab() {
   const moodLogs = useCuesStore(state => state.moodLogs);
   const bodyLogs = useCuesStore(state => state.bodyLogs);
   const behaviors = useBehaviorStore(state => state.behaviors);
+  const custom = useCustomCueOptions();
+  const [adding, setAdding] = useState<AddCueOptionKind>();
   const currentMood = getCurrentMood(moodLogs);
   const recentBody = getRecentBodySensation(bodyLogs);
 
   const stats = useMemo(() => getCueXpStats(behaviors), [behaviors]);
-  const sources = useMemo(() => getCueSources(places), [places]);
+  const sources = useMemo(() => getCueSources(places, custom), [places, custom]);
   const maxXp = useMemo(() => Math.max(0, ...sources.map(source => stats.get(source.ref)?.xp ?? 0)), [sources, stats]);
   const byKind = useMemo(() => {
     const sorted = (kind: CueSourceKind) =>
@@ -139,23 +144,60 @@ function CueSourcesTab() {
       <View style={styles.group}>
         <SectionHeader
           label="Moods"
-          detail={currentMood ? `Now ${getMoodOption(currentMood.mood).emoji}` : undefined}
+          detail={currentMood ? `Now ${getMoodOption(currentMood.mood, custom.moods).emoji}` : undefined}
           action="Log mood"
           onAction={() => navigation.navigate('MoodLog')}
         />
         {renderRows(byKind.mood)}
+        <AddRow
+          label="Add a mood"
+          onPress={() => setAdding('mood')}
+        />
       </View>
 
       <View style={styles.group}>
         <SectionHeader
           label="Body"
-          detail={recentBody ? `Now ${getBodySensationOption(recentBody.sensation).emoji}` : undefined}
+          detail={
+            recentBody ? `Now ${getBodySensationOption(recentBody.sensation, custom.sensations).emoji}` : undefined
+          }
           action="Log sensation"
           onAction={() => navigation.navigate('BodyLog')}
         />
         {renderRows(byKind.body)}
+        <AddRow
+          label="Add a body sensation"
+          onPress={() => setAdding('body')}
+        />
       </View>
+
+      <AddCueOptionModal
+        kind={adding}
+        onClose={() => setAdding(undefined)}
+      />
     </>
+  );
+}
+
+interface AddRowProps {
+  label: string;
+  onPress: () => void;
+}
+
+function AddRow({ label, onPress }: AddRowProps) {
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.emptyRow, styles.addRow, pressed && styles.pressed]}
+      onPress={onPress}
+      accessibilityRole="button"
+    >
+      <Ionicons
+        name="add"
+        size={16}
+        color={Colors.text.muted}
+      />
+      <Text style={styles.emptyRowText}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -295,6 +337,12 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     paddingHorizontal: 14,
     paddingVertical: 14,
+  },
+  addRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 12,
   },
   emptyRowText: {
     color: Colors.text.muted,
