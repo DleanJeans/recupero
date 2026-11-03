@@ -141,3 +141,44 @@ export function getTotalStarsForDate(behaviors: BehaviorEntry[], dateStr: string
   }
   return total;
 }
+
+export interface StarProgressSegment {
+  /** Reps this segment covers (its flex weight). */
+  span: number;
+  /** 0..1 share of the segment that is filled. */
+  fill: number;
+  /** Count shown above the segment's right end. */
+  label: number;
+  /** True once the log count reaches `label`. */
+  hit: boolean;
+}
+
+/** One segment per configured star threshold, each as wide as the reps it
+ *  needs. When the count passes the top threshold, an extra full segment
+ *  grows to fit it so the threshold marks slide left. */
+export function getStarProgressSegments(
+  logCount: number,
+  thresholds: readonly (number | null)[],
+): StarProgressSegment[] {
+  const count = Number.isNaN(logCount) ? 0 : Math.max(0, logCount);
+  const segments: StarProgressSegment[] = [];
+  let prev = 0;
+  for (const t of thresholds) {
+    if (t == null || t <= prev) continue;
+    const span = t - prev;
+    segments.push({ span, fill: Math.min(Math.max(count - prev, 0), span) / span, label: t, hit: count >= t });
+    prev = t;
+  }
+  if (segments.length > 0 && count > prev) {
+    segments.push({ span: count - prev, fill: 1, label: count, hit: true });
+  }
+  return segments;
+}
+
+/** Short row label for the star progress bar: "Today" for the current day,
+ *  otherwise the period name. */
+export function getStarProgressLabel(period: StarPeriod, targetDateStr: string, todayStr: string): string {
+  if (period === 'week') return 'Week';
+  if (period === 'month') return 'Month';
+  return targetDateStr === todayStr ? 'Today' : 'Day';
+}

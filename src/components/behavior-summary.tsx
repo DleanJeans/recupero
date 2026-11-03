@@ -14,6 +14,7 @@ import { BehaviorIcon } from './behavior-icon';
 import { CategoryEmoji } from './category-emoji';
 import { CooldownBar } from './cooldown-bar';
 import { DecayBar } from './decay-bar';
+import { StarProgressBar } from './star-progress-bar';
 import { StarRow } from './star-row';
 import { Text } from './text';
 import { XPBar } from './xp-bar';
@@ -112,13 +113,17 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
             size={isHeader ? 24 : 32}
           />
         )}
-        <StarRow
-          behavior={behavior}
-          dateStr={starTargetDate}
-          size={isHomeCard ? 13 : 11}
-          motionEnabled={starMotionEnabled}
-        />
-        {starLogCountSummary && <Text style={styles.starLogCount}>{starLogCountSummary}</Text>}
+        {!isHomeCard && (
+          <>
+            <StarRow
+              behavior={behavior}
+              dateStr={starTargetDate}
+              size={11}
+              motionEnabled={starMotionEnabled}
+            />
+            {starLogCountSummary && <Text style={styles.starLogCount}>{starLogCountSummary}</Text>}
+          </>
+        )}
       </View>
       <View style={[styles.info, isHomeCard && styles.cardInfo]}>
         <BehaviorTitle
@@ -136,6 +141,13 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
             label={showCurrentHabitXpLabel && behavior.xpDecay ? 'Current Habit XP' : undefined}
             animateNumbers={xpMotionEnabled}
             motionEnabled={xpMotionEnabled}
+          />
+        )}
+        {isHomeCard && (
+          <StarProgressBar
+            behavior={behavior}
+            dateStr={starTargetDate}
+            todayStr={todayStr}
           />
         )}
         {isHomeCard ? (

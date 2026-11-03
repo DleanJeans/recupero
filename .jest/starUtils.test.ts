@@ -6,6 +6,8 @@ import {
   getPeriodRange,
   getStarPeriod,
   getStarPeriodLogCountLabel,
+  getStarProgressLabel,
+  getStarProgressSegments,
   getThresholds,
   getTotalStarsForDate,
 } from '../src/utils/star-utils';
@@ -381,5 +383,42 @@ describe('getLogsForPeriod', () => {
       ts(2026, 6, 1, 12),
       ts(2026, 6, 30, 12),
     ]);
+  });
+});
+
+describe('getStarProgressSegments', () => {
+  it('makes one segment per threshold, sized by the reps it needs', () => {
+    expect(getStarProgressSegments(1, [1, 2, 4])).toEqual([
+      { span: 1, fill: 1, label: 1, hit: true },
+      { span: 1, fill: 0, label: 2, hit: false },
+      { span: 2, fill: 0, label: 4, hit: false },
+    ]);
+  });
+
+  it('partially fills the segment in progress', () => {
+    expect(getStarProgressSegments(3, [1, 2, 4])[2]).toEqual({ span: 2, fill: 0.5, label: 4, hit: false });
+  });
+
+  it('skips null placeholders', () => {
+    expect(getStarProgressSegments(0, [null, 3, null])).toEqual([{ span: 3, fill: 0, label: 3, hit: false }]);
+  });
+
+  it('adds an overflow segment past the top threshold', () => {
+    const segments = getStarProgressSegments(7, [1, 3, 5]);
+    expect(segments).toHaveLength(4);
+    expect(segments[3]).toEqual({ span: 2, fill: 1, label: 7, hit: true });
+  });
+
+  it('returns no segments without thresholds', () => {
+    expect(getStarProgressSegments(2, [])).toEqual([]);
+  });
+});
+
+describe('getStarProgressLabel', () => {
+  it('labels by period', () => {
+    expect(getStarProgressLabel('day', '2026-11-03', '2026-11-03')).toBe('Today');
+    expect(getStarProgressLabel('day', '2026-11-02', '2026-11-03')).toBe('Day');
+    expect(getStarProgressLabel('week', '2026-11-03', '2026-11-03')).toBe('Week');
+    expect(getStarProgressLabel('month', '2026-11-03', '2026-11-03')).toBe('Month');
   });
 });
