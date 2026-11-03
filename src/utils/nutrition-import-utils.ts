@@ -29,13 +29,17 @@ const NUTRIENT_LINE = new RegExp(String.raw`^([a-z][a-z ,()/-]{0,40}?)\s*(?:\|\s
 const VALUE_ONLY_LINE = new RegExp(String.raw`^${NUMBER}\s*${UNIT}`, 'i');
 const LABEL_ONLY_LINE = /^[a-z][a-z ,()/-]{0,40}$/i;
 
+const GRAMS = String.raw`(\d+(?:[.,]\d+)?)\s*(?:g|grams?)`;
 const SERVING_GRAMS_PATTERNS = [
-  // eatthismuch: "For 1 tbsp of sunflower seed kernels (9g)"
-  /\bfor\s+[^()\n|]{1,80}\((\d+(?:[.,]\d+)?)\s*g\)/i,
+  // eatthismuch with the unit switched to grams: "For 100 grams of tomatoes"
+  new RegExp(String.raw`\bfor\s+${GRAMS}\s+of\b`, 'i'),
+  // eatthismuch: "For 1 tbsp of sunflower seed kernels (9g)", "For 1 medium whole of tomatoes (123g)".
+  // The amount and unit can be split across elements, so allow line breaks and spaced-out parentheses.
+  new RegExp(String.raw`\bfor\s+[^()|]{1,200}?\(\s*${GRAMS}\s*\)`, 'i'),
   // "Serving size 1 cup (140 g)"
-  /serving\s+size[^\n]{0,60}?\((\d+(?:[.,]\d+)?)\s*g\)/i,
+  new RegExp(String.raw`serving\s+size[^\n]{0,60}?\(\s*${GRAMS}\s*\)`, 'i'),
   // "Serving size: 30 g"
-  /serving\s+size[\s:|]*(\d+(?:[.,]\d+)?)\s*g(?![a-z])/i,
+  new RegExp(String.raw`serving\s+size[\s:|]*${GRAMS}(?![a-z])`, 'i'),
 ];
 const PER_100G_TABLE = /(?:amount|nutrition(?:\s+facts)?|values?|nutrients?)\s+per\s+100\s*g(?![a-z])/i;
 const CALORIES_PER_100G = /(\d+(?:[.,]\d+)?)\s*(?:k?cal(?:ories)?)\s+per\s+100\s*g(?![a-z])/i;
@@ -185,15 +189,31 @@ function findServingGrams(text: string): number | undefined {
   return undefined;
 }
 
+/**
+ * Last resort when the page names its serving only by a unit like "medium whole": the per-serving
+ * calories over the stated calories per 100 g give the serving's weight.
+ */
+function servingGramsFromCalories(
+  nutrients: ParsedNutrient[],
+  caloriesPer100g: number | undefined,
+): number | undefined {
+  if (!caloriesPer100g || caloriesPer100g <= 0) return undefined;
+  const calories = nutrients.find(nutrient => canonicalNutrientKey(nutrient.label) === 'calories');
+  if (!calories || !(calories.value > 0)) return undefined;
+  const kcal = convertUnit(calories.value, calories.unit ?? 'kcal', 'kcal');
+  return Math.round((kcal * 1000) / caloriesPer100g) / 10;
+}
+
 export function parseNutritionHtml(html: string): ParsedNutrition {
   const text = htmlToText(html);
   const caloriesMatch = text.match(CALORIES_PER_100G);
   const caloriesPer100g = caloriesMatch ? parseNumber(caloriesMatch[1]) : undefined;
 
   const jsonLd = parseJsonLdNutrition(html);
-  if (jsonLd) return { ...jsonLd, servingGrams: jsonLd.servingGrams ?? findServingGrams(text), caloriesPer100g };
-
-  return { servingGrams: findServingGrams(text), caloriesPer100g, nutrients: parseTextNutrients(text) };
+  const nutrients = jsonLd?.nutrients ?? parseTextNutrients(text);
+  const servingGrams =
+    jsonLd?.servingGrams ?? findServingGrams(text) ?? servingGramsFromCalories(nutrients, caloriesPer100g);
+  return { servingGrams, caloriesPer100g, nutrients };
 }
 
 function convertUnit(value: number, fromUnit: string | undefined, toUnit: string | undefined): number {

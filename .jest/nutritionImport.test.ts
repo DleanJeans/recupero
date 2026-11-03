@@ -75,6 +75,32 @@ describe('nutrition URL import', () => {
     expect(result.values).toEqual({ field_2: '500', field_3: '20.5' });
   });
 
+  it('reads the gram weight of a non-gram default unit like "medium whole"', () => {
+    const html = `
+      <h2>For <span>1</span> <span>medium whole</span>
+      <div>of tomatoes</div> <span>(<b>123</b> g)</span></h2>
+      <table><tr><td>Calories</td><td>22</td></tr><tr><td>Protein</td><td>1g</td></tr></table>
+      <p>This has a relatively low calorie density, with 18 Calories per 100g.</p>`;
+    const parsed = parseNutritionHtml(html);
+    expect(parsed.servingGrams).toBe(123);
+    expect(mapNutritionToMetadata(parsed, fields).values).toEqual({ field_2: '18', field_3: '0.81' });
+  });
+
+  it('reads the serving when the page unit is switched to grams', () => {
+    const html = `<p>For 100 grams of tomatoes</p>
+      <table><tr><td>Calories</td><td>18</td></tr><tr><td>Protein</td><td>1g</td></tr></table>`;
+    const parsed = parseNutritionHtml(html);
+    expect(parsed.servingGrams).toBe(100);
+    expect(mapNutritionToMetadata(parsed, fields).values).toEqual({ field_2: '18', field_3: '1' });
+  });
+
+  it('derives the serving weight from calories when the page gives no grams', () => {
+    const html = `<p>For 1 medium whole of tomatoes</p>
+      <table><tr><td>Calories</td><td>22</td></tr><tr><td>Protein</td><td>1g</td></tr></table>
+      <p>with 18 Calories per 100g.</p>`;
+    expect(parseNutritionHtml(html).servingGrams).toBe(122.2);
+  });
+
   it('fails clearly when the serving weight is missing', () => {
     expect(() => mapNutritionToMetadata(parseNutritionHtml('<p>Protein 2g</p>'), fields)).toThrow(/serving weight/);
   });
