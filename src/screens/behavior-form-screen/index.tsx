@@ -426,195 +426,198 @@ export function BehaviorFormScreen() {
         <BackButton />
         <ScreenTitle>{isEdit ? 'Edit Behavior' : 'New Behavior'}</ScreenTitle>
       </View>
-      <KeyboardAvoidingView
-        behavior="height"
-        style={styles.flex}
-      >
-        <ScrollView
+      {/* Inner body ends at the safe-area padding, so the absolute FAB sits above the system nav bar. */}
+      <View style={styles.flex}>
+        <KeyboardAvoidingView
+          behavior="height"
           style={styles.flex}
-          contentContainerStyle={[styles.form, emojiKeyboardOpen && styles.formWithEmojiOpen]}
-          keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.row}>
-            <EmojiPicker
-              value={icon}
-              onChangeText={setIcon}
-              nameHint={name}
-              onPick={() => nameRef.current?.focus()}
-              onOpenChange={setEmojiKeyboardOpen}
-            />
-            <NameInput
-              ref={nameRef}
-              value={name}
-              onChangeText={setName}
-              onSubmit={handleSave}
-            />
-          </View>
-
-          <BehaviorTypePicker
-            value={type}
-            onChange={setType}
-          />
-
-          <CategoryPicker
-            categories={categories}
-            selectedId={categoryId}
-            onChange={handleCategoryChange}
-            forceShowNames
-            selectCreatedCategoryOnSave
-          />
-
-          <BehaviorMetadataEditor
-            categoryId={categoryId}
-            categories={categories}
-            defaults={behaviorDefaultMetadata}
-            amountFieldKey={selectedAmountField?.key}
-            onChange={setBehaviorDefaultMetadata}
-            onAmountFieldChange={setMetadataAmountFieldKey}
-          />
-
-          <CheckboxRow
-            label="Cooldown"
-            hint="Limit how often this can be logged"
-            checked={cooldownEnabled}
-            onToggle={handleCooldownToggle}
+          <ScrollView
+            style={styles.flex}
+            contentContainerStyle={[styles.form, emojiKeyboardOpen && styles.formWithEmojiOpen]}
+            keyboardShouldPersistTaps="handled"
           >
-            {cooldownEnabled && (
-              <View style={styles.cooldownSection}>
-                <View style={styles.cooldownLabelRow}>
-                  <CooldownIcon size={14} />
-                  <Text style={styles.cooldownLabel}>Type</Text>
-                  <CooldownTypeToggle
-                    value={cooldownType}
-                    onChange={setCooldownType}
-                    style={styles.cooldownTypeRow}
-                  />
-                </View>
-                <CooldownInput
-                  cooldownMinutes={cooldownMinutes}
-                  onChange={setCooldownMinutes}
-                  preferredUnit={cooldownUnit}
-                  onUnitChange={setCooldownUnit}
-                />
-              </View>
-            )}
-          </CheckboxRow>
+            <View style={styles.row}>
+              <EmojiPicker
+                value={icon}
+                onChangeText={setIcon}
+                nameHint={name}
+                onPick={() => nameRef.current?.focus()}
+                onOpenChange={setEmojiKeyboardOpen}
+              />
+              <NameInput
+                ref={nameRef}
+                value={name}
+                onChangeText={setName}
+                onSubmit={handleSave}
+              />
+            </View>
 
-          <StarThresholdsFormField
-            enabled={starsEnabled}
-            period={starPeriod}
-            inputs={starInputs}
-            validationError={starValidationError}
-            onToggle={handleStarsToggle}
-            onInputChange={handleStarInputChange}
-            onPeriodChange={handleStarPeriodChange}
-          />
+            <BehaviorTypePicker
+              value={type}
+              onChange={setType}
+            />
 
-          <AutoTrackAppField
-            enabled={autoTrackEnabled}
-            app={autoTrackPick}
-            onToggle={() => setAutoTrackEnabled(v => !v)}
-            onAppChange={handleAutoTrackAppChange}
-          />
+            <CategoryPicker
+              categories={categories}
+              selectedId={categoryId}
+              onChange={handleCategoryChange}
+              forceShowNames
+              selectCreatedCategoryOnSave
+            />
 
-          <AutoTrackSiteField
-            enabled={siteTrackEnabled}
-            domain={siteDomain}
-            onToggle={handleSiteTrackToggle}
-            onDomainChange={setSiteDomain}
-          />
+            <BehaviorMetadataEditor
+              categoryId={categoryId}
+              categories={categories}
+              defaults={behaviorDefaultMetadata}
+              amountFieldKey={selectedAmountField?.key}
+              onChange={setBehaviorDefaultMetadata}
+              onAmountFieldChange={setMetadataAmountFieldKey}
+            />
 
-          <CheckboxRow
-            label="Track XP"
-            hint="Show level, XP bar, and decay"
-            checked={xpEnabled}
-            onToggle={() => setXpEnabled(v => !v)}
-          >
-            {xpEnabled && (
-              <View style={styles.xpOptions}>
-                <CheckboxRow
-                  label="Track duration for XP"
-                  hint="Use start and end time, awarding 1 XP per minute"
-                  checked={durationXpEnabled}
-                  onToggle={handleDurationXpToggle}
-                  variant="row"
-                />
-                <XPDecayInput
-                  enabled={xpDecayEnabled}
-                  every={xpDecayEvery}
-                  unit={xpDecayUnit}
-                  onToggle={handleXpDecayToggle}
-                  onChangeEvery={handleXpDecayChangeEvery}
-                  onUnitChange={handleXpDecayUnitChange}
-                />
-                <CheckboxRow
-                  label="Hide Total XP"
-                  hint="Hide lifetime XP in habit details"
-                  checked={hideTotalXp}
-                  onToggle={() => setHideTotalXp(v => !v)}
-                  variant="row"
-                />
-              </View>
-            )}
-          </CheckboxRow>
-
-          {moneyRewardsEnabled && (
             <CheckboxRow
-              label={type === 'undesirable' ? 'Money penalty' : 'Reward money'}
-              hint={type === 'neutral' ? 'Neutral logs do not change money' : undefined}
-              checked={moneyRewardEnabled}
-              disabled={type === 'neutral'}
-              onToggle={handleMoneyRewardToggle}
+              label="Cooldown"
+              hint="Limit how often this can be logged"
+              checked={cooldownEnabled}
+              onToggle={handleCooldownToggle}
             >
-              {moneyRewardEnabled && (
-                <View style={styles.moneyOptions}>
-                  <MoneyRewardInput
-                    value={moneyRewardAmount}
-                    rateLabel={moneyRewardDurationBased ? 'per minute' : 'per log'}
-                    negative={type === 'undesirable'}
-                    onChangeText={value => {
-                      setMoneyRewardAmountTouched(true);
-                      setMoneyRewardAmount(sanitizeVndInput(value));
-                    }}
-                  />
-                  {starsEnabled && (
-                    <StarMoneyMultipliersFormField
-                      inputs={starMoneyMultiplierInputs}
-                      validationError={starMoneyMultiplierValidationError ?? parsedMultipliers.error}
-                      onInputChange={handleStarMoneyMultiplierInputChange}
+              {cooldownEnabled && (
+                <View style={styles.cooldownSection}>
+                  <View style={styles.cooldownLabelRow}>
+                    <CooldownIcon size={14} />
+                    <Text style={styles.cooldownLabel}>Type</Text>
+                    <CooldownTypeToggle
+                      value={cooldownType}
+                      onChange={setCooldownType}
+                      style={styles.cooldownTypeRow}
                     />
-                  )}
+                  </View>
+                  <CooldownInput
+                    cooldownMinutes={cooldownMinutes}
+                    onChange={setCooldownMinutes}
+                    preferredUnit={cooldownUnit}
+                    onUnitChange={setCooldownUnit}
+                  />
                 </View>
               )}
             </CheckboxRow>
-          )}
 
-          <CheckboxRow
-            label="Private"
-            checked={isPrivate}
-            onToggle={() => setIsPrivate(v => !v)}
-          />
-        </ScrollView>
-      </KeyboardAvoidingView>
+            <StarThresholdsFormField
+              enabled={starsEnabled}
+              period={starPeriod}
+              inputs={starInputs}
+              validationError={starValidationError}
+              onToggle={handleStarsToggle}
+              onInputChange={handleStarInputChange}
+              onPeriodChange={handleStarPeriodChange}
+            />
 
-      {!isKeyboardOpen && (
-        <Button
-          variant="primary"
-          fab
-          onPress={handleSave}
-          disabled={
-            isEdit
-              ? !hasChanges || moneyRewardInputInvalid || starMoneyMultipliersInvalid || siteDomainInvalid
-              : !name.trim() ||
-                !icon.trim() ||
-                moneyRewardInputInvalid ||
-                starMoneyMultipliersInvalid ||
-                siteDomainInvalid
-          }
-        >
-          {isEdit ? 'Save' : 'Add'}
-        </Button>
-      )}
+            <AutoTrackAppField
+              enabled={autoTrackEnabled}
+              app={autoTrackPick}
+              onToggle={() => setAutoTrackEnabled(v => !v)}
+              onAppChange={handleAutoTrackAppChange}
+            />
+
+            <AutoTrackSiteField
+              enabled={siteTrackEnabled}
+              domain={siteDomain}
+              onToggle={handleSiteTrackToggle}
+              onDomainChange={setSiteDomain}
+            />
+
+            <CheckboxRow
+              label="Track XP"
+              hint="Show level, XP bar, and decay"
+              checked={xpEnabled}
+              onToggle={() => setXpEnabled(v => !v)}
+            >
+              {xpEnabled && (
+                <View style={styles.xpOptions}>
+                  <CheckboxRow
+                    label="Track duration for XP"
+                    hint="Use start and end time, awarding 1 XP per minute"
+                    checked={durationXpEnabled}
+                    onToggle={handleDurationXpToggle}
+                    variant="row"
+                  />
+                  <XPDecayInput
+                    enabled={xpDecayEnabled}
+                    every={xpDecayEvery}
+                    unit={xpDecayUnit}
+                    onToggle={handleXpDecayToggle}
+                    onChangeEvery={handleXpDecayChangeEvery}
+                    onUnitChange={handleXpDecayUnitChange}
+                  />
+                  <CheckboxRow
+                    label="Hide Total XP"
+                    hint="Hide lifetime XP in habit details"
+                    checked={hideTotalXp}
+                    onToggle={() => setHideTotalXp(v => !v)}
+                    variant="row"
+                  />
+                </View>
+              )}
+            </CheckboxRow>
+
+            {moneyRewardsEnabled && (
+              <CheckboxRow
+                label={type === 'undesirable' ? 'Money penalty' : 'Reward money'}
+                hint={type === 'neutral' ? 'Neutral logs do not change money' : undefined}
+                checked={moneyRewardEnabled}
+                disabled={type === 'neutral'}
+                onToggle={handleMoneyRewardToggle}
+              >
+                {moneyRewardEnabled && (
+                  <View style={styles.moneyOptions}>
+                    <MoneyRewardInput
+                      value={moneyRewardAmount}
+                      rateLabel={moneyRewardDurationBased ? 'per minute' : 'per log'}
+                      negative={type === 'undesirable'}
+                      onChangeText={value => {
+                        setMoneyRewardAmountTouched(true);
+                        setMoneyRewardAmount(sanitizeVndInput(value));
+                      }}
+                    />
+                    {starsEnabled && (
+                      <StarMoneyMultipliersFormField
+                        inputs={starMoneyMultiplierInputs}
+                        validationError={starMoneyMultiplierValidationError ?? parsedMultipliers.error}
+                        onInputChange={handleStarMoneyMultiplierInputChange}
+                      />
+                    )}
+                  </View>
+                )}
+              </CheckboxRow>
+            )}
+
+            <CheckboxRow
+              label="Private"
+              checked={isPrivate}
+              onToggle={() => setIsPrivate(v => !v)}
+            />
+          </ScrollView>
+        </KeyboardAvoidingView>
+
+        {!isKeyboardOpen && (
+          <Button
+            variant="primary"
+            fab
+            onPress={handleSave}
+            disabled={
+              isEdit
+                ? !hasChanges || moneyRewardInputInvalid || starMoneyMultipliersInvalid || siteDomainInvalid
+                : !name.trim() ||
+                  !icon.trim() ||
+                  moneyRewardInputInvalid ||
+                  starMoneyMultipliersInvalid ||
+                  siteDomainInvalid
+            }
+          >
+            {isEdit ? 'Save' : 'Add'}
+          </Button>
+        )}
+      </View>
     </SafeAreaView>
   );
 }

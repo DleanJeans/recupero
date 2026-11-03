@@ -108,69 +108,72 @@ export function CategoryFormScreen() {
         <BackButton />
         <ScreenTitle>{isEditing ? 'Edit Category' : 'New Category'}</ScreenTitle>
       </View>
-      <KeyboardAvoidingView
-        behavior="height"
-        style={styles.flex}
-      >
-        <ScrollView
+      {/* Inner body ends at the safe-area padding, so the absolute FAB sits above the system nav bar. */}
+      <View style={styles.flex}>
+        <KeyboardAvoidingView
+          behavior="height"
           style={styles.flex}
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
         >
-          <CategoryForm
-            categoryId={categoryId}
-            emoji={emoji}
-            name={name}
-            isEditing={isEditing}
-            onEmojiChange={setEmoji}
-            onNameChange={setName}
-            metadataFields={metadataFields}
-            metadataResetNonce={metadataResetNonce}
-            onMetadataFieldsChange={setMetadataFields}
-            onSave={handleSave}
-          />
-        </ScrollView>
-      </KeyboardAvoidingView>
+          <ScrollView
+            style={styles.flex}
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+          >
+            <CategoryForm
+              categoryId={categoryId}
+              emoji={emoji}
+              name={name}
+              isEditing={isEditing}
+              onEmojiChange={setEmoji}
+              onNameChange={setName}
+              metadataFields={metadataFields}
+              metadataResetNonce={metadataResetNonce}
+              onMetadataFieldsChange={setMetadataFields}
+              onSave={handleSave}
+            />
+          </ScrollView>
+        </KeyboardAvoidingView>
 
-      <FabButtonRow>
-        {isEditing && (
+        <FabButtonRow>
+          {isEditing && (
+            <Button
+              variant="icon"
+              onPress={handleDelete}
+              style={styles.deleteButton}
+              accessibilityLabel="Delete category"
+            >
+              <Ionicons
+                name="trash-outline"
+                size={20}
+                color={Colors.type.undesirable}
+              />
+            </Button>
+          )}
+          {isEditing && (
+            <Button
+              variant="icon"
+              onPress={handleUndo}
+              disabled={!hasChanges}
+              style={styles.undoButton}
+              accessibilityLabel="Undo category changes"
+            >
+              <Ionicons
+                name="arrow-undo"
+                size={20}
+                color={Colors.text.muted}
+              />
+            </Button>
+          )}
           <Button
-            variant="icon"
-            onPress={handleDelete}
-            style={styles.deleteButton}
-            accessibilityLabel="Delete category"
+            variant="primary"
+            onPress={handleSave}
+            disabled={!canSave}
+            style={styles.saveButton}
           >
-            <Ionicons
-              name="trash-outline"
-              size={20}
-              color={Colors.type.undesirable}
-            />
+            {isEditing ? 'Save' : 'Add'}
           </Button>
-        )}
-        {isEditing && (
-          <Button
-            variant="icon"
-            onPress={handleUndo}
-            disabled={!hasChanges}
-            style={styles.undoButton}
-            accessibilityLabel="Undo category changes"
-          >
-            <Ionicons
-              name="arrow-undo"
-              size={20}
-              color={Colors.text.muted}
-            />
-          </Button>
-        )}
-        <Button
-          variant="primary"
-          onPress={handleSave}
-          disabled={!canSave}
-          style={styles.saveButton}
-        >
-          {isEditing ? 'Save' : 'Add'}
-        </Button>
-      </FabButtonRow>
+        </FabButtonRow>
+      </View>
     </SafeAreaView>
   );
 }
