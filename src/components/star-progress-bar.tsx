@@ -14,6 +14,10 @@ import {
 } from '../utils/star-utils';
 import { Text } from './text';
 
+/** Width of the row label column. The home card passes the same width to
+ *  the XP bar's level label so both bars line up, with room after "Today". */
+export const STAR_PROGRESS_LABEL_WIDTH = 40;
+
 interface Props {
   behavior: BehaviorEntry;
   /** Anchor date (YYYY-MM-DD) whose star period is evaluated. */
@@ -96,7 +100,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   labelSpacer: {
-    minWidth: 30,
+    width: STAR_PROGRESS_LABEL_WIDTH,
   },
   valueSpacer: {
     minWidth: 42,
@@ -105,7 +109,7 @@ const styles = StyleSheet.create({
     color: Colors.text.muted,
     fontSize: 11,
     fontWeight: '600',
-    minWidth: 30,
+    width: STAR_PROGRESS_LABEL_WIDTH,
   },
   segments: {
     flex: 1,

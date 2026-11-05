@@ -14,7 +14,7 @@ import { BehaviorIcon } from './behavior-icon';
 import { CategoryEmoji } from './category-emoji';
 import { CooldownBar } from './cooldown-bar';
 import { DecayBar } from './decay-bar';
-import { StarProgressBar } from './star-progress-bar';
+import { STAR_PROGRESS_LABEL_WIDTH, StarProgressBar } from './star-progress-bar';
 import { StarRow } from './star-row';
 import { Text } from './text';
 import { XPBar } from './xp-bar';
@@ -141,6 +141,7 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
             label={showCurrentHabitXpLabel && behavior.xpDecay ? 'Current Habit XP' : undefined}
             animateNumbers={xpMotionEnabled}
             motionEnabled={xpMotionEnabled}
+            levelWidth={isHomeCard ? STAR_PROGRESS_LABEL_WIDTH : undefined}
           />
         )}
         {isHomeCard && (

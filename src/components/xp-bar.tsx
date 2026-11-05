@@ -18,6 +18,8 @@ interface XPBarProps {
   label?: string;
   animateNumbers?: boolean;
   motionEnabled?: boolean;
+  /** Fixed width for the "Lv" label column, to line up with a row below. */
+  levelWidth?: number;
 }
 
 interface XPBarValues {
@@ -33,6 +35,7 @@ export function XPBar({
   label,
   animateNumbers = false,
   motionEnabled = true,
+  levelWidth,
 }: XPBarProps) {
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
@@ -47,6 +50,7 @@ export function XPBar({
         values={values}
         color={color}
         label={label}
+        levelWidth={levelWidth}
       />
     );
   }
@@ -58,6 +62,7 @@ export function XPBar({
       color={color}
       label={label}
       animateNumbers={animateNumbers}
+      levelWidth={levelWidth}
     />
   );
 }
@@ -66,14 +71,15 @@ interface StaticXPBarProps {
   values: XPBarValues;
   color: string;
   label?: string;
+  levelWidth?: number;
 }
 
-function StaticXPBar({ values, color, label }: StaticXPBarProps) {
+function StaticXPBar({ values, color, label, levelWidth }: StaticXPBarProps) {
   return (
     <View style={styles.container}>
       {label && <Text style={styles.title}>{label}</Text>}
       <View style={styles.row}>
-        <Text style={styles.level}>Lv{values.level}</Text>
+        <Text style={[styles.level, levelWidth != null && { width: levelWidth }]}>Lv{values.level}</Text>
         <View style={styles.track}>
           <View style={[styles.fill, { backgroundColor: color, width: `${values.progress * 100}%` }]} />
         </View>
@@ -91,9 +97,10 @@ interface AnimatedXPBarProps {
   color: string;
   label?: string;
   animateNumbers: boolean;
+  levelWidth?: number;
 }
 
-function AnimatedXPBar({ xp, values, color, label, animateNumbers }: AnimatedXPBarProps) {
+function AnimatedXPBar({ xp, values, color, label, animateNumbers, levelWidth }: AnimatedXPBarProps) {
   const animatedProgress = useSharedValue(values.progress);
   const prevLevel = useRef(values.level);
   const hasMounted = useRef(false);
@@ -139,7 +146,7 @@ function AnimatedXPBar({ xp, values, color, label, animateNumbers }: AnimatedXPB
     <View style={styles.container}>
       {label && <Text style={styles.title}>{label}</Text>}
       <View style={styles.row}>
-        <Text style={styles.level}>Lv{values.level}</Text>
+        <Text style={[styles.level, levelWidth != null && { width: levelWidth }]}>Lv{values.level}</Text>
         <View style={styles.track}>
           <Animated.View style={[styles.fill, { backgroundColor: color }, fillStyle]} />
           <Animated.View style={[styles.glow, { backgroundColor: color }, glowStyle]} />
