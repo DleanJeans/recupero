@@ -2,12 +2,20 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
-import type { MetadataField, MetadataFieldCalculation } from '../../../types/behavior';
+import type { MetadataField, MetadataFieldCalculation, MetadataFieldListDisplay } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
-import { TextInput } from '../../text';
+import { getMetadataFieldListDisplay } from '../../../utils/metadata-list-display-utils';
+import { Text, TextInput } from '../../text';
 import { CalculationPill } from './calculation-pill';
 
 const METADATA_FIELD_ROW_LAYOUT = LinearTransition.duration(220);
+
+const LIST_DISPLAY_OPTIONS: { value: MetadataFieldListDisplay; label: string }[] = [
+  { value: 'big', label: 'Big' },
+  { value: 'bar', label: 'Bar' },
+  { value: 'text', label: 'Text' },
+  { value: 'hidden', label: 'Hidden' },
+];
 
 interface MetadataFieldRowProps {
   field: MetadataField;
@@ -17,6 +25,7 @@ interface MetadataFieldRowProps {
   onDailyGoalChange: (index: number, value: string) => void;
   onUnitChange: (index: number, value: string) => void;
   onCalculationChange: (index: number, calculation: MetadataFieldCalculation) => void;
+  onListDisplayChange: (index: number, listDisplay: MetadataFieldListDisplay) => void;
   onMove: (index: number, offset: number) => void;
   onRemove: (index: number) => void;
   isSorting: boolean;
@@ -30,6 +39,7 @@ export function MetadataFieldRow({
   onDailyGoalChange,
   onUnitChange,
   onCalculationChange,
+  onListDisplayChange,
   onMove,
   onRemove,
   isSorting,
@@ -82,6 +92,19 @@ export function MetadataFieldRow({
               active={field.calculation === 'per100'}
               onPress={() => onCalculationChange(index, 'per100')}
             />
+          </View>
+        </View>
+        <View style={styles.listDisplayRow}>
+          <Text style={styles.listDisplayLabel}>In log list</Text>
+          <View style={styles.calculationRow}>
+            {LIST_DISPLAY_OPTIONS.map(option => (
+              <CalculationPill
+                key={option.value}
+                label={option.label}
+                active={getMetadataFieldListDisplay(field) === option.value}
+                onPress={() => onListDisplayChange(index, option.value)}
+              />
+            ))}
           </View>
         </View>
       </View>
@@ -186,6 +209,16 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     padding: 3,
+  },
+  listDisplayRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+  },
+  listDisplayLabel: {
+    color: Colors.text.muted,
+    fontSize: 11,
+    fontWeight: '600',
   },
   calculationRow: {
     flex: 1,

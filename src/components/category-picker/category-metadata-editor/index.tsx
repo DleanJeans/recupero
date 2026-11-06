@@ -2,9 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useBehaviorStore } from '../../../store/behavior-store';
-import type { MetadataField, MetadataFieldCalculation } from '../../../types/behavior';
+import type { MetadataField, MetadataFieldCalculation, MetadataFieldListDisplay } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 import { sanitizeDecimalInput } from '../../../utils/metadata-calculation-utils';
+import { setMetadataFieldListDisplay } from '../../../utils/metadata-list-display-utils';
 import { Text } from '../../text';
 import { MetadataFieldRow } from './metadata-field-row';
 
@@ -122,6 +123,16 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
     [onChange],
   );
 
+  const handleListDisplayChange = useCallback(
+    (index: number, listDisplay: MetadataFieldListDisplay) => {
+      const next = setMetadataFieldListDisplay(latestRef.current, index, listDisplay);
+      latestRef.current = next;
+      setLocalFields(next);
+      onChange(next);
+    },
+    [onChange],
+  );
+
   const handleMoveField = useCallback(
     (index: number, offset: number) => {
       const targetIndex = index + offset;
@@ -168,6 +179,7 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
           onDailyGoalChange={handleDailyGoalChange}
           onUnitChange={handleUnitChange}
           onCalculationChange={handleCalculationChange}
+          onListDisplayChange={handleListDisplayChange}
           onMove={handleMoveField}
           onRemove={handleRemoveField}
           isSorting={isSorting}

@@ -7,6 +7,7 @@ import type { BehaviorEntry, LogEntry, MetadataField } from '../../../types/beha
 import { Colors } from '../../../utils/colors';
 import { getLogDurationMs, getLogEndTimestamp, hasTimedLogRange } from '../../../utils/log-utils';
 import { formatMetadataValueUnit } from '../../../utils/metadata-calculation-utils';
+import { buildLogMetadataDisplay } from '../../../utils/metadata-list-display-utils';
 import { getMoneyRewardForLog, getStarMoneyMultiplierForLog } from '../../../utils/money-utils';
 import { formatDuration, formatElapsedNumeric, formatTimeRange } from '../../../utils/time-utils';
 import { getLogXp } from '../../../utils/xp-utils';
@@ -47,66 +48,102 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
   const moneyMultiplier =
     moneyOriginal == null ? undefined : getStarMoneyMultiplierForLog(behavior, log, dayCutoffHour);
   const money = moneyOriginal == null || moneyMultiplier == null ? undefined : moneyOriginal * moneyMultiplier;
-  const hasMetadata =
-    metadataFields?.some(field => log.metadata?.[field.key] != null) === true || Boolean(log.metadata?.notes);
+  const metadataDisplay = useMemo(
+    () => buildLogMetadataDisplay(metadataFields, log.metadata),
+    [log.metadata, metadataFields],
+  );
+  const { big, bars, texts } = metadataDisplay;
+  const notes = log.metadata?.notes ? String(log.metadata.notes) : undefined;
   const hasReward = xp != null || money != null;
-  const hasContent = hasMetadata || hasReward;
+  const hasSide = hasReward || big != null || texts.length > 0;
 
   const handlePress = useCallback(() => onEdit(), [onEdit]);
 
   return (
     <Pressable
-      style={[styles.logItem, isRange && styles.logItemRange, isDecayed && styles.decayedLogItem]}
+      style={[styles.logItem, isDecayed && styles.decayedLogItem]}
       onPress={handlePress}
     >
-      <View style={[styles.timeContent, isRange && styles.timeContentRange]}>
-        <Text style={[styles.dateText, isDecayed && styles.decayedText]}>
-          {timeText}
-          {durationText ? (
-            <Text style={[styles.timeText, isDecayed && styles.decayedText]}> ({durationText})</Text>
-          ) : null}
-        </Text>
-        <Text style={[styles.elapsedText, isDecayed && styles.decayedText]}>{elapsedText}</Text>
+      <View style={styles.topRow}>
+        <View style={styles.timeContent}>
+          <Text style={[styles.dateText, isDecayed && styles.decayedText]}>
+            {timeText}
+            {durationText ? (
+              <Text style={[styles.timeText, isDecayed && styles.decayedText]}> ({durationText})</Text>
+            ) : null}
+          </Text>
+          <Text style={[styles.elapsedText, isDecayed && styles.decayedText]}>{elapsedText}</Text>
+        </View>
+        {hasSide ? (
+          <View style={styles.sideContent}>
+            {hasReward ? (
+              <LogRewardPreview
+                xp={xp}
+                money={money}
+                moneyOriginal={moneyOriginal}
+                moneyMultiplier={moneyMultiplier}
+                undesirable={behavior.type === 'undesirable'}
+                decayed={isDecayed}
+              />
+            ) : null}
+            {big ? (
+              <Text style={[styles.bigValue, isDecayed && styles.decayedText]}>
+                {big.text}
+                <Text style={styles.bigUnit}>{formatMetadataValueUnit(big.field)}</Text>
+              </Text>
+            ) : null}
+            {texts.length > 0 ? (
+              <Text style={styles.textLine}>
+                {texts
+                  .map(item =>
+                    item.field.calculation === 'amount'
+                      ? `${item.text}${formatMetadataValueUnit(item.field)}`
+                      : `${item.field.label} ${item.text}${formatMetadataValueUnit(item.field)}`,
+                  )
+                  .join('  ·  ')}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
       </View>
-      {hasContent ? <View style={[styles.separator, isRange && styles.separatorRange]} /> : null}
-      {hasContent ? (
-        <View style={styles.contentArea}>
-          {hasReward ? (
-            <LogRewardPreview
-              xp={xp}
-              money={money}
-              moneyOriginal={moneyOriginal}
-              moneyMultiplier={moneyMultiplier}
-              undesirable={behavior.type === 'undesirable'}
-              decayed={isDecayed}
-            />
-          ) : null}
-          {metadataFields?.map(field => {
-            const val = log.metadata?.[field.key];
-            if (val == null) return null;
-            return (
+      {bars.length > 0 ? (
+        <View style={styles.barSection}>
+          <View style={styles.bar}>
+            {bars.map((item, i) => (
               <View
-                key={field.key}
-                style={styles.metaChip}
+                key={item.field.key}
+                style={[
+                  styles.barSegment,
+                  { flex: item.value, backgroundColor: Colors.metadataBar[i % Colors.metadataBar.length] },
+                ]}
+              />
+            ))}
+          </View>
+          <View style={styles.legend}>
+            {bars.map((item, i) => (
+              <View
+                key={item.field.key}
+                style={styles.legendItem}
               >
-                <Text style={styles.metaChipText}>
-                  {field.label} {val}
-                  {formatMetadataValueUnit(field)}
+                <View
+                  style={[styles.legendDot, { backgroundColor: Colors.metadataBar[i % Colors.metadataBar.length] }]}
+                />
+                <Text style={styles.legendText}>
+                  {item.field.label} <Text style={styles.legendValue}>{item.text}</Text>
+                  {formatMetadataValueUnit(item.field)}
                 </Text>
               </View>
-            );
-          })}
-          {log.metadata?.notes ? (
-            <View style={styles.notesContent}>
-              <Text
-                style={styles.notesText}
-                numberOfLines={2}
-              >
-                {String(log.metadata.notes)}
-              </Text>
-            </View>
-          ) : null}
+            ))}
+          </View>
         </View>
+      ) : null}
+      {notes ? (
+        <Text
+          style={styles.notesText}
+          numberOfLines={2}
+        >
+          {notes}
+        </Text>
       ) : null}
     </Pressable>
   );
@@ -114,57 +151,87 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
 
 const styles = StyleSheet.create({
   logItem: {
-    flexDirection: 'row',
     backgroundColor: Colors.bg.card,
     borderRadius: 12,
     marginVertical: 6,
     marginHorizontal: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 10,
     overflow: 'hidden',
-  },
-  logItemRange: {
-    flexDirection: 'column',
   },
   decayedLogItem: {
     backgroundColor: Colors.status.error,
   },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
   timeContent: {
-    flex: 2,
-    padding: 16,
-    justifyContent: 'center',
+    flexShrink: 1,
   },
-  timeContentRange: {
-    justifyContent: 'flex-start',
+  sideContent: {
+    flexShrink: 1,
+    maxWidth: '60%',
+    alignItems: 'flex-end',
+    gap: 2,
   },
-  separator: {
-    width: StyleSheet.hairlineWidth,
-    alignSelf: 'center',
-    height: '50%',
-    backgroundColor: Colors.text.faint,
+  bigValue: {
+    color: Colors.text.primary,
+    fontSize: 22,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
-  separatorRange: {
-    width: '50%',
-    height: StyleSheet.hairlineWidth,
+  bigUnit: {
+    color: Colors.text.muted,
+    fontSize: 13,
+    fontWeight: '400',
   },
-  contentArea: {
-    flex: 4,
+  textLine: {
+    color: Colors.text.light,
+    fontSize: 13,
+    textAlign: 'right',
+    fontVariant: ['tabular-nums'],
+  },
+  barSection: {
+    gap: 7,
+  },
+  bar: {
+    flexDirection: 'row',
+    height: 6,
+    gap: 2,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  barSegment: {
+    height: '100%',
+  },
+  legend: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    padding: 12,
-    gap: 6,
+    columnGap: 14,
+    rowGap: 4,
   },
-  metaChip: {
-    backgroundColor: Colors.bg.darker,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
-  metaChipText: {
-    color: Colors.text.secondary,
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 2,
+  },
+  legendText: {
+    color: Colors.text.muted,
     fontSize: 12,
-    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
   },
-  notesContent: {
-    width: '100%',
+  legendValue: {
+    color: Colors.text.secondary,
+    fontWeight: '600',
   },
   notesText: {
     color: Colors.text.muted,
@@ -180,7 +247,6 @@ const styles = StyleSheet.create({
   timeText: {
     color: Colors.text.primary,
     fontSize: 14,
-    marginBottom: 4,
   },
   elapsedText: {
     color: Colors.text.muted,

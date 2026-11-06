@@ -2,12 +2,16 @@ import type { CueRef } from './cue';
 
 export type MetadataFieldCalculation = 'manual' | 'amount' | 'per100';
 
+/** How a field shows on log cards. Undefined means 'text'. */
+export type MetadataFieldListDisplay = 'big' | 'bar' | 'text' | 'hidden';
+
 export interface MetadataField {
   key: string;
   label: string;
   unit?: string;
   calculation?: MetadataFieldCalculation;
   dailyGoal?: number;
+  listDisplay?: MetadataFieldListDisplay;
 }
 
 export interface Category {

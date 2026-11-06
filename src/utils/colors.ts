@@ -1,6 +1,9 @@
 export const Colors = {
   transparent: 'trasparent',
 
+  // Segments of the metadata bar on log cards, in field order
+  metadataBar: ['#5ab0ff', '#f2b84b', '#7bd88f', '#c792ea', '#f78c6c', '#89ddff'],
+
   bg: {
     primary: '#121212',
     card: '#1e1e1e',
