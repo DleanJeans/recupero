@@ -26,22 +26,24 @@ export function useNeedLevels(): { needs: NeedSnapshot[]; now: number } {
   const categories = useBehaviorStore(state => state.categories);
   const configs = useNeedsStore(state => state.needs);
   const checkIns = useNeedsStore(state => state.checkIns);
-  const [now, setNow] = useState(() => Date.now());
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => setNow(Date.now()), TICK_MS);
+    const interval = setInterval(() => setTick(value => value + 1), TICK_MS);
     return () => clearInterval(interval);
   }, []);
 
-  const needs = useMemo(
-    () =>
-      NEED_IDS.filter(id => configs[id].enabled).map(id => {
-        const config = configs[id];
-        const source = getNeedMetadataSource(id, config, categories);
-        const events = getNeedEvents(id, config, behaviors, checkIns, source, now - NEED_LOOKBACK_MS);
-        return { id, config, source, ...simulateNeed(events, getDecayPerHour(config), now) };
-      }),
-    [behaviors, categories, checkIns, configs, now],
-  );
-  return { needs, now };
+  // `now` is read fresh whenever the data changes, so a check-in or log made a moment ago
+  // (timestamped after the last tick) shows straight away instead of after the next tick.
+  return useMemo(() => {
+    const now = Date.now();
+    const needs = NEED_IDS.filter(id => configs[id].enabled).map(id => {
+      const config = configs[id];
+      const source = getNeedMetadataSource(id, config, categories);
+      const events = getNeedEvents(id, config, behaviors, checkIns, source, now - NEED_LOOKBACK_MS);
+      return { id, config, source, ...simulateNeed(events, getDecayPerHour(config), now) };
+    });
+    return { needs, now };
+    // tick re-reads the clock each minute.
+  }, [behaviors, categories, checkIns, configs, tick]);
 }
