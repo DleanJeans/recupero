@@ -22,7 +22,8 @@ const CRAVING_OUTCOME_LABELS: Record<CravingOutcome, string> = {
 
 /** Doing what you craved is "giving in" only for undesirable behaviours; otherwise you just did it. */
 export function getCravingOutcomeLabel(outcome: CravingOutcome, behaviorType: BehaviorType): string {
-  if (outcome === 'gaveIn' && behaviorType !== 'undesirable') return 'Did it';
+  if (behaviorType !== 'undesirable' && outcome === 'gaveIn') return 'Did it';
+  if (behaviorType !== 'undesirable' && outcome === 'resisted') return 'Let it pass';
   return CRAVING_OUTCOME_LABELS[outcome];
 }
 

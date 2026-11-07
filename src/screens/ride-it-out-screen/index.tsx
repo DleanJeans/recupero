@@ -18,6 +18,7 @@ import { useTimerStore } from '../../store/timer-store';
 import type { CueRef } from '../../types/cue';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
+import { getCravingTone } from '../../utils/craving-tone';
 import { getCravingWeekStats, getLatestUrge, getRideRemainingMs } from '../../utils/craving-utils';
 import { CravingAlternatives } from './components/craving-alternatives';
 import { RideCountdown } from './components/ride-countdown';
@@ -70,7 +71,7 @@ export function RideItOutScreen() {
   const remainingMs = getRideRemainingMs(craving, now);
   const latestUrge = getLatestUrge(craving);
   const cues = craving.cues ?? [];
-  const isUndesirable = behavior.type === 'undesirable';
+  const tone = getCravingTone(behavior.type);
 
   const toggleCue = (ref: CueRef) =>
     setCravingCues(craving.id, cues.includes(ref) ? cues.filter(cue => cue !== ref) : [...cues, ref]);
@@ -110,17 +111,17 @@ export function RideItOutScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <BackButton />
-          <ScreenTitle style={styles.title}>Ride it out</ScreenTitle>
+          <ScreenTitle style={styles.title}>{tone.title}</ScreenTitle>
         </View>
         <View style={styles.done}>
           <Ionicons
-            name="checkmark-circle"
+            name={tone.doingIsGood ? 'leaf-outline' : 'checkmark-circle'}
             size={64}
-            color={Colors.type.desirable}
+            color={tone.doingIsGood ? Colors.text.muted : Colors.type.desirable}
           />
-          <Text style={styles.doneTitle}>You rode it out</Text>
+          <Text style={styles.doneTitle}>{tone.passedTitle}</Text>
           <Text style={styles.doneText}>
-            {behavior.name} cravings beaten this week: {stats.beaten}
+            {tone.doingIsGood ? 'Let pass this week' : `${behavior.name} cravings beaten this week`}: {stats.beaten}
             {stats.gaveIn ? ` · gave in ${stats.gaveIn}` : ''}
             {stats.didIt ? ` · did it ${stats.didIt}` : ''}
           </Text>
@@ -169,16 +170,19 @@ export function RideItOutScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
+        <Text style={[styles.toneTitle, { color: tone.accent }]}>{tone.title}</Text>
         <RideCountdown
           craving={craving}
           remainingMs={remainingMs}
+          tone={tone}
         />
 
         <View style={styles.section}>
-          <CueSectionLabel>{latestUrge == null ? 'How strong is the urge?' : "Right now it's…"}</CueSectionLabel>
+          <CueSectionLabel>{latestUrge == null ? tone.firstUrgeQuestion : "Right now it's…"}</CueSectionLabel>
           <UrgeScale
             value={latestUrge}
             onSelect={level => rateUrge(craving.id, level)}
+            tone={tone}
           />
         </View>
 
@@ -207,25 +211,45 @@ export function RideItOutScreen() {
           cravedBehaviorId={behaviorId}
           onLog={handleLogInstead}
           onTime={handleTimeInstead}
+          label={tone.alternativesLabel}
         />
 
         <View style={styles.actions}>
-          <Button
-            variant={remainingMs === 0 ? 'primary' : 'secondary'}
-            onPress={() => endCraving(craving.id, 'resisted')}
-            style={styles.action}
-          >
-            {remainingMs === 0 ? 'I rode it out' : "It's passed"}
-          </Button>
-          <Button
-            variant="secondary"
-            onPress={handleGaveIn}
-            style={[styles.action, styles.gaveIn, !isUndesirable && styles.didIt]}
-          >
-            <Text style={[styles.gaveInText, !isUndesirable && styles.didItText]}>
-              {isUndesirable ? 'I gave in' : 'I did it'}
-            </Text>
-          </Button>
+          {tone.doingIsGood ? (
+            <>
+              <Button
+                variant="primary"
+                onPress={handleGaveIn}
+                style={[styles.action, { backgroundColor: tone.accent }]}
+              >
+                <Text style={[styles.actionText, { color: tone.onAccent }]}>{tone.doLabel}</Text>
+              </Button>
+              <Button
+                variant="secondary"
+                onPress={() => endCraving(craving.id, 'resisted')}
+                style={styles.action}
+              >
+                {remainingMs === 0 ? tone.passLabelTimeUp : tone.passLabel}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant={remainingMs === 0 ? 'primary' : 'secondary'}
+                onPress={() => endCraving(craving.id, 'resisted')}
+                style={styles.action}
+              >
+                {remainingMs === 0 ? tone.passLabelTimeUp : tone.passLabel}
+              </Button>
+              <Button
+                variant="secondary"
+                onPress={handleGaveIn}
+                style={[styles.action, { borderWidth: 1, borderColor: tone.accentDim }]}
+              >
+                <Text style={[styles.actionText, { color: Colors.typeText.undesirable }]}>{tone.doLabel}</Text>
+              </Button>
+            </>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -249,10 +273,8 @@ const styles = StyleSheet.create({
   cuesToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: 4 },
   actions: { flexDirection: 'row', gap: 10 },
   action: { flex: 1 },
-  gaveIn: { borderWidth: 1, borderColor: Colors.typeBtn.undesirable },
-  gaveInText: { color: Colors.typeText.undesirable, fontWeight: '700' },
-  didIt: { borderColor: Colors.typeBtn.desirable },
-  didItText: { color: Colors.typeText.desirable },
+  actionText: { fontWeight: '700' },
+  toneTitle: { fontSize: 13, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', paddingHorizontal: 4 },
   done: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
   doneTitle: { color: Colors.text.primary, fontSize: 24, fontWeight: '700' },
   doneText: { color: Colors.text.muted, fontSize: 14, textAlign: 'center' },

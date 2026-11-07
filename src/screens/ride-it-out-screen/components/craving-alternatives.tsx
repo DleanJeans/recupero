@@ -22,9 +22,10 @@ interface CravingAlternativesProps {
   cravedBehaviorId: string;
   onLog: (behaviorId: string) => void;
   onTime: (behaviorId: string) => void;
+  label: string;
 }
 
-export function CravingAlternatives({ cravedBehaviorId, onLog, onTime }: CravingAlternativesProps) {
+export function CravingAlternatives({ cravedBehaviorId, onLog, onTime, label }: CravingAlternativesProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const behaviors = useBehaviorStore(state => state.behaviors);
   const cravings = useCravingsStore(state => state.cravings);
@@ -47,7 +48,7 @@ export function CravingAlternatives({ cravedBehaviorId, onLog, onTime }: Craving
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <CueSectionLabel>Do this instead</CueSectionLabel>
+        <CueSectionLabel>{label}</CueSectionLabel>
         <Pressable
           onPress={() => navigation.navigate('BehaviorForm', { behaviorId: cravedBehaviorId })}
           accessibilityRole="button"

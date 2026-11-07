@@ -12,8 +12,10 @@ import { useBehaviorStore } from '../../store/behavior-store';
 import { useCravingsStore } from '../../store/cravings-store';
 import { useSettingsStore } from '../../store/settings-store';
 import type { BehaviorEntry, BehaviorType } from '../../types/behavior';
+import type { CravingOutcome } from '../../types/craving';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
+import { getCravingTone } from '../../utils/craving-tone';
 import {
   type CravingWeekStats,
   getCravableBehaviors,
@@ -53,7 +55,14 @@ export function CravingsScreen() {
     () => getRecentCravings(cravings).filter(craving => behaviorById.has(craving.behaviorId)),
     [behaviorById, cravings],
   );
-  const stats = getCravingWeekStats(cravings, behaviors);
+  // The week tiles are about beating bad habits, so they only count undesirable cravings.
+  const stats = useMemo(() => {
+    const undesirableIds = new Set(behaviors.filter(b => b.type === 'undesirable').map(b => b.id));
+    return getCravingWeekStats(
+      cravings.filter(craving => undesirableIds.has(craving.behaviorId)),
+      behaviors,
+    );
+  }, [behaviors, cravings]);
   const [now, setNow] = useState(() => Date.now());
   const hasUnfinished = unfinished.length > 0;
 
@@ -196,7 +205,7 @@ export function CravingsScreen() {
                       {peak ? ` · urge ${peak}/5` : ''}
                     </Text>
                   </View>
-                  <Text style={[styles.outcome, isCravingLost(outcome, behavior.type) ? styles.lost : styles.beaten]}>
+                  <Text style={[styles.outcome, { color: getOutcomeColor(outcome, behavior.type) }]}>
                     {redirect ? `→ ${redirect.name}` : getCravingOutcomeLabel(outcome, behavior.type)}
                   </Text>
                 </View>
@@ -209,10 +218,17 @@ export function CravingsScreen() {
   );
 }
 
+function getOutcomeColor(outcome: CravingOutcome, type: BehaviorType): string {
+  if (isCravingLost(outcome, type)) return Colors.type.undesirable;
+  if (type === 'undesirable') return Colors.type.desirable;
+  return outcome === 'resisted' ? Colors.text.muted : getCravingTone(type).accent;
+}
+
 function formatWeekStats(stats: CravingWeekStats, type: BehaviorType): string {
   const parts = [`beaten ${stats.beaten}`];
   if (type === 'undesirable') parts.push(`gave in ${stats.gaveIn}`);
   else parts.push(`did it ${stats.didIt}`);
+  if (type !== 'undesirable') parts[0] = `let pass ${stats.beaten}`;
   return `This week: ${parts.join(' · ')}`;
 }
 
@@ -260,9 +276,9 @@ function BehaviorRow({ behavior, detail, active = false, onPress }: BehaviorRowP
         <Text style={styles.detail}>{detail}</Text>
       </View>
       <Ionicons
-        name={active ? 'play-circle' : 'flame-outline'}
+        name={active ? 'play-circle' : getCravingTone(behavior.type).listIcon}
         size={22}
-        color={active ? Colors.type.desirable : Colors.type.undesirable}
+        color={active ? Colors.text.secondary : getCravingTone(behavior.type).accent}
       />
     </Pressable>
   );
@@ -331,6 +347,4 @@ const styles = StyleSheet.create({
   recentRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4, paddingVertical: 4 },
   recentName: { color: Colors.text.secondary, fontSize: 14, fontWeight: '600' },
   outcome: { fontSize: 12, fontWeight: '600', maxWidth: 140 },
-  beaten: { color: Colors.type.desirable },
-  lost: { color: Colors.type.undesirable },
 });

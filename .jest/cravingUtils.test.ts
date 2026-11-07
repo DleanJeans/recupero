@@ -90,7 +90,8 @@ describe('craving utils', () => {
   it('calls doing a craved behaviour giving in only when it is undesirable', () => {
     expect(getCravingOutcomeLabel('gaveIn', 'undesirable')).toBe('Gave in');
     expect(getCravingOutcomeLabel('gaveIn', 'desirable')).toBe('Did it');
-    expect(getCravingOutcomeLabel('resisted', 'neutral')).toBe('Rode it out');
+    expect(getCravingOutcomeLabel('resisted', 'undesirable')).toBe('Rode it out');
+    expect(getCravingOutcomeLabel('resisted', 'neutral')).toBe('Let it pass');
   });
 
   it('lists undesirable and previously craved behaviours, recently craved first', () => {

@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
 import type { CravingLog } from '../../../types/craving';
 import { Colors } from '../../../utils/colors';
+import type { CravingTone } from '../../../utils/craving-tone';
 import { formatStopwatchDuration } from '../../../utils/stopwatch-utils';
 
 const MAX_BARS = 12;
@@ -10,10 +11,11 @@ const MAX_BARS = 12;
 interface RideCountdownProps {
   craving: CravingLog;
   remainingMs: number;
+  tone: CravingTone;
 }
 
 /** Countdown circle with the urge ratings so far drawn as bars beside it. */
-export function RideCountdown({ craving, remainingMs }: RideCountdownProps) {
+export function RideCountdown({ craving, remainingMs, tone }: RideCountdownProps) {
   const progress = craving.rideMs > 0 ? 1 - remainingMs / craving.rideMs : 1;
   const bars = craving.ratings.slice(-MAX_BARS);
 
@@ -23,11 +25,11 @@ export function RideCountdown({ craving, remainingMs }: RideCountdownProps) {
         <Text style={styles.time}>{formatStopwatchDuration(remainingMs)}</Text>
         <Text style={styles.caption}>left of {formatStopwatchDuration(craving.rideMs)}</Text>
         <View style={styles.track}>
-          <View style={[styles.fill, { width: `${Math.round(progress * 100)}%` }]} />
+          <View style={[styles.fill, { width: `${Math.round(progress * 100)}%`, backgroundColor: tone.accent }]} />
         </View>
       </View>
       <View style={styles.chart}>
-        <Text style={styles.chartLabel}>URGE SO FAR</Text>
+        <Text style={styles.chartLabel}>{tone.urgeChartLabel}</Text>
         <View style={styles.bars}>
           {bars.length === 0 ? (
             <Text style={styles.empty}>Rate it below as it changes.</Text>
@@ -35,7 +37,13 @@ export function RideCountdown({ craving, remainingMs }: RideCountdownProps) {
             bars.map((rating, index) => (
               <View
                 key={rating.ts}
-                style={[styles.bar, { height: `${rating.level * 20}%` }, index === bars.length - 1 && styles.barLatest]}
+                style={[
+                  styles.bar,
+                  {
+                    height: `${rating.level * 20}%`,
+                    backgroundColor: index === bars.length - 1 ? tone.accent : tone.accentDim,
+                  },
+                ]}
               />
             ))
           )}
@@ -67,7 +75,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     overflow: 'hidden',
   },
-  fill: { height: '100%', backgroundColor: Colors.type.desirable },
+  fill: { height: '100%' },
   chart: { flex: 1, gap: 8 },
   chartLabel: { color: Colors.text.faint, fontSize: 11, fontWeight: '700', letterSpacing: 0.7 },
   bars: { height: 64, flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
@@ -76,8 +84,6 @@ const styles = StyleSheet.create({
     maxWidth: 28,
     borderTopLeftRadius: 4,
     borderTopRightRadius: 4,
-    backgroundColor: Colors.typeBtn.undesirable,
   },
-  barLatest: { backgroundColor: Colors.type.undesirable },
   empty: { color: Colors.text.faint, fontSize: 12, alignSelf: 'center' },
 });
