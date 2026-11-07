@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { sendFileToDev } from '../../modules/dev-handoff';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useCuesStore } from '../store/cues-store';
 import { useSettingsStore } from '../store/settings-store';
@@ -32,31 +33,49 @@ function isPersistedStore(value: string | null | undefined): value is string {
   }
 }
 
+async function writeBackupFile(): Promise<{ file: File; summary: string }> {
+  const [behaviors, settings, shop, cues] = await Promise.all([
+    AsyncStorage.getItem(STORAGE_KEYS.behaviors),
+    AsyncStorage.getItem(STORAGE_KEYS.settings),
+    AsyncStorage.getItem(STORAGE_KEYS.shop),
+    AsyncStorage.getItem(STORAGE_KEYS.cues),
+  ]);
+
+  const data: ExportData = { version: 2, exportedAt: new Date().toISOString(), behaviors, settings, shop, cues };
+
+  const json = JSON.stringify(data, null, 2);
+  const filename = `recupero-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  const file = new File(Paths.cache, filename);
+
+  file.write(json);
+
+  const behaviorState = behaviors ? JSON.parse(behaviors).state : null;
+  const behaviorCount = behaviorState?.behaviors?.length ?? 0;
+  const taskCount = behaviorState?.tasks?.length ?? 0;
+  return { file, summary: `${behaviorCount} behaviors and ${taskCount} tasks` };
+}
+
 export async function exportToFile(): Promise<{ success: boolean; message: string }> {
   try {
-    const [behaviors, settings, shop, cues] = await Promise.all([
-      AsyncStorage.getItem(STORAGE_KEYS.behaviors),
-      AsyncStorage.getItem(STORAGE_KEYS.settings),
-      AsyncStorage.getItem(STORAGE_KEYS.shop),
-      AsyncStorage.getItem(STORAGE_KEYS.cues),
-    ]);
-
-    const data: ExportData = { version: 2, exportedAt: new Date().toISOString(), behaviors, settings, shop, cues };
-
-    const json = JSON.stringify(data, null, 2);
-    const filename = `recupero-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    const file = new File(Paths.cache, filename);
-
-    file.write(json);
-
+    const { file, summary } = await writeBackupFile();
     await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: 'Export Recupero Data' });
-
-    const behaviorState = behaviors ? JSON.parse(behaviors).state : null;
-    const behaviorCount = behaviorState?.behaviors?.length ?? 0;
-    const taskCount = behaviorState?.tasks?.length ?? 0;
-    return { success: true, message: `Exported ${behaviorCount} behaviors and ${taskCount} tasks` };
+    return { success: true, message: `Exported ${summary}` };
   } catch (error) {
     return { success: false, message: `Export failed: ${error instanceof Error ? error.message : 'Unknown error'}` };
+  }
+}
+
+/** Exports a backup and opens it straight in the Recupero dev build, which offers to import it. */
+export async function sendToDevBuild(): Promise<{ success: boolean; message: string }> {
+  try {
+    const { file, summary } = await writeBackupFile();
+    const opened = await sendFileToDev(file.uri);
+    if (!opened) {
+      return { success: false, message: 'Recupero Dev is not installed, or it was built before Send to dev existed' };
+    }
+    return { success: true, message: `Sent ${summary}` };
+  } catch (error) {
+    return { success: false, message: `Send failed: ${error instanceof Error ? error.message : 'Unknown error'}` };
   }
 }
 

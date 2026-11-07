@@ -2,13 +2,24 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import React, { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
+import { canSendToDev } from '../../../../modules/dev-handoff';
 import { Button } from '../../../components/button';
 import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
-import { exportToFile, importFromFile } from '../../../utils/data-transfer';
+import { exportToFile, importFromFile, sendToDevBuild } from '../../../utils/data-transfer';
 
 export function DataTransferSection() {
   const [isTransferring, setIsTransferring] = useState(false);
+  const [showSendToDev] = useState(canSendToDev);
+
+  const handleSendToDev = async () => {
+    setIsTransferring(true);
+    const result = await sendToDevBuild();
+    setIsTransferring(false);
+    if (!result.success) {
+      Alert.alert('Error', result.message);
+    }
+  };
 
   const handleExport = async () => {
     setIsTransferring(true);
@@ -85,6 +96,24 @@ export function DataTransferSection() {
           <Text style={styles.optionLabel}>Import</Text>
           <Text style={styles.optionDescriptionSmall}>Pick JSON file</Text>
         </Button>
+
+        {showSendToDev && (
+          <Button
+            variant="ghost"
+            onPress={handleSendToDev}
+            disabled={isTransferring}
+            style={[styles.optionCard, isTransferring && { opacity: 0.5 }]}
+          >
+            <Ionicons
+              name="paper-plane-outline"
+              size={22}
+              color={Colors.text.white}
+              style={{ marginBottom: 6 }}
+            />
+            <Text style={styles.optionLabel}>Send to dev</Text>
+            <Text style={styles.optionDescriptionSmall}>Open in Recupero Dev</Text>
+          </Button>
+        )}
       </View>
     </View>
   );

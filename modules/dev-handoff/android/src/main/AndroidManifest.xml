@@ -1,0 +1,14 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Shares the exported backup from the app's cache dir with the dev build, read-only. -->
+        <provider
+            android:name="expo.modules.devhandoff.DevHandoffFileProvider"
+            android:authorities="${applicationId}.devhandoff"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/dev_handoff_paths" />
+        </provider>
+    </application>
+</manifest>

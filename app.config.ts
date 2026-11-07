@@ -70,6 +70,13 @@ const config: ExpoConfig = {
         data: [{ scheme: 'exp+recupero' }],
         category: ['BROWSABLE', 'DEFAULT'],
       },
+      // Dev build only: receive JSON backups from prod/preview ("Send to dev") or the share sheet.
+      ...(isDev
+        ? [
+            { action: 'VIEW', data: [{ scheme: 'content', mimeType: 'application/json' }], category: ['DEFAULT'] },
+            { action: 'SEND', data: [{ mimeType: 'application/json' }], category: ['DEFAULT'] },
+          ]
+        : []),
     ],
   },
   web: {
