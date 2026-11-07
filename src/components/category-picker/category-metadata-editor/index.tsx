@@ -5,9 +5,14 @@ import { useBehaviorStore } from '../../../store/behavior-store';
 import type { MetadataField, MetadataFieldCalculation, MetadataFieldListDisplay } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 import { sanitizeDecimalInput } from '../../../utils/metadata-calculation-utils';
-import { setMetadataFieldListDisplay } from '../../../utils/metadata-list-display-utils';
+import {
+  getLatestLogWithMetadata,
+  getMetadataBarColors,
+  setMetadataFieldListDisplay,
+} from '../../../utils/metadata-list-display-utils';
 import { Text } from '../../text';
 import { MetadataFieldRow } from './metadata-field-row';
+import { MetadataLogPreview } from './metadata-log-preview';
 
 interface Props {
   categoryId?: string;
@@ -21,11 +26,21 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
   const latestRef = useRef(localFields);
   latestRef.current = localFields;
   const [isSorting, setIsSorting] = useState(false);
+  const [expandedKey, setExpandedKey] = useState<string | undefined>();
   const behaviors = useBehaviorStore(state => state.behaviors);
   const categoryBehaviors = useMemo(
     () => (categoryId ? behaviors.filter(behavior => behavior.categoryId === categoryId) : []),
     [behaviors, categoryId],
   );
+  const preview = useMemo(
+    () => getLatestLogWithMetadata(categoryBehaviors, localFields),
+    [categoryBehaviors, localFields],
+  );
+  const barColors = useMemo(() => getMetadataBarColors(localFields, Colors.metadataBar), [localFields]);
+
+  const handleToggleExpanded = useCallback((key: string) => {
+    setExpandedKey(current => (current === key ? undefined : key));
+  }, []);
   // No useEffect to sync from parent — use key prop on parent side to remount on category change
 
   const handleAddField = useCallback(() => {
@@ -33,6 +48,7 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
     const next = [...latestRef.current, { key, label: '', unit: '' }];
     latestRef.current = next;
     setLocalFields(next);
+    setExpandedKey(key);
     onChange(next);
   }, [onChange]);
 
@@ -169,12 +185,23 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
         </View>
       </View>
 
+      {preview && (
+        <MetadataLogPreview
+          behavior={preview.behavior}
+          log={preview.log}
+          fields={localFields}
+        />
+      )}
+
       {localFields.map((field, index) => (
         <MetadataFieldRow
           key={field.key}
           field={field}
           index={index}
           isLast={index === localFields.length - 1}
+          expanded={expandedKey === field.key}
+          barColor={barColors[field.key]}
+          onToggleExpanded={handleToggleExpanded}
           onLabelChange={handleLabelChange}
           onDailyGoalChange={handleDailyGoalChange}
           onUnitChange={handleUnitChange}

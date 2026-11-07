@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { LogRewardPreview } from '../../../components/log-reward-preview';
 import { Text } from '../../../components/text';
 import { useSettingsStore } from '../../../store/settings-store';
@@ -19,6 +19,7 @@ interface Props {
   metadataFields?: MetadataField[];
   elapsedTick: number;
   isDecayed?: boolean;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const BehaviorLogItem = React.memo(function BehaviorLogItem({
@@ -28,6 +29,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
   metadataFields,
   elapsedTick,
   isDecayed = false,
+  style,
 }: Props) {
   const timeFormat = useSettingsStore(state => state.timeFormat);
   const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
@@ -61,7 +63,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
 
   return (
     <Pressable
-      style={[styles.logItem, isDecayed && styles.decayedLogItem]}
+      style={[styles.logItem, isDecayed && styles.decayedLogItem, style]}
       onPress={handlePress}
     >
       <View style={styles.topRow}>
@@ -114,7 +116,10 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
                 key={item.field.key}
                 style={[
                   styles.barSegment,
-                  { flex: item.amount, backgroundColor: Colors.metadataBar[item.colorIndex % Colors.metadataBar.length] },
+                  {
+                    flex: item.amount,
+                    backgroundColor: Colors.metadataBar[item.colorIndex % Colors.metadataBar.length],
+                  },
                 ]}
               />
             ))}
@@ -126,7 +131,10 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
                 style={styles.legendItem}
               >
                 <View
-                  style={[styles.legendDot, { backgroundColor: Colors.metadataBar[item.colorIndex % Colors.metadataBar.length] }]}
+                  style={[
+                    styles.legendDot,
+                    { backgroundColor: Colors.metadataBar[item.colorIndex % Colors.metadataBar.length] },
+                  ]}
                 />
                 <Text style={styles.legendText}>
                   {item.field.label} <Text style={styles.legendValue}>{item.text}</Text>

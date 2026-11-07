@@ -2,6 +2,8 @@ import type { MetadataField } from '../src/types/behavior';
 import {
   buildLogMetadataDisplay,
   formatMetadataDisplayNumber,
+  getLatestLogWithMetadata,
+  getMetadataBarColors,
   setMetadataFieldListDisplay,
 } from '../src/utils/metadata-list-display-utils';
 
@@ -63,5 +65,34 @@ describe('setMetadataFieldListDisplay', () => {
 
   it('stores text as undefined', () => {
     expect(setMetadataFieldListDisplay(fields, 2, 'text')[2].listDisplay).toBeUndefined();
+  });
+});
+
+describe('getMetadataBarColors', () => {
+  it('assigns palette colours to bar fields in order', () => {
+    expect(getMetadataBarColors(fields, ['a', 'b'])).toEqual({ protein: 'a', fat: 'b', carb: 'a' });
+  });
+});
+
+describe('getLatestLogWithMetadata', () => {
+  const behaviors = [
+    { id: 'milk', logs: [{ id: 'm1', timestamp: 30, metadata: { kcal: 90 } }] },
+    {
+      id: 'rice',
+      logs: [
+        { id: 'r1', timestamp: 20, metadata: { kcal: 200 } },
+        { id: 'r2', timestamp: 40 },
+      ],
+    },
+  ];
+
+  it('picks the newest log that has a value for one of the fields', () => {
+    const latest = getLatestLogWithMetadata(behaviors, fields);
+    expect(latest?.behavior.id).toBe('milk');
+    expect(latest?.log.id).toBe('m1');
+  });
+
+  it('returns undefined when no log has metadata', () => {
+    expect(getLatestLogWithMetadata([{ logs: [{ id: 'x', timestamp: 1 }] }], fields)).toBeUndefined();
   });
 });

@@ -1,4 +1,4 @@
-import type { MetadataField, MetadataFieldListDisplay } from '../types/behavior';
+import type { LogEntry, MetadataField, MetadataFieldCalculation, MetadataFieldListDisplay } from '../types/behavior';
 
 export interface MetadataDisplayValue {
   field: MetadataField;
@@ -72,4 +72,42 @@ export function setMetadataFieldListDisplay(
     if (listDisplay === 'big' && field.listDisplay === 'big') return { ...field, listDisplay: undefined };
     return field;
   });
+}
+
+export const METADATA_CALCULATION_LABELS: Record<MetadataFieldCalculation, string> = {
+  manual: 'Manual',
+  amount: 'Amount',
+  per100: 'Per 100',
+};
+
+export const METADATA_LIST_DISPLAY_LABELS: Record<MetadataFieldListDisplay, string> = {
+  big: 'Big',
+  bar: 'Bar',
+  text: 'Text',
+  hidden: 'Hidden',
+};
+
+/** Colour of each Bar field by key, in field order (same assignment as the log card bar). */
+export function getMetadataBarColors(fields: MetadataField[], palette: readonly string[]): Record<string, string> {
+  const colors: Record<string, string> = {};
+  let barIndex = 0;
+  for (const field of fields) {
+    if (getMetadataFieldListDisplay(field) === 'bar') colors[field.key] = palette[barIndex++ % palette.length];
+  }
+  return colors;
+}
+
+/** Latest log among the behaviors that has a value for any of the fields, for the editor's preview card. */
+export function getLatestLogWithMetadata<B extends { logs: L[] }, L extends LogEntry>(
+  behaviors: B[],
+  fields: MetadataField[],
+): { behavior: B; log: L } | undefined {
+  let latest: { behavior: B; log: L } | undefined;
+  for (const behavior of behaviors) {
+    for (const log of behavior.logs) {
+      if (latest && log.timestamp <= latest.log.timestamp) continue;
+      if (fields.some(field => log.metadata?.[field.key] != null)) latest = { behavior, log };
+    }
+  }
+  return latest;
 }

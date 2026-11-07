@@ -4,23 +4,26 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import type { MetadataField, MetadataFieldCalculation, MetadataFieldListDisplay } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
-import { getMetadataFieldListDisplay } from '../../../utils/metadata-list-display-utils';
+import {
+  getMetadataFieldListDisplay,
+  METADATA_CALCULATION_LABELS,
+  METADATA_LIST_DISPLAY_LABELS,
+} from '../../../utils/metadata-list-display-utils';
 import { Text, TextInput } from '../../text';
 import { CalculationPill } from './calculation-pill';
 
 const METADATA_FIELD_ROW_LAYOUT = LinearTransition.duration(220);
 
-const LIST_DISPLAY_OPTIONS: { value: MetadataFieldListDisplay; label: string }[] = [
-  { value: 'big', label: 'Big' },
-  { value: 'bar', label: 'Bar' },
-  { value: 'text', label: 'Text' },
-  { value: 'hidden', label: 'Hidden' },
-];
+const CALCULATION_OPTIONS: MetadataFieldCalculation[] = ['manual', 'amount', 'per100'];
+const LIST_DISPLAY_OPTIONS: MetadataFieldListDisplay[] = ['big', 'bar', 'text', 'hidden'];
 
 interface MetadataFieldRowProps {
   field: MetadataField;
   index: number;
   isLast: boolean;
+  expanded: boolean;
+  barColor?: string;
+  onToggleExpanded: (key: string) => void;
   onLabelChange: (index: number, value: string) => void;
   onDailyGoalChange: (index: number, value: string) => void;
   onUnitChange: (index: number, value: string) => void;
@@ -35,6 +38,9 @@ export function MetadataFieldRow({
   field,
   index,
   isLast,
+  expanded,
+  barColor,
+  onToggleExpanded,
   onLabelChange,
   onDailyGoalChange,
   onUnitChange,
@@ -44,72 +50,46 @@ export function MetadataFieldRow({
   onRemove,
   isSorting,
 }: MetadataFieldRowProps) {
+  const calculation = field.calculation ?? 'manual';
+  const listDisplay = getMetadataFieldListDisplay(field);
+  const showEditor = expanded && !isSorting;
+
   return (
     <Animated.View
       layout={METADATA_FIELD_ROW_LAYOUT}
-      style={styles.fieldRow}
+      style={[styles.fieldRow, showEditor && styles.fieldRowExpanded]}
     >
-      <View style={styles.fieldInputs}>
-        <View style={styles.inputRow}>
-          <TextInput
-            style={[styles.fieldInput, styles.labelInput]}
-            placeholder="Label"
-            placeholderTextColor={Colors.text.faint}
-            value={field.label}
-            onChangeText={v => onLabelChange(index, v)}
-          />
-          <TextInput
-            style={[styles.fieldInput, styles.dailyGoalInput]}
-            placeholder="Daily goal"
-            placeholderTextColor={Colors.text.faint}
-            value={field.dailyGoal != null ? String(field.dailyGoal) : ''}
-            onChangeText={v => onDailyGoalChange(index, v)}
-            keyboardType="decimal-pad"
-            returnKeyType="done"
-          />
-          <TextInput
-            style={[styles.fieldInput, styles.unitInput]}
-            placeholder="Unit"
-            placeholderTextColor={Colors.text.faint}
-            value={field.unit ?? ''}
-            onChangeText={v => onUnitChange(index, v)}
-          />
-        </View>
-        <View style={styles.controlsRow}>
-          <View style={styles.calculationRow}>
-            <CalculationPill
-              label="Manual"
-              active={!field.calculation || field.calculation === 'manual'}
-              onPress={() => onCalculationChange(index, 'manual')}
-            />
-            <CalculationPill
-              label="Amount"
-              active={field.calculation === 'amount'}
-              onPress={() => onCalculationChange(index, 'amount')}
-            />
-            <CalculationPill
-              label="Per 100"
-              active={field.calculation === 'per100'}
-              onPress={() => onCalculationChange(index, 'per100')}
-            />
+      <Pressable
+        style={styles.summaryRow}
+        onPress={() => onToggleExpanded(field.key)}
+        disabled={isSorting}
+        accessibilityRole="button"
+        accessibilityLabel={`${showEditor ? 'Collapse' : 'Edit'} ${field.label || 'field'}`}
+        accessibilityState={{ expanded: showEditor }}
+      >
+        <Text
+          style={[styles.summaryLabel, !field.label && styles.summaryLabelEmpty]}
+          numberOfLines={1}
+        >
+          {field.label || 'New field'}
+          {field.unit ? <Text style={styles.summaryUnit}> {field.unit}</Text> : null}
+        </Text>
+        {!showEditor && (
+          <View style={styles.tags}>
+            {field.dailyGoal != null ? <Text style={styles.tag}>goal {field.dailyGoal}</Text> : null}
+            <Text style={styles.tag}>{METADATA_CALCULATION_LABELS[calculation]}</Text>
+            <Text
+              style={[
+                styles.tag,
+                listDisplay === 'big' && styles.tagBig,
+                listDisplay === 'bar' && barColor != null && [styles.tagBar, { backgroundColor: barColor }],
+              ]}
+            >
+              {METADATA_LIST_DISPLAY_LABELS[listDisplay]}
+            </Text>
           </View>
-        </View>
-        <View style={styles.listDisplayRow}>
-          <Text style={styles.listDisplayLabel}>In log list</Text>
-          <View style={[styles.calculationRow, styles.listDisplayPills]}>
-            {LIST_DISPLAY_OPTIONS.map(option => (
-              <CalculationPill
-                key={option.value}
-                label={option.label}
-                active={getMetadataFieldListDisplay(field) === option.value}
-                onPress={() => onListDisplayChange(index, option.value)}
-              />
-            ))}
-          </View>
-        </View>
-      </View>
-      <View style={styles.actions}>
-        {isSorting && (
+        )}
+        {isSorting ? (
           <View style={styles.reorderButtons}>
             <Pressable
               accessibilityLabel={`Move ${field.label || 'field'} up`}
@@ -136,37 +116,139 @@ export function MetadataFieldRow({
               />
             </Pressable>
           </View>
-        )}
-        <Pressable
-          accessibilityLabel={`Remove ${field.label || 'field'}`}
-          onPress={() => onRemove(index)}
-          style={styles.actionButton}
-        >
+        ) : (
           <Ionicons
-            name="close-circle"
-            size={20}
+            name={showEditor ? 'chevron-up' : 'chevron-forward'}
+            size={16}
             color={Colors.text.faint}
           />
-        </Pressable>
-      </View>
+        )}
+      </Pressable>
+
+      {showEditor && (
+        <View style={styles.editor}>
+          <View style={styles.inputRow}>
+            <TextInput
+              style={[styles.fieldInput, styles.labelInput]}
+              placeholder="Label"
+              placeholderTextColor={Colors.text.faint}
+              value={field.label}
+              onChangeText={v => onLabelChange(index, v)}
+            />
+            <TextInput
+              style={[styles.fieldInput, styles.dailyGoalInput]}
+              placeholder="Daily goal"
+              placeholderTextColor={Colors.text.faint}
+              value={field.dailyGoal != null ? String(field.dailyGoal) : ''}
+              onChangeText={v => onDailyGoalChange(index, v)}
+              keyboardType="decimal-pad"
+              returnKeyType="done"
+            />
+            <TextInput
+              style={[styles.fieldInput, styles.unitInput]}
+              placeholder="Unit"
+              placeholderTextColor={Colors.text.faint}
+              value={field.unit ?? ''}
+              onChangeText={v => onUnitChange(index, v)}
+            />
+          </View>
+          <View style={styles.optionGroup}>
+            <Text style={styles.optionLabel}>Value</Text>
+            <View style={styles.pillRow}>
+              {CALCULATION_OPTIONS.map(option => (
+                <CalculationPill
+                  key={option}
+                  label={METADATA_CALCULATION_LABELS[option]}
+                  active={calculation === option}
+                  onPress={() => onCalculationChange(index, option)}
+                />
+              ))}
+            </View>
+          </View>
+          <View style={styles.optionGroup}>
+            <Text style={styles.optionLabel}>In log list</Text>
+            <View style={styles.pillRow}>
+              {LIST_DISPLAY_OPTIONS.map(option => (
+                <CalculationPill
+                  key={option}
+                  label={METADATA_LIST_DISPLAY_LABELS[option]}
+                  active={listDisplay === option}
+                  onPress={() => onListDisplayChange(index, option)}
+                />
+              ))}
+            </View>
+          </View>
+          <Pressable
+            onPress={() => onRemove(index)}
+            style={({ pressed }) => [styles.deleteButton, pressed && styles.deleteButtonPressed]}
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${field.label || 'field'}`}
+          >
+            <Text style={styles.deleteLabel}>Delete field</Text>
+          </Pressable>
+        </View>
+      )}
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   fieldRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 9,
     backgroundColor: Colors.bg.card,
     borderWidth: 1,
     borderColor: Colors.border.default,
     borderRadius: 14,
-    padding: 11,
   },
-  fieldInputs: {
+  fieldRowExpanded: {
+    borderColor: Colors.border.light,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    minHeight: 48,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+  },
+  summaryLabel: {
     flex: 1,
-    gap: 9,
+    color: Colors.text.primary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  summaryLabelEmpty: {
+    color: Colors.text.faint,
+  },
+  summaryUnit: {
+    color: Colors.text.muted,
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  tags: {
+    flexDirection: 'row',
+    gap: 5,
+  },
+  tag: {
+    color: Colors.text.light,
+    backgroundColor: Colors.bg.input,
+    borderRadius: 6,
+    overflow: 'hidden',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  tagBig: {
+    backgroundColor: Colors.text.lightest,
+    color: Colors.bg.primary,
+  },
+  tagBar: {
+    color: Colors.bg.primary,
+  },
+  editor: {
+    gap: 10,
+    paddingHorizontal: 11,
+    paddingBottom: 11,
   },
   inputRow: {
     flexDirection: 'row',
@@ -194,40 +276,42 @@ const styles = StyleSheet.create({
     width: 56,
     textAlign: 'center',
   },
-  controlsRow: {
-    flexDirection: 'row',
-    gap: 0,
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 2,
-    paddingTop: 8,
-  },
-  reorderButtons: {
-    flexDirection: 'column',
-  },
-  actionButton: {
-    padding: 3,
-  },
-  listDisplayRow: {
+  optionGroup: {
     gap: 5,
   },
-  listDisplayLabel: {
+  optionLabel: {
     color: Colors.text.muted,
     fontSize: 11,
     fontWeight: '600',
     paddingLeft: 4,
   },
-  listDisplayPills: {
-    flex: 0,
-  },
-  calculationRow: {
-    flex: 1,
+  pillRow: {
     flexDirection: 'row',
     backgroundColor: Colors.bg.primary,
     borderRadius: 11,
     overflow: 'hidden',
+    padding: 3,
+  },
+  deleteButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 40,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.status.danger,
+  },
+  deleteButtonPressed: {
+    opacity: 0.7,
+  },
+  deleteLabel: {
+    color: Colors.type.undesirable,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  reorderButtons: {
+    flexDirection: 'row',
+  },
+  actionButton: {
     padding: 3,
   },
 });
