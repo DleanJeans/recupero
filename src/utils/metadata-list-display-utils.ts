@@ -2,7 +2,8 @@ import type { MetadataField, MetadataFieldListDisplay } from '../types/behavior'
 
 export interface MetadataDisplayValue {
   field: MetadataField;
-  value: number;
+  /** Named `amount`, not `value`: Reanimated's Babel plugin warns on `.value` inside inline styles. */
+  amount: number;
   text: string;
 }
 
@@ -42,7 +43,7 @@ export function buildLogMetadataDisplay(
   for (const field of fields) {
     const value = toNumber(metadata[field.key]);
     if (value == null) continue;
-    const item = { field, value, text: formatMetadataDisplayNumber(value) };
+    const item = { field, amount: value, text: formatMetadataDisplayNumber(value) };
     const role = getMetadataFieldListDisplay(field);
     if (role === 'big') {
       if (!display.big) display.big = item;

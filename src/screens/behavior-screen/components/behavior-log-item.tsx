@@ -114,7 +114,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
                 key={item.field.key}
                 style={[
                   styles.barSegment,
-                  { flex: item.value, backgroundColor: Colors.metadataBar[i % Colors.metadataBar.length] },
+                  { flex: item.amount, backgroundColor: Colors.metadataBar[i % Colors.metadataBar.length] },
                 ]}
               />
             ))}
