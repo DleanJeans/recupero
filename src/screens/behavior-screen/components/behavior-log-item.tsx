@@ -109,24 +109,24 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
       {bars.length > 0 ? (
         <View style={styles.barSection}>
           <View style={styles.bar}>
-            {bars.map((item, i) => (
+            {bars.map(item => (
               <View
                 key={item.field.key}
                 style={[
                   styles.barSegment,
-                  { flex: item.amount, backgroundColor: Colors.metadataBar[i % Colors.metadataBar.length] },
+                  { flex: item.amount, backgroundColor: Colors.metadataBar[item.colorIndex % Colors.metadataBar.length] },
                 ]}
               />
             ))}
           </View>
           <View style={styles.legend}>
-            {bars.map((item, i) => (
+            {bars.map(item => (
               <View
                 key={item.field.key}
                 style={styles.legendItem}
               >
                 <View
-                  style={[styles.legendDot, { backgroundColor: Colors.metadataBar[i % Colors.metadataBar.length] }]}
+                  style={[styles.legendDot, { backgroundColor: Colors.metadataBar[item.colorIndex % Colors.metadataBar.length] }]}
                 />
                 <Text style={styles.legendText}>
                   {item.field.label} <Text style={styles.legendValue}>{item.text}</Text>

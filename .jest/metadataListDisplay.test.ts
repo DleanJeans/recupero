@@ -33,6 +33,7 @@ describe('buildLogMetadataDisplay', () => {
       ['carb', '15.1'],
     ]);
     expect(display.texts.map(t => t.field.key)).toEqual(['weight']);
+    expect(display.bars.map(b => b.colorIndex)).toEqual([0, 2]);
   });
 
   it('treats fields without listDisplay as text (old categories)', () => {

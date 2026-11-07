@@ -9,7 +9,8 @@ export interface MetadataDisplayValue {
 
 export interface LogMetadataDisplay {
   big?: MetadataDisplayValue;
-  bars: MetadataDisplayValue[];
+  /** colorIndex is the field's position among all Bar fields, so a 0 value never shifts the colours. */
+  bars: (MetadataDisplayValue & { colorIndex: number })[];
   texts: MetadataDisplayValue[];
 }
 
@@ -40,16 +41,18 @@ export function buildLogMetadataDisplay(
   const display: LogMetadataDisplay = { bars: [], texts: [] };
   if (!fields || !metadata) return display;
 
+  let barIndex = 0;
   for (const field of fields) {
+    const role = getMetadataFieldListDisplay(field);
+    const colorIndex = role === 'bar' ? barIndex++ : 0;
     const value = toNumber(metadata[field.key]);
     if (value == null) continue;
     const item = { field, amount: value, text: formatMetadataDisplayNumber(value) };
-    const role = getMetadataFieldListDisplay(field);
     if (role === 'big') {
       if (!display.big) display.big = item;
       else if (value !== 0) display.texts.push(item);
     } else if (role === 'bar') {
-      if (value > 0) display.bars.push(item);
+      if (value > 0) display.bars.push({ ...item, colorIndex });
     } else if (role === 'text') {
       if (value !== 0) display.texts.push(item);
     }
