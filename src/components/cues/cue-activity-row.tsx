@@ -4,7 +4,7 @@ import { useCustomCueOptions } from '../../hooks/use-custom-cue-options';
 import { useCuesStore } from '../../store/cues-store';
 import type { CueActivityEvent } from '../../types/cue';
 import { Colors } from '../../utils/colors';
-import { getBodySensationOption, getMoodOption } from '../../utils/cue-utils';
+import { getBodySensationOption, getMoodOption, getPlaceEmoji } from '../../utils/cue-utils';
 import { formatTime } from '../../utils/time-utils';
 import { Text } from '../text';
 
@@ -25,7 +25,7 @@ export function CueActivityRow({ event }: CueActivityRowProps) {
   const mood = event.mood ? getMoodOption(event.mood, custom.moods) : undefined;
   const sensation = event.sensation ? getBodySensationOption(event.sensation, custom.sensations) : undefined;
   const option = mood ?? sensation;
-  const icon = option?.emoji ?? (place?.isHome ? '🏠' : '📍');
+  const icon = option?.emoji ?? (place ? getPlaceEmoji(place) : '📍');
   const title = TITLES[event.kind];
   const detail = option?.label ?? place?.name ?? 'Unknown place';
 

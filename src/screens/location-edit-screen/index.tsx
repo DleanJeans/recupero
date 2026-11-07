@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../../components/button';
 import { CueScreenHeader } from '../../components/cues/cue-screen-header';
 import { CueToggle } from '../../components/cues/cue-toggle';
+import { EmojiPicker } from '../../components/emoji-picker';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text, TextInput } from '../../components/text';
 import { useCuesStore } from '../../store/cues-store';
@@ -29,6 +30,7 @@ export function LocationEditScreen() {
   const updatePlace = useCuesStore(state => state.updatePlace);
   const removePlace = useCuesStore(state => state.removePlace);
   const [name, setName] = useState(existingPlace?.name ?? '');
+  const [emoji, setEmoji] = useState(existingPlace?.emoji ?? '');
   const [address, setAddress] = useState(existingPlace?.address ?? '');
   const [radiusM, setRadiusM] = useState(clampGeofenceRadius(existingPlace?.radiusM ?? 20));
   const [isHome, setIsHome] = useState(existingPlace?.isHome ?? false);
@@ -96,6 +98,7 @@ export function LocationEditScreen() {
     }
     const input = {
       name: name.trim(),
+      emoji: emoji.trim() || undefined,
       address: address.trim() || undefined,
       lat: point.lat,
       lng: point.lng,
@@ -170,13 +173,30 @@ export function LocationEditScreen() {
 
         <View style={styles.fieldCard}>
           <Text style={styles.fieldLabel}>Name</Text>
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="Home, Office, Gym…"
-            placeholderTextColor={Colors.text.faint}
-          />
+          <View style={styles.nameRow}>
+            <EmojiPicker
+              value={emoji}
+              onChangeText={setEmoji}
+              nameHint={name}
+              style={styles.emojiBox}
+            />
+            <TextInput
+              style={[styles.input, styles.nameInput]}
+              value={name}
+              onChangeText={setName}
+              placeholder="Home, Office, Gym…"
+              placeholderTextColor={Colors.text.faint}
+            />
+          </View>
+          {emoji ? (
+            <Text
+              style={styles.clearEmoji}
+              onPress={() => setEmoji('')}
+              accessibilityRole="button"
+            >
+              Use the default pin instead
+            </Text>
+          ) : null}
         </View>
 
         <RadiusSlider
@@ -238,6 +258,10 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, height: 46, color: Colors.text.primary, fontSize: 14, paddingVertical: 0 },
   fieldCard: { gap: 8, backgroundColor: Colors.bg.card, borderRadius: 12, padding: 13 },
   fieldLabel: { color: Colors.text.muted, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  emojiBox: { width: 48, height: 44, borderRadius: 9 },
+  nameInput: { flex: 1 },
+  clearEmoji: { alignSelf: 'flex-start', color: Colors.text.faint, fontSize: 12, fontWeight: '600' },
   input: {
     height: 44,
     color: Colors.text.primary,

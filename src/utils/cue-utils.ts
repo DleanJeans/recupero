@@ -221,9 +221,19 @@ export interface CueSource {
 }
 
 /** Every cue a log can be attached to: saved places, then moods, then body sensations. */
+/** Emoji for a saved place in emoji-only spots (lists, pickers): the user's pick, else 🏠 for Home, else 📍. */
+export function getPlaceEmoji(place: Pick<SavedPlace, 'emoji' | 'isHome'>): string {
+  return place.emoji || (place.isHome ? '🏠' : '📍');
+}
+
 export function getCueSources(places: SavedPlace[], custom: CustomCueOptions = NO_CUSTOM_CUE_OPTIONS): CueSource[] {
   return [
-    ...places.map(place => ({ ref: placeCueRef(place.id), kind: 'place' as const, label: place.name })),
+    ...places.map(place => ({
+      ref: placeCueRef(place.id),
+      kind: 'place' as const,
+      label: place.name,
+      emoji: place.emoji || undefined,
+    })),
     ...getMoodOptions(custom.moods).map(option => ({
       ref: moodCueRef(option.id),
       kind: 'mood' as const,

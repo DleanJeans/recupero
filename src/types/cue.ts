@@ -54,6 +54,8 @@ export interface Cue {
 export interface SavedPlace {
   id: string;
   name: string;
+  /** User-chosen emoji shown as the place's icon. Unset falls back to the pin (or 🏠 for Home). */
+  emoji?: string;
   address?: string;
   lat: number;
   lng: number;

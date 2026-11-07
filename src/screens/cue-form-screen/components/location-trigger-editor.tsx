@@ -9,6 +9,7 @@ import { useCuesStore } from '../../../store/cues-store';
 import type { CueTrigger } from '../../../types/cue';
 import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
+import { getPlaceEmoji } from '../../../utils/cue-utils';
 
 type LocationTrigger = Extract<CueTrigger, { type: 'location' }>;
 
@@ -40,7 +41,7 @@ export function LocationTriggerEditor({ value, onChange }: LocationTriggerEditor
               style={({ pressed }) => [styles.place, selected && styles.selectedPlace, pressed && styles.pressed]}
               onPress={() => onChange({ ...value, placeId: place.id })}
             >
-              <Text style={styles.placeIcon}>{place.isHome ? '🏠' : '📍'}</Text>
+              <Text style={styles.placeIcon}>{getPlaceEmoji(place)}</Text>
               <View style={styles.placeCopy}>
                 <Text style={styles.placeName}>{place.name}</Text>
                 <Text style={styles.placeDetail}>{place.address || `${place.radiusM} m radius`}</Text>

@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
 import type { SavedPlace } from '../../../types/cue';
 import { Colors } from '../../../utils/colors';
+import { getPlaceEmoji } from '../../../utils/cue-utils';
 
 interface SavedPlaceRowProps {
   place: SavedPlace;
@@ -20,7 +21,7 @@ export function SavedPlaceRow({ place, onPress }: SavedPlaceRowProps) {
       accessibilityHint="Double tap to edit this saved place."
     >
       <View style={[styles.icon, place.isHome && styles.homeIcon]}>
-        <Text style={styles.emoji}>{place.isHome ? '🏠' : '📍'}</Text>
+        <Text style={styles.emoji}>{getPlaceEmoji(place)}</Text>
       </View>
       <View style={styles.copy}>
         <View style={styles.nameRow}>

@@ -10,6 +10,7 @@ import {
   getCueXpStats,
   getMoodOption,
   getMoodSuggestedBehaviorIds,
+  getPlaceEmoji,
   getRecentBodySensation,
   isCueOptionLabelTaken,
   isCueTriggerComplete,
@@ -119,6 +120,17 @@ describe('cue XP', () => {
     expect(sources[0]).toMatchObject({ ref: 'place:gym', kind: 'place', label: 'Gym' });
     expect(sources.filter(source => source.kind === 'mood')).toHaveLength(6);
     expect(sources.filter(source => source.kind === 'body')).toHaveLength(6);
+  });
+
+  it("uses a place's own emoji, with no emoji (pin icon) when unset", () => {
+    expect(getCueSources([place])[0].emoji).toBeUndefined();
+    expect(getCueSources([{ ...place, emoji: '🏋️' }])[0].emoji).toBe('🏋️');
+  });
+
+  it('falls back to 🏠 for Home and 📍 otherwise in emoji-only spots', () => {
+    expect(getPlaceEmoji({ emoji: '☕', isHome: true })).toBe('☕');
+    expect(getPlaceEmoji({ isHome: true })).toBe('🏠');
+    expect(getPlaceEmoji({ emoji: '', isHome: false })).toBe('📍');
   });
 
   it('sums log XP for every cue attached to a log', () => {
