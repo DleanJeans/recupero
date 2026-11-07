@@ -440,3 +440,42 @@ export function isNeedNotificationData(data: unknown): data is NeedNotificationD
   const value = data as Partial<NeedNotificationData>;
   return value.kind === 'need' && typeof value.needId === 'string' && Array.isArray(value.behaviorIds);
 }
+
+export interface NeedRefillEntry {
+  behaviorId: string;
+  logId: string;
+  ts: number;
+  /** "+45%" or "Full". */
+  amountLabel: string;
+}
+
+/**
+ * Logs that refilled a need on the day `isToday` accepts, newest first. When there are none,
+ * the single most recent refill from any day (or nothing if it was never refilled).
+ */
+export function getNeedRefillHistory(
+  config: NeedConfig,
+  behaviors: BehaviorEntry[],
+  source: NeedMetadataSource | undefined,
+  isToday: (ts: number) => boolean,
+): { entries: NeedRefillEntry[]; today: boolean } {
+  const all: NeedRefillEntry[] = [];
+  for (const behavior of behaviors) {
+    const refill = config.refills[behavior.id];
+    if (!refill && !source) continue;
+    for (const log of behavior.logs) {
+      const event = getRefillEvent(behavior.id, log, refill, source);
+      if (!event) continue;
+      all.push({
+        behaviorId: behavior.id,
+        logId: log.id,
+        ts: event.ts,
+        amountLabel: event.kind === 'add' ? `+${Math.round(event.amount)}%` : 'Full',
+      });
+    }
+  }
+  all.sort((a, b) => b.ts - a.ts);
+  const todays = all.filter(entry => isToday(entry.ts));
+  if (todays.length > 0) return { entries: todays, today: true };
+  return { entries: all.slice(0, 1), today: false };
+}

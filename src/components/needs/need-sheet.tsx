@@ -13,6 +13,7 @@ import type { RootStackParamList } from '../../types/navigation';
 import type { NeedId } from '../../types/need';
 import { getActiveBehaviors } from '../../utils/archive-utils';
 import { Colors } from '../../utils/colors';
+import { toDateString } from '../../utils/date-utils';
 import {
   findMetadataField,
   formatEmptyHours,
@@ -20,11 +21,13 @@ import {
   getDecayPerHour,
   getDefaultRefill,
   getNeedLevelTone,
+  getNeedRefillHistory,
   getNextRefill,
   getRefillBehaviorIds,
   getSuggestedRefillIds,
   NEED_INFO,
 } from '../../utils/need-utils';
+import { formatCompactDate, formatElapsedNumeric, formatTime } from '../../utils/time-utils';
 import { BehaviorIcon } from '../behavior-icon';
 import { CueSectionLabel } from '../cues/cue-section-label';
 import { Text, TextInput } from '../text';
@@ -45,6 +48,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
   const behaviors = useBehaviorStore(state => state.behaviors);
   const categories = useBehaviorStore(state => state.categories);
   const hidePrivate = useSettingsStore(state => state.hidePrivate);
+  const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
   const checkIn = useNeedsStore(state => state.checkIn);
   const setRefill = useNeedsStore(state => state.setRefill);
   const [adding, setAdding] = useState(false);
@@ -57,6 +61,16 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
     () => (need ? getRefillBehaviorIds(need.config, behaviors, need.source, now) : []),
     [behaviors, need, now],
   );
+  const history = useMemo(() => {
+    if (!need) return undefined;
+    const today = toDateString(new Date(now), dayCutoffHour);
+    return getNeedRefillHistory(
+      need.config,
+      behaviors,
+      need.source,
+      ts => toDateString(new Date(ts), dayCutoffHour) === today,
+    );
+  }, [behaviors, dayCutoffHour, need, now]);
   const suggestedIds = useMemo(
     () => (need ? getSuggestedRefillIds(need.id, need.config, behaviors).filter(id => !refillIds.includes(id)) : []),
     [behaviors, need, refillIds],
@@ -162,6 +176,41 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                 </Pressable>
               ))}
             </View>
+
+            {history && history.entries.length > 0 ? (
+              <>
+                <CueSectionLabel>{history.today ? 'Refilled today' : 'Last refill'}</CueSectionLabel>
+                <View style={styles.history}>
+                  {history.entries.map(entry => {
+                    const behavior = behaviorById.get(entry.behaviorId);
+                    if (!behavior) return null;
+                    return (
+                      <View
+                        key={entry.logId}
+                        style={styles.historyRow}
+                      >
+                        <BehaviorIcon
+                          behavior={behavior}
+                          size={20}
+                        />
+                        <Text
+                          style={styles.historyName}
+                          numberOfLines={1}
+                        >
+                          {behavior.name}
+                        </Text>
+                        <Text style={styles.historyAmount}>{entry.amountLabel}</Text>
+                        <Text style={styles.historyTime}>
+                          {history.today
+                            ? formatTime(entry.ts)
+                            : `${formatCompactDate(entry.ts)} ${formatTime(entry.ts)} · ${formatElapsedNumeric(entry.ts, now)}`}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </>
+            ) : null}
 
             <CueSectionLabel>Refill</CueSectionLabel>
             {sourceField && need.source ? (
@@ -431,6 +480,32 @@ const styles = StyleSheet.create({
     color: Colors.text.light,
     fontSize: 12,
     fontWeight: '700',
+  },
+  history: {
+    backgroundColor: Colors.bg.input,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 6,
+  },
+  historyName: {
+    flex: 1,
+    color: Colors.text.secondary,
+    fontSize: 13,
+  },
+  historyAmount: {
+    color: Colors.type.desirable,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  historyTime: {
+    color: Colors.text.faint,
+    fontSize: 12,
   },
   search: {
     flexDirection: 'row',

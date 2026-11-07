@@ -10,6 +10,7 @@ import {
   getNeedLevelTone,
   getNeedMetadataSource,
   getNeedNudgePlans,
+  getNeedRefillHistory,
   getRefillBehaviorIds,
   isNeedNotificationData,
   learnEmptyHours,
@@ -219,5 +220,39 @@ describe('getNeedNudgePlans', () => {
     const late = getNeedNudgePlans([{ id: 'thirst', config: base, level: 75, refills: [] }], T0 + 6 * H);
     // 18:00 + 6h = 00:00 → 07:00 next day.
     expect(new Date(late[0].at).getHours()).toBe(7);
+  });
+});
+
+describe('getNeedRefillHistory', () => {
+  const source = { fieldKey: 'field_kcal', fullAmount: 800 };
+  const isToday = (ts: number) => ts >= T0 - 2 * H;
+  it("lists today's refills newest first", () => {
+    const behaviors = [
+      makeBehavior('rice', [
+        { id: 'r1', timestamp: T0 - H, metadata: { field_kcal: 400 } },
+        { id: 'r0', timestamp: T0 - 30 * H, metadata: { field_kcal: 400 } },
+      ]),
+      makeBehavior('egg', [{ id: 'e1', timestamp: T0, metadata: { field_kcal: 80 } }]),
+    ];
+    const history = getNeedRefillHistory(DEFAULT_NEED_CONFIGS.hunger, behaviors, source, isToday);
+    expect(history.today).toBe(true);
+    expect(history.entries.map(entry => [entry.logId, entry.amountLabel])).toEqual([
+      ['e1', '+10%'],
+      ['r1', '+50%'],
+    ]);
+  });
+  it('falls back to the last refill from an earlier day', () => {
+    const config = { ...DEFAULT_NEED_CONFIGS.hygiene, refills: { shower: { mode: 'set' as const } } };
+    const behaviors = [
+      makeBehavior('shower', [
+        { id: 's1', timestamp: T0 - 50 * H },
+        { id: 's2', timestamp: T0 - 26 * H },
+      ]),
+    ];
+    const history = getNeedRefillHistory(config, behaviors, undefined, isToday);
+    expect(history).toEqual({
+      today: false,
+      entries: [{ behaviorId: 'shower', logId: 's2', ts: T0 - 26 * H, amountLabel: 'Full' }],
+    });
   });
 });
