@@ -96,7 +96,7 @@ export function MetadataFieldRow({
         </View>
         <View style={styles.listDisplayRow}>
           <Text style={styles.listDisplayLabel}>In log list</Text>
-          <View style={styles.calculationRow}>
+          <View style={[styles.calculationRow, styles.listDisplayPills]}>
             {LIST_DISPLAY_OPTIONS.map(option => (
               <CalculationPill
                 key={option.value}
@@ -211,14 +211,16 @@ const styles = StyleSheet.create({
     padding: 3,
   },
   listDisplayRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
+    gap: 5,
   },
   listDisplayLabel: {
     color: Colors.text.muted,
     fontSize: 11,
     fontWeight: '600',
+    paddingLeft: 4,
+  },
+  listDisplayPills: {
+    flex: 0,
   },
   calculationRow: {
     flex: 1,
