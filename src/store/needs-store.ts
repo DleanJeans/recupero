@@ -24,6 +24,7 @@ export interface NeedsStore {
   /** Records how the need feels now and nudges its decay rate toward what that implies. */
   checkIn: (needId: NeedId, level: number, source: NeedCheckInSource) => void;
   setRefill: (needId: NeedId, behaviorId: string, refill: NeedRefill | undefined) => void;
+  setCategoryRefill: (needId: NeedId, categoryId: string, refill: NeedRefill | undefined) => void;
   setMetadataSource: (needId: NeedId, source: NeedMetadataSource | null | undefined) => void;
   setEnabled: (needId: NeedId, enabled: boolean) => void;
   resetLearning: (needId: NeedId) => void;
@@ -33,7 +34,12 @@ function withDefaults(needs: Partial<Record<NeedId, Partial<NeedConfig>>> | unde
   const result = {} as Record<NeedId, NeedConfig>;
   for (const id of NEED_IDS) {
     const saved = needs?.[id];
-    result[id] = { ...DEFAULT_NEED_CONFIGS[id], ...saved, refills: { ...saved?.refills } };
+    result[id] = {
+      ...DEFAULT_NEED_CONFIGS[id],
+      ...saved,
+      refills: { ...saved?.refills },
+      categoryRefills: { ...saved?.categoryRefills },
+    };
   }
   return result;
 }
@@ -77,6 +83,13 @@ export const useNeedsStore = create<NeedsStore>()(
           if (refill) refills[behaviorId] = refill;
           else delete refills[behaviorId];
           return { needs: { ...state.needs, [needId]: { ...state.needs[needId], refills } } };
+        }),
+      setCategoryRefill: (needId, categoryId, refill) =>
+        set(state => {
+          const categoryRefills = { ...state.needs[needId].categoryRefills };
+          if (refill) categoryRefills[categoryId] = refill;
+          else delete categoryRefills[categoryId];
+          return { needs: { ...state.needs, [needId]: { ...state.needs[needId], categoryRefills } } };
         }),
       setMetadataSource: (needId, source) =>
         set(state => ({ needs: { ...state.needs, [needId]: { ...state.needs[needId], metadataSource: source } } })),

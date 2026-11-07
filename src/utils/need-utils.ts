@@ -140,6 +140,16 @@ export function getRefillEvent(
   return { ts: log.endTimestamp, kind: 'add', amount: (minutes / refill.fullMinutes) * 100, behaviorId };
 }
 
+/** How a behaviour refills a need: its own setting, else its category's. */
+export function getBehaviorRefill(
+  config: Pick<NeedConfig, 'refills' | 'categoryRefills'>,
+  behavior: Pick<BehaviorEntry, 'id' | 'categoryId'>,
+): NeedRefill | undefined {
+  return (
+    config.refills[behavior.id] ?? (behavior.categoryId ? config.categoryRefills?.[behavior.categoryId] : undefined)
+  );
+}
+
 /** Refills and check-ins for one need since `since`, oldest first. */
 export function getNeedEvents(
   needId: NeedId,
@@ -151,7 +161,7 @@ export function getNeedEvents(
 ): NeedEvent[] {
   const events: NeedEvent[] = [];
   for (const behavior of behaviors) {
-    const refill = config.refills[behavior.id];
+    const refill = getBehaviorRefill(config, behavior);
     if (!refill && !source) continue;
     for (const log of behavior.logs) {
       const end = log.endTimestamp ?? log.timestamp;
@@ -296,7 +306,7 @@ export function getRefillBehaviorIds(
   const scored: Array<{ id: string; count: number; mapped: boolean }> = [];
   for (const behavior of behaviors) {
     if (behavior.archivedAt != null) continue;
-    const mapped = config.refills[behavior.id] != null;
+    const mapped = getBehaviorRefill(config, behavior) != null;
     let count = 0;
     for (const log of behavior.logs) {
       if (log.timestamp < since) continue;
@@ -310,8 +320,12 @@ export function getRefillBehaviorIds(
     .map(item => item.id);
 }
 
-/** Unmapped behaviours whose names suggest they refill this need. */
+/**
+ * Behaviours whose names suggest they refill this need. Only offered until the user picks
+ * behaviours or categories themselves.
+ */
 export function getSuggestedRefillIds(needId: NeedId, config: NeedConfig, behaviors: BehaviorEntry[], limit = 3) {
+  if (Object.keys(config.refills).length > 0 || Object.keys(config.categoryRefills ?? {}).length > 0) return [];
   const { suggest } = NEED_INFO[needId];
   return behaviors
     .filter(
@@ -461,7 +475,7 @@ export function getNeedRefillHistory(
 ): { entries: NeedRefillEntry[]; today: boolean } {
   const all: NeedRefillEntry[] = [];
   for (const behavior of behaviors) {
-    const refill = config.refills[behavior.id];
+    const refill = getBehaviorRefill(config, behavior);
     if (!refill && !source) continue;
     for (const log of behavior.logs) {
       const event = getRefillEvent(behavior.id, log, refill, source);

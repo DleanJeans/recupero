@@ -35,8 +35,10 @@ export interface NeedConfig {
   cravingLine: number;
   /** Crossing this sends a push notification. */
   nudgeLine: number;
-  /** Behaviours that refill this need, by behaviour id. */
+  /** Behaviours that refill this need, by behaviour id. Wins over the behaviour's category. */
   refills: Record<string, NeedRefill>;
+  /** Whole categories whose behaviours refill this need, by category id. */
+  categoryRefills?: Record<string, NeedRefill>;
   /** Undefined = automatic (Hunger picks a calorie field). Null = off. */
   metadataSource?: NeedMetadataSource | null;
   /** How many check-ins have adjusted the rate since the last reset. */

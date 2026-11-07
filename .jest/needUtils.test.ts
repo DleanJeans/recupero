@@ -4,6 +4,7 @@ import {
   DEFAULT_HUNGER_FULL_KCAL,
   DEFAULT_NEED_CONFIGS,
   formatNextCraving,
+  getBehaviorRefill,
   getLineCrossingTime,
   getNeedEvents,
   getNeedIdForBodySensation,
@@ -12,6 +13,7 @@ import {
   getNeedNudgePlans,
   getNeedRefillHistory,
   getRefillBehaviorIds,
+  getSuggestedRefillIds,
   isNeedNotificationData,
   learnEmptyHours,
   NEED_NOT_YET_ACTION,
@@ -254,5 +256,26 @@ describe('getNeedRefillHistory', () => {
       today: false,
       entries: [{ behaviorId: 'shower', logId: 's2', ts: T0 - 26 * H, amountLabel: 'Full' }],
     });
+  });
+});
+
+describe('category refills', () => {
+  const drinks = { ...makeBehavior('water', [{ id: 'w1', timestamp: T0 }]), categoryId: 'drinks' };
+  const juice = { ...makeBehavior('juice', [{ id: 'j1', timestamp: T0 + H }]), categoryId: 'drinks' };
+  const config = {
+    ...DEFAULT_NEED_CONFIGS.thirst,
+    categoryRefills: { drinks: { mode: 'add' as const, amount: 30 } },
+    refills: { juice: { mode: 'add' as const, amount: 15 } },
+  };
+  it('refills from every behaviour in the category, with a behaviour setting winning', () => {
+    expect(getBehaviorRefill(config, drinks)).toEqual({ mode: 'add', amount: 30 });
+    expect(getBehaviorRefill(config, juice)).toEqual({ mode: 'add', amount: 15 });
+    const events = getNeedEvents('thirst', config, [drinks, juice], [], undefined, 0);
+    expect(events.map(event => (event.kind === 'add' ? event.amount : null))).toEqual([30, 15]);
+  });
+  it('stops keyword suggestions once you pick refills yourself', () => {
+    const water = makeBehavior('Water', []);
+    expect(getSuggestedRefillIds('thirst', DEFAULT_NEED_CONFIGS.thirst, [water])).toEqual(['Water']);
+    expect(getSuggestedRefillIds('thirst', config, [water])).toEqual([]);
   });
 });

@@ -51,6 +51,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
   const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
   const checkIn = useNeedsStore(state => state.checkIn);
   const setRefill = useNeedsStore(state => state.setRefill);
+  const setCategoryRefill = useNeedsStore(state => state.setCategoryRefill);
   const [adding, setAdding] = useState(false);
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
@@ -75,6 +76,13 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
     () => (need ? getSuggestedRefillIds(need.id, need.config, behaviors).filter(id => !refillIds.includes(id)) : []),
     [behaviors, need, refillIds],
   );
+  const categoryResults = useMemo(() => {
+    if (!need) return [];
+    const q = query.trim().toLowerCase();
+    return categories.filter(
+      category => need.config.categoryRefills?.[category.id] == null && category.name.toLowerCase().includes(q),
+    );
+  }, [categories, need, query]);
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!need || !q) return [];
@@ -118,10 +126,23 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
     setQuery('');
   };
 
-  const refillDetail = (behaviorId: string) => {
-    const refill = need.config.refills[behaviorId];
-    if (refill) return undefined;
-    return sourceField ? `By ${sourceField.label.toLowerCase()}` : undefined;
+  const addCategoryRefill = (categoryId: string) => {
+    setCategoryRefill(need.id, categoryId, getDefaultRefill(need.id));
+    setAdding(false);
+    setQuery('');
+  };
+
+  const selectedCategories = categories.filter(category => need.config.categoryRefills?.[category.id] != null);
+
+  const refillDetail = (behavior: BehaviorEntry) => {
+    if (need.config.refills[behavior.id]) return undefined;
+    const viaCategory = behavior.categoryId ? need.config.categoryRefills?.[behavior.categoryId] : undefined;
+    if (sourceField) return `By ${sourceField.label.toLowerCase()}`;
+    if (viaCategory) {
+      const category = categories.find(item => item.id === behavior.categoryId);
+      return `${formatRefill(viaCategory)} via ${category?.name ?? 'category'}`;
+    }
+    return undefined;
   };
 
   return (
@@ -219,6 +240,21 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                 {sourceField.unit ? ` ${sourceField.unit}` : ''} = full. Change it in Settings.
               </Text>
             ) : null}
+            {selectedCategories.map(category => {
+              const refill = need.config.categoryRefills?.[category.id];
+              if (!refill) return null;
+              return (
+                <CategoryRefillRow
+                  key={category.id}
+                  emoji={category.emoji}
+                  name={category.name}
+                  count={behaviors.filter(b => b.categoryId === category.id && b.archivedAt == null).length}
+                  amount={formatRefill(refill)}
+                  onAmountPress={() => setCategoryRefill(need.id, category.id, getNextRefill(refill))}
+                  onRemove={() => setCategoryRefill(need.id, category.id, undefined)}
+                />
+              );
+            })}
             {refillIds.map(id => {
               const behavior = behaviorById.get(id);
               if (!behavior) return null;
@@ -227,7 +263,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                 <RefillRow
                   key={id}
                   behavior={behavior}
-                  detail={refillDetail(id)}
+                  detail={refillDetail(behavior)}
                   amount={refill ? formatRefill(refill) : undefined}
                   onAmountPress={refill ? () => setRefill(need.id, id, getNextRefill(refill)) : undefined}
                   onRemove={refill ? () => setRefill(need.id, id, undefined) : undefined}
@@ -248,8 +284,10 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                 />
               );
             })}
-            {refillIds.length === 0 && suggestedIds.length === 0 && !adding ? (
-              <Text style={styles.hint}>Nothing refills {info.label} yet. Add the behaviours that do.</Text>
+            {refillIds.length === 0 && suggestedIds.length === 0 && selectedCategories.length === 0 && !adding ? (
+              <Text style={styles.hint}>
+                Nothing refills {info.label} yet. Add a category or the behaviours that do.
+              </Text>
             ) : null}
 
             {adding ? (
@@ -264,12 +302,21 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                     style={styles.searchInput}
                     value={query}
                     onChangeText={setQuery}
-                    placeholder="Find a behaviour"
+                    placeholder="Find a category or behaviour"
                     placeholderTextColor={Colors.text.faint}
                     autoCorrect={false}
                     autoFocus
                   />
                 </View>
+                {categoryResults.map(category => (
+                  <CategoryRefillRow
+                    key={category.id}
+                    emoji={category.emoji}
+                    name={category.name}
+                    count={behaviors.filter(b => b.categoryId === category.id && b.archivedAt == null).length}
+                    onPress={() => addCategoryRefill(category.id)}
+                  />
+                ))}
                 {results.map(behavior => (
                   <RefillRow
                     key={behavior.id}
@@ -290,13 +337,75 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                   size={16}
                   color={Colors.text.muted}
                 />
-                <Text style={styles.addText}>Add a behaviour that refills {info.label}</Text>
+                <Text style={styles.addText}>Add a category or behaviour that refills {info.label}</Text>
               </Pressable>
             )}
           </ScrollView>
         </View>
       </View>
     </Modal>
+  );
+}
+
+interface CategoryRefillRowProps {
+  emoji: string;
+  name: string;
+  count: number;
+  /** Set for a category that already refills the need; unset in search results (tap to add). */
+  amount?: string;
+  onPress?: () => void;
+  onAmountPress?: () => void;
+  onRemove?: () => void;
+}
+
+function CategoryRefillRow({ emoji, name, count, amount, onPress, onAmountPress, onRemove }: CategoryRefillRowProps) {
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.row, onPress && pressed && styles.pressed]}
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+    >
+      <Text style={styles.categoryEmoji}>{emoji}</Text>
+      <View style={styles.rowText}>
+        <Text
+          style={styles.rowName}
+          numberOfLines={1}
+        >
+          {name}
+        </Text>
+        <Text style={styles.rowDetail}>
+          Whole category · {count} behaviour{count === 1 ? '' : 's'}
+        </Text>
+      </View>
+      {amount ? (
+        <Pressable
+          style={({ pressed }) => [styles.amount, pressed && styles.pressed]}
+          onPress={onAmountPress}
+          hitSlop={6}
+          accessibilityRole="button"
+          accessibilityLabel={`Refill amount ${amount}, tap to change`}
+        >
+          <Text style={styles.amountText}>{amount}</Text>
+        </Pressable>
+      ) : (
+        <Text style={styles.rowAction}>Add ›</Text>
+      )}
+      {onRemove ? (
+        <Pressable
+          onPress={onRemove}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Stop ${name} refilling this need`}
+        >
+          <Ionicons
+            name="close"
+            size={16}
+            color={Colors.text.faint}
+          />
+        </Pressable>
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -451,6 +560,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 9,
+  },
+  categoryEmoji: {
+    fontSize: 20,
+    width: 24,
+    textAlign: 'center',
   },
   rowText: {
     flex: 1,
