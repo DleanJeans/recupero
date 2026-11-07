@@ -61,6 +61,7 @@ export function StackedBehaviorsSection({ form }: Props) {
       </Button>
       <StackBehaviorPickerModal
         visible={pickerVisible}
+        behaviorId={behavior.id}
         excludeIds={excludeIds}
         onClose={() => setPickerVisible(false)}
         onPick={behaviorId => {
