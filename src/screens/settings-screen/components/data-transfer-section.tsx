@@ -96,25 +96,24 @@ export function DataTransferSection() {
           <Text style={styles.optionLabel}>Import</Text>
           <Text style={styles.optionDescriptionSmall}>Pick JSON file</Text>
         </Button>
-
-        {showSendToDev && (
-          <Button
-            variant="ghost"
-            onPress={handleSendToDev}
-            disabled={isTransferring}
-            style={[styles.optionCard, isTransferring && { opacity: 0.5 }]}
-          >
-            <Ionicons
-              name="paper-plane-outline"
-              size={22}
-              color={Colors.text.white}
-              style={{ marginBottom: 6 }}
-            />
-            <Text style={styles.optionLabel}>Send to dev</Text>
-            <Text style={styles.optionDescriptionSmall}>Open in Recupero Dev</Text>
-          </Button>
-        )}
       </View>
+
+      {showSendToDev && (
+        <Button
+          variant="ghost"
+          onPress={handleSendToDev}
+          disabled={isTransferring}
+          style={[styles.sendRow, isTransferring && { opacity: 0.5 }]}
+        >
+          <Ionicons
+            name="paper-plane-outline"
+            size={20}
+            color={Colors.text.white}
+          />
+          <Text style={[styles.optionLabel, { marginBottom: 0 }]}>Send to dev</Text>
+          <Text style={styles.sendRowDescription}>Open in Recupero Dev</Text>
+        </Button>
+      )}
     </View>
   );
 }
@@ -132,6 +131,16 @@ const styles = StyleSheet.create({
   },
   optionsRow: { flexDirection: 'row', gap: 10 },
   optionCard: { flex: 1, padding: 16, borderWidth: 1.5, borderColor: Colors.bg.card },
+  sendRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.bg.card,
+  },
+  sendRowDescription: { flex: 1, color: Colors.text.dim, fontSize: 12, fontWeight: '400', textAlign: 'right' },
   optionLabel: { color: Colors.text.muted, fontSize: 16, fontWeight: '600', marginBottom: 4 },
   optionDescriptionSmall: { color: Colors.text.dim, fontSize: 12, fontWeight: '400', marginTop: 2 },
 });
