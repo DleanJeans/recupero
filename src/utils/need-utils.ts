@@ -267,7 +267,7 @@ export function formatEmptyHours(emptyHours: number): string {
   return formatHoursMinutes(emptyHours * MS_PER_HOUR);
 }
 
-/** "Craving now", "Craving in ~40 min", "Craving ~21:30", "Craving tomorrow 09:10". */
+/** "Low now", "Low in ~40 min", "Low ~21:30", "Low tomorrow 09:10". */
 export function formatNextCraving(
   level: number | undefined,
   config: NeedConfig,
@@ -275,17 +275,17 @@ export function formatNextCraving(
   formatClock: (ts: number) => string,
 ): string {
   if (level == null) return 'No data yet · tap to check in';
-  if (level < config.cravingLine) return 'Craving now';
+  if (level < config.cravingLine) return 'Low now';
   const at = getLineCrossingTime(level, getDecayPerHour(config), config.cravingLine, now);
-  if (at == null) return 'Craving now';
+  if (at == null) return 'Low now';
   const ms = at - now;
-  if (ms < 3 * MS_PER_HOUR) return `Craving in ~${formatHoursMinutes(ms)}`;
+  if (ms < 3 * MS_PER_HOUR) return `Low in ~${formatHoursMinutes(ms)}`;
   const sameDay = new Date(at).toDateString() === new Date(now).toDateString();
-  if (sameDay) return `Craving ~${formatClock(at)}`;
+  if (sameDay) return `Low ~${formatClock(at)}`;
   const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  if (new Date(at).toDateString() === tomorrow.toDateString()) return `Craving tomorrow ${formatClock(at)}`;
-  return `Craving in ~${Math.round(ms / (24 * MS_PER_HOUR))} days`;
+  if (new Date(at).toDateString() === tomorrow.toDateString()) return `Low tomorrow ${formatClock(at)}`;
+  return `Low in ~${Math.round(ms / (24 * MS_PER_HOUR))} days`;
 }
 
 export function formatRefill(refill: NeedRefill): string {

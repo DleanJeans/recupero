@@ -158,9 +158,9 @@ describe('labels', () => {
   it('describes the next craving', () => {
     const config = DEFAULT_NEED_CONFIGS.hunger;
     expect(formatNextCraving(undefined, config, T0, clock)).toMatch(/No data/);
-    expect(formatNextCraving(20, config, T0, clock)).toBe('Craving now');
-    expect(formatNextCraving(35, config, T0, clock)).toBe('Craving in ~24 min');
-    expect(formatNextCraving(80, config, T0, clock)).toBe('Craving ~16:00');
+    expect(formatNextCraving(20, config, T0, clock)).toBe('Low now');
+    expect(formatNextCraving(35, config, T0, clock)).toBe('Low in ~24 min');
+    expect(formatNextCraving(80, config, T0, clock)).toBe('Low ~16:00');
   });
   it('tones by level', () => {
     expect(getNeedLevelTone(80, 30)).toBe('good');
