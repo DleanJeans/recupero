@@ -7,6 +7,7 @@ import { BehaviorActionSheet } from '../../components/behavior-action-sheet';
 import { BehaviorIcon } from '../../components/behavior-icon';
 import { CueScreenHeader } from '../../components/cues/cue-screen-header';
 import { CueSectionLabel } from '../../components/cues/cue-section-label';
+import { NeedsCravingStrip } from '../../components/needs/needs-craving-strip';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text, TextInput } from '../../components/text';
 import { useBehaviorActionSheetStore } from '../../store/behavior-action-sheet-store';
@@ -89,6 +90,8 @@ export function CravingsScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
+        <NeedsCravingStrip />
+
         <View style={styles.stats}>
           <StatTile
             label="Beaten this week"

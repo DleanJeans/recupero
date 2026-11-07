@@ -8,6 +8,7 @@ import { type AddCueOptionKind, AddCueOptionModal } from '../../components/cues/
 import { CueScreenHeader } from '../../components/cues/cue-screen-header';
 import { CueSectionLabel } from '../../components/cues/cue-section-label';
 import { CueSegmentedControl } from '../../components/cues/cue-segmented-control';
+import { NeedsPanel } from '../../components/needs/needs-panel';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text } from '../../components/text';
 import { useCustomCueOptions } from '../../hooks/use-custom-cue-options';
@@ -120,6 +121,8 @@ function CueSourcesTab() {
 
   return (
     <>
+      <NeedsPanel />
+
       <Text style={styles.hint}>XP from behaviours you logged with each cue. Pick cues on the log screen.</Text>
 
       <View style={styles.group}>

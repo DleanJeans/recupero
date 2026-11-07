@@ -14,6 +14,7 @@ import { useAppFonts } from './src/hooks/use-app-fonts';
 import { useAppUsageSync } from './src/hooks/use-app-usage-sync';
 import { useDeferredBottomNavNavigation } from './src/hooks/use-deferred-bottom-nav-navigation';
 import { useDevHandoffImport } from './src/hooks/use-dev-handoff-import';
+import { useNeedNudges } from './src/hooks/use-need-nudges';
 import { useReminderEngine } from './src/hooks/use-reminder-engine';
 import { BehaviorFormScreen } from './src/screens/behavior-form-screen';
 import { BehaviorScreen } from './src/screens/behavior-screen';
@@ -37,6 +38,7 @@ import { TimerScreen } from './src/screens/timer-screen';
 import { useBehaviorStore } from './src/store/behavior-store';
 import { useCravingsStore } from './src/store/cravings-store';
 import { useCuesStore } from './src/store/cues-store';
+import { useNeedsStore } from './src/store/needs-store';
 import { useSettingsStore } from './src/store/settings-store';
 import { useShopStore } from './src/store/shop-store';
 import { useTimerStore } from './src/store/timer-store';
@@ -49,6 +51,7 @@ const PERSISTED_STORES = [
   useBehaviorStore,
   useCravingsStore,
   useCuesStore,
+  useNeedsStore,
   useSettingsStore,
   useShopStore,
   useTimerStore,
@@ -92,6 +95,7 @@ export default function App() {
   const { pendingRouteName, deferNavigation, completeNavigation } = useDeferredBottomNavNavigation<BottomNavRoute>();
   useAppUsageSync(storesReady);
   useReminderEngine(storesReady, navigationRef);
+  useNeedNudges(storesReady, navigationRef);
   useDevHandoffImport(storesReady);
 
   useEffect(() => {
