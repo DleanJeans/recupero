@@ -3,17 +3,20 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { BehaviorActionSheet } from '../../components/behavior-action-sheet';
 import { BehaviorIcon } from '../../components/behavior-icon';
 import { CueScreenHeader } from '../../components/cues/cue-screen-header';
 import { CueSectionLabel } from '../../components/cues/cue-section-label';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text, TextInput } from '../../components/text';
+import { useBehaviorActionSheetStore } from '../../store/behavior-action-sheet-store';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useCravingsStore } from '../../store/cravings-store';
 import { useSettingsStore } from '../../store/settings-store';
 import type { BehaviorEntry, BehaviorType } from '../../types/behavior';
 import type { CravingOutcome } from '../../types/craving';
 import type { RootStackParamList } from '../../types/navigation';
+import { getActiveBehaviors } from '../../utils/archive-utils';
 import { Colors } from '../../utils/colors';
 import { getCravingTone } from '../../utils/craving-tone';
 import {
@@ -46,8 +49,9 @@ export function CravingsScreen() {
   );
   const listed = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return getCravableBehaviors(behaviors, cravings, hidePrivate);
-    return behaviors
+    const active = getActiveBehaviors(behaviors);
+    if (!q) return getCravableBehaviors(active, cravings, hidePrivate);
+    return active
       .filter(behavior => (!hidePrivate || !behavior.private) && behavior.name.toLowerCase().includes(q))
       .sort((a, b) => (b.lastTimestamp ?? 0) - (a.lastTimestamp ?? 0));
   }, [behaviors, cravings, hidePrivate, query]);
@@ -80,6 +84,7 @@ export function CravingsScreen() {
       edges={['top', 'left', 'right']}
     >
       <CueScreenHeader title="Cravings" />
+      <BehaviorActionSheet />
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
@@ -255,10 +260,12 @@ interface BehaviorRowProps {
 }
 
 function BehaviorRow({ behavior, detail, active = false, onPress }: BehaviorRowProps) {
+  const openActionSheet = useBehaviorActionSheetStore(state => state.open);
   return (
     <Pressable
       style={({ pressed }) => [styles.row, active && styles.rowActive, pressed && styles.pressed]}
       onPress={onPress}
+      onLongPress={() => openActionSheet(behavior.id)}
       accessibilityRole="button"
       accessibilityLabel={`Ride out a craving for ${behavior.name}`}
     >

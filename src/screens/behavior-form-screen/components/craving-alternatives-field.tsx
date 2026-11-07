@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
-import { useBehaviorStore } from '../../../store/behavior-store';
+import { useActiveBehaviors } from '../../../hooks/use-active-behaviors';
 import { Colors } from '../../../utils/colors';
 import { StackBehaviorPickerModal } from '../../behavior-screen/components/stack-behavior-picker-modal';
 
@@ -14,7 +14,7 @@ interface CravingAlternativesFieldProps {
 
 /** "Instead, try…": behaviours suggested first when riding out a craving for this one. */
 export function CravingAlternativesField({ behaviorId, value, onChange }: CravingAlternativesFieldProps) {
-  const behaviors = useBehaviorStore(state => state.behaviors);
+  const behaviors = useActiveBehaviors();
   const [picking, setPicking] = useState(false);
   const picked = value
     .map(id => behaviors.find(behavior => behavior.id === id))

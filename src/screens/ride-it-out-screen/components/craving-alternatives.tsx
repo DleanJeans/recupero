@@ -6,7 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { BehaviorIcon } from '../../../components/behavior-icon';
 import { CueSectionLabel } from '../../../components/cues/cue-section-label';
 import { Text, TextInput } from '../../../components/text';
-import { useBehaviorStore } from '../../../store/behavior-store';
+import { useActiveBehaviors } from '../../../hooks/use-active-behaviors';
 import { useCravingsStore } from '../../../store/cravings-store';
 import { useSettingsStore } from '../../../store/settings-store';
 import type { BehaviorEntry } from '../../../types/behavior';
@@ -27,7 +27,7 @@ interface CravingAlternativesProps {
 
 export function CravingAlternatives({ cravedBehaviorId, onLog, onTime, label }: CravingAlternativesProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const behaviors = useBehaviorStore(state => state.behaviors);
+  const behaviors = useActiveBehaviors();
   const cravings = useCravingsStore(state => state.cravings);
   const alternatives = useCravingsStore(state => state.alternatives);
   const hidePrivate = useSettingsStore(state => state.hidePrivate);

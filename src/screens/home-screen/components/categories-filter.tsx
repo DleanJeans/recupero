@@ -10,6 +10,12 @@ import { useBehaviorStore } from '../../../store/behavior-store';
 import { useSettingsStore } from '../../../store/settings-store';
 import type { Category } from '../../../types/behavior';
 import type { RootStackParamList } from '../../../types/navigation';
+import {
+  ARCHIVED_CATEGORY_FILTER_ID,
+  ARCHIVED_FILTER_LABEL,
+  getActiveBehaviors,
+  isArchivedCategoryFilterId,
+} from '../../../utils/archive-utils';
 import { computeBehaviorCounts } from '../../../utils/behavior-counts';
 import { Colors } from '../../../utils/colors';
 
@@ -45,15 +51,24 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
     setChipWidths(current => (current[key] === width ? current : { ...current, [key]: width }));
   };
 
-  const { behaviorCounts, allCount } = useMemo(() => computeBehaviorCounts(behaviors), [behaviors]);
+  const activeBehaviors = useMemo(() => getActiveBehaviors(behaviors), [behaviors]);
+  const archivedCount = behaviors.length - activeBehaviors.length;
+  const showArchivedChip = archivedCount > 0 || isArchivedCategoryFilterId(selectedCategoryId);
+  const { behaviorCounts, allCount } = useMemo(() => computeBehaviorCounts(activeBehaviors), [activeBehaviors]);
   const collapsedCategories = useMemo(() => {
-    if (gridWidth <= 0 || chipWidths.all == null || categories.some(category => chipWidths[category.id] == null)) {
+    if (
+      gridWidth <= 0 ||
+      chipWidths.all == null ||
+      (showArchivedChip && chipWidths.archived == null) ||
+      categories.some(category => chipWidths[category.id] == null)
+    ) {
       return categories;
     }
 
     const gap = 9;
     const visible: Category[] = [];
-    let usedWidth = chipWidths.all;
+    // The Archived chip always stays on the collapsed row, after the categories.
+    let usedWidth = chipWidths.all + (showArchivedChip ? gap + chipWidths.archived : 0);
     for (const category of categories) {
       const width = chipWidths[category.id];
       if (width == null || usedWidth + gap + width > gridWidth) break;
@@ -72,7 +87,7 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
     }
 
     return visible;
-  }, [categories, chipWidths, gridWidth, selectedCategoryId]);
+  }, [categories, chipWidths, gridWidth, selectedCategoryId, showArchivedChip]);
 
   const visibleCategories = renderExpanded ? categories : collapsedCategories;
 
@@ -81,7 +96,10 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
   };
 
   const collapsedLayoutMeasured =
-    gridWidth > 0 && chipWidths.all != null && categories.every(category => chipWidths[category.id] != null);
+    gridWidth > 0 &&
+    chipWidths.all != null &&
+    (!showArchivedChip || chipWidths.archived != null) &&
+    categories.every(category => chipWidths[category.id] != null);
   const canExpand = collapsedLayoutMeasured ? categories.length > collapsedCategories.length : categories.length > 0;
 
   const finishCollapse = (transitionId: number) => {
@@ -173,6 +191,20 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
               onLongPress={() => handleCategoryLongPress(category)}
             />
           ))}
+          {showArchivedChip && (
+            <CategoryChip
+              icon="🗄️"
+              label={ARCHIVED_FILTER_LABEL}
+              count={archivedCount}
+              active={isArchivedCategoryFilterId(selectedCategoryId)}
+              iconOnly={hideNames}
+              dashed
+              onLayout={event => handleChipLayout('archived', event)}
+              onPress={() =>
+                onSelectCategory(isArchivedCategoryFilterId(selectedCategoryId) ? null : ARCHIVED_CATEGORY_FILTER_ID)
+              }
+            />
+          )}
         </View>
       </Animated.View>
     </View>
@@ -206,6 +238,8 @@ interface CategoryChipProps {
   onPress: () => void;
   onLongPress?: () => void;
   onLayout?: (event: LayoutChangeEvent) => void;
+  /** Dashed border, for the Archived chip. */
+  dashed?: boolean;
 }
 
 function CategoryChip({
@@ -217,6 +251,7 @@ function CategoryChip({
   onPress,
   onLongPress,
   onLayout,
+  dashed = false,
 }: CategoryChipProps) {
   return (
     <Pressable
@@ -226,7 +261,12 @@ function CategoryChip({
       onLongPress={onLongPress}
       onLayout={onLayout}
       onPress={onPress}
-      style={({ pressed }) => [styles.chip, active && styles.chipActive, pressed && styles.chipPressed]}
+      style={({ pressed }) => [
+        styles.chip,
+        dashed && styles.chipDashed,
+        active && styles.chipActive,
+        pressed && styles.chipPressed,
+      ]}
     >
       {(icon || iconOnly) && (
         <Text
@@ -303,6 +343,10 @@ const styles = StyleSheet.create({
     borderColor: Colors.border.default,
     borderRadius: 20,
     borderWidth: 1,
+  },
+  chipDashed: {
+    borderStyle: 'dashed',
+    borderColor: Colors.border.light,
   },
   chipActive: {
     backgroundColor: 'rgba(74, 222, 128, 0.12)',

@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { BehaviorActionSheet } from '../../components/behavior-action-sheet';
 import { Button } from '../../components/button';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text } from '../../components/text';
@@ -12,6 +13,7 @@ import { useBehaviorStore } from '../../store/behavior-store';
 import { useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
 import type { RootStackParamList } from '../../types/navigation';
+import { getActiveBehaviors, getArchivedBehaviors, isArchivedCategoryFilterId } from '../../utils/archive-utils';
 import { Colors } from '../../utils/colors';
 import { getCooldownBehaviors, isCooldownCategoryFilterId } from '../../utils/cooldown-filter';
 import { BehaviorList } from './components/behavior-list';
@@ -45,6 +47,8 @@ export function HomeScreen() {
   const [cooldownSortTick, setCooldownSortTick] = useState(0);
   const cooldownSelected = isCooldownCategoryFilterId(selectedCategoryId);
   const listCooldownSelected = isCooldownCategoryFilterId(listCategoryId);
+  const archivedSelected = isArchivedCategoryFilterId(selectedCategoryId);
+  const listArchivedSelected = isArchivedCategoryFilterId(listCategoryId);
   const handleSelectCategory = useCallback(
     (id: string | null) => {
       selectCategory(id);
@@ -55,11 +59,23 @@ export function HomeScreen() {
 
   // Reset selection if the selected category no longer exists
   useEffect(() => {
-    if (selectedCategoryId !== null && !cooldownSelected && !categories.some(c => c.id === selectedCategoryId)) {
+    if (
+      selectedCategoryId !== null &&
+      !cooldownSelected &&
+      !archivedSelected &&
+      !categories.some(c => c.id === selectedCategoryId)
+    ) {
       setHomeSelectedCategoryId(null);
       resetCategorySelection();
     }
-  }, [categories, cooldownSelected, resetCategorySelection, selectedCategoryId, setHomeSelectedCategoryId]);
+  }, [
+    archivedSelected,
+    categories,
+    cooldownSelected,
+    resetCategorySelection,
+    selectedCategoryId,
+    setHomeSelectedCategoryId,
+  ]);
 
   useEffect(() => {
     if (!cooldownSelected) return;
@@ -68,9 +84,11 @@ export function HomeScreen() {
   }, [cooldownSelected]);
 
   const filteredBehaviors = useMemo(() => {
-    let result = behaviors;
+    let result = listArchivedSelected ? getArchivedBehaviors(behaviors) : getActiveBehaviors(behaviors);
     if (hidePrivate) result = result.filter(b => !b.private);
-    if (listCooldownSelected) {
+    if (listArchivedSelected) {
+      // Already narrowed to archived behaviours above.
+    } else if (listCooldownSelected) {
       result = getCooldownBehaviors(result);
     } else if (listCategoryId !== null) {
       result = result.filter(b => b.categoryId === listCategoryId);
@@ -80,9 +98,18 @@ export function HomeScreen() {
       result = result.filter(b => b.name.toLowerCase().includes(q));
     }
     return result;
-  }, [behaviors, listCooldownSelected, cooldownSortTick, listCategoryId, hidePrivate, searchQuery]);
+  }, [
+    behaviors,
+    listArchivedSelected,
+    listCooldownSelected,
+    cooldownSortTick,
+    listCategoryId,
+    hidePrivate,
+    searchQuery,
+  ]);
 
-  const addBehaviorDefaultCategoryId = cooldownSelected ? undefined : (selectedCategoryId ?? undefined);
+  const addBehaviorDefaultCategoryId =
+    cooldownSelected || archivedSelected ? undefined : (selectedCategoryId ?? undefined);
   const motionEnabled = useAfterInteractionsFlag([behaviors, isSearching, searchQuery, showXp]);
 
   return (
@@ -114,7 +141,8 @@ export function HomeScreen() {
           }}
         />
       ) : (
-        showXp && (
+        showXp &&
+        !archivedSelected && (
           <BehaviorTypeXPPanel
             selectedCategoryId={renderedSummaryCategoryId}
             motionEnabled={motionEnabled}
@@ -129,7 +157,8 @@ export function HomeScreen() {
 
       {isSearching
         ? null
-        : showXp && (
+        : showXp &&
+          !archivedSelected && (
             <CategoryXPBar
               selectedCategoryId={renderedSummaryCategoryId}
               motionEnabled={motionEnabled}
@@ -153,6 +182,8 @@ export function HomeScreen() {
           motionEnabled={motionEnabled}
         />
       )}
+
+      <BehaviorActionSheet />
 
       <Button
         fab

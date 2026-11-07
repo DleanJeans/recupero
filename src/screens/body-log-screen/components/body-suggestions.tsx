@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { BehaviorIcon } from '../../../components/behavior-icon';
 import { Text } from '../../../components/text';
-import { useBehaviorStore } from '../../../store/behavior-store';
+import { useActiveBehaviors } from '../../../hooks/use-active-behaviors';
 import { useCuesStore } from '../../../store/cues-store';
 import type { BodySensationId } from '../../../types/cue';
 import type { RootStackParamList } from '../../../types/navigation';
@@ -19,7 +19,7 @@ export function BodySuggestions({ sensation }: BodySuggestionsProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const cues = useCuesStore(state => state.cues);
   const customSensations = useCuesStore(state => state.customSensations);
-  const behaviors = useBehaviorStore(state => state.behaviors);
+  const behaviors = useActiveBehaviors();
   const suggestedIds = useMemo(() => getBodySuggestedBehaviorIds(sensation, cues), [cues, sensation]);
   const suggested = suggestedIds
     .map(id => behaviors.find(behavior => behavior.id === id))

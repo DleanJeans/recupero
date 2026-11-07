@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useActiveBehaviors } from '../hooks/use-active-behaviors';
 import { useBehaviorStore } from '../store/behavior-store';
 import { COOLDOWN_CATEGORY_FILTER_ID, isCooldownCategoryFilterId } from '../utils/cooldown-filter';
 import { CategoryPicker } from './category-picker';
@@ -16,7 +17,7 @@ export const CategoryFilter = React.memo(function CategoryFilter({
   onSelectCategory,
 }: CategoryFilterProps) {
   const categories = useBehaviorStore(s => s.categories);
-  const behaviors = useBehaviorStore(s => s.behaviors);
+  const behaviors = useActiveBehaviors();
   const handleChange = useCallback((id: string | undefined | null) => onSelectCategory(id ?? null), [onSelectCategory]);
   const cooldownSelected = isCooldownCategoryFilterId(selectedCategoryId);
   const handleCooldownPress = useCallback(

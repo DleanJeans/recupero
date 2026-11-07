@@ -101,6 +101,9 @@ interface BehaviorStore {
     stackId?: string,
   ) => void;
   removeBehavior: (id: string) => void;
+  /** Hides a behaviour from lists, pickers and suggestions without touching its logs. */
+  archiveBehavior: (id: string) => void;
+  unarchiveBehavior: (id: string) => void;
   removeLog: (behaviorId: string, logId: string) => void;
   updateLog: (
     behaviorId: string,
@@ -251,6 +254,18 @@ export const useBehaviorStore = create<BehaviorStore>()(
             ),
           };
         }),
+      archiveBehavior: id =>
+        set(state => ({
+          behaviors: state.behaviors.map(b => (b.id === id ? { ...b, archivedAt: Date.now() } : b)),
+        })),
+      unarchiveBehavior: id =>
+        set(state => ({
+          behaviors: state.behaviors.map(b => {
+            if (b.id !== id) return b;
+            const { archivedAt: _archivedAt, ...rest } = b;
+            return rest;
+          }),
+        })),
       removeLog: (behaviorId, logId) =>
         set(state => ({
           behaviors: state.behaviors.map(b =>

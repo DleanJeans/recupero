@@ -11,6 +11,7 @@ import { useBehaviorStore } from '../../store/behavior-store';
 import { useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
 import type { TaskEntry, TaskStarValue } from '../../types/task';
+import { getActiveBehaviors } from '../../utils/archive-utils';
 import { getCalendarTaskCompletionMetrics } from '../../utils/calendar-metrics';
 import { Colors } from '../../utils/colors';
 import { toDateString } from '../../utils/date-utils';
@@ -51,7 +52,8 @@ export function TaskScreen() {
 
   const availableBehaviors = useMemo(() => {
     if (!composerOpen) return [];
-    const visible = hidePrivate ? behaviors.filter(behavior => !behavior.private) : behaviors;
+    const active = getActiveBehaviors(behaviors);
+    const visible = hidePrivate ? active.filter(behavior => !behavior.private) : active;
     return [...visible].sort((a, b) => a.name.localeCompare(b.name));
   }, [behaviors, composerOpen, hidePrivate]);
   const behaviorById = useMemo(() => new Map(behaviors.map(behavior => [behavior.id, behavior])), [behaviors]);

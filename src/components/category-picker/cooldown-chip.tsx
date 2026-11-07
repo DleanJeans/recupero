@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useBehaviorStore } from '../../store/behavior-store';
+import { useActiveBehaviors } from '../../hooks/use-active-behaviors';
 import { useSettingsStore } from '../../store/settings-store';
 import { Colors } from '../../utils/colors';
 import { COOLDOWN_FILTER_LABEL, countBehaviorsPastCooldown, countCooldownBehaviors } from '../../utils/cooldown-filter';
@@ -14,7 +14,7 @@ interface CooldownChipProps {
 }
 
 export function CooldownChip({ active, onPress }: CooldownChipProps) {
-  const behaviors = useBehaviorStore(s => s.behaviors);
+  const behaviors = useActiveBehaviors();
   const hideNames = useSettingsStore(s => s.hideCategoryNames);
   const count = useMemo(() => countCooldownBehaviors(behaviors), [behaviors]);
   const pastCooldownCount = useMemo(() => countBehaviorsPastCooldown(behaviors), [behaviors]);

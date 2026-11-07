@@ -10,6 +10,7 @@ import { useBehaviorStore } from '../../store/behavior-store';
 import { useSettingsStore } from '../../store/settings-store';
 import { useTimerStore } from '../../store/timer-store';
 import type { RootStackParamList } from '../../types/navigation';
+import { isArchived } from '../../utils/archive-utils';
 import { Colors } from '../../utils/colors';
 import { TimerPicker } from './components/timer-picker';
 import { TimerRunningPanel } from './components/timer-running-panel';
@@ -44,7 +45,7 @@ export function TimerScreen() {
 
   const availableBehaviors = useMemo(() => {
     const timerBehaviors = behaviors.filter(
-      behavior => behavior.xpEnabled === true && behavior.durationXpEnabled === true,
+      behavior => behavior.xpEnabled === true && behavior.durationXpEnabled === true && !isArchived(behavior),
     );
     const visibleBehaviors = hidePrivate ? timerBehaviors.filter(behavior => !behavior.private) : timerBehaviors;
     return [...visibleBehaviors].sort((a, b) => {

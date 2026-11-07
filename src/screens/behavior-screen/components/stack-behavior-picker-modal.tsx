@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { BehaviorIcon } from '../../../components/behavior-icon';
 import { Text, TextInput } from '../../../components/text';
-import { useBehaviorStore } from '../../../store/behavior-store';
+import { useActiveBehaviors } from '../../../hooks/use-active-behaviors';
 import { Colors } from '../../../utils/colors';
 
 interface StackBehaviorPickerModalProps {
@@ -14,7 +14,7 @@ interface StackBehaviorPickerModalProps {
 }
 
 export function StackBehaviorPickerModal({ visible, excludeIds, onClose, onPick }: StackBehaviorPickerModalProps) {
-  const behaviors = useBehaviorStore(state => state.behaviors);
+  const behaviors = useActiveBehaviors();
   const [query, setQuery] = useState('');
 
   const options = useMemo(() => {

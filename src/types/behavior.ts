@@ -74,6 +74,9 @@ export interface BehaviorEntry {
       };
   categoryId?: string;
   private?: boolean;
+  /** When the behaviour was archived. Archived behaviours are hidden from lists, pickers and suggestions
+   *  but keep their logs, XP and money. Undefined = not archived. */
+  archivedAt?: number;
   lastTimestamp: number | null;
   metadata: Record<string, string | number>;
   defaultMetadata?: Record<string, number>;

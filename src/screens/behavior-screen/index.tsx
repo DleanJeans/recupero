@@ -8,8 +8,10 @@ import { SafeAreaView } from '../../components/safe-area-view';
 import { Text } from '../../components/text';
 import { useBehaviorStore } from '../../store/behavior-store';
 import type { RootStackParamList } from '../../types/navigation';
+import { isArchived } from '../../utils/archive-utils';
 import { Colors } from '../../utils/colors';
 import { BehaviorScreenLayout } from '../components/behavior-screen-layout';
+import { ArchivedBanner } from './components/archived-banner';
 import { BehaviorActions } from './components/behavior-actions';
 import { BehaviorLogList } from './components/behavior-log-list';
 import { BehaviorLogScreen } from './components/behavior-log-screen';
@@ -132,6 +134,7 @@ export function BehaviorScreen() {
     >
       {mode === 'details' ? (
         <View style={styles.detailsBody}>
+          {isArchived(behavior) && <ArchivedBanner behaviorId={behavior.id} />}
           <BehaviorLogList
             behavior={behavior}
             onEditLog={handleEditLog}

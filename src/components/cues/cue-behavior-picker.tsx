@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useBehaviorStore } from '../../store/behavior-store';
+import { useActiveBehaviors } from '../../hooks/use-active-behaviors';
 import { Colors } from '../../utils/colors';
 import { BehaviorIcon } from '../behavior-icon';
 import { Text } from '../text';
@@ -19,7 +19,7 @@ export function CueBehaviorPicker({
   emptyMessage = 'Create a behaviour first.',
   onChange,
 }: CueBehaviorPickerProps) {
-  const behaviors = useBehaviorStore(state => state.behaviors);
+  const behaviors = useActiveBehaviors();
 
   if (behaviors.length === 0) return <Text style={styles.empty}>{emptyMessage}</Text>;
 

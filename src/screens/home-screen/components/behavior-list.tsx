@@ -4,6 +4,7 @@ import { Text } from '../../../components/text';
 import { useSettingsStore } from '../../../store/settings-store';
 import type { BehaviorEntry } from '../../../types/behavior';
 import type { TaskEntry } from '../../../types/task';
+import { ARCHIVED_FILTER_LABEL, isArchivedCategoryFilterId } from '../../../utils/archive-utils';
 import { groupBehaviorsByRecency } from '../../../utils/behavior-utils';
 import { Colors } from '../../../utils/colors';
 import { COOLDOWN_FILTER_LABEL, isCooldownCategoryFilterId } from '../../../utils/cooldown-filter';
@@ -30,6 +31,7 @@ export const BehaviorList = React.memo(function BehaviorList({
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const [now, setNow] = useState(() => Date.now());
   const cooldownSelected = isCooldownCategoryFilterId(selectedCategoryId);
+  const archivedSelected = isArchivedCategoryFilterId(selectedCategoryId);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 60000);
@@ -38,12 +40,12 @@ export const BehaviorList = React.memo(function BehaviorList({
 
   const sections = useMemo(
     () =>
-      cooldownSelected
+      cooldownSelected || archivedSelected
         ? behaviors.length > 0
-          ? [{ title: COOLDOWN_FILTER_LABEL, data: behaviors }]
+          ? [{ title: archivedSelected ? ARCHIVED_FILTER_LABEL : COOLDOWN_FILTER_LABEL, data: behaviors }]
           : []
         : groupBehaviorsByRecency(behaviors, dayCutoffHour),
-    [behaviors, cooldownSelected, dayCutoffHour, now],
+    [archivedSelected, behaviors, cooldownSelected, dayCutoffHour, now],
   );
   const todayStr = useMemo(() => toDateString(new Date(now), dayCutoffHour), [dayCutoffHour, now]);
   const yesterdayStr = useMemo(() => toDateString(yesterday(new Date(now), dayCutoffHour)), [dayCutoffHour, now]);
@@ -57,6 +59,7 @@ export const BehaviorList = React.memo(function BehaviorList({
   );
   const emptyMessage = (() => {
     if (searchQuery) return `No behaviors matching "${searchQuery}".`;
+    if (archivedSelected) return 'No archived behaviors.\nLong-press a behavior to archive it.';
     if (cooldownSelected) return 'No cooldown behaviors yet.\nLog a cooldown-enabled behavior to see it here.';
     if (selectedCategoryId !== null) return 'No behaviors in this category.\nTap + to add one.';
     return 'No behaviors yet.\nAdd your first one.';
@@ -70,13 +73,13 @@ export const BehaviorList = React.memo(function BehaviorList({
     ({ item, section }: { item: BehaviorEntry; section: { title: string } }) => (
       <BehaviorCard
         behavior={item}
-        showCategory={selectedCategoryId === null || cooldownSelected}
+        showCategory={selectedCategoryId === null || cooldownSelected || archivedSelected}
         dateStr={dateForSection(section.title)}
         motionEnabled={motionEnabled}
         now={now}
       />
     ),
-    [cooldownSelected, dateForSection, motionEnabled, now, selectedCategoryId],
+    [archivedSelected, cooldownSelected, dateForSection, motionEnabled, now, selectedCategoryId],
   );
   const renderSectionHeader = useCallback(
     ({ section }: { section: { title: string } }) => (
