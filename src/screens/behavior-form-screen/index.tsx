@@ -18,6 +18,7 @@ import { useStarMoneyMultipliersForm } from '../../hooks/use-star-money-multipli
 import { useStarThresholdsForm } from '../../hooks/use-star-thresholds-form';
 import { useXPDecayForm } from '../../hooks/use-xp-decay-form';
 import { useBehaviorStore } from '../../store/behavior-store';
+import { useCravingsStore } from '../../store/cravings-store';
 import { useSettingsStore } from '../../store/settings-store';
 import type { BehaviorEntry, BehaviorType } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
@@ -37,6 +38,7 @@ import { BehaviorTypePicker } from './components/behavior-type-picker';
 import type { CooldownUnit } from './components/cooldown-input';
 import { CooldownInput } from './components/cooldown-input';
 import { CooldownTypeToggle } from './components/cooldown-type-toggle';
+import { CravingAlternativesField } from './components/craving-alternatives-field';
 import { MoneyRewardInput } from './components/money-reward-input';
 import { StarMoneyMultipliersFormField } from './components/star-money-multipliers-form-field';
 import { StarThresholdsFormField } from './components/star-thresholds-form-field';
@@ -99,6 +101,8 @@ export function BehaviorFormScreen() {
   );
   const [moneyRewardAmountTouched, setMoneyRewardAmountTouched] = useState(() => behavior?.moneyReward != null);
   const [type, setType] = useState<BehaviorType>(behavior?.type ?? 'neutral');
+  const savedAlternativeIds = useCravingsStore(state => (behaviorId ? state.alternatives[behaviorId] : undefined));
+  const [alternativeIds, setAlternativeIds] = useState<string[]>(() => savedAlternativeIds ?? []);
   const [cooldownMinutes, setCooldownMinutes] = useState(() => behavior?.cooldownMinutes || 0);
   const [cooldownType, setCooldownType] = useState<'rest' | 'limit'>(() => behavior?.cooldownType || 'rest');
   const [cooldownUnit, setCooldownUnit] = useState<CooldownUnit | undefined>(() => behavior?.cooldownUnit);
@@ -310,7 +314,8 @@ export function BehaviorFormScreen() {
       xpDecayChanged ||
       (autoTrackEnabled && autoTrackPick ? autoTrackPick.packageName : undefined) !==
         behavior.autoTrackApp?.packageName ||
-      (normalizedSiteDomain || undefined) !== behavior.autoTrackSite?.domain);
+      (normalizedSiteDomain || undefined) !== behavior.autoTrackSite?.domain ||
+      alternativeIds.join() !== (savedAlternativeIds ?? []).join());
 
   const isDirty = isEdit ? !!hasChanges : name.trim().length > 0 || icon.trim().length > 0;
 
@@ -390,6 +395,7 @@ export function BehaviorFormScreen() {
         autoTrackApp,
         autoTrackSite,
       });
+      useCravingsStore.getState().setAlternatives(behavior.id, alternativeIds);
     } else {
       addBehavior(
         trimmed,
@@ -465,6 +471,14 @@ export function BehaviorFormScreen() {
               forceShowNames
               selectCreatedCategoryOnSave
             />
+
+            {isEdit && behavior && type === 'undesirable' && (
+              <CravingAlternativesField
+                behaviorId={behavior.id}
+                value={alternativeIds}
+                onChange={setAlternativeIds}
+              />
+            )}
 
             <BehaviorMetadataEditor
               categoryId={categoryId}

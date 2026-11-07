@@ -8,6 +8,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context';
 import { BottomNav, type BottomNavRoute } from './src/components/bottom-nav';
 import { ConfettiOverlay } from './src/components/confetti-overlay';
+import { RunningTimerPill } from './src/components/running-timer-pill';
 import { Text } from './src/components/text';
 import { useAppFonts } from './src/hooks/use-app-fonts';
 import { useAppUsageSync } from './src/hooks/use-app-usage-sync';
@@ -18,6 +19,7 @@ import { BehaviorFormScreen } from './src/screens/behavior-form-screen';
 import { BehaviorScreen } from './src/screens/behavior-screen';
 import { BodyLogScreen } from './src/screens/body-log-screen';
 import { CategoryFormScreen } from './src/screens/category-form-screen';
+import { CravingsScreen } from './src/screens/cravings-screen';
 import { CueActivityScreen } from './src/screens/cue-activity-screen';
 import { CueFormScreen } from './src/screens/cue-form-screen';
 import { CuesScreen } from './src/screens/cues-screen';
@@ -26,12 +28,14 @@ import { HomeScreen } from './src/screens/home-screen';
 import { LocationEditScreen } from './src/screens/location-edit-screen';
 import { MoneyLogScreen } from './src/screens/money-log-screen';
 import { MoodLogScreen } from './src/screens/mood-log-screen';
+import { RideItOutScreen } from './src/screens/ride-it-out-screen';
 import { SavedPlacesScreen } from './src/screens/saved-places-screen';
 import { SettingsScreen } from './src/screens/settings-screen';
 import { ShopScreen } from './src/screens/shop-screen';
 import { TaskScreen } from './src/screens/task-screen';
 import { TimerScreen } from './src/screens/timer-screen';
 import { useBehaviorStore } from './src/store/behavior-store';
+import { useCravingsStore } from './src/store/cravings-store';
 import { useCuesStore } from './src/store/cues-store';
 import { useSettingsStore } from './src/store/settings-store';
 import { useShopStore } from './src/store/shop-store';
@@ -40,8 +44,15 @@ import type { RootStackParamList } from './src/types/navigation';
 import { Colors } from './src/utils/colors';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-const BOTTOM_NAV_ROUTES = new Set<string>(['Home', 'Cues', 'Timer', 'Day', 'Tasks']);
-const PERSISTED_STORES = [useBehaviorStore, useCuesStore, useSettingsStore, useShopStore, useTimerStore];
+const BOTTOM_NAV_ROUTES = new Set<string>(['Cues', 'Cravings', 'Home', 'Day', 'Tasks']);
+const PERSISTED_STORES = [
+  useBehaviorStore,
+  useCravingsStore,
+  useCuesStore,
+  useSettingsStore,
+  useShopStore,
+  useTimerStore,
+];
 
 const linking: LinkingOptions<RootStackParamList> = {
   prefixes: ['exp+recupero://'],
@@ -63,6 +74,8 @@ const linking: LinkingOptions<RootStackParamList> = {
       LocationEdit: 'cues/places/edit',
       MoodLog: 'cues/mood',
       BodyLog: 'cues/body',
+      Cravings: 'cravings',
+      RideItOut: 'cravings/ride/:behaviorId',
     },
   },
 };
@@ -202,6 +215,15 @@ export default function App() {
                     name="BodyLog"
                     component={BodyLogScreen}
                   />
+                  <Stack.Screen
+                    name="Cravings"
+                    component={CravingsScreen}
+                    options={{ animation: 'fade_from_bottom' }}
+                  />
+                  <Stack.Screen
+                    name="RideItOut"
+                    component={RideItOutScreen}
+                  />
                 </Stack.Navigator>
                 {pendingRouteName != null && (
                   <View style={styles.screenLoading}>
@@ -213,6 +235,9 @@ export default function App() {
                   </View>
                 )}
               </View>
+              {isBottomNavRoute(activeRouteName) && (
+                <RunningTimerPill onPress={() => navigationRef.isReady() && navigationRef.navigate('Timer')} />
+              )}
               {isBottomNavRoute(activeRouteName) && (
                 <BottomNav
                   activeRoute={activeRouteName}

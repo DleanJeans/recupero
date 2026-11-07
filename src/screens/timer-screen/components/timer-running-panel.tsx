@@ -26,6 +26,7 @@ interface TimerRunningPanelProps {
   startTimestamp: number | undefined;
   dayCutoffHour: number;
   onBack: () => void;
+  onDiscard: () => void;
   onStart: () => void;
   onStop: () => void;
   onResume: () => void;
@@ -41,6 +42,7 @@ export function TimerRunningPanel({
   startTimestamp,
   dayCutoffHour,
   onBack,
+  onDiscard,
   onStart,
   onStop,
   onResume,
@@ -78,7 +80,7 @@ export function TimerRunningPanel({
         <Button
           variant="icon"
           onPress={onBack}
-          accessibilityLabel="Back to behavior picker"
+          accessibilityLabel="Back"
           style={styles.backButton}
         >
           <Ionicons
@@ -128,6 +130,15 @@ export function TimerRunningPanel({
           onStop={onStop}
           onResume={onResume}
         />
+        {hasStarted && (
+          <Button
+            variant="ghost"
+            onPress={onDiscard}
+            accessibilityLabel="Discard timer"
+          >
+            <Text style={styles.discardText}>Discard</Text>
+          </Button>
+        )}
       </View>
     </View>
   );
@@ -269,6 +280,11 @@ function TimerActions({ hasStarted, hasStopped, isRunning, onStart, onStop, onRe
 }
 
 const styles = StyleSheet.create({
+  discardText: {
+    color: Colors.type.undesirable,
+    fontSize: 14,
+    fontWeight: '600',
+  },
   panel: {
     flex: 1,
     gap: 16,

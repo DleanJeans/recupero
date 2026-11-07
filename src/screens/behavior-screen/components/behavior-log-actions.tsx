@@ -18,6 +18,8 @@ export function BehaviorLogActions({ form }: Props) {
     earnedXp,
     handleConfirm,
     handleDelete,
+    handleStartTimer,
+    hasTimerRange,
     moneyRewardAmount,
     moneyRewardMultiplier,
     moneyRewardOriginalAmount,
@@ -42,7 +44,23 @@ export function BehaviorLogActions({ form }: Props) {
             />
           </View>
         </Button>
-      ) : null}
+      ) : (
+        !hasTimerRange && (
+          <Button
+            variant="icon"
+            style={styles.timerButton}
+            onPress={handleStartTimer}
+            disabled={pending}
+            accessibilityLabel="Start a timer instead"
+          >
+            <Ionicons
+              name="stopwatch-outline"
+              size={20}
+              color={Colors.text.light}
+            />
+          </Button>
+        )
+      )}
       <View style={styles.logAction}>
         <LogRewardPreview
           xp={behavior.xpEnabled ? earnedXp : undefined}
@@ -83,6 +101,15 @@ const styles = StyleSheet.create({
   },
   logButton: {
     flex: 1,
+  },
+  timerButton: {
+    width: 48,
+    height: 48,
+    padding: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.bg.input,
+    marginTop: 'auto',
   },
   deleteButton: {
     width: 48,

@@ -1,3 +1,5 @@
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Keyboard } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
@@ -5,8 +7,10 @@ import { type MoneyRewardPreview, REWARD_ANIMATION_MS } from '../../../component
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useCuesStore } from '../../../store/cues-store';
 import { useSettingsStore } from '../../../store/settings-store';
+import { useTimerStore } from '../../../store/timer-store';
 import type { BehaviorEntry, LogEntry } from '../../../types/behavior';
 import type { CueRef } from '../../../types/cue';
+import type { RootStackParamList } from '../../../types/navigation';
 import { placeCueRef } from '../../../utils/cue-utils';
 import { toDateString } from '../../../utils/date-utils';
 import { findPlaceAtPoint } from '../../../utils/geofence-utils';
@@ -341,6 +345,41 @@ export function useBehaviorLogForm({
       ? undefined
       : originalMoneyRewardAmount * moneyRewardMultiplier;
   const hasReward = behavior.xpEnabled || moneyRewardAmount != null;
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  /** Time this log instead: start the timer now, or from the start time the user set in the expanded time picker. */
+  const handleStartTimer = useCallback(() => {
+    const now = Date.now();
+    const startedAt = timePickerCollapsed
+      ? now
+      : Math.min(
+          getLogFormTimestamp(
+            selectedDate,
+            showTimeRange ? startHour : endHour,
+            showTimeRange ? startMinute : endMinute,
+            dayCutoffHour,
+            maxTimestampForDate,
+            showSeconds && showTimeRange ? startSecond : 0,
+          ),
+          now,
+        );
+    useTimerStore.getState().start(behaviorId, startedAt, notes.trim() || undefined);
+    navigation.navigate('Timer');
+  }, [
+    behaviorId,
+    dayCutoffHour,
+    endHour,
+    endMinute,
+    maxTimestampForDate,
+    navigation,
+    notes,
+    selectedDate,
+    showSeconds,
+    showTimeRange,
+    startHour,
+    startMinute,
+    startSecond,
+    timePickerCollapsed,
+  ]);
   const handleConfirm = useCallback(() => {
     const logHour = showTimeRange ? startHour : endHour;
     const logMinute = showTimeRange ? startMinute : endMinute;
@@ -509,6 +548,8 @@ export function useBehaviorLogForm({
     handleConfirm,
     handleDelete,
     handleInputBlur,
+    handleStartTimer,
+    hasTimerRange,
     manualMetadataFields,
     metadataFields,
     metadataValues,

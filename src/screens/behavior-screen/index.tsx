@@ -138,7 +138,6 @@ export function BehaviorScreen() {
           />
           <BehaviorActions
             behaviorId={behavior.id}
-            canTrackTimer={behavior.xpEnabled === true && behavior.durationXpEnabled === true}
             onDelete={handleDeleteBehavior}
             onEdit={() => navigation.navigate('BehaviorForm', { behaviorId: behavior.id })}
             onLog={handleOpenLog}

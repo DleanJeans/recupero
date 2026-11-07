@@ -1,7 +1,8 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { BackButton } from '../../components/back-button';
 import { MoneyBalance } from '../../components/money-balance';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
@@ -34,6 +35,12 @@ export function TimerScreen() {
   const [behaviorQuery, setBehaviorQuery] = useState('');
   const [selectedBehaviorId, setSelectedBehaviorId] = useState<string | undefined>();
   const [nowTick, setNowTick] = useState(() => Date.now());
+
+  // Timer has no tab, so leaving goes back to wherever the user came from. The timer keeps running.
+  const leave = useCallback(() => {
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.navigate('Home');
+  }, [navigation]);
 
   const availableBehaviors = useMemo(() => {
     const timerBehaviors = behaviors.filter(
@@ -77,10 +84,11 @@ export function TimerScreen() {
       const locked = useBehaviorStore.getState().behaviors.find(b => b.id === lockedBehaviorId);
       if (locked && locked.logs.length > pendingLogBehaviorLogCount) {
         resetTimer();
+        leave();
       } else {
         clearPendingLog();
       }
-    }, [pendingLogBehaviorLogCount, lockedBehaviorId, resetTimer, clearPendingLog]),
+    }, [pendingLogBehaviorLogCount, lockedBehaviorId, resetTimer, clearPendingLog, leave]),
   );
 
   const handleContinue = () => {
@@ -90,10 +98,20 @@ export function TimerScreen() {
     setNowTick(Date.now());
   };
 
-  const handleBackToPicker = () => {
-    resetTimer();
-    setSelectedBehaviorId(undefined);
-    setBehaviorQuery('');
+  const handleDiscard = () => {
+    Alert.alert('Discard timer?', 'This session will not be logged.', [
+      { text: 'Keep', style: 'cancel' },
+      {
+        text: 'Discard',
+        style: 'destructive',
+        onPress: () => {
+          resetTimer();
+          setSelectedBehaviorId(undefined);
+          setBehaviorQuery('');
+          leave();
+        },
+      },
+    ]);
   };
 
   const handleStart = () => {
@@ -151,7 +169,8 @@ export function TimerScreen() {
             hasStopped={stopTimestamp != null}
             startTimestamp={startTimestamp}
             dayCutoffHour={dayCutoffHour}
-            onBack={handleBackToPicker}
+            onBack={leave}
+            onDiscard={handleDiscard}
             onStart={handleStart}
             onStop={handleStop}
             onResume={handleResume}
@@ -160,6 +179,7 @@ export function TimerScreen() {
         ) : (
           <>
             <View style={styles.header}>
+              <BackButton onPress={leave} />
               <View
                 pointerEvents="none"
                 style={styles.headerTitleWrap}

@@ -4,6 +4,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button } from '../../../components/button';
+import { useBehaviorStore } from '../../../store/behavior-store';
 import { useTimerStore } from '../../../store/timer-store';
 import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
@@ -13,15 +14,15 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface BehaviorActionsProps {
   behaviorId: string;
-  canTrackTimer: boolean;
   onDelete: () => void;
   onEdit: () => void;
   onLog: () => void;
 }
 
-export function BehaviorActions({ behaviorId, canTrackTimer, onDelete, onEdit, onLog }: BehaviorActionsProps) {
+export function BehaviorActions({ behaviorId, onDelete, onEdit, onLog }: BehaviorActionsProps) {
   const navigation = useNavigation<NavigationProp>();
   const startTimer = useTimerStore(s => s.start);
+  const isUndesirable = useBehaviorStore(s => s.behaviors.find(b => b.id === behaviorId)?.type === 'undesirable');
 
   const handleStartTimer = () => {
     startTimer(behaviorId);
@@ -63,20 +64,32 @@ export function BehaviorActions({ behaviorId, canTrackTimer, onDelete, onEdit, o
       >
         Log
       </Button>
-      {canTrackTimer && (
+      {isUndesirable && (
         <Button
           variant="icon"
           style={styles.iconAction}
-          onPress={handleStartTimer}
-          accessibilityLabel="Start timer"
+          onPress={() => navigation.navigate('RideItOut', { behaviorId })}
+          accessibilityLabel="Ride out a craving"
         >
           <Ionicons
-            name="stopwatch-outline"
+            name="flame-outline"
             size={20}
-            color={Colors.text.light}
+            color={Colors.type.undesirable}
           />
         </Button>
       )}
+      <Button
+        variant="icon"
+        style={styles.iconAction}
+        onPress={handleStartTimer}
+        accessibilityLabel="Start timer"
+      >
+        <Ionicons
+          name="stopwatch-outline"
+          size={20}
+          color={Colors.text.light}
+        />
+      </Button>
     </FabButtonRow>
   );
 }

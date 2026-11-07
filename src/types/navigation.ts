@@ -38,4 +38,7 @@ export type RootStackParamList = {
   LocationEdit: { placeId?: string } | undefined;
   MoodLog: undefined;
   BodyLog: undefined;
+  Cravings: undefined;
+  /** Urge-surfing timer for a craving. Resumes cravingId, or an unfinished craving for the behaviour, or starts one. */
+  RideItOut: { behaviorId: string; cravingId?: string };
 };
