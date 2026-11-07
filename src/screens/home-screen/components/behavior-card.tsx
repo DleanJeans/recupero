@@ -11,6 +11,7 @@ import type { RootStackParamList } from '../../../types/navigation';
 import { isArchived } from '../../../utils/archive-utils';
 import { getBehaviorTypeColor } from '../../../utils/behavior-type-utils';
 import { Colors } from '../../../utils/colors';
+import { formatCompactDate } from '../../../utils/time-utils';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 type Mode = 'details' | 'log';
@@ -103,44 +104,49 @@ export const BehaviorCard = React.memo(function BehaviorCard({
         pointerEvents="none"
         style={[styles.accent, { backgroundColor: accentColor }]}
       />
-      <Pressable
-        ref={pressableRef}
-        style={[styles.content, archived && styles.archivedContent]}
-        onPress={archived ? () => goToMode('details') : handlePress}
-        onLongPress={handleLongPress}
-        onLayout={handleLayout}
-        onPressIn={refreshBounds}
-        accessibilityRole="button"
-        accessibilityLabel={behavior.name}
-        accessibilityHint="Choose View details or Log behavior from accessibility actions. Long-press for more."
-        accessibilityActions={[
-          { name: 'view-details', label: 'View details' },
-          { name: 'log-behavior', label: 'Log behavior' },
-          { name: 'longpress', label: 'Edit, archive or delete' },
-        ]}
-        onAccessibilityAction={handleAccessibilityAction}
-      >
-        <BehaviorSummary
-          behavior={behavior}
-          showCategory={showCategory}
-          dateStr={dateStr}
-          motionEnabled={motionEnabled}
-          xpMotionEnabled={false}
-          now={now}
-          presentation="home-card"
-          inlineElapsedWhenNoCooldown
-        />
-      </Pressable>
-      {archived && (
+      <View style={styles.column}>
         <Pressable
-          style={({ pressed }) => [styles.unarchive, pressed && styles.unarchivePressed]}
-          onPress={() => unarchiveBehavior(behavior.id)}
+          ref={pressableRef}
+          style={[styles.content, archived && styles.archivedContent]}
+          onPress={archived ? () => goToMode('details') : handlePress}
+          onLongPress={handleLongPress}
+          onLayout={handleLayout}
+          onPressIn={refreshBounds}
           accessibilityRole="button"
-          accessibilityLabel={`Unarchive ${behavior.name}`}
+          accessibilityLabel={behavior.name}
+          accessibilityHint="Choose View details or Log behavior from accessibility actions. Long-press for more."
+          accessibilityActions={[
+            { name: 'view-details', label: 'View details' },
+            { name: 'log-behavior', label: 'Log behavior' },
+            { name: 'longpress', label: 'Edit, archive or delete' },
+          ]}
+          onAccessibilityAction={handleAccessibilityAction}
         >
-          <Text style={styles.unarchiveLabel}>Unarchive</Text>
+          <BehaviorSummary
+            behavior={behavior}
+            showCategory={showCategory}
+            dateStr={dateStr}
+            motionEnabled={motionEnabled}
+            xpMotionEnabled={false}
+            now={now}
+            presentation="home-card"
+            inlineElapsedWhenNoCooldown
+          />
         </Pressable>
-      )}
+        {archived && (
+          <View style={styles.archivedFooter}>
+            <Text style={styles.archivedLabel}>Archived {formatCompactDate(behavior.archivedAt ?? Date.now())}</Text>
+            <Pressable
+              style={({ pressed }) => [styles.unarchive, pressed && styles.unarchivePressed]}
+              onPress={() => unarchiveBehavior(behavior.id)}
+              accessibilityRole="button"
+              accessibilityLabel={`Unarchive ${behavior.name}`}
+            >
+              <Text style={styles.unarchiveLabel}>Unarchive</Text>
+            </Pressable>
+          </View>
+        )}
+      </View>
     </View>
   );
 });
@@ -166,11 +172,30 @@ const styles = StyleSheet.create({
     width: 4,
     borderRadius: 4,
   },
+  column: {
+    flex: 1,
+    minWidth: 0,
+  },
   archivedContent: {
     opacity: 0.5,
   },
+  archivedFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginTop: -4,
+    paddingLeft: 20,
+    paddingRight: 14,
+    paddingBottom: 12,
+  },
+  archivedLabel: {
+    flex: 1,
+    color: Colors.text.faint,
+    fontSize: 12,
+    fontWeight: '600',
+  },
   unarchive: {
-    marginRight: 12,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 16,
