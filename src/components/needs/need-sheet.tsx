@@ -3,6 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNeedLevels } from '../../hooks/use-need-levels';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useNeedsStore } from '../../store/needs-store';
@@ -47,6 +48,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
   const checkIn = useNeedsStore(state => state.checkIn);
   const setRefill = useNeedsStore(state => state.setRefill);
   const [adding, setAdding] = useState(false);
+  const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
 
   const need = needs.find(item => item.id === needId);
@@ -123,7 +125,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
         <View style={styles.sheet}>
           <View style={styles.grab} />
           <ScrollView
-            contentContainerStyle={styles.content}
+            contentContainerStyle={[styles.content, { paddingBottom: styles.content.paddingBottom + insets.bottom }]}
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.header}>

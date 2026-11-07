@@ -57,7 +57,8 @@ export const NEED_INFO: Record<NeedId, NeedInfo> = {
     question: 'How much energy do you have?',
     checkIns: checkInLevels(['Exhausted', 'Tired', 'Okay', 'Awake', 'Energised']),
     bodySensations: ['tired', 'sleepy'],
-    suggest: /sleep|nap|rest/i,
+    // Word boundaries so "Napa cabbage" or "Restaurant" don't count.
+    suggest: /\b(sleep|nap|rest)\b/i,
   },
 };
 
