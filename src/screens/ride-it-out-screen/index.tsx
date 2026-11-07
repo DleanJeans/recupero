@@ -70,6 +70,7 @@ export function RideItOutScreen() {
   const remainingMs = getRideRemainingMs(craving, now);
   const latestUrge = getLatestUrge(craving);
   const cues = craving.cues ?? [];
+  const isUndesirable = behavior.type === 'undesirable';
 
   const toggleCue = (ref: CueRef) =>
     setCravingCues(craving.id, cues.includes(ref) ? cues.filter(cue => cue !== ref) : [...cues, ref]);
@@ -104,7 +105,7 @@ export function RideItOutScreen() {
     ]);
 
   if (craving.outcome != null) {
-    const stats = getCravingWeekStats(cravings, Date.now(), behaviorId);
+    const stats = getCravingWeekStats(cravings, [behavior], Date.now(), behaviorId);
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
@@ -121,6 +122,7 @@ export function RideItOutScreen() {
           <Text style={styles.doneText}>
             {behavior.name} cravings beaten this week: {stats.beaten}
             {stats.gaveIn ? ` · gave in ${stats.gaveIn}` : ''}
+            {stats.didIt ? ` · did it ${stats.didIt}` : ''}
           </Text>
           <Button
             variant="primary"
@@ -218,9 +220,11 @@ export function RideItOutScreen() {
           <Button
             variant="secondary"
             onPress={handleGaveIn}
-            style={[styles.action, styles.gaveIn]}
+            style={[styles.action, styles.gaveIn, !isUndesirable && styles.didIt]}
           >
-            <Text style={styles.gaveInText}>I gave in</Text>
+            <Text style={[styles.gaveInText, !isUndesirable && styles.didItText]}>
+              {isUndesirable ? 'I gave in' : 'I did it'}
+            </Text>
           </Button>
         </View>
       </ScrollView>
@@ -247,6 +251,8 @@ const styles = StyleSheet.create({
   action: { flex: 1 },
   gaveIn: { borderWidth: 1, borderColor: Colors.typeBtn.undesirable },
   gaveInText: { color: Colors.typeText.undesirable, fontWeight: '700' },
+  didIt: { borderColor: Colors.typeBtn.desirable },
+  didItText: { color: Colors.typeText.desirable },
   done: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
   doneTitle: { color: Colors.text.primary, fontSize: 24, fontWeight: '700' },
   doneText: { color: Colors.text.muted, fontSize: 14, textAlign: 'center' },

@@ -479,7 +479,7 @@ export function BehaviorFormScreen() {
               selectCreatedCategoryOnSave
             />
 
-            {isEdit && behavior && type === 'undesirable' && (
+            {isEdit && behavior && (
               <CravingAlternativesField
                 behaviorId={behavior.id}
                 value={alternativeIds}

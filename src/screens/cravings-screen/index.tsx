@@ -11,17 +11,18 @@ import { Text, TextInput } from '../../components/text';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useCravingsStore } from '../../store/cravings-store';
 import { useSettingsStore } from '../../store/settings-store';
-import type { BehaviorEntry } from '../../types/behavior';
+import type { BehaviorEntry, BehaviorType } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import {
-  CRAVING_OUTCOME_LABELS,
+  type CravingWeekStats,
   getCravableBehaviors,
+  getCravingOutcomeLabel,
   getCravingWeekStats,
   getPeakUrge,
   getRecentCravings,
   getRideRemainingMs,
-  isCravingBeaten,
+  isCravingLost,
 } from '../../utils/craving-utils';
 import { formatStopwatchDuration } from '../../utils/stopwatch-utils';
 import { formatElapsedNumeric } from '../../utils/time-utils';
@@ -52,7 +53,7 @@ export function CravingsScreen() {
     () => getRecentCravings(cravings).filter(craving => behaviorById.has(craving.behaviorId)),
     [behaviorById, cravings],
   );
-  const stats = getCravingWeekStats(cravings);
+  const stats = getCravingWeekStats(cravings, behaviors);
   const [now, setNow] = useState(() => Date.now());
   const hasUnfinished = unfinished.length > 0;
 
@@ -127,9 +128,7 @@ export function CravingsScreen() {
             query.trim() ? (
               <Pressable
                 style={({ pressed }) => [styles.createRow, pressed && styles.pressed]}
-                onPress={() =>
-                  navigation.navigate('BehaviorForm', { defaultName: query.trim(), defaultType: 'undesirable' })
-                }
+                onPress={() => navigation.navigate('BehaviorForm', { defaultName: query.trim() })}
                 accessibilityRole="button"
               >
                 <Ionicons
@@ -139,7 +138,7 @@ export function CravingsScreen() {
                 />
                 <View style={styles.rowText}>
                   <Text style={styles.name}>Create "{query.trim()}"</Text>
-                  <Text style={styles.detail}>No behaviour matches. Add it as undesirable, then ride it out.</Text>
+                  <Text style={styles.detail}>No behaviour matches. Add it, then ride it out.</Text>
                 </View>
               </Pressable>
             ) : (
@@ -149,10 +148,10 @@ export function CravingsScreen() {
             )
           ) : (
             listed.map(behavior => {
-              const behaviorStats = getCravingWeekStats(cravings, Date.now(), behavior.id);
+              const behaviorStats = getCravingWeekStats(cravings, behaviors, Date.now(), behavior.id);
               const detail =
-                behaviorStats.beaten || behaviorStats.gaveIn
-                  ? `This week: beaten ${behaviorStats.beaten} · gave in ${behaviorStats.gaveIn}`
+                behaviorStats.beaten || behaviorStats.gaveIn || behaviorStats.didIt
+                  ? formatWeekStats(behaviorStats, behavior.type)
                   : behavior.lastTimestamp
                     ? `Last done ${formatElapsedNumeric(behavior.lastTimestamp)}`
                     : 'Not done yet';
@@ -197,8 +196,8 @@ export function CravingsScreen() {
                       {peak ? ` · urge ${peak}/5` : ''}
                     </Text>
                   </View>
-                  <Text style={[styles.outcome, isCravingBeaten(outcome) ? styles.beaten : styles.lost]}>
-                    {redirect ? `→ ${redirect.name}` : CRAVING_OUTCOME_LABELS[outcome]}
+                  <Text style={[styles.outcome, isCravingLost(outcome, behavior.type) ? styles.lost : styles.beaten]}>
+                    {redirect ? `→ ${redirect.name}` : getCravingOutcomeLabel(outcome, behavior.type)}
                   </Text>
                 </View>
               );
@@ -208,6 +207,13 @@ export function CravingsScreen() {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function formatWeekStats(stats: CravingWeekStats, type: BehaviorType): string {
+  const parts = [`beaten ${stats.beaten}`];
+  if (type === 'undesirable') parts.push(`gave in ${stats.gaveIn}`);
+  else parts.push(`did it ${stats.didIt}`);
+  return `This week: ${parts.join(' · ')}`;
 }
 
 interface StatTileProps {

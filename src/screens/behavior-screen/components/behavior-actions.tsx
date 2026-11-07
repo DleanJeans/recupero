@@ -4,7 +4,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button } from '../../../components/button';
-import { useBehaviorStore } from '../../../store/behavior-store';
 import { useTimerStore } from '../../../store/timer-store';
 import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
@@ -22,7 +21,6 @@ interface BehaviorActionsProps {
 export function BehaviorActions({ behaviorId, onDelete, onEdit, onLog }: BehaviorActionsProps) {
   const navigation = useNavigation<NavigationProp>();
   const startTimer = useTimerStore(s => s.start);
-  const isUndesirable = useBehaviorStore(s => s.behaviors.find(b => b.id === behaviorId)?.type === 'undesirable');
 
   const handleStartTimer = () => {
     startTimer(behaviorId);
@@ -64,20 +62,18 @@ export function BehaviorActions({ behaviorId, onDelete, onEdit, onLog }: Behavio
       >
         Log
       </Button>
-      {isUndesirable && (
-        <Button
-          variant="icon"
-          style={styles.iconAction}
-          onPress={() => navigation.navigate('RideItOut', { behaviorId })}
-          accessibilityLabel="Ride out a craving"
-        >
-          <Ionicons
-            name="flame-outline"
-            size={20}
-            color={Colors.type.undesirable}
-          />
-        </Button>
-      )}
+      <Button
+        variant="icon"
+        style={styles.iconAction}
+        onPress={() => navigation.navigate('RideItOut', { behaviorId })}
+        accessibilityLabel="Ride out a craving"
+      >
+        <Ionicons
+          name="flame-outline"
+          size={20}
+          color={Colors.type.undesirable}
+        />
+      </Button>
       <Button
         variant="icon"
         style={styles.iconAction}

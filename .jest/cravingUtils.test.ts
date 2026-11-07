@@ -5,6 +5,7 @@ import {
   getActiveCraving,
   getCravableBehaviors,
   getCravingAlternatives,
+  getCravingOutcomeLabel,
   getCravingWeekStats,
   getPeakUrge,
   getRecentCravings,
@@ -81,9 +82,15 @@ describe('craving utils', () => {
     ]);
   });
 
-  it('searches non-undesirable behaviours, most recent first', () => {
-    expect(searchAlternativeBehaviors('', behaviors, ['walk']).map(b => b.id)).toEqual(['breathe', 'read']);
+  it('searches behaviours with undesirable ones last, otherwise most recent first', () => {
+    expect(searchAlternativeBehaviors('', behaviors, ['walk']).map(b => b.id)).toEqual(['breathe', 'read', 'youtube']);
     expect(searchAlternativeBehaviors('WA', behaviors, []).map(b => b.id)).toEqual(['walk']);
+  });
+
+  it('calls doing a craved behaviour giving in only when it is undesirable', () => {
+    expect(getCravingOutcomeLabel('gaveIn', 'undesirable')).toBe('Gave in');
+    expect(getCravingOutcomeLabel('gaveIn', 'desirable')).toBe('Did it');
+    expect(getCravingOutcomeLabel('resisted', 'neutral')).toBe('Rode it out');
   });
 
   it('lists undesirable and previously craved behaviours, recently craved first', () => {
@@ -92,7 +99,7 @@ describe('craving utils', () => {
     expect(getCravableBehaviors([...behaviors, snack], cravings).map(b => b.id)).toEqual(['walk', 'snack', 'youtube']);
   });
 
-  it('counts beaten and lost cravings from the last week', () => {
+  it('counts beaten cravings, and giving in only for undesirable behaviours', () => {
     const now = 8 * 24 * 60 * 60_000;
     const cravings = [
       makeCraving('old', { startedAt: 0, outcome: 'resisted' }),
@@ -100,8 +107,10 @@ describe('craving utils', () => {
       makeCraving('d', { startedAt: now - 2, outcome: 'redirected' }),
       makeCraving('g', { startedAt: now - 3, outcome: 'gaveIn' }),
       makeCraving('open', { startedAt: now - 4 }),
+      makeCraving('w', { behaviorId: 'walk', startedAt: now - 5, outcome: 'gaveIn' }),
     ];
-    expect(getCravingWeekStats(cravings, now)).toEqual({ beaten: 2, gaveIn: 1 });
-    expect(getRecentCravings(cravings).map(c => c.id)).toEqual(['r', 'd', 'g', 'old']);
+    expect(getCravingWeekStats(cravings, behaviors, now)).toEqual({ beaten: 2, gaveIn: 1, didIt: 1 });
+    expect(getCravingWeekStats(cravings, behaviors, now, 'walk')).toEqual({ beaten: 0, gaveIn: 0, didIt: 1 });
+    expect(getRecentCravings(cravings).map(c => c.id)).toEqual(['r', 'd', 'g', 'w', 'old']);
   });
 });
