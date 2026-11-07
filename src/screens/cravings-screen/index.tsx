@@ -124,11 +124,29 @@ export function CravingsScreen() {
             />
           </View>
           {listed.length === 0 ? (
-            <Text style={styles.empty}>
-              {query.trim()
-                ? `No behaviours match "${query.trim()}".`
-                : 'Undesirable behaviours show up here. Search to ride out a craving for anything else.'}
-            </Text>
+            query.trim() ? (
+              <Pressable
+                style={({ pressed }) => [styles.createRow, pressed && styles.pressed]}
+                onPress={() =>
+                  navigation.navigate('BehaviorForm', { defaultName: query.trim(), defaultType: 'undesirable' })
+                }
+                accessibilityRole="button"
+              >
+                <Ionicons
+                  name="add-circle-outline"
+                  size={22}
+                  color={Colors.type.undesirable}
+                />
+                <View style={styles.rowText}>
+                  <Text style={styles.name}>Create "{query.trim()}"</Text>
+                  <Text style={styles.detail}>No behaviour matches. Add it as undesirable, then ride it out.</Text>
+                </View>
+              </Pressable>
+            ) : (
+              <Text style={styles.empty}>
+                Undesirable behaviours show up here. Search to ride out a craving for anything else.
+              </Text>
+            )
           ) : (
             listed.map(behavior => {
               const behaviorStats = getCravingWeekStats(cravings, Date.now(), behavior.id);
@@ -287,6 +305,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.border.default,
+    padding: 12,
+  },
+  createRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: Colors.border.light,
     padding: 12,
   },
   rowActive: { borderColor: Colors.status.success },

@@ -1,3 +1,4 @@
+import type { BehaviorType } from './behavior';
 import type { CueRef } from './cue';
 
 export type RootStackParamList = {
@@ -23,6 +24,9 @@ export type RootStackParamList = {
     defaultXpEnabled?: boolean;
     defaultDurationXpEnabled?: boolean;
     selectedCategoryId?: string;
+    /** Prefill for a new behaviour, e.g. the search text when nothing matched. */
+    defaultName?: string;
+    defaultType?: BehaviorType;
   };
   CategoryForm: {
     categoryId?: string;

@@ -59,8 +59,15 @@ function iconForStore(raw: string): BehaviorEntry['icon'] | undefined {
 export function BehaviorFormScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'BehaviorForm'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { behaviorId, defaultCategoryId, defaultXpEnabled, defaultDurationXpEnabled, selectedCategoryId } =
-    route.params ?? {};
+  const {
+    behaviorId,
+    defaultCategoryId,
+    defaultXpEnabled,
+    defaultDurationXpEnabled,
+    selectedCategoryId,
+    defaultName,
+    defaultType,
+  } = route.params ?? {};
 
   const behavior = useBehaviorStore(
     useCallback(state => (behaviorId ? state.behaviors.find(b => b.id === behaviorId) : undefined), [behaviorId]),
@@ -73,7 +80,7 @@ export function BehaviorFormScreen() {
   const skipInitialHydration = useRef(behavior != null);
   const appliedSelectedCategoryIdRef = useRef<string | undefined>(undefined);
 
-  const [name, setName] = useState(() => behavior?.name ?? '');
+  const [name, setName] = useState(() => behavior?.name ?? defaultName ?? '');
   const [icon, setIcon] = useState(() => iconFromStore(behavior?.icon));
   const [categoryId, setCategoryId] = useState<string | undefined>(behavior ? behavior.categoryId : defaultCategoryId);
   const handleCategoryChange = (id: string | undefined | null) => setCategoryId(id ?? undefined);
@@ -100,7 +107,7 @@ export function BehaviorFormScreen() {
     ),
   );
   const [moneyRewardAmountTouched, setMoneyRewardAmountTouched] = useState(() => behavior?.moneyReward != null);
-  const [type, setType] = useState<BehaviorType>(behavior?.type ?? 'neutral');
+  const [type, setType] = useState<BehaviorType>(behavior?.type ?? defaultType ?? 'neutral');
   const savedAlternativeIds = useCravingsStore(state => (behaviorId ? state.alternatives[behaviorId] : undefined));
   const [alternativeIds, setAlternativeIds] = useState<string[]>(() => savedAlternativeIds ?? []);
   const [cooldownMinutes, setCooldownMinutes] = useState(() => behavior?.cooldownMinutes || 0);
