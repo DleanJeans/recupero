@@ -192,6 +192,7 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
           fields={localFields}
         />
       )}
+      {preview && localFields.length > 0 && <View style={styles.previewDivider} />}
 
       {localFields.map((field, index) => (
         <MetadataFieldRow
@@ -235,6 +236,11 @@ export default React.memo(CategoryMetadataEditor);
 const styles = StyleSheet.create({
   section: {
     gap: 12,
+  },
+  previewDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Colors.border.light,
+    marginVertical: 6,
   },
   header: {
     flexDirection: 'row',

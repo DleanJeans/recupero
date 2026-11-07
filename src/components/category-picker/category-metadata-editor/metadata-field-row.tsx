@@ -76,7 +76,7 @@ export function MetadataFieldRow({
         </Text>
         {!showEditor && (
           <View style={styles.tags}>
-            {field.dailyGoal != null ? <Text style={styles.tag}>goal {field.dailyGoal}</Text> : null}
+            {field.dailyGoal != null ? <Text style={styles.tag}>Goal: {field.dailyGoal}</Text> : null}
             <Text style={styles.tag}>{METADATA_CALCULATION_LABELS[calculation]}</Text>
             <Text
               style={[
