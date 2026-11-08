@@ -32,6 +32,7 @@ import {
   getInitialLogMetadataValues,
   getManualMetadataFields,
   getSelectedAmountMetadataField,
+  NO_AMOUNT_FIELD_KEY,
   parseDecimalInput,
   type StackedLog,
 } from '../../../utils/metadata-calculation-utils';
@@ -152,7 +153,16 @@ export function useBehaviorLogForm({
     [behavior.metadataAmountFieldKey, behavior.metadataQuantityUnit, metadataFields],
   );
   const manualMetadataFields = useMemo(() => getManualMetadataFields(metadataFields), [metadataFields]);
-  const calculatedMetadataFields = useMemo(() => getCalculatedMetadataFields(metadataFields), [metadataFields]);
+  /** "None" amount unit: hide the amount and per-100 fields, which can't be filled or calculated without an amount. */
+  const amountOptedOut = behavior.metadataAmountFieldKey === NO_AMOUNT_FIELD_KEY;
+  const visibleMetadataFields = useMemo(
+    () => (amountOptedOut ? getManualMetadataFields(metadataFields) : metadataFields),
+    [amountOptedOut, metadataFields],
+  );
+  const calculatedMetadataFields = useMemo(
+    () => (amountOptedOut ? [] : getCalculatedMetadataFields(metadataFields)),
+    [amountOptedOut, metadataFields],
+  );
   const [metadataValues, setMetadataValues] = useState<Record<string, string>>(() => {
     const values: Record<string, string> = {};
     if (existingLog?.metadata) {
@@ -538,6 +548,7 @@ export function useBehaviorLogForm({
     behavior,
     calculatedMetadataFields,
     calculatedMetadataValues,
+    visibleMetadataFields,
     durationMs,
     editLogId,
     endHour,

@@ -28,6 +28,7 @@ import { Colors } from '../../utils/colors';
 import {
   getAmountMetadataFields,
   getSelectedAmountMetadataField,
+  NO_AMOUNT_FIELD_KEY,
   parseDecimalInput,
 } from '../../utils/metadata-calculation-utils';
 import { getMoneyRewardAmount, parseVndInput, sanitizeVndInput } from '../../utils/money-utils';
@@ -170,6 +171,8 @@ export function BehaviorFormScreen() {
     metadataAmountFieldKey,
     behavior?.metadataQuantityUnit,
   );
+  const amountFieldKeyToSave =
+    metadataAmountFieldKey === NO_AMOUNT_FIELD_KEY ? NO_AMOUNT_FIELD_KEY : selectedAmountField?.key;
 
   const {
     enabled: starsEnabled,
@@ -268,6 +271,7 @@ export function BehaviorFormScreen() {
       if (metadataAmountFieldKey !== undefined) setMetadataAmountFieldKey(undefined);
       return;
     }
+    if (metadataAmountFieldKey === NO_AMOUNT_FIELD_KEY) return;
     if (!amountFields.some(field => field.key === metadataAmountFieldKey)) {
       setMetadataAmountFieldKey(selectedAmountField?.key);
     }
@@ -314,8 +318,10 @@ export function BehaviorFormScreen() {
       cooldownType !== (behavior.cooldownType || 'rest') ||
       cooldownUnit !== behavior.cooldownUnit ||
       defaultMetadataChanged ||
-      selectedAmountField?.key !==
-        getSelectedAmountMetadataField(metadataFields, behavior.metadataAmountFieldKey)?.key ||
+      amountFieldKeyToSave !==
+        (behavior.metadataAmountFieldKey === NO_AMOUNT_FIELD_KEY
+          ? NO_AMOUNT_FIELD_KEY
+          : getSelectedAmountMetadataField(metadataFields, behavior.metadataAmountFieldKey)?.key) ||
       starThresholdsChanged ||
       starPeriodChanged ||
       xpDecayChanged ||
@@ -389,7 +395,7 @@ export function BehaviorFormScreen() {
         cooldownEnabled,
         private: isPrivate,
         defaultMetadata: defaultMetadataObj,
-        metadataAmountFieldKey: selectedAmountField?.key,
+        metadataAmountFieldKey: amountFieldKeyToSave,
         starThresholds: starsEnabled ? (parsedStars.values ?? undefined) : undefined,
         starPeriod: starsEnabled ? starPeriod : undefined,
         starMoneyMultipliers: starMoneyMultipliersConfig,
@@ -491,7 +497,7 @@ export function BehaviorFormScreen() {
               categoryId={categoryId}
               categories={categories}
               defaults={behaviorDefaultMetadata}
-              amountFieldKey={selectedAmountField?.key}
+              amountFieldKey={amountFieldKeyToSave}
               onChange={setBehaviorDefaultMetadata}
               onAmountFieldChange={setMetadataAmountFieldKey}
             />

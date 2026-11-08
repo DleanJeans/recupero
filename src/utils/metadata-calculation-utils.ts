@@ -44,11 +44,15 @@ export function getCalculatedMetadataFields(fields: MetadataField[]): MetadataFi
   return fields.filter(field => getMetadataFieldCalculation(field) === 'per100');
 }
 
+/** Stored as a behaviour's `metadataAmountFieldKey` when the user opts out of an amount unit ("None"). */
+export const NO_AMOUNT_FIELD_KEY = '__none__';
+
 export function getSelectedAmountMetadataField(
   fields: MetadataField[],
   selectedAmountFieldKey?: string,
   legacyQuantityUnit?: string,
 ): MetadataField | undefined {
+  if (selectedAmountFieldKey === NO_AMOUNT_FIELD_KEY) return undefined;
   const amountFields = getAmountMetadataFields(fields);
   return (
     amountFields.find(field => field.key === selectedAmountFieldKey) ??

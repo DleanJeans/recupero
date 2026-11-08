@@ -11,6 +11,7 @@ import {
   getCalculatedMetadataFields,
   getManualMetadataFields,
   getSelectedAmountMetadataField,
+  NO_AMOUNT_FIELD_KEY,
 } from '../../../utils/metadata-calculation-utils';
 import { MetadataDefaultInput } from './metadata-default-input';
 import { NutritionUrlImport } from './nutrition-url-import';
@@ -59,6 +60,15 @@ export function BehaviorMetadataEditor({
                 style={styles.quantityUnitOption}
               />
             ))}
+            <SelectPill
+              label="None"
+              active={!selectedAmountField}
+              activeBtnStyle={styles.quantityUnitOptionActive}
+              textStyle={styles.quantityUnitOptionText}
+              activeTextStyle={styles.quantityUnitOptionTextActive}
+              onPress={() => onAmountFieldChange(NO_AMOUNT_FIELD_KEY)}
+              style={styles.quantityUnitOption}
+            />
           </View>
           {selectedAmountField && (
             <MetadataDefaultInput
@@ -87,7 +97,7 @@ export function BehaviorMetadataEditor({
         </>
       )}
 
-      {calculatedFields.length > 0 && (
+      {calculatedFields.length > 0 && (amountFields.length === 0 || selectedAmountField) && (
         <>
           <Text style={styles.label}>Rates per {formatMetadataAmountBasis(selectedAmountField)}</Text>
           <NutritionUrlImport

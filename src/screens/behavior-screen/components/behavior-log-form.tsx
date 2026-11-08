@@ -33,7 +33,7 @@ export function BehaviorLogForm({ form }: Props) {
     endSecond,
     handleCollapseTime,
     handleInputBlur,
-    metadataFields,
+    visibleMetadataFields,
     metadataValues,
     notes,
     notesRef,
@@ -102,7 +102,7 @@ export function BehaviorLogForm({ form }: Props) {
           showsVerticalScrollIndicator={false}
           removeClippedSubviews
         >
-          {metadataFields.length > 0 && (
+          {visibleMetadataFields.length > 0 && (
             <View style={styles.metadataHeader}>
               <Text style={[styles.sectionLabel, styles.metadataSectionLabel]}>Metadata</Text>
               {calculatedMetadataFields.length > 1 && (
@@ -122,7 +122,7 @@ export function BehaviorLogForm({ form }: Props) {
             </View>
           )}
           <View style={styles.metadataFields}>
-            {metadataFields.map(field => {
+            {visibleMetadataFields.map(field => {
               if (getMetadataFieldCalculation(field) === 'amount' && field.key !== amountField?.key) {
                 return null;
               }
@@ -163,13 +163,16 @@ export function BehaviorLogForm({ form }: Props) {
           </View>
 
           {!editLogId && (
-            <View style={metadataFields.length > 0 && styles.stackAfterMetadata}>
+            <View style={visibleMetadataFields.length > 0 && styles.stackAfterMetadata}>
               <StackedBehaviorsSection form={form} />
             </View>
           )}
 
           <Text
-            style={[styles.sectionLabel, metadataFields.length > 0 && !!editLogId && styles.cuesLabelAfterMetadata]}
+            style={[
+              styles.sectionLabel,
+              visibleMetadataFields.length > 0 && !!editLogId && styles.cuesLabelAfterMetadata,
+            ]}
           >
             Cues
           </Text>
