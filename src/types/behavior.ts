@@ -73,6 +73,9 @@ export interface BehaviorEntry {
         uri: string;
       };
   categoryId?: string;
+  /** Group name shared by variants of one thing, e.g. "Omachi" for each Omachi flavour. Members keep their own
+   *  logs and XP; the log screen shows the others as chips and the group shows the total. Undefined = no group. */
+  group?: string;
   private?: boolean;
   /** When the behaviour was archived. Archived behaviours are hidden from lists, pickers and suggestions
    *  but keep their logs, XP and money. Undefined = not archived. */

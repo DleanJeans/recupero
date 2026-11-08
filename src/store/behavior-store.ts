@@ -56,6 +56,7 @@ interface BehaviorStore {
     moneyReward?: BehaviorEntry['moneyReward'],
     autoTrackApp?: AutoTrackApp,
     autoTrackSite?: AutoTrackSite,
+    group?: string,
   ) => void;
   updateBehaviorCooldown: (behaviorId: string, cooldownMinutes: number) => void;
   updateBehavior: (
@@ -87,6 +88,7 @@ interface BehaviorStore {
       moneyReward?: BehaviorEntry['moneyReward'];
       autoTrackApp?: AutoTrackApp | undefined;
       autoTrackSite?: AutoTrackSite | undefined;
+      group?: string | undefined;
     },
   ) => void;
   /** Turns app sessions and Firefox site visits into logs for behaviors that auto-track them, then marks them synced. */
@@ -156,6 +158,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
         moneyReward,
         autoTrackApp,
         autoTrackSite,
+        group,
       ) =>
         set(state => ({
           behaviors: [
@@ -186,6 +189,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               moneyReward,
               autoTrackApp,
               autoTrackSite,
+              ...(group ? { group } : {}),
             },
           ],
         })),

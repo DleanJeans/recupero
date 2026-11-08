@@ -4,6 +4,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useState } from 'react';
 import { Alert, BackHandler, LayoutAnimation, StyleSheet, View } from 'react-native';
 import { BackButton } from '../../components/back-button';
+import { BehaviorGroupChips } from '../../components/behavior-group-chips';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text } from '../../components/text';
 import { useBehaviorStore } from '../../store/behavior-store';
@@ -96,6 +97,12 @@ export function BehaviorScreen() {
     }
   }, [initialMode, navigation]);
 
+  /** Switch to another member of the group (e.g. another flavour). A new log keeps its date, time, notes and cues. */
+  const handleSelectGroupMember = useCallback(
+    (memberId: string) => navigation.setParams({ behaviorId: memberId }),
+    [navigation],
+  );
+
   const handleDeleteBehavior = useCallback(() => {
     if (!behavior) return;
 
@@ -132,6 +139,12 @@ export function BehaviorScreen() {
       summaryStarMotionEnabled={mode === 'log'}
       onBack={handleBack}
     >
+      {!isEditing && (
+        <BehaviorGroupChips
+          behavior={behavior}
+          onSelect={handleSelectGroupMember}
+        />
+      )}
       {mode === 'details' ? (
         <View style={styles.detailsBody}>
           {isArchived(behavior) && <ArchivedBanner behaviorId={behavior.id} />}

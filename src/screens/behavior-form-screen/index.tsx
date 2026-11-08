@@ -24,6 +24,7 @@ import type { BehaviorEntry, BehaviorType } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { syncAppUsage } from '../../utils/app-usage-sync';
 import { getAutoTrackApp, getAutoTrackSite, normalizeSiteDomain } from '../../utils/app-usage-utils';
+import { normalizeGroupName } from '../../utils/behavior-group-utils';
 import { Colors } from '../../utils/colors';
 import {
   getAmountMetadataFields,
@@ -34,6 +35,7 @@ import {
 import { getMoneyRewardAmount, parseVndInput, sanitizeVndInput } from '../../utils/money-utils';
 import { AutoTrackAppField } from './components/auto-track-app-field';
 import { AutoTrackSiteField } from './components/auto-track-site-field';
+import { BehaviorGroupField } from './components/behavior-group-field';
 import { BehaviorMetadataEditor } from './components/behavior-metadata-editor';
 import { BehaviorTypePicker } from './components/behavior-type-picker';
 import type { CooldownUnit } from './components/cooldown-input';
@@ -87,6 +89,7 @@ export function BehaviorFormScreen() {
   const handleCategoryChange = (id: string | undefined | null) => setCategoryId(id ?? undefined);
   const [emojiKeyboardOpen, setEmojiKeyboardOpen] = useState(false);
   const [isPrivate, setIsPrivate] = useState(() => behavior?.private ?? false);
+  const [group, setGroup] = useState(() => behavior?.group ?? '');
   // Existing behaviors inherit their saved state; new behaviors can receive route-specific defaults.
   const [xpEnabled, setXpEnabled] = useState(() =>
     behavior ? behavior.xpEnabled === true : defaultXpEnabled === true,
@@ -228,6 +231,7 @@ export function BehaviorFormScreen() {
     setIcon(iconFromStore(behavior.icon));
     setCategoryId(behavior.categoryId);
     setIsPrivate(behavior.private ?? false);
+    setGroup(behavior.group ?? '');
     setXpEnabled(behavior.xpEnabled === true);
     setDurationXpEnabled(behavior.durationXpEnabled === true);
     setHideTotalXp(behavior.hideTotalXp === true);
@@ -307,6 +311,7 @@ export function BehaviorFormScreen() {
       icon.trim() !== iconFromStore(behavior.icon) ||
       categoryId !== behavior.categoryId ||
       isPrivate !== (behavior.private ?? false) ||
+      normalizeGroupName(group) !== normalizeGroupName(behavior.group) ||
       xpEnabled !== (behavior.xpEnabled === true) ||
       durationXpEnabled !== (behavior.durationXpEnabled === true) ||
       hideTotalXp !== (behavior.hideTotalXp === true) ||
@@ -407,6 +412,7 @@ export function BehaviorFormScreen() {
         moneyReward: moneyRewardConfig,
         autoTrackApp,
         autoTrackSite,
+        group: normalizeGroupName(group),
       });
       useCravingsStore.getState().setAlternatives(behavior.id, alternativeIds);
     } else {
@@ -432,6 +438,7 @@ export function BehaviorFormScreen() {
         moneyRewardConfig,
         autoTrackApp,
         autoTrackSite,
+        normalizeGroupName(group),
       );
     }
     if (autoTrackApp || autoTrackSite) syncAppUsage();
@@ -483,6 +490,11 @@ export function BehaviorFormScreen() {
               onChange={handleCategoryChange}
               forceShowNames
               selectCreatedCategoryOnSave
+            />
+
+            <BehaviorGroupField
+              value={group}
+              onChange={setGroup}
             />
 
             {isEdit && behavior && (

@@ -11,6 +11,7 @@ import { useTimerStore } from '../../../store/timer-store';
 import type { BehaviorEntry, LogEntry } from '../../../types/behavior';
 import type { CueRef } from '../../../types/cue';
 import type { RootStackParamList } from '../../../types/navigation';
+import { switchMemberMetadataValues } from '../../../utils/behavior-group-utils';
 import { placeCueRef } from '../../../utils/cue-utils';
 import { toDateString } from '../../../utils/date-utils';
 import { findPlaceAtPoint } from '../../../utils/geofence-utils';
@@ -176,6 +177,17 @@ export function useBehaviorLogForm({
     return values;
   });
   const categories = useBehaviorStore(state => state.categories);
+  /** Switching to another group member (flavour chip) on a new log: swap in its metadata defaults,
+   *  keeping values the user typed. Date, time, notes and cues stay as they are. */
+  const previousBehaviorRef = useRef(behavior);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only react to switching behaviour
+  useEffect(() => {
+    const previous = previousBehaviorRef.current;
+    previousBehaviorRef.current = behavior;
+    if (previous.id === behavior.id || existingLog) return;
+    setMetadataValues(current => switchMemberMetadataValues(current, previous, behavior, categories));
+    setStackedLogs(current => current.filter(item => item.behaviorId !== behavior.id));
+  }, [behavior.id]);
   /** Other behaviours logged together with this one (habit stacking). New logs only. */
   const [stackedLogs, setStackedLogs] = useState<StackedLog[]>([]);
   const addStackedBehavior = useCallback(
