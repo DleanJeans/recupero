@@ -112,10 +112,17 @@ export function getNeedMetadataSource(
   categories: Category[],
 ): NeedMetadataSource | undefined {
   if (config.metadataSource === null) return undefined;
-  if (config.metadataSource) return config.metadataSource;
+  const withCategories = (fieldKey: string, fullAmount: number): NeedMetadataSource => ({
+    fieldKey,
+    fullAmount,
+    categoryIds: categories
+      .filter(category => category.metadataFields?.some(field => field.key === fieldKey))
+      .map(category => category.id),
+  });
+  if (config.metadataSource) return withCategories(config.metadataSource.fieldKey, config.metadataSource.fullAmount);
   if (needId !== 'hunger') return undefined;
   const field = findCalorieField(categories);
-  return field ? { fieldKey: field.key, fullAmount: DEFAULT_HUNGER_FULL_KCAL } : undefined;
+  return field ? withCategories(field.key, DEFAULT_HUNGER_FULL_KCAL) : undefined;
 }
 
 export type NeedEvent =
@@ -140,14 +147,19 @@ export function getRefillEvent(
   return { ts: log.endTimestamp, kind: 'add', amount: (minutes / refill.fullMinutes) * 100, behaviorId };
 }
 
-/** How a behaviour refills a need: its own setting, else its category's. */
+/**
+ * How a behaviour refills a need: its own setting, else its category's. A category that has the
+ * need's metadata field (e.g. Calorie) refills by that field only, so its 0 kcal behaviours don't count.
+ */
 export function getBehaviorRefill(
   config: Pick<NeedConfig, 'refills' | 'categoryRefills'>,
   behavior: Pick<BehaviorEntry, 'id' | 'categoryId'>,
+  source?: NeedMetadataSource,
 ): NeedRefill | undefined {
-  return (
-    config.refills[behavior.id] ?? (behavior.categoryId ? config.categoryRefills?.[behavior.categoryId] : undefined)
-  );
+  const own = config.refills[behavior.id];
+  if (own || !behavior.categoryId) return own;
+  if (source?.categoryIds?.includes(behavior.categoryId)) return undefined;
+  return config.categoryRefills?.[behavior.categoryId];
 }
 
 /**
@@ -175,7 +187,7 @@ export function getNeedEvents(
 ): NeedEvent[] {
   const events: NeedEvent[] = [];
   for (const behavior of behaviors) {
-    const refill = getBehaviorRefill(config, behavior);
+    const refill = getBehaviorRefill(config, behavior, source);
     if (!refill && !source) continue;
     for (const log of behavior.logs) {
       const end = log.endTimestamp ?? log.timestamp;
@@ -320,7 +332,7 @@ export function getRefillBehaviorIds(
   const scored: Array<{ id: string; count: number; mapped: boolean }> = [];
   for (const behavior of behaviors) {
     if (behavior.archivedAt != null) continue;
-    const mapped = getBehaviorRefill(config, behavior) != null;
+    const mapped = getBehaviorRefill(config, behavior, source) != null;
     let count = 0;
     for (const log of behavior.logs) {
       if (log.timestamp < since) continue;
@@ -489,7 +501,7 @@ export function getNeedRefillHistory(
 ): { entries: NeedRefillEntry[]; today: boolean } {
   const all: NeedRefillEntry[] = [];
   for (const behavior of behaviors) {
-    const refill = getBehaviorRefill(config, behavior);
+    const refill = getBehaviorRefill(config, behavior, source);
     if (!refill && !source) continue;
     for (const log of behavior.logs) {
       const event = getRefillEvent(behavior.id, log, refill, source);

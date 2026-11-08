@@ -28,7 +28,7 @@ export function NeedSettingsRow({ needId, first, onPickSource }: NeedSettingsRow
   const commitFull = () => {
     if (fullText == null || !source) return;
     const parsed = parseDecimalInput(fullText);
-    if (parsed != null && parsed > 0) setMetadataSource(needId, { ...source, fullAmount: parsed });
+    if (parsed != null && parsed > 0) setMetadataSource(needId, { fieldKey: source.fieldKey, fullAmount: parsed });
     setFullText(undefined);
   };
 

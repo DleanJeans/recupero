@@ -14,6 +14,12 @@ export interface NeedMetadataSource {
   fieldKey: string;
   /** The field value that takes the need from 0% to 100%. */
   fullAmount: number;
+  /**
+   * Categories that have the field, filled in when the source is resolved (not saved). Their
+   * behaviours refill by the field only, so a 0 kcal "Drink water" in Food doesn't get the
+   * Food category's fixed amount.
+   */
+  categoryIds?: string[];
 }
 
 export type NeedCheckInSource = 'tap' | 'body' | 'notification';

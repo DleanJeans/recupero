@@ -249,8 +249,16 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                   emoji={category.emoji}
                   name={category.name}
                   count={behaviors.filter(b => b.categoryId === category.id && b.archivedAt == null).length}
-                  amount={formatRefill(refill)}
-                  onAmountPress={() => setCategoryRefill(need.id, category.id, getNextRefill(refill))}
+                  amount={
+                    need.source?.categoryIds?.includes(category.id)
+                      ? `By ${sourceField?.label.toLowerCase() ?? 'metadata'}`
+                      : formatRefill(refill)
+                  }
+                  onAmountPress={
+                    need.source?.categoryIds?.includes(category.id)
+                      ? undefined
+                      : () => setCategoryRefill(need.id, category.id, getNextRefill(refill))
+                  }
                   onRemove={() => setCategoryRefill(need.id, category.id, undefined)}
                 />
               );

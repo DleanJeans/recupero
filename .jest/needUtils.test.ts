@@ -47,7 +47,7 @@ const food: Category = {
 
 describe('getNeedMetadataSource', () => {
   it('picks a calorie field for Hunger by default', () => {
-    expect(getNeedMetadataSource('hunger', DEFAULT_NEED_CONFIGS.hunger, [food])).toEqual({
+    expect(getNeedMetadataSource('hunger', DEFAULT_NEED_CONFIGS.hunger, [food])).toMatchObject({
       fieldKey: 'field_kcal',
       fullAmount: DEFAULT_HUNGER_FULL_KCAL,
     });
@@ -55,7 +55,7 @@ describe('getNeedMetadataSource', () => {
   it('respects an explicit choice or off', () => {
     const custom = { fieldKey: 'field_protein', fullAmount: 50 };
     expect(getNeedMetadataSource('hunger', { ...DEFAULT_NEED_CONFIGS.hunger, metadataSource: custom }, [food])).toEqual(
-      custom,
+      { ...custom, categoryIds: ['food'] },
     );
     expect(
       getNeedMetadataSource('hunger', { ...DEFAULT_NEED_CONFIGS.hunger, metadataSource: null }, [food]),
@@ -289,5 +289,37 @@ describe('check-in then refill in the same minute', () => {
     const events = getNeedEvents('hunger', DEFAULT_NEED_CONFIGS.hunger, [meal], checkIns, source, 0);
     expect(events.map(event => event.kind)).toEqual(['set', 'add']);
     expect(simulateNeed(events, 12.5, T0 + 50_000).level).toBeCloseTo(95, 0);
+  });
+});
+
+describe('metadata categories', () => {
+  it("doesn't give a 0 kcal behaviour in a calorie category the category's fixed refill", () => {
+    const config = {
+      ...DEFAULT_NEED_CONFIGS.hunger,
+      categoryRefills: { food: { mode: 'add' as const, amount: 60 } },
+    };
+    const source = getNeedMetadataSource('hunger', config, [food]);
+    expect(source?.categoryIds).toEqual(['food']);
+    const water = {
+      ...makeBehavior('water', [{ id: 'w', timestamp: T0, metadata: { field_kcal: 0 } }]),
+      categoryId: 'food',
+    };
+    const rice = {
+      ...makeBehavior('rice', [{ id: 'r', timestamp: T0, metadata: { field_kcal: 400 } }]),
+      categoryId: 'food',
+    };
+    const snack = { ...makeBehavior('snack', [{ id: 's', timestamp: T0 }]), categoryId: 'other' };
+    const events = getNeedEvents(
+      'hunger',
+      { ...config, categoryRefills: { ...config.categoryRefills, other: { mode: 'add', amount: 10 } } },
+      [water, rice, snack],
+      [],
+      source,
+      0,
+    );
+    expect(events.map(event => (event.kind === 'add' ? [event.behaviorId, event.amount] : null))).toEqual([
+      ['rice', 50],
+      ['snack', 10],
+    ]);
   });
 });
