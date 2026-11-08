@@ -497,7 +497,8 @@ export function BehaviorFormScreen() {
               onChange={setGroup}
             />
 
-            {isEdit && behavior && (
+            {/* Only undesirable behaviours get ridden out. Hiding it keeps the saved list untouched. */}
+            {isEdit && behavior && type === 'undesirable' && (
               <CravingAlternativesField
                 behaviorId={behavior.id}
                 value={alternativeIds}
