@@ -53,22 +53,16 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
 
   const activeBehaviors = useMemo(() => getActiveBehaviors(behaviors), [behaviors]);
   const archivedCount = behaviors.length - activeBehaviors.length;
-  const showArchivedChip = archivedCount > 0 || isArchivedCategoryFilterId(selectedCategoryId);
+  const archivedSelected = isArchivedCategoryFilterId(selectedCategoryId);
   const { behaviorCounts, allCount } = useMemo(() => computeBehaviorCounts(activeBehaviors), [activeBehaviors]);
   const collapsedCategories = useMemo(() => {
-    if (
-      gridWidth <= 0 ||
-      chipWidths.all == null ||
-      (showArchivedChip && chipWidths.archived == null) ||
-      categories.some(category => chipWidths[category.id] == null)
-    ) {
+    if (gridWidth <= 0 || chipWidths.all == null || categories.some(category => chipWidths[category.id] == null)) {
       return categories;
     }
 
     const gap = 9;
     const visible: Category[] = [];
-    // The Archived chip always stays on the collapsed row, after the categories.
-    let usedWidth = chipWidths.all + (showArchivedChip ? gap + chipWidths.archived : 0);
+    let usedWidth = chipWidths.all;
     for (const category of categories) {
       const width = chipWidths[category.id];
       if (width == null || usedWidth + gap + width > gridWidth) break;
@@ -87,7 +81,7 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
     }
 
     return visible;
-  }, [categories, chipWidths, gridWidth, selectedCategoryId, showArchivedChip]);
+  }, [categories, chipWidths, gridWidth, selectedCategoryId]);
 
   const visibleCategories = renderExpanded ? categories : collapsedCategories;
 
@@ -96,11 +90,13 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
   };
 
   const collapsedLayoutMeasured =
-    gridWidth > 0 &&
-    chipWidths.all != null &&
-    (!showArchivedChip || chipWidths.archived != null) &&
-    categories.every(category => chipWidths[category.id] != null);
-  const canExpand = collapsedLayoutMeasured ? categories.length > collapsedCategories.length : categories.length > 0;
+    gridWidth > 0 && chipWidths.all != null && categories.every(category => chipWidths[category.id] != null);
+  // The Archived chip only shows once expanded (or while it is the selected filter), so it also needs the toggle.
+  const hasArchivedChip = archivedCount > 0 || archivedSelected;
+  const showArchivedChip = hasArchivedChip && (renderExpanded || archivedSelected);
+  const canExpand =
+    hasArchivedChip ||
+    (collapsedLayoutMeasured ? categories.length > collapsedCategories.length : categories.length > 0);
 
   const finishCollapse = (transitionId: number) => {
     if (transitionIdRef.current === transitionId && !expandedRef.current) {
@@ -196,13 +192,10 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
               icon="🗄️"
               label={ARCHIVED_FILTER_LABEL}
               count={archivedCount}
-              active={isArchivedCategoryFilterId(selectedCategoryId)}
+              active={archivedSelected}
               iconOnly={hideNames}
               dashed
-              onLayout={event => handleChipLayout('archived', event)}
-              onPress={() =>
-                onSelectCategory(isArchivedCategoryFilterId(selectedCategoryId) ? null : ARCHIVED_CATEGORY_FILTER_ID)
-              }
+              onPress={() => onSelectCategory(archivedSelected ? null : ARCHIVED_CATEGORY_FILTER_ID)}
             />
           )}
         </View>
