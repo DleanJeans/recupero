@@ -279,3 +279,15 @@ describe('category refills', () => {
     expect(getSuggestedRefillIds('thirst', config, [water])).toEqual([]);
   });
 });
+
+describe('check-in then refill in the same minute', () => {
+  it('applies the refill after the check-in even though the log is timestamped earlier', () => {
+    const source = { fieldKey: 'field_kcal', fullAmount: 800 };
+    const checkIns: NeedCheckIn[] = [{ id: 'c', needId: 'hunger', ts: T0 + 40_000, level: 45, source: 'tap' }];
+    // Log form saves to the minute: 12:00:00, though it was logged after the 12:00:40 check-in.
+    const meal = makeBehavior('meal', [{ id: 'm', timestamp: T0, metadata: { field_kcal: 400 } }]);
+    const events = getNeedEvents('hunger', DEFAULT_NEED_CONFIGS.hunger, [meal], checkIns, source, 0);
+    expect(events.map(event => event.kind)).toEqual(['set', 'add']);
+    expect(simulateNeed(events, 12.5, T0 + 50_000).level).toBeCloseTo(95, 0);
+  });
+});

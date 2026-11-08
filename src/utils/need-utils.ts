@@ -150,6 +150,20 @@ export function getBehaviorRefill(
   );
 }
 
+/**
+ * Oldest first. Logs saved from the log form are timestamped to the minute, so a refill logged
+ * right after a check-in can look up to a minute older than it. Within the same minute a
+ * check-in therefore comes before refills, so the refill isn't wiped out by it.
+ */
+export function compareNeedEvents(a: NeedEvent, b: NeedEvent): number {
+  const minuteA = Math.floor(a.ts / 60_000);
+  const minuteB = Math.floor(b.ts / 60_000);
+  if (minuteA !== minuteB) return minuteA - minuteB;
+  const checkInA = a.kind === 'set' && a.checkIn ? 0 : 1;
+  const checkInB = b.kind === 'set' && b.checkIn ? 0 : 1;
+  return checkInA - checkInB || a.ts - b.ts;
+}
+
 /** Refills and check-ins for one need since `since`, oldest first. */
 export function getNeedEvents(
   needId: NeedId,
@@ -175,7 +189,7 @@ export function getNeedEvents(
       events.push({ ts: checkIn.ts, kind: 'set', level: checkIn.level, checkIn: true });
     }
   }
-  return events.sort((a, b) => a.ts - b.ts);
+  return events.sort(compareNeedEvents);
 }
 
 export interface NeedState {
@@ -194,10 +208,10 @@ export function simulateNeed(events: NeedEvent[], decayPerHour: number, now: num
   let t = past[0].ts;
   let lastRefillAt: number | undefined;
   for (const event of past) {
-    level = clampLevel(level - (decayPerHour * (event.ts - t)) / MS_PER_HOUR);
+    level = clampLevel(level - (decayPerHour * Math.max(0, event.ts - t)) / MS_PER_HOUR);
     level = event.kind === 'add' ? clampLevel(level + event.amount) : clampLevel(event.level);
     if (event.kind === 'add' || !event.checkIn) lastRefillAt = event.ts;
-    t = event.ts;
+    t = Math.max(t, event.ts);
   }
   const anchor = { ts: t, level };
   return {
