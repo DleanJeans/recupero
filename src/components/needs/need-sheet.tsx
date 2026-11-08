@@ -120,6 +120,11 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
     navigation.navigate('BehaviorLog', { behaviorId, initialMode: 'log' });
   };
 
+  const editLog = (behaviorId: string, logId: string) => {
+    close();
+    navigation.navigate('BehaviorLog', { behaviorId, initialMode: 'log', logId });
+  };
+
   const addRefill = (behaviorId: string) => {
     setRefill(need.id, behaviorId, getDefaultRefill(need.id));
     setAdding(false);
@@ -206,9 +211,12 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                     const behavior = behaviorById.get(entry.behaviorId);
                     if (!behavior) return null;
                     return (
-                      <View
+                      <Pressable
                         key={entry.logId}
-                        style={styles.historyRow}
+                        style={({ pressed }) => [styles.historyRow, pressed && styles.pressed]}
+                        onPress={() => editLog(entry.behaviorId, entry.logId)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Edit ${behavior.name} log`}
                       >
                         <BehaviorIcon
                           behavior={behavior}
@@ -226,7 +234,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                             ? formatTime(entry.ts)
                             : `${formatCompactDate(entry.ts)} ${formatTime(entry.ts)} · ${formatElapsedNumeric(entry.ts, now)}`}
                         </Text>
-                      </View>
+                      </Pressable>
                     );
                   })}
                 </View>
