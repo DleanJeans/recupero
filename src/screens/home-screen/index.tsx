@@ -14,6 +14,7 @@ import { useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
 import type { RootStackParamList } from '../../types/navigation';
 import { getActiveBehaviors, getArchivedBehaviors, isArchivedCategoryFilterId } from '../../utils/archive-utils';
+import { collapseBehaviorGroups, matchesBehaviorOrGroupName } from '../../utils/behavior-group-utils';
 import { Colors } from '../../utils/colors';
 import { getCooldownBehaviors, isCooldownCategoryFilterId } from '../../utils/cooldown-filter';
 import { BehaviorList } from './components/behavior-list';
@@ -95,7 +96,7 @@ export function HomeScreen() {
     }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(b => b.name.toLowerCase().includes(q));
+      result = result.filter(b => matchesBehaviorOrGroupName(b, q));
     }
     return result;
   }, [
@@ -107,6 +108,12 @@ export function HomeScreen() {
     hidePrivate,
     searchQuery,
   ]);
+
+  /** Grouped behaviours (e.g. Omachi flavours) show as one card named after the group. Archived stays per behaviour. */
+  const listedBehaviors = useMemo(
+    () => (listArchivedSelected ? filteredBehaviors : collapseBehaviorGroups(filteredBehaviors)),
+    [filteredBehaviors, listArchivedSelected],
+  );
 
   const addBehaviorDefaultCategoryId =
     cooldownSelected || archivedSelected ? undefined : (selectedCategoryId ?? undefined);
@@ -175,7 +182,8 @@ export function HomeScreen() {
         </View>
       ) : (
         <BehaviorList
-          behaviors={filteredBehaviors}
+          behaviors={listedBehaviors}
+          starBehaviors={filteredBehaviors}
           tasks={tasks}
           selectedCategoryId={listCategoryId}
           searchQuery={isSearching ? searchQuery : undefined}

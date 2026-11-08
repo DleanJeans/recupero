@@ -1,9 +1,11 @@
 import type { BehaviorEntry, Category } from '../src/types/behavior';
 import {
+  collapseBehaviorGroups,
   getGroupMemberLabel,
   getGroupMembers,
   getGroupNames,
   getGroupTotals,
+  matchesBehaviorOrGroupName,
   normalizeGroupName,
   switchMemberMetadataValues,
 } from '../src/utils/behavior-group-utils';
@@ -109,5 +111,41 @@ describe('behavior-group-utils', () => {
         rating: '4',
       });
     });
+  });
+});
+
+describe('collapseBehaviorGroups', () => {
+  const beef = behavior('beef', {
+    name: 'Omachi Bò Hầm',
+    group: 'Omachi',
+    lastTimestamp: 200,
+    logs: [{ id: '2', timestamp: 200 }],
+  });
+  const shrimp = behavior('shrimp', {
+    name: 'Omachi Lẩu Tôm',
+    group: 'omachi',
+    lastTimestamp: 100,
+    logs: [{ id: '1', timestamp: 100 }],
+    xpEnabled: true,
+  });
+  const water = behavior('water', { name: 'Drink water' });
+
+  it('shows one entry per group, named after the group, at the first member position', () => {
+    const result = collapseBehaviorGroups([shrimp, water, beef]);
+    expect(result.map(b => b.name)).toEqual(['Omachi', 'Drink water']);
+    expect(result[0].id).toBe('beef');
+    expect(result[0].logs.map(l => l.id)).toEqual(['1', '2']);
+    expect(result[0].lastTimestamp).toBe(200);
+    expect(result[0].xpEnabled).toBe(true);
+  });
+
+  it('leaves a lone member as it is', () => {
+    expect(collapseBehaviorGroups([beef, water])).toEqual([beef, water]);
+  });
+
+  it('matches searches on the group name', () => {
+    expect(matchesBehaviorOrGroupName(beef, 'omachi')).toBe(true);
+    expect(matchesBehaviorOrGroupName(beef, 'hầm')).toBe(true);
+    expect(matchesBehaviorOrGroupName(water, 'omachi')).toBe(false);
   });
 });

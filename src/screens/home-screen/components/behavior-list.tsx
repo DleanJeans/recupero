@@ -15,6 +15,8 @@ import { SectionHeader } from './section-header';
 
 interface BehaviorListProps {
   behaviors: BehaviorEntry[];
+  /** Behaviours counted for section stars, before groups are collapsed. Defaults to `behaviors`. */
+  starBehaviors?: BehaviorEntry[];
   tasks: TaskEntry[];
   selectedCategoryId: string | null;
   searchQuery?: string;
@@ -23,6 +25,7 @@ interface BehaviorListProps {
 
 export const BehaviorList = React.memo(function BehaviorList({
   behaviors,
+  starBehaviors = behaviors,
   tasks,
   selectedCategoryId,
   searchQuery,
@@ -85,11 +88,11 @@ export const BehaviorList = React.memo(function BehaviorList({
     ({ section }: { section: { title: string } }) => (
       <SectionHeader
         title={section.title}
-        behaviors={behaviors}
+        behaviors={starBehaviors}
         tasks={tasks}
       />
     ),
-    [behaviors, tasks],
+    [starBehaviors, tasks],
   );
 
   return (

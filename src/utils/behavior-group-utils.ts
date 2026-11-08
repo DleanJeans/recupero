@@ -105,3 +105,51 @@ export function switchMemberMetadataValues(
   }
   return result;
 }
+
+/** Whether a behaviour matches a search by its own name or its group name. */
+export function matchesBehaviorOrGroupName(behavior: BehaviorEntry, lowerCaseQuery: string): boolean {
+  return (
+    behavior.name.toLowerCase().includes(lowerCaseQuery) ||
+    (normalizeGroupName(behavior.group)?.toLowerCase().includes(lowerCaseQuery) ?? false)
+  );
+}
+
+/** Replaces each group's members with one entry named after the group, for lists that show only the group.
+ *  The entry takes the id, icon and settings of the most recently logged member, so opening it lands on that
+ *  member (whose screen has chips for the others), and holds every member's logs so XP and "last logged" are
+ *  the group's totals. Ungrouped behaviours and single-member groups pass through unchanged, in order. */
+export function collapseBehaviorGroups(behaviors: BehaviorEntry[]): BehaviorEntry[] {
+  const membersByKey = new Map<string, BehaviorEntry[]>();
+  for (const behavior of behaviors) {
+    const key = groupKey(behavior.group);
+    if (!key) continue;
+    const members = membersByKey.get(key);
+    if (members) members.push(behavior);
+    else membersByKey.set(key, [behavior]);
+  }
+
+  const result: BehaviorEntry[] = [];
+  const emitted = new Set<string>();
+  for (const behavior of behaviors) {
+    const key = groupKey(behavior.group);
+    const members = key ? membersByKey.get(key) : undefined;
+    if (!key || !members || members.length < 2) {
+      result.push(behavior);
+      continue;
+    }
+    if (emitted.has(key)) continue;
+    emitted.add(key);
+    const representative = members.reduce((latest, member) =>
+      (member.lastTimestamp ?? -Infinity) > (latest.lastTimestamp ?? -Infinity) ? member : latest,
+    );
+    const lastTimestamps = members.map(member => member.lastTimestamp).filter((t): t is number => t != null);
+    result.push({
+      ...representative,
+      name: normalizeGroupName(representative.group) ?? representative.name,
+      lastTimestamp: lastTimestamps.length > 0 ? Math.max(...lastTimestamps) : null,
+      logs: members.flatMap(member => member.logs).sort((a, b) => a.timestamp - b.timestamp),
+      xpEnabled: members.some(member => member.xpEnabled) ? true : undefined,
+    });
+  }
+  return result;
+}
