@@ -7,7 +7,9 @@ import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { Text } from '../../components/text';
 import { useDeferredComputation } from '../../hooks/use-deferred-computation';
+import { resyncReminders } from '../../hooks/use-reminder-engine';
 import { useBehaviorStore } from '../../store/behavior-store';
+import { useCuesStore } from '../../store/cues-store';
 import { useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
 import type { TaskEntry, TaskStarValue } from '../../types/task';
@@ -15,6 +17,7 @@ import { getActiveBehaviors } from '../../utils/archive-utils';
 import { getCalendarTaskCompletionMetrics } from '../../utils/calendar-metrics';
 import { Colors } from '../../utils/colors';
 import { toDateString } from '../../utils/date-utils';
+import { requestPlaceTaskPermissions } from '../../utils/reminder-permissions';
 import { getTaskStarsForDate, getTasksForDate, isTaskCompleteOnDate } from '../../utils/task-utils';
 import { DateNavigationRow } from '../components/date-navigation-row';
 import { SummaryRow } from '../components/summary-row';
@@ -39,6 +42,7 @@ export function TaskScreen() {
   const [behaviorQuery, setBehaviorQuery] = useState('');
   const [stars, setStars] = useState<TaskStarValue>(1);
   const [selectedBehaviorId, setSelectedBehaviorId] = useState<string | undefined>();
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | undefined>();
   const [composerOpen, setComposerOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | undefined>();
 
@@ -49,6 +53,8 @@ export function TaskScreen() {
   const removeTask = useBehaviorStore(s => s.removeTask);
   const toggleTaskCompletion = useBehaviorStore(s => s.toggleTaskCompletion);
   const hidePrivate = useSettingsStore(s => s.hidePrivate);
+  const places = useCuesStore(s => s.places);
+  const placeById = useMemo(() => new Map(places.map(place => [place.id, place])), [places]);
 
   const availableBehaviors = useMemo(() => {
     if (!composerOpen) return [];
@@ -87,6 +93,7 @@ export function TaskScreen() {
     setTitle('');
     setBehaviorQuery('');
     setSelectedBehaviorId(undefined);
+    setSelectedPlaceId(undefined);
     setEditingTaskId(undefined);
   };
 
@@ -107,6 +114,7 @@ export function TaskScreen() {
       stars: nextStars,
       source: isBehaviorOnlyTask ? ('behavior' as const) : ('oneOff' as const),
       behaviorId: selectedBehavior?.id,
+      placeId: selectedPlaceId && placeById.has(selectedPlaceId) ? selectedPlaceId : undefined,
     };
 
     if (editingTaskId) {
@@ -115,6 +123,11 @@ export function TaskScreen() {
       addTask(nextTask);
     }
     closeComposer();
+    if (nextTask.placeId) {
+      requestPlaceTaskPermissions()
+        .then(() => resyncReminders())
+        .catch(error => console.warn('Place task permissions failed', error));
+    }
   };
 
   const openAddComposer = () => {
@@ -130,6 +143,7 @@ export function TaskScreen() {
       setBehaviorQuery(behavior?.name ?? '');
       setStars(task.stars);
       setSelectedBehaviorId(task.behaviorId);
+      setSelectedPlaceId(task.placeId);
       setEditingTaskId(task.id);
       setComposerOpen(true);
     },
@@ -174,6 +188,7 @@ export function TaskScreen() {
         <TaskCard
           task={task}
           behavior={behavior}
+          place={task.placeId ? placeById.get(task.placeId) : undefined}
           selectedDate={selectedDate}
           onToggle={() => handleToggleTask(task.id)}
           onEdit={() => openEditComposer(task)}
@@ -181,7 +196,7 @@ export function TaskScreen() {
         />
       );
     },
-    [behaviorById, confirmRemove, handleToggleTask, openEditComposer, selectedDate],
+    [behaviorById, confirmRemove, handleToggleTask, openEditComposer, placeById, selectedDate],
   );
 
   return (
@@ -217,6 +232,9 @@ export function TaskScreen() {
             onBehaviorQueryChange={setBehaviorQuery}
             onStarsChange={setStars}
             onBehaviorSelect={setSelectedBehaviorId}
+            places={places}
+            selectedPlaceId={selectedPlaceId}
+            onPlaceSelect={setSelectedPlaceId}
             onAdd={handleSubmitTask}
             onCancel={closeComposer}
             submitLabel={editingTaskId ? 'Save' : 'Add'}

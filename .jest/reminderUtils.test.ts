@@ -97,6 +97,23 @@ describe('getReminderGeofenceRegions', () => {
     ]);
   });
 
+  it('merges extra watches (e.g. place tasks) with reminder directions', () => {
+    const cues = [cue('a', { type: 'location', placeId: 'gym', direction: 'exit' })];
+    const regions = getReminderGeofenceRegions(
+      cues,
+      [place('gym', 20), place('bank', 150), place('home', 50)],
+      [
+        { placeId: 'gym', enter: true },
+        { placeId: 'bank', enter: true },
+        { placeId: 'gone', enter: true },
+      ],
+    );
+    expect(regions).toEqual([
+      { identifier: 'gym', latitude: 10, longitude: 20, radius: 100, notifyOnEnter: true, notifyOnExit: true },
+      { identifier: 'bank', latitude: 10, longitude: 20, radius: 150, notifyOnEnter: true, notifyOnExit: false },
+    ]);
+  });
+
   it('matches geofence events by place and direction', () => {
     const cues = [
       cue('a', { type: 'location', placeId: 'gym', direction: 'enter' }),

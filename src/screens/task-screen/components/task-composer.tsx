@@ -3,10 +3,12 @@ import { StyleSheet, View } from 'react-native';
 import { Button } from '../../../components/button';
 import { TextInput } from '../../../components/text';
 import type { BehaviorEntry } from '../../../types/behavior';
+import type { SavedPlace } from '../../../types/cue';
 import type { TaskStarValue } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
 import { BehaviorSelector } from './behavior-selector';
 import { StarPicker } from './star-picker';
+import { TaskPlacePicker } from './task-place-picker';
 
 interface TaskComposerProps {
   title: string;
@@ -14,6 +16,9 @@ interface TaskComposerProps {
   stars: TaskStarValue;
   behaviors: BehaviorEntry[];
   selectedBehaviorId: string | undefined;
+  places?: SavedPlace[];
+  selectedPlaceId?: string;
+  onPlaceSelect?: (placeId: string | undefined) => void;
   onTitleChange: (title: string) => void;
   onBehaviorQueryChange: (query: string) => void;
   onStarsChange: (stars: TaskStarValue) => void;
@@ -36,6 +41,9 @@ export function TaskComposer({
   stars,
   behaviors,
   selectedBehaviorId,
+  places,
+  selectedPlaceId,
+  onPlaceSelect,
   onTitleChange,
   onBehaviorQueryChange,
   onStarsChange,
@@ -79,6 +87,13 @@ export function TaskComposer({
           onQueryChange={onBehaviorQueryChange}
           onSelect={onBehaviorSelect}
         />
+        {places && onPlaceSelect && (
+          <TaskPlacePicker
+            places={places}
+            selectedPlaceId={selectedPlaceId}
+            onSelect={onPlaceSelect}
+          />
+        )}
       </View>
 
       <View style={styles.composerFooter}>

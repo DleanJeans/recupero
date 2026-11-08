@@ -2,9 +2,12 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useCuesStore } from '../store/cues-store';
+import { useSettingsStore } from '../store/settings-store';
 import type { Cue, SavedPlace } from '../types/cue';
-import { presentReminderNotification } from './reminder-notifications';
-import { getReminderGeofenceRegions, getRemindersForGeofenceEvent } from './reminder-utils';
+import { toDateString } from './date-utils';
+import { getPlaceTaskNotificationContent, getPlaceTasksForArrival } from './place-task-utils';
+import { presentPlaceTaskNotification, presentReminderNotification } from './reminder-notifications';
+import { type GeofenceWatch, getReminderGeofenceRegions, getRemindersForGeofenceEvent } from './reminder-utils';
 
 export const REMINDER_GEOFENCE_TASK = 'recupero-reminder-geofence';
 
@@ -13,7 +16,7 @@ interface GeofenceTaskData {
   region: Location.LocationRegion;
 }
 
-type PersistedStore = typeof useCuesStore | typeof useBehaviorStore;
+type PersistedStore = typeof useCuesStore | typeof useBehaviorStore | typeof useSettingsStore;
 
 /** The task can run headless (app closed), before the persisted stores have loaded. */
 function waitForHydration(store: PersistedStore): Promise<void> {
@@ -37,13 +40,29 @@ async function handleGeofenceEvent({ eventType, region }: GeofenceTaskData): Pro
   await Promise.all([waitForHydration(useCuesStore), waitForHydration(useBehaviorStore)]);
 
   const { cues, places, addActivityEvent } = useCuesStore.getState();
-  if (!places.some(place => place.id === placeId)) return;
+  const place = places.find(candidate => candidate.id === placeId);
+  if (!place) return;
   addActivityEvent({ kind: direction, placeId });
+  if (direction === 'enter') await completePlaceTasksOnArrival(place);
 
   const behaviors = useBehaviorStore.getState().behaviors;
   for (const cue of getRemindersForGeofenceEvent(cues, placeId, direction)) {
     await presentReminderNotification(cue, places, behaviors);
   }
+}
+
+/** "Go to this location" tasks tick themselves off (and log their behaviour) on arrival. */
+async function completePlaceTasksOnArrival(place: SavedPlace): Promise<void> {
+  await waitForHydration(useSettingsStore);
+  const { dayCutoffHour } = useSettingsStore.getState();
+  const todayStr = toDateString(new Date(), dayCutoffHour);
+  const { tasks, toggleTaskCompletion } = useBehaviorStore.getState();
+  const arrived = getPlaceTasksForArrival(tasks, place.id, todayStr, dayCutoffHour);
+  if (arrived.length === 0) return;
+  for (const task of arrived) toggleTaskCompletion(task.id, todayStr);
+  await presentPlaceTaskNotification(getPlaceTaskNotificationContent(arrived, place)).catch(error =>
+    console.warn('Place task notification failed', error),
+  );
 }
 
 // Must be defined at module load (imported from index.ts) so Android can run it with the app closed.
@@ -72,9 +91,16 @@ export async function requestBackgroundLocationPermission(): Promise<boolean> {
   return background.granted;
 }
 
-/** Registers geofences for every place an active reminder points at, or stops geofencing if there are none. */
-export async function syncReminderGeofences(cues: Cue[], places: SavedPlace[]): Promise<void> {
-  const regions = getReminderGeofenceRegions(cues, places);
+/**
+ * Registers geofences for every place an active reminder (or an extra watch, e.g. a place task) points at,
+ * or stops geofencing if there are none.
+ */
+export async function syncReminderGeofences(
+  cues: Cue[],
+  places: SavedPlace[],
+  extraWatches: GeofenceWatch[] = [],
+): Promise<void> {
+  const regions = getReminderGeofenceRegions(cues, places, extraWatches);
   const running = await Location.hasStartedGeofencingAsync(REMINDER_GEOFENCE_TASK).catch(() => false);
   if (regions.length === 0 || !(await hasBackgroundLocationPermission())) {
     if (running) await Location.stopGeofencingAsync(REMINDER_GEOFENCE_TASK);

@@ -9,9 +9,11 @@ import { Button } from '../../../components/button';
 import { Text } from '../../../components/text';
 import { useTimerStore } from '../../../store/timer-store';
 import type { BehaviorEntry } from '../../../types/behavior';
+import type { SavedPlace } from '../../../types/cue';
 import type { RootStackParamList } from '../../../types/navigation';
 import type { TaskEntry } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
+import { getPlaceEmoji } from '../../../utils/cue-utils';
 import { isTaskCompleteOnDate } from '../../../utils/task-utils';
 import { TaskStarRow } from './task-star-row';
 
@@ -22,18 +24,20 @@ const TASK_CARD_LAYOUT = LinearTransition.duration(240);
 interface TaskCardProps {
   task: TaskEntry;
   behavior: BehaviorEntry | undefined;
+  place?: SavedPlace;
   selectedDate: string;
   onToggle: () => void;
   onEdit: () => void;
   onRemove: () => void;
 }
 
-function TaskCardComponent({ task, behavior, selectedDate, onToggle, onEdit, onRemove }: TaskCardProps) {
+function TaskCardComponent({ task, behavior, place, selectedDate, onToggle, onEdit, onRemove }: TaskCardProps) {
   const navigation = useNavigation<NavigationProp>();
   const startTimer = useTimerStore(s => s.start);
   const complete = isTaskCompleteOnDate(task, selectedDate);
   const isBehaviorTask = task.source === 'behavior' || (!task.source && task.behaviorId);
-  const taskMeta = isBehaviorTask ? 'Behavior task' : behavior ? `One-off · ${behavior.name}` : 'One-off';
+  const kindMeta = isBehaviorTask ? 'Behavior task' : behavior ? `One-off · ${behavior.name}` : 'One-off';
+  const taskMeta = place ? `${kindMeta} · ${getPlaceEmoji(place)} ${place.name}` : kindMeta;
   const canTrack = behavior?.xpEnabled === true && behavior.durationXpEnabled === true;
 
   const handlePlay = () => {
@@ -114,7 +118,12 @@ function TaskCardComponent({ task, behavior, selectedDate, onToggle, onEdit, onR
 }
 
 export const TaskCard = React.memo(TaskCardComponent, (prev, next) => {
-  return prev.task === next.task && prev.behavior === next.behavior && prev.selectedDate === next.selectedDate;
+  return (
+    prev.task === next.task &&
+    prev.behavior === next.behavior &&
+    prev.place === next.place &&
+    prev.selectedDate === next.selectedDate
+  );
 });
 
 const styles = StyleSheet.create({

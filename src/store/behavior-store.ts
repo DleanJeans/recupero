@@ -361,6 +361,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               stars: input.stars,
               source: input.source,
               behaviorId: input.behaviorId,
+              placeId: input.placeId,
               completedDates: [],
               completedAtByDate: undefined,
               createdAt: Date.now(),

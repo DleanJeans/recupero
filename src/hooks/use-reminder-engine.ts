@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useCuesStore } from '../store/cues-store';
 import type { RootStackParamList } from '../types/navigation';
+import { getPlaceTaskGeofenceWatches, PLACE_TASK_NOTIFICATION_KIND } from '../utils/place-task-utils';
 import { syncReminderGeofences } from '../utils/reminder-geofencing';
 import {
   scheduleDelayedReminder,
@@ -22,10 +23,12 @@ const NAVIGATION_MAX_RETRIES = 20;
 
 async function syncAll() {
   const { cues, places } = useCuesStore.getState();
-  const behaviors = useBehaviorStore.getState().behaviors;
+  const { behaviors, tasks } = useBehaviorStore.getState();
   await Promise.all([
     syncTimeReminders(cues, places, behaviors).catch(error => console.warn('Time reminder sync failed', error)),
-    syncReminderGeofences(cues, places).catch(error => console.warn('Geofence sync failed', error)),
+    syncReminderGeofences(cues, places, getPlaceTaskGeofenceWatches(tasks)).catch(error =>
+      console.warn('Geofence sync failed', error),
+    ),
   ]);
 }
 
@@ -53,7 +56,8 @@ export function useReminderEngine(
 
     const syncIfChanged = () => {
       const { cues, places } = useCuesStore.getState();
-      const signature = getReminderScheduleSignature(cues, places, useBehaviorStore.getState().behaviors);
+      const { behaviors, tasks } = useBehaviorStore.getState();
+      const signature = getReminderScheduleSignature(cues, places, behaviors, getPlaceTaskGeofenceWatches(tasks));
       if (signature === lastSignature.current) return;
       lastSignature.current = signature;
       void syncAll();
@@ -62,6 +66,7 @@ export function useReminderEngine(
 
     const unsubscribeCues = useCuesStore.subscribe(syncIfChanged);
     const unsubscribeBehaviors = useBehaviorStore.subscribe((state, previous) => {
+      if (state.tasks !== previous.tasks) syncIfChanged();
       if (state.behaviors === previous.behaviors) return;
       syncIfChanged();
       const { cues, places } = useCuesStore.getState();
@@ -85,6 +90,12 @@ export function useReminderEngine(
     const responseId = `${notification.request.identifier}:${notification.date}:${actionIdentifier}`;
     if (handledResponseIds.current.has(responseId)) return;
     const data = notification.request.content.data;
+    if (data?.kind === PLACE_TASK_NOTIFICATION_KIND) {
+      handledResponseIds.current.add(responseId);
+      if (navigationRef.isReady()) navigationRef.navigate('Tasks');
+      Notifications.dismissNotificationAsync(notification.request.identifier).catch(() => undefined);
+      return;
+    }
     if (!isReminderNotificationData(data)) return;
     handledResponseIds.current.add(responseId);
 

@@ -8,6 +8,8 @@ export interface TaskEntry {
   stars: TaskStarValue;
   source?: TaskSource;
   behaviorId?: string;
+  /** "Go to this location": ticks itself off when the user arrives at this saved place. */
+  placeId?: string;
   completedDates: string[];
   completedAtByDate?: Record<string, number>;
   completionLogIds?: Record<string, string>;
@@ -21,4 +23,5 @@ export interface AddTaskInput {
   stars: TaskStarValue;
   source?: TaskSource;
   behaviorId?: string;
+  placeId?: string;
 }

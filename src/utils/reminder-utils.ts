@@ -31,6 +31,13 @@ export interface ReminderGeofenceRegion {
   notifyOnExit: boolean;
 }
 
+/** A place something other than a reminder wants arrival/leave events for (e.g. a place task). */
+export interface GeofenceWatch {
+  placeId: string;
+  enter?: boolean;
+  exit?: boolean;
+}
+
 export interface ReminderNotificationData {
   kind: 'reminder';
   cueId: string;
@@ -78,14 +85,21 @@ export function getTimeReminderSchedules(cues: Cue[]): TimeReminderSchedule[] {
 }
 
 /** One geofence per saved place that an active enter/exit reminder points at. */
-export function getReminderGeofenceRegions(cues: Cue[], places: SavedPlace[]): ReminderGeofenceRegion[] {
+export function getReminderGeofenceRegions(
+  cues: Cue[],
+  places: SavedPlace[],
+  extraWatches: GeofenceWatch[] = [],
+): ReminderGeofenceRegion[] {
   const directions = new Map<string, { enter: boolean; exit: boolean }>();
+  const watch = (placeId: string, enter: boolean, exit: boolean) => {
+    const current = directions.get(placeId) ?? { enter: false, exit: false };
+    directions.set(placeId, { enter: current.enter || enter, exit: current.exit || exit });
+  };
   for (const cue of getActivePushReminders(cues)) {
     if (cue.trigger.type !== 'location') continue;
-    const current = directions.get(cue.trigger.placeId) ?? { enter: false, exit: false };
-    current[cue.trigger.direction] = true;
-    directions.set(cue.trigger.placeId, current);
+    watch(cue.trigger.placeId, cue.trigger.direction === 'enter', cue.trigger.direction === 'exit');
   }
+  for (const extra of extraWatches) watch(extra.placeId, extra.enter === true, extra.exit === true);
   return places.flatMap(place => {
     const direction = directions.get(place.id);
     if (!direction) return [];
@@ -182,12 +196,21 @@ export function getReminderNotificationContent(
 }
 
 /** Changes whenever something that affects scheduled notifications or geofences changes. */
-export function getReminderScheduleSignature(cues: Cue[], places: SavedPlace[], behaviors: BehaviorEntry[]): string {
+export function getReminderScheduleSignature(
+  cues: Cue[],
+  places: SavedPlace[],
+  behaviors: BehaviorEntry[],
+  extraWatches: GeofenceWatch[] = [],
+): string {
   const active = getActivePushReminders(cues);
   const behaviorIds = new Set(active.flatMap(cue => cue.behaviorIds));
-  const placeIds = new Set(active.flatMap(cue => (cue.trigger.type === 'location' ? [cue.trigger.placeId] : [])));
+  const placeIds = new Set([
+    ...active.flatMap(cue => (cue.trigger.type === 'location' ? [cue.trigger.placeId] : [])),
+    ...extraWatches.map(extra => extra.placeId),
+  ]);
   return JSON.stringify({
     active,
+    extraWatches,
     places: places.filter(place => placeIds.has(place.id)),
     behaviors: behaviors.filter(behavior => behaviorIds.has(behavior.id)).map(behavior => [behavior.id, behavior.name]),
   });

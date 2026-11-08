@@ -6,11 +6,13 @@ import { canTriggerFireAutomatically, getActivePushReminders } from './reminder-
 
 export type MissingReminderPermission = 'notifications' | 'location';
 
-function explainBackgroundLocation(): Promise<boolean> {
+const REMINDER_LOCATION_REASON = 'Place reminders need to know when you arrive or leave while Recupero is closed.';
+
+function explainBackgroundLocation(reason = REMINDER_LOCATION_REASON): Promise<boolean> {
   return new Promise(resolve => {
     Alert.alert(
       'Allow location all the time',
-      'Place reminders need to know when you arrive or leave while Recupero is closed. On the next screen, choose "Allow all the time".',
+      `${reason} On the next screen, choose "Allow all the time".`,
       [
         { text: 'Not now', style: 'cancel', onPress: () => resolve(false) },
         { text: 'Continue', onPress: () => resolve(true) },
@@ -30,6 +32,20 @@ export async function requestReminderPermissions(triggers: CueTrigger[]): Promis
     const granted = (await explainBackgroundLocation()) && (await requestBackgroundLocationPermission());
     if (!granted) missing.push('location');
   }
+  return missing;
+}
+
+/** Asks for what a "Go to this location" task needs. Resolves to the permissions still missing afterwards. */
+export async function requestPlaceTaskPermissions(): Promise<MissingReminderPermission[]> {
+  const missing: MissingReminderPermission[] = [];
+  if (!(await hasBackgroundLocationPermission())) {
+    const granted =
+      (await explainBackgroundLocation(
+        'Place tasks tick themselves off when you arrive, even while Recupero is closed.',
+      )) && (await requestBackgroundLocationPermission());
+    if (!granted) missing.push('location');
+  }
+  if (!(await requestNotificationPermission())) missing.push('notifications');
   return missing;
 }
 

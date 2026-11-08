@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import type { BehaviorEntry } from '../types/behavior';
 import type { Cue, SavedPlace } from '../types/cue';
+import { PLACE_TASK_NOTIFICATION_KIND } from './place-task-utils';
 import {
   getReminderNotificationContent,
   getTimeReminderSchedules,
@@ -99,6 +100,16 @@ export async function presentReminderNotification(
   });
   await AsyncStorage.setItem(LAST_FIRED_KEY, JSON.stringify({ ...lastFired, [cue.id]: now }));
   return true;
+}
+
+/** Tells the user a "Go to this location" task ticked itself off. Tapping it opens Tasks. */
+export async function presentPlaceTaskNotification(content: { title: string; body: string }): Promise<void> {
+  if (!(await hasNotificationPermission())) return;
+  await setupReminderNotifications();
+  await Notifications.scheduleNotificationAsync({
+    content: { ...content, data: { kind: PLACE_TASK_NOTIFICATION_KIND } },
+    trigger: process.env.EXPO_OS === 'android' ? { channelId: REMINDER_CHANNEL_ID } : null,
+  });
 }
 
 /** Schedules a one-off reminder `delayMin` minutes from now (e.g. "20 min after Coffee"). */
