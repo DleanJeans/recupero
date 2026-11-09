@@ -13,8 +13,8 @@ interface DayTabSelectorProps {
 }
 
 const TABS: { key: DayTab; label: string }[] = [
-  { key: 'logs', label: 'Logs' },
   { key: 'metadata', label: 'Metadata' },
+  { key: 'logs', label: 'Logs' },
 ];
 
 export function DayTabSelector({ selectedTab, onSelect, counts }: DayTabSelectorProps) {
