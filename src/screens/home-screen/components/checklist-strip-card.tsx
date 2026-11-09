@@ -1,24 +1,13 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
-import { useBehaviorStore } from '../../../store/behavior-store';
-import { useChecklistsStore } from '../../../store/checklists-store';
-import { useSettingsStore } from '../../../store/settings-store';
+import { useChecklistStatus } from '../../../hooks/use-checklist-status';
 import type { Checklist } from '../../../types/checklist';
 import type { RootStackParamList } from '../../../types/navigation';
-import {
-  CHECKLIST_DEFAULT_EMOJI,
-  describeChecklistStatus,
-  getChecklistProgress,
-  getRunnableItems,
-  getTodayRun,
-  isRunDone,
-  pruneRun,
-} from '../../../utils/checklist-utils';
+import { CHECKLIST_DEFAULT_EMOJI } from '../../../utils/checklist-utils';
 import { Colors } from '../../../utils/colors';
-import { toDateString } from '../../../utils/date-utils';
 
 export const CHECKLIST_CARD_HEIGHT = 112;
 
@@ -29,25 +18,7 @@ interface ChecklistStripCardProps {
 /** One checklist on the Routines strip: emoji, name, today's progress. Tap to run, long-press to edit. */
 export function ChecklistStripCard({ checklist }: ChecklistStripCardProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const savedRun = useChecklistsStore(state => state.runs[checklist.id]);
-  const behaviors = useBehaviorStore(state => state.behaviors);
-  const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
-  const today = toDateString(new Date(), dayCutoffHour);
-
-  const { progress, status, done, started } = useMemo(() => {
-    const items = getRunnableItems(checklist, behaviors);
-    const run = pruneRun(getTodayRun(savedRun, today), behaviors);
-    const nextProgress = getChecklistProgress(items, run);
-    const isDone = isRunDone(run, nextProgress);
-    return {
-      progress: nextProgress,
-      status: describeChecklistStatus(checklist, run, nextProgress, dayCutoffHour),
-      done: isDone,
-      started: !isDone && nextProgress.done + nextProgress.skipped > 0,
-    };
-  }, [behaviors, checklist, dayCutoffHour, savedRun, today]);
-
-  const fraction = done ? 1 : progress.total > 0 ? (progress.done + progress.skipped) / progress.total : 0;
+  const { status, done, started, fraction } = useChecklistStatus(checklist);
 
   return (
     <Pressable

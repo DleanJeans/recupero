@@ -5,6 +5,7 @@ import {
   getChecklistProgress,
   getDragShift,
   getRunnableItems,
+  getStripSwipe,
   getTodayRun,
   isRunDone,
   moveItem,
@@ -87,6 +88,14 @@ describe('checklist-utils', () => {
     const up = { from: 3, to: 1 };
     expect([0, 1, 2, 3].map(index => getDragShift(index, up))).toEqual([0, 1, 1, 0]);
     expect(getDragShift(1, null)).toBe(0);
+  });
+
+  it('reads a vertical swipe on the strip, ignoring horizontal scrolling', () => {
+    expect(getStripSwipe(2, 40)).toBe('expand');
+    expect(getStripSwipe(-3, -40)).toBe('collapse');
+    expect(getStripSwipe(60, 30)).toBeNull();
+    expect(getStripSwipe(0, 10)).toBeNull();
+    expect(getStripSwipe(30, 40)).toBeNull();
   });
 
   it('describes status for the Routines strip', () => {

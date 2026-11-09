@@ -99,6 +99,12 @@ export function moveItem<T>(items: T[], from: number, to: number): T[] {
   return next;
 }
 
+/** Vertical swipe on the checklist strip: down expands to cards, up collapses to pills. Mostly-horizontal drags are scrolling. */
+export function getStripSwipe(dx: number, dy: number, minDistance = 24): 'expand' | 'collapse' | null {
+  if (Math.abs(dy) < minDistance || Math.abs(dy) < Math.abs(dx) * 1.5) return null;
+  return dy > 0 ? 'expand' : 'collapse';
+}
+
 /** Slot offset (-1, 0 or 1) for the row at `index` while the row at `from` is dragged to `to`. */
 export function getDragShift(index: number, drag: { from: number; to: number } | null): number {
   if (!drag || index === drag.from) return 0;
