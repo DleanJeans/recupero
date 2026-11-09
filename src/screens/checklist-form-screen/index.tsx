@@ -141,6 +141,7 @@ export function ChecklistFormScreen() {
             value={emoji}
             onChangeText={setEmoji}
             nameHint={name}
+            style={styles.emojiInput}
           />
           <TextInput
             style={[styles.input, styles.nameInput]}
@@ -259,6 +260,7 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     fontSize: 15,
   },
+  emojiInput: { width: 56, height: 46, borderRadius: 10 },
   nameInput: { flex: 1, fontSize: 17, fontWeight: '600' },
   plainRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   plainInput: { flex: 1 },
