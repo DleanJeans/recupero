@@ -270,3 +270,9 @@ export function getAzmGoalDaysThisWeek(byDay: Record<string, number>, goal: numb
   for (let i = 0; i < 7; i++) if ((byDay[addDaysToDateString(today, -i)] ?? 0) >= goal) met++;
   return met;
 }
+
+/** Behaviours whose name contains `query` (ignoring case); all of them when the query is blank. */
+export function filterBehaviorsByName<T extends { name: string }>(behaviors: T[], query: string): T[] {
+  const q = query.trim().toLowerCase();
+  return q ? behaviors.filter(behavior => behavior.name.toLowerCase().includes(q)) : behaviors;
+}

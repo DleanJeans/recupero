@@ -1,6 +1,7 @@
 import type { LogEntry } from '../src/types/behavior';
 import type { HealthSleep } from '../src/types/health';
 import {
+  filterBehaviorsByName,
   getAzmGoalDaysThisWeek,
   getAzmRollUpBody,
   getAzmWeekTotal,
@@ -229,5 +230,16 @@ describe('getSleepBehaviorChoices', () => {
       { id: '4', name: 'Go to bed' },
     ]);
     expect(choices.map(choice => choice.id)).toEqual(['4', '2', '1']);
+  });
+});
+
+describe('filterBehaviorsByName', () => {
+  const behaviors = [{ name: 'Nap' }, { name: 'Napa Cabbage / Cải thảo' }, { name: 'Phone in Bed' }];
+  it('matches any part of the name, ignoring case', () => {
+    expect(filterBehaviorsByName(behaviors, ' BED ')).toEqual([{ name: 'Phone in Bed' }]);
+    expect(filterBehaviorsByName(behaviors, 'nap')).toHaveLength(2);
+  });
+  it('returns everything for a blank query', () => {
+    expect(filterBehaviorsByName(behaviors, '  ')).toBe(behaviors);
   });
 });

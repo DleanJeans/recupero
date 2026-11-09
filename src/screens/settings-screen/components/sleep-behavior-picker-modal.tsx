@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Text } from '../../../components/text';
+import { Text, TextInput } from '../../../components/text';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useHealthStore } from '../../../store/health-store';
 import { Colors } from '../../../utils/colors';
-import { getSleepBehaviorChoices } from '../../../utils/google-health-utils';
+import { filterBehaviorsByName, getSleepBehaviorChoices } from '../../../utils/google-health-utils';
 
 interface SleepBehaviorPickerModalProps {
   visible: boolean;
@@ -17,12 +17,19 @@ export function SleepBehaviorPickerModal({ visible, onClose }: SleepBehaviorPick
   const addBehavior = useBehaviorStore(state => state.addBehavior);
   const sleepBehaviorId = useHealthStore(state => state.sleepBehaviorId);
   const setSleepBehavior = useHealthStore(state => state.setSleepBehavior);
+  const [query, setQuery] = useState('');
   if (!visible) return null;
-  const choices = getSleepBehaviorChoices(behaviors);
+  const searching = query.trim().length > 0;
+  const choices = filterBehaviorsByName(getSleepBehaviorChoices(behaviors), query);
+
+  const close = () => {
+    setQuery('');
+    onClose();
+  };
 
   const choose = (behaviorId: string | undefined) => {
     setSleepBehavior(behaviorId);
-    onClose();
+    close();
   };
 
   const createSleep = () => {
@@ -36,28 +43,39 @@ export function SleepBehaviorPickerModal({ visible, onClose }: SleepBehaviorPick
       visible
       transparent
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={close}
     >
       <View style={styles.overlay}>
         <Pressable
           style={StyleSheet.absoluteFill}
-          onPress={onClose}
+          onPress={close}
         />
         <View style={styles.sheet}>
           <Text style={styles.sheetTitle}>Log Fitbit sleep to</Text>
-          <ScrollView>
-            <Pressable
-              style={({ pressed }) => [styles.choice, pressed && styles.pressed]}
-              onPress={() => choose(undefined)}
-            >
-              <Text style={[styles.choiceText, !sleepBehaviorId && styles.choiceSelected]}>Don’t sync sleep</Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.choice, pressed && styles.pressed]}
-              onPress={createSleep}
-            >
-              <Text style={styles.choiceText}>＋ New “Sleep” behaviour</Text>
-            </Pressable>
+          <TextInput
+            style={styles.search}
+            placeholder="Search behaviours"
+            placeholderTextColor={Colors.text.faint}
+            value={query}
+            onChangeText={setQuery}
+          />
+          <ScrollView keyboardShouldPersistTaps="handled">
+            {!searching && (
+              <>
+                <Pressable
+                  style={({ pressed }) => [styles.choice, pressed && styles.pressed]}
+                  onPress={() => choose(undefined)}
+                >
+                  <Text style={[styles.choiceText, !sleepBehaviorId && styles.choiceSelected]}>Don’t sync sleep</Text>
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [styles.choice, pressed && styles.pressed]}
+                  onPress={createSleep}
+                >
+                  <Text style={styles.choiceText}>＋ New “Sleep” behaviour</Text>
+                </Pressable>
+              </>
+            )}
             {choices.map(behavior => (
               <Pressable
                 key={behavior.id}
@@ -70,6 +88,7 @@ export function SleepBehaviorPickerModal({ visible, onClose }: SleepBehaviorPick
                 </Text>
               </Pressable>
             ))}
+            {searching && choices.length === 0 && <Text style={styles.empty}>No behaviours match.</Text>}
           </ScrollView>
         </View>
       </View>
@@ -82,6 +101,15 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: 'rgba(0,0,0,0.6)' },
   sheet: { maxHeight: '70%', backgroundColor: Colors.bg.card, borderRadius: 14, padding: 16, gap: 10 },
   sheetTitle: { color: Colors.text.primary, fontSize: 17, fontWeight: '700' },
+  search: {
+    backgroundColor: Colors.bg.input,
+    color: Colors.text.primary,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+  },
+  empty: { color: Colors.text.faint, fontSize: 14, paddingVertical: 12 },
   choice: {
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
