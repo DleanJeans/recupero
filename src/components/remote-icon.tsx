@@ -2,6 +2,7 @@ import React from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { useIconImage } from '../hooks/use-icon-image';
 import { DEFAULT_LAYER, getIconImageUrl, type ParsedIcon, presetLayer } from '../utils/icon-utils';
+import { CroppedImage } from './cropped-image';
 import { StackLayers } from './stack-layers';
 import { Text } from './text';
 
@@ -18,12 +19,23 @@ export function RemoteIcon({ parsed, box, imageRadius }: Props) {
   const url = getIconImageUrl(parsed);
   const image = useIconImage(url);
 
+  if (image.status === 'ready' && parsed.kind === 'image') {
+    return (
+      <CroppedImage
+        uri={image.uri}
+        box={box}
+        radius={radius}
+        crop={parsed.crop}
+      />
+    );
+  }
+
   if (image.status === 'ready') {
     return (
       <Image
         source={{ uri: image.uri }}
-        resizeMode={parsed.kind === 'image' ? 'cover' : 'contain'}
-        style={{ width: box, height: box, borderRadius: parsed.kind === 'image' ? radius : 0 }}
+        resizeMode="contain"
+        style={{ width: box, height: box }}
       />
     );
   }

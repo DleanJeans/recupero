@@ -6,7 +6,8 @@ import { findKitchenMix, getKitchenUrl, type KitchenMix } from './emoji-kitchen-
  *  - plain emoji: "🍕"
  *  - Emoji Kitchen mix: "mix:🍕+🔥"
  *  - stacked emoji: "stack:☕|😴,0.55,0.62,45,-20" (layers bottom to top, see StackLayer)
- *  - image: "https://…" (behaviours may also hold the older `{ uri }` object)
+ *  - image: "https://…", optionally cropped: "https://… crop:0.5,0.4,1.6" (see ImageCrop)
+ *    (behaviours may also hold the older `{ uri }` object)
  */
 export type IconValue = string | { uri: string } | null | undefined;
 
@@ -29,7 +30,19 @@ export type ParsedIcon =
   | { kind: 'emoji'; emoji: string }
   | { kind: 'mix'; left: string; right: string; mix: KitchenMix | null }
   | { kind: 'stack'; layers: StackLayer[] }
-  | { kind: 'image'; uri: string };
+  | { kind: 'image'; uri: string; crop?: ImageCrop };
+
+/** Which part of an image an icon shows: the centre point (fractions of the image) and how far it is zoomed in.
+ *  Zoom 1 means the image's short side fills the icon. */
+export interface ImageCrop {
+  x: number;
+  y: number;
+  zoom: number;
+}
+
+export const DEFAULT_CROP: ImageCrop = { x: 0.5, y: 0.5, zoom: 1 };
+export const MAX_CROP_ZOOM = 5;
+const IMAGE_PATTERN = /^(https?:\/\/\S+)(?:\s+crop:(-?[\d.]+),(-?[\d.]+),(-?[\d.]+))?$/i;
 
 const MIX_PREFIX = 'mix:';
 const STACK_PREFIX = 'stack:';
@@ -46,6 +59,41 @@ export const DEFAULT_LAYER: Omit<StackLayer, 'emoji'> = {
 
 export function isImageUrl(value: string): boolean {
   return /^https?:\/\/\S+$/i.test(value.trim());
+}
+
+function parseImage(text: string): ParsedIcon | null {
+  const match = IMAGE_PATTERN.exec(text);
+  if (!match) return null;
+  const [, uri, x, y, zoom] = match;
+  if (x == null) return { kind: 'image', uri };
+  return { kind: 'image', uri, crop: { x: Number(x), y: Number(y), zoom: Number(zoom) } };
+}
+
+/** Stores an image link with its crop; an untouched crop is left off. */
+export function imageIcon(uri: string, crop?: ImageCrop): string {
+  const url = uri.trim();
+  if (!crop || (crop.x === DEFAULT_CROP.x && crop.y === DEFAULT_CROP.y && crop.zoom === DEFAULT_CROP.zoom)) return url;
+  return `${url} crop:${round(crop.x, 3)},${round(crop.y, 3)},${round(crop.zoom, 2)}`;
+}
+
+/** Keeps the crop inside the image: zoom 1-MAX, and the centre far enough in that the icon is always covered. */
+export function clampCrop(crop: ImageCrop, width: number, height: number): ImageCrop {
+  const zoom = Math.min(MAX_CROP_ZOOM, Math.max(1, crop.zoom));
+  const short = Math.min(width, height);
+  // Half the visible box as a fraction of each image dimension.
+  const halfX = short / zoom / width / 2;
+  const halfY = short / zoom / height / 2;
+  const clamp = (v: number, half: number) => Math.min(1 - half, Math.max(half, v));
+  return { x: clamp(crop.x, halfX), y: clamp(crop.y, halfY), zoom };
+}
+
+/** Where to draw an image of natural size width x height so the crop fills a square box. */
+export function getCropFrame(width: number, height: number, box: number, crop: ImageCrop = DEFAULT_CROP) {
+  const { x, y, zoom } = clampCrop(crop, width, height);
+  const scale = (box / Math.min(width, height)) * zoom;
+  const w = width * scale;
+  const h = height * scale;
+  return { width: w, height: h, left: box / 2 - x * w, top: box / 2 - y * h };
 }
 
 function toNumber(raw: string | undefined, fallback: number): number {
@@ -69,10 +117,11 @@ function parseLayer(raw: string): StackLayer | null {
 }
 
 export function parseIcon(value: IconValue): ParsedIcon {
-  if (value && typeof value === 'object') return value.uri ? { kind: 'image', uri: value.uri } : { kind: 'none' };
+  if (value && typeof value === 'object') return parseImage(value.uri?.trim() ?? '') ?? { kind: 'none' };
   const text = value?.trim();
   if (!text) return { kind: 'none' };
-  if (isImageUrl(text)) return { kind: 'image', uri: text };
+  const image = parseImage(text);
+  if (image) return image;
   if (text.startsWith(MIX_PREFIX)) {
     const [left, right] = text.slice(MIX_PREFIX.length).split('+');
     if (left && right) return { kind: 'mix', left, right, mix: findKitchenMix(left, right) };

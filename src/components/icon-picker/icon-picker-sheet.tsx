@@ -26,6 +26,8 @@ const MIX_MODES: { value: MixMode; label: string }[] = [
 
 interface Props {
   value: string;
+  /** The item's name, used as the starting image search. */
+  nameHint?: string;
   onChange: (value: string) => void;
   onClose: () => void;
 }
@@ -39,7 +41,7 @@ function initialTabs(value: string): { tab: Tab; mixMode: MixMode } {
 }
 
 /** Bottom sheet for any icon: a plain emoji, an Emoji Kitchen mix, stacked emoji, or an image link. */
-export function IconPickerSheet({ value, onChange, onClose }: Props) {
+export function IconPickerSheet({ value, nameHint, onChange, onClose }: Props) {
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [{ tab, mixMode }, setTabs] = useState(() => initialTabs(value));
@@ -116,6 +118,7 @@ export function IconPickerSheet({ value, onChange, onClose }: Props) {
             {tab === 'image' && (
               <ImagePanel
                 value={value}
+                nameHint={nameHint}
                 onUse={use}
               />
             )}

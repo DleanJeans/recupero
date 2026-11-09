@@ -84,6 +84,7 @@ export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChang
       {open && (
         <IconPickerSheet
           value={value || suggestedEmoji || ''}
+          nameHint={nameHint}
           onChange={handleChange}
           onClose={handleClose}
         />

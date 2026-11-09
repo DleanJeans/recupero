@@ -8,17 +8,21 @@ import {
 } from '../src/utils/emoji-kitchen-utils';
 import {
   applyStackPreset,
+  clampCrop,
   DEFAULT_LAYER,
+  getCropFrame,
   getIconCacheName,
   getIconImageUrl,
   getLayerOffset,
   getLayerPolar,
   iconText,
+  imageIcon,
   mixIcon,
   parseIcon,
   stackIcon,
   toStackLayers,
 } from '../src/utils/icon-utils';
+import { getImageSearchUrl, parseImageCandidate } from '../src/utils/image-search-utils';
 
 describe('emoji kitchen index', () => {
   it('finds a mix in either order with the URL Google serves', () => {
@@ -125,5 +129,57 @@ describe('icon helpers', () => {
     expect(name).toMatch(/^[0-9a-f]{16}\.png$/);
     expect(getIconCacheName('https://x.test/a.PNG?v=1')).toBe(name);
     expect(getIconCacheName('https://x.test/b')).toMatch(/\.img$/);
+  });
+});
+
+describe('image crop', () => {
+  it('round-trips a cropped image and keeps old values', () => {
+    const stored = imageIcon('https://x.test/a.png', { x: 0.3, y: 0.6, zoom: 2 });
+    expect(stored).toBe('https://x.test/a.png crop:0.3,0.6,2');
+    expect(parseIcon(stored)).toEqual({
+      kind: 'image',
+      uri: 'https://x.test/a.png',
+      crop: { x: 0.3, y: 0.6, zoom: 2 },
+    });
+    expect(parseIcon({ uri: stored })).toEqual(parseIcon(stored));
+    expect(imageIcon('https://x.test/a.png', { x: 0.5, y: 0.5, zoom: 1 })).toBe('https://x.test/a.png');
+    expect(iconText(stored)).toBe('');
+  });
+
+  it('downloads the image without the crop', () => {
+    expect(getIconImageUrl(parseIcon('https://x.test/a.png crop:0.3,0.6,2'))).toBe('https://x.test/a.png');
+  });
+
+  it('keeps the icon covered', () => {
+    // A 200x100 image at zoom 1 shows its middle 100x100: x can range 0.25-0.75, y is fixed at 0.5.
+    expect(clampCrop({ x: 0, y: 0, zoom: 1 }, 200, 100)).toEqual({ x: 0.25, y: 0.5, zoom: 1 });
+    expect(clampCrop({ x: 0.5, y: 0.5, zoom: 9 }, 100, 100).zoom).toBe(5);
+  });
+
+  it('places the image so the crop centre is in the middle', () => {
+    expect(getCropFrame(200, 100, 50)).toEqual({ width: 100, height: 50, left: -25, top: 0 });
+    expect(getCropFrame(100, 100, 50, { x: 0.25, y: 0.25, zoom: 2 })).toEqual({
+      width: 100,
+      height: 100,
+      left: 0,
+      top: 0,
+    });
+  });
+});
+
+describe('image search', () => {
+  it('builds the search URL', () => {
+    expect(getImageSearchUrl(' oat milk ')).toBe('https://www.google.com/search?tbm=isch&q=oat%20milk');
+  });
+
+  it('accepts only http image candidates', () => {
+    expect(parseImageCandidate('{"src":"https://x.test/a.jpg","width":640,"height":480}')).toEqual({
+      src: 'https://x.test/a.jpg',
+      width: 640,
+      height: 480,
+    });
+    expect(parseImageCandidate('{"src":"data:image/png;base64,AAA"}')).toBeNull();
+    expect(parseImageCandidate('{}')).toBeNull();
+    expect(parseImageCandidate('not json')).toBeNull();
   });
 });
