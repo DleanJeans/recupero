@@ -20,6 +20,8 @@ import {
 import { Colors } from '../../../utils/colors';
 import { toDateString } from '../../../utils/date-utils';
 
+export const CHECKLIST_CARD_HEIGHT = 112;
+
 interface ChecklistStripCardProps {
   checklist: Checklist;
 }
@@ -79,6 +81,7 @@ export function ChecklistStripCard({ checklist }: ChecklistStripCardProps) {
 const styles = StyleSheet.create({
   card: {
     width: 128,
+    height: CHECKLIST_CARD_HEIGHT,
     padding: 10,
     borderRadius: 14,
     borderWidth: 1,

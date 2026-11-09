@@ -7,7 +7,9 @@ import { Text } from '../../../components/text';
 import { useChecklistsStore } from '../../../store/checklists-store';
 import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
-import { ChecklistStripCard } from './checklist-strip-card';
+import { CHECKLIST_CARD_HEIGHT, ChecklistStripCard } from './checklist-strip-card';
+
+const EMPTY_STRIP_HEIGHT = 44;
 
 /** Row of checklist cards above the category chips on Routines, ending with + New. */
 export function ChecklistStrip() {
@@ -19,7 +21,7 @@ export function ChecklistStrip() {
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      style={styles.strip}
+      style={[styles.strip, { height: empty ? EMPTY_STRIP_HEIGHT : CHECKLIST_CARD_HEIGHT }]}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
@@ -70,7 +72,6 @@ const styles = StyleSheet.create({
   addEmpty: {
     flexDirection: 'row',
     gap: 6,
-    minHeight: 44,
     paddingVertical: 10,
   },
   pressed: {
