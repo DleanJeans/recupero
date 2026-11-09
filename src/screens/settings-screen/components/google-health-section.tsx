@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Button } from '../../../components/button';
-import { Text } from '../../../components/text';
+import { Text, TextInput } from '../../../components/text';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useHealthStore } from '../../../store/health-store';
 import { Colors } from '../../../utils/colors';
 import { getGoogleHealthClientId } from '../../../utils/google-health-auth';
 import { connectGoogleHealth, disconnectGoogleHealth, syncGoogleHealth } from '../../../utils/google-health-sync';
+import { stepAzmGoal } from '../../../utils/google-health-utils';
 import { formatTime } from '../../../utils/time-utils';
 import { SleepBehaviorPickerModal } from './sleep-behavior-picker-modal';
-
-const AZM_GOAL_STEP = 5;
 
 /** Connects Google Health (Fitbit): sleep logs to a behaviour and fills Energy; Active Zone Minutes count toward a daily goal. */
 export function GoogleHealthSection() {
@@ -25,6 +24,7 @@ export function GoogleHealthSection() {
   const [connecting, setConnecting] = useState(false);
   const [connectError, setConnectError] = useState<string>();
   const [picking, setPicking] = useState(false);
+  const [goalText, setGoalText] = useState<string>();
   const configured = getGoogleHealthClientId() != null;
 
   const connect = async () => {
@@ -33,6 +33,12 @@ export function GoogleHealthSection() {
     const error = await connectGoogleHealth();
     setConnecting(false);
     setConnectError(error);
+  };
+
+  const commitGoal = () => {
+    const parsed = Number.parseInt(goalText ?? '', 10);
+    if (Number.isFinite(parsed) && parsed > 0) setAzmDailyGoal(parsed);
+    setGoalText(undefined);
   };
 
   const error = connectError ?? lastError;
@@ -75,15 +81,26 @@ export function GoogleHealthSection() {
               <View style={styles.stepper}>
                 <Pressable
                   style={({ pressed }) => [styles.step, pressed && styles.pressed]}
-                  onPress={() => setAzmDailyGoal(azmDailyGoal - AZM_GOAL_STEP)}
+                  onPress={() => setAzmDailyGoal(stepAzmGoal(azmDailyGoal, -1))}
                   accessibilityLabel="Lower goal"
                 >
                   <Text style={styles.stepText}>−</Text>
                 </Pressable>
-                <Text style={styles.value}>{azmDailyGoal} / day</Text>
+                <TextInput
+                  style={styles.goalInput}
+                  value={goalText ?? String(azmDailyGoal)}
+                  onChangeText={setGoalText}
+                  onBlur={commitGoal}
+                  onSubmitEditing={commitGoal}
+                  keyboardType="number-pad"
+                  selectTextOnFocus
+                  maxLength={3}
+                  accessibilityLabel="Active Zone Minutes goal per day"
+                />
+                <Text style={styles.value}>/ day</Text>
                 <Pressable
                   style={({ pressed }) => [styles.step, pressed && styles.pressed]}
-                  onPress={() => setAzmDailyGoal(azmDailyGoal + AZM_GOAL_STEP)}
+                  onPress={() => setAzmDailyGoal(stepAzmGoal(azmDailyGoal, 1))}
                   accessibilityLabel="Raise goal"
                 >
                   <Text style={styles.stepText}>+</Text>
@@ -157,6 +174,17 @@ const styles = StyleSheet.create({
   action: { color: Colors.type.desirable, fontSize: 14, fontWeight: '600' },
   danger: { color: Colors.status.dangerLight, fontSize: 14 },
   error: { color: Colors.status.dangerLight, fontSize: 12, lineHeight: 17, paddingHorizontal: 14, paddingBottom: 12 },
+  goalInput: {
+    minWidth: 44,
+    color: Colors.text.primary,
+    backgroundColor: Colors.bg.input,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   step: {
     width: 28,

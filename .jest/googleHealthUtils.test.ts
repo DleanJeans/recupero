@@ -14,6 +14,7 @@ import {
   mergeSleepIntoLogs,
   parseAzmRollupPoint,
   parseSleepDataPoint,
+  stepAzmGoal,
 } from '../src/utils/google-health-utils';
 import { getRefillEvent } from '../src/utils/need-utils';
 
@@ -241,5 +242,18 @@ describe('filterBehaviorsByName', () => {
   });
   it('returns everything for a blank query', () => {
     expect(filterBehaviorsByName(behaviors, '  ')).toBe(behaviors);
+  });
+});
+
+describe('stepAzmGoal', () => {
+  it('snaps to the next multiple of 5', () => {
+    expect(stepAzmGoal(27, 1)).toBe(30);
+    expect(stepAzmGoal(27, -1)).toBe(25);
+    expect(stepAzmGoal(30, 1)).toBe(35);
+    expect(stepAzmGoal(30, -1)).toBe(25);
+  });
+  it('never goes below 1', () => {
+    expect(stepAzmGoal(3, -1)).toBe(1);
+    expect(stepAzmGoal(1, -1)).toBe(1);
   });
 });

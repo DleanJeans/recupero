@@ -276,3 +276,9 @@ export function filterBehaviorsByName<T extends { name: string }>(behaviors: T[]
   const q = query.trim().toLowerCase();
   return q ? behaviors.filter(behavior => behavior.name.toLowerCase().includes(q)) : behaviors;
 }
+
+/** The next multiple of `step` above (or below) `goal`, never under 1: 27 -> 30, 30 -> 35, 30 -> 25. */
+export function stepAzmGoal(goal: number, direction: 1 | -1, step = 5): number {
+  const next = direction > 0 ? (Math.floor(goal / step) + 1) * step : (Math.ceil(goal / step) - 1) * step;
+  return Math.max(1, next);
+}
