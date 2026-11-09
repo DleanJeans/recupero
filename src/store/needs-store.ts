@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { NeedCheckIn, NeedCheckInSource, NeedConfig, NeedId, NeedMetadataSource, NeedRefill } from '../types/need';
+import { emptyRateHistory, type NeedRatePoint } from '../utils/need-history-utils';
 import {
   clampLevel,
   DEFAULT_NEED_CONFIGS,
@@ -17,10 +18,18 @@ import {
 import { useBehaviorStore } from './behavior-store';
 
 const MAX_CHECK_INS = 500;
+const MAX_RATE_POINTS = 200;
+
+export type NeedHistoryDisplay = 'lanes' | 'overlay';
 
 export interface NeedsStore {
   needs: Record<NeedId, NeedConfig>;
   checkIns: NeedCheckIn[];
+  /** Each need's learned rate over time, so history charts use the rate you had then. */
+  rateHistory: Record<NeedId, NeedRatePoint[]>;
+  /** Needs history screen: one chart per need, or all needs on one chart. */
+  historyDisplay: NeedHistoryDisplay;
+  setHistoryDisplay: (display: NeedHistoryDisplay) => void;
   /** Records how the need feels now and nudges its decay rate toward what that implies. */
   checkIn: (needId: NeedId, level: number, source: NeedCheckInSource) => void;
   setRefill: (needId: NeedId, behaviorId: string, refill: NeedRefill | undefined) => void;
@@ -29,6 +38,25 @@ export interface NeedsStore {
   setEnabled: (needId: NeedId, enabled: boolean) => void;
   resetLearning: (needId: NeedId) => void;
 }
+
+function withRateHistory(
+  saved: Partial<Record<NeedId, NeedRatePoint[]>> | undefined,
+  needs: Record<NeedId, NeedConfig>,
+): Record<NeedId, NeedRatePoint[]> {
+  const result = emptyRateHistory();
+  for (const id of NEED_IDS) {
+    const points = saved?.[id];
+    if (points?.length) result[id] = points;
+    // Rates learned before history was kept apply from the start.
+    else if (needs[id].emptyHours !== DEFAULT_NEED_CONFIGS[id].emptyHours) {
+      result[id] = [{ ts: 0, emptyHours: needs[id].emptyHours }];
+    }
+  }
+  return result;
+}
+
+const appendRate = (points: NeedRatePoint[], ts: number, emptyHours: number) =>
+  [...points, { ts, emptyHours }].slice(-MAX_RATE_POINTS);
 
 function withDefaults(needs: Partial<Record<NeedId, Partial<NeedConfig>>> | undefined): Record<NeedId, NeedConfig> {
   const result = {} as Record<NeedId, NeedConfig>;
@@ -49,6 +77,9 @@ export const useNeedsStore = create<NeedsStore>()(
     set => ({
       needs: withDefaults(undefined),
       checkIns: [],
+      rateHistory: emptyRateHistory(),
+      historyDisplay: 'lanes',
+      setHistoryDisplay: display => set({ historyDisplay: display }),
       checkIn: (needId, level, source) =>
         set(state => {
           const now = Date.now();
@@ -65,14 +96,18 @@ export const useNeedsStore = create<NeedsStore>()(
           const { anchor } = simulateNeed(events, getDecayPerHour(config), now);
           const entry: NeedCheckIn = { id: uuidv4(), needId, ts: now, level: clampLevel(level), source };
           const emptyHours = learnEmptyHours(config.emptyHours, anchor, entry);
+          const learned = emptyHours !== config.emptyHours;
           return {
             checkIns: [...state.checkIns, entry].slice(-MAX_CHECK_INS),
+            rateHistory: learned
+              ? { ...state.rateHistory, [needId]: appendRate(state.rateHistory[needId], now, emptyHours) }
+              : state.rateHistory,
             needs: {
               ...state.needs,
               [needId]: {
                 ...config,
                 emptyHours,
-                learnedFrom: emptyHours !== config.emptyHours ? config.learnedFrom + 1 : config.learnedFrom,
+                learnedFrom: learned ? config.learnedFrom + 1 : config.learnedFrom,
               },
             },
           };
@@ -97,6 +132,10 @@ export const useNeedsStore = create<NeedsStore>()(
         set(state => ({ needs: { ...state.needs, [needId]: { ...state.needs[needId], enabled } } })),
       resetLearning: needId =>
         set(state => ({
+          rateHistory: {
+            ...state.rateHistory,
+            [needId]: appendRate(state.rateHistory[needId], Date.now(), DEFAULT_NEED_CONFIGS[needId].emptyHours),
+          },
           needs: {
             ...state.needs,
             [needId]: {
@@ -110,14 +149,27 @@ export const useNeedsStore = create<NeedsStore>()(
     {
       name: 'recupero-needs',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 1,
+      version: 2,
       migrate: persistedState => {
         const state = persistedState as Partial<NeedsStore>;
-        return { ...state, needs: withDefaults(state.needs), checkIns: state.checkIns ?? [] } as NeedsStore;
+        const needs = withDefaults(state.needs);
+        return {
+          ...state,
+          needs,
+          checkIns: state.checkIns ?? [],
+          rateHistory: withRateHistory(state.rateHistory, needs),
+        } as NeedsStore;
       },
       merge: (persisted, current) => {
         const state = persisted as Partial<NeedsStore> | undefined;
-        return { ...current, ...state, needs: withDefaults(state?.needs), checkIns: state?.checkIns ?? [] };
+        const needs = withDefaults(state?.needs);
+        return {
+          ...current,
+          ...state,
+          needs,
+          checkIns: state?.checkIns ?? [],
+          rateHistory: withRateHistory(state?.rateHistory, needs),
+        };
       },
     },
   ),

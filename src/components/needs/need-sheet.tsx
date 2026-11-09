@@ -32,6 +32,8 @@ import { BehaviorIcon } from '../behavior-icon';
 import { CueSectionLabel } from '../cues/cue-section-label';
 import { Text, TextInput } from '../text';
 import { NEED_TONE_COLORS } from './need-bar-row';
+import { NeedHistorySection } from './need-history-section';
+import { NeedRateLearning } from './need-rate-learning';
 
 interface NeedSheetProps {
   /** The need to show; the sheet is hidden while this is undefined. */
@@ -184,6 +186,11 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                 </Text>
               </View>
             </View>
+
+            <NeedHistorySection
+              needId={need.id}
+              onEditLog={editLog}
+            />
 
             <CueSectionLabel>{info.question}</CueSectionLabel>
             <View style={styles.checkIns}>
@@ -356,6 +363,8 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                 <Text style={styles.addText}>Add a category or behaviour that refills {info.label}</Text>
               </Pressable>
             )}
+
+            <NeedRateLearning needId={need.id} />
           </ScrollView>
         </View>
       </View>

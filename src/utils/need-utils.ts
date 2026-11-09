@@ -125,9 +125,10 @@ export function getNeedMetadataSource(
   return field ? withCategories(field.key, DEFAULT_HUNGER_FULL_KCAL) : undefined;
 }
 
+/** `logId` is the refill's log, or the check-in's id for check-ins. */
 export type NeedEvent =
-  | { ts: number; kind: 'add'; amount: number; behaviorId: string }
-  | { ts: number; kind: 'set'; level: number; behaviorId?: string; checkIn?: boolean };
+  | { ts: number; kind: 'add'; amount: number; behaviorId: string; logId?: string }
+  | { ts: number; kind: 'set'; level: number; behaviorId?: string; checkIn?: boolean; logId?: string };
 
 export function getRefillEvent(
   behaviorId: string,
@@ -137,15 +138,28 @@ export function getRefillEvent(
 ): NeedEvent | undefined {
   const fromMetadata = source ? log.metadata?.[source.fieldKey] : undefined;
   if (source && typeof fromMetadata === 'number' && fromMetadata > 0 && source.fullAmount > 0) {
-    return { ts: log.timestamp, kind: 'add', amount: (fromMetadata / source.fullAmount) * 100, behaviorId };
+    return {
+      ts: log.timestamp,
+      kind: 'add',
+      amount: (fromMetadata / source.fullAmount) * 100,
+      behaviorId,
+      logId: log.id,
+    };
   }
   if (!refill) return undefined;
-  if (refill.mode === 'set') return { ts: log.timestamp, kind: 'set', level: 100, behaviorId };
-  if (refill.mode === 'add') return { ts: log.timestamp, kind: 'add', amount: refill.amount, behaviorId };
+  if (refill.mode === 'set') return { ts: log.timestamp, kind: 'set', level: 100, behaviorId, logId: log.id };
+  if (refill.mode === 'add')
+    return { ts: log.timestamp, kind: 'add', amount: refill.amount, behaviorId, logId: log.id };
   if (log.endTimestamp == null || refill.fullMinutes <= 0) return undefined;
   // Wearable sleep logs count only time asleep, so a restless night refills less than its time in bed.
   const minutes = log.sleep?.asleepMinutes ?? (log.endTimestamp - log.timestamp) / 60_000;
-  return { ts: log.endTimestamp, kind: 'add', amount: (minutes / refill.fullMinutes) * 100, behaviorId };
+  return {
+    ts: log.endTimestamp,
+    kind: 'add',
+    amount: (minutes / refill.fullMinutes) * 100,
+    behaviorId,
+    logId: log.id,
+  };
 }
 
 /**
@@ -199,7 +213,7 @@ export function getNeedEvents(
   }
   for (const checkIn of checkIns) {
     if (checkIn.needId === needId && checkIn.ts >= since) {
-      events.push({ ts: checkIn.ts, kind: 'set', level: checkIn.level, checkIn: true });
+      events.push({ ts: checkIn.ts, kind: 'set', level: checkIn.level, checkIn: true, logId: checkIn.id });
     }
   }
   return events.sort(compareNeedEvents);

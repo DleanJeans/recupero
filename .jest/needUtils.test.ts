@@ -76,7 +76,7 @@ describe('getNeedEvents + simulateNeed', () => {
   it('adds kcal as a share of the full amount and decays after', () => {
     const lunch = makeBehavior('lunch', [{ id: 'l1', timestamp: T0, metadata: { field_kcal: 400 } }]);
     const events = getNeedEvents('hunger', DEFAULT_NEED_CONFIGS.hunger, [lunch], [], source, 0);
-    expect(events).toEqual([{ ts: T0, kind: 'add', amount: 50, behaviorId: 'lunch' }]);
+    expect(events).toMatchObject([{ ts: T0, kind: 'add', amount: 50, behaviorId: 'lunch' }]);
     // Starts unknown at 50, +50 = 100, then 2h at 12.5%/h.
     expect(simulateNeed(events, 12.5, T0 + 2 * H).level).toBeCloseTo(75);
     expect(NEED_UNKNOWN_START_LEVEL).toBe(50);
@@ -96,7 +96,7 @@ describe('getNeedEvents + simulateNeed', () => {
     };
     const sleep = makeBehavior('sleep', [{ id: 'z', timestamp: T0, endTimestamp: T0 + 4 * H }]);
     const events = getNeedEvents('energy', config, [sleep], [], undefined, 0);
-    expect(events).toEqual([{ ts: T0 + 4 * H, kind: 'add', amount: 50, behaviorId: 'sleep' }]);
+    expect(events).toMatchObject([{ ts: T0 + 4 * H, kind: 'add', amount: 50, behaviorId: 'sleep' }]);
   });
 
   it('lets a check-in set the level and ignores other needs and old logs', () => {

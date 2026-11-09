@@ -1,11 +1,15 @@
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useNeedLevels } from '../../hooks/use-need-levels';
+import type { RootStackParamList } from '../../types/navigation';
 import type { NeedId } from '../../types/need';
 import { Colors } from '../../utils/colors';
 import { formatNextCraving } from '../../utils/need-utils';
 import { formatTime } from '../../utils/time-utils';
 import { CueSectionLabel } from '../cues/cue-section-label';
+import { Text } from '../text';
 import { NeedBarRow } from './need-bar-row';
 import { NeedSheet } from './need-sheet';
 
@@ -13,11 +17,21 @@ import { NeedSheet } from './need-sheet';
 export function NeedsPanel() {
   const { needs, now } = useNeedLevels();
   const [openId, setOpenId] = useState<NeedId>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   if (needs.length === 0) return null;
 
   return (
     <View style={styles.group}>
-      <CueSectionLabel>Needs</CueSectionLabel>
+      <View style={styles.header}>
+        <CueSectionLabel>Needs</CueSectionLabel>
+        <Pressable
+          onPress={() => navigation.navigate('NeedsHistory')}
+          hitSlop={8}
+          accessibilityRole="button"
+        >
+          <Text style={styles.action}>History ›</Text>
+        </Pressable>
+      </View>
       <View style={styles.card}>
         {needs.map(need => (
           <NeedBarRow
@@ -41,6 +55,17 @@ export function NeedsPanel() {
 const styles = StyleSheet.create({
   group: {
     gap: 8,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    paddingRight: 4,
+  },
+  action: {
+    color: Colors.text.light,
+    fontSize: 12,
+    fontWeight: '700',
   },
   card: {
     backgroundColor: Colors.bg.card,
