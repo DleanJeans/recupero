@@ -72,6 +72,7 @@ function renderIcon(icon: React.ReactNode, active?: boolean) {
 
 const styles = StyleSheet.create({
   chip: {
+    justifyContent: 'center',
     backgroundColor: 'transparent',
     paddingHorizontal: 10,
     paddingVertical: 6,

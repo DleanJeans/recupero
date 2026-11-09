@@ -83,7 +83,7 @@ export function CategoryPicker({
   const addButtonProps = {
     isOpen: false,
     onPress: handleAddPress,
-    style: styles.barChip,
+    style: bar ? styles.barChip : styles.squareButton,
   };
 
   if (bar) {
@@ -134,4 +134,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   scrollContent: { paddingHorizontal: 16, gap: 8, paddingVertical: 4 },
   barChip: { paddingHorizontal: 8 },
+  squareButton: { width: 40, height: 40, alignSelf: 'center' },
 });
