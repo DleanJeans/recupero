@@ -16,7 +16,7 @@ interface ScreenUiStore {
 export const useScreenUiStore = create<ScreenUiStore>()(set => ({
   homeSelectedCategoryId: null,
   dayScreenSelectedDate: null,
-  dayScreenSelectedTab: 'logs',
+  dayScreenSelectedTab: 'metadata',
   taskScreenSelectedDate: null,
   setHomeSelectedCategoryId: id => set({ homeSelectedCategoryId: id }),
   setDayScreenSelectedDate: date => set({ dayScreenSelectedDate: date }),

@@ -2,54 +2,55 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useHealthStore } from '../../store/health-store';
 import { Colors } from '../../utils/colors';
-import { toDateString } from '../../utils/date-utils';
 import { getAzmGoalDaysThisWeek, getAzmWeekTotal } from '../../utils/google-health-utils';
-import { CueSectionLabel } from '../cues/cue-section-label';
 import { DailyGoalProgressBar } from '../daily-goal-progress-bar';
 import { Text } from '../text';
 
-/** Today's Fitbit Active Zone Minutes against the daily goal, under the Needs panel. Hidden until Fitbit is connected. */
-export function AzmGoalCard() {
+interface AzmGoalCardProps {
+  /** The day to show, "YYYY-MM-DD". */
+  date: string;
+}
+
+/** A day's Fitbit Active Zone Minutes against the daily goal, on the Daily screen. Hidden until Fitbit is connected. */
+export function AzmGoalCard({ date }: AzmGoalCardProps) {
   const connected = useHealthStore(state => state.tokens != null);
   const azmByDay = useHealthStore(state => state.azmByDay);
   const goal = useHealthStore(state => state.azmDailyGoal);
   if (!connected) return null;
 
-  const now = Date.now();
-  const today = azmByDay[toDateString(new Date(now))] ?? 0;
-  const met = today >= goal;
-  const week = getAzmWeekTotal(azmByDay, now);
-  const daysMet = getAzmGoalDaysThisWeek(azmByDay, goal, now);
+  const dayMs = new Date(`${date}T12:00:00`).getTime();
+  const minutes = azmByDay[date] ?? 0;
+  const met = minutes >= goal;
+  const week = getAzmWeekTotal(azmByDay, dayMs);
+  const daysMet = getAzmGoalDaysThisWeek(azmByDay, goal, dayMs);
 
   return (
-    <View style={styles.group}>
-      <CueSectionLabel>Active Zone Minutes</CueSectionLabel>
-      <View style={styles.card}>
-        <View style={styles.row}>
-          <Text style={styles.emoji}>⚡</Text>
-          <Text style={styles.label}>Today</Text>
-          <Text style={[styles.value, met && styles.met]}>
-            {today} / {goal}
-            {met ? ' ✓' : ''}
-          </Text>
-        </View>
-        <DailyGoalProgressBar
-          current={today}
-          after={today}
-          goal={goal}
-        />
-        <Text style={styles.detail}>
-          {week} this week · goal met {daysMet} of 7 days
+    <View style={styles.card}>
+      <View style={styles.row}>
+        <Text style={styles.emoji}>⚡</Text>
+        <Text style={styles.label}>Active Zone Minutes</Text>
+        <Text style={[styles.value, met && styles.met]}>
+          {minutes} / {goal}
+          {met ? ' ✓' : ''}
         </Text>
       </View>
+      <DailyGoalProgressBar
+        current={minutes}
+        after={minutes}
+        goal={goal}
+      />
+      <Text style={styles.detail}>
+        {week} in the last 7 days · goal met {daysMet} of 7 days
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  group: { gap: 8 },
   card: {
     backgroundColor: Colors.bg.card,
+    marginHorizontal: 16,
+    marginBottom: 8,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.border.default,

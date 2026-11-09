@@ -22,7 +22,7 @@ const ITEMS: Array<{
   { route: 'Cues', label: 'Cues', icon: 'eye' },
   { route: 'Cravings', label: 'Cravings', icon: 'flame' },
   { route: 'Home', label: 'Routines', icon: 'repeat' },
-  { route: 'Day', label: 'Day', icon: 'calendar' },
+  { route: 'Day', label: 'Daily', icon: 'calendar' },
   { route: 'Tasks', label: 'Tasks', icon: 'checkmark-circle' },
 ];
 export type BottomNavRoute = (typeof ITEMS)[number]['route'];
