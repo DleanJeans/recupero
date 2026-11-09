@@ -14,6 +14,7 @@ import { useAppFonts } from './src/hooks/use-app-fonts';
 import { useAppUsageSync } from './src/hooks/use-app-usage-sync';
 import { useDeferredBottomNavNavigation } from './src/hooks/use-deferred-bottom-nav-navigation';
 import { useDevHandoffImport } from './src/hooks/use-dev-handoff-import';
+import { useGoogleHealthSync } from './src/hooks/use-google-health-sync';
 import { useNeedNudges } from './src/hooks/use-need-nudges';
 import { useReminderEngine } from './src/hooks/use-reminder-engine';
 import { BehaviorFormScreen } from './src/screens/behavior-form-screen';
@@ -38,6 +39,7 @@ import { TimerScreen } from './src/screens/timer-screen';
 import { useBehaviorStore } from './src/store/behavior-store';
 import { useCravingsStore } from './src/store/cravings-store';
 import { useCuesStore } from './src/store/cues-store';
+import { useHealthStore } from './src/store/health-store';
 import { useNeedsStore } from './src/store/needs-store';
 import { useSettingsStore } from './src/store/settings-store';
 import { useShopStore } from './src/store/shop-store';
@@ -51,6 +53,7 @@ const PERSISTED_STORES = [
   useBehaviorStore,
   useCravingsStore,
   useCuesStore,
+  useHealthStore,
   useNeedsStore,
   useSettingsStore,
   useShopStore,
@@ -94,6 +97,7 @@ export default function App() {
   const [activeRouteName, setActiveRouteName] = useState<string | undefined>();
   const { pendingRouteName, deferNavigation, completeNavigation } = useDeferredBottomNavNavigation<BottomNavRoute>();
   useAppUsageSync(storesReady);
+  useGoogleHealthSync(storesReady);
   useReminderEngine(storesReady, navigationRef);
   useNeedNudges(storesReady, navigationRef);
   useDevHandoffImport(storesReady);

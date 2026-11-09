@@ -13,9 +13,11 @@ import type {
   StarPeriod,
 } from '../types/behavior';
 import type { CueRef } from '../types/cue';
+import type { HealthSleep } from '../types/health';
 import type { AddTaskInput, TaskEntry } from '../types/task';
 import { mergeTrackedSessionsIntoLogs, siteMatchesDomain } from '../utils/app-usage-utils';
 import { getGroupKey } from '../utils/behavior-group-utils';
+import { mergeSleepIntoLogs } from '../utils/google-health-utils';
 import { getLogEndTimestamp } from '../utils/log-utils';
 import {
   getLoggableDefaultMetadata,
@@ -97,6 +99,8 @@ interface BehaviorStore {
   ) => void;
   /** Turns app sessions and Firefox site visits into logs for behaviors that auto-track them, then marks them synced. */
   applyAppUsageSessions: (appSessions: AppUsageSession[], siteSessions: SiteSession[], syncedUntil: number) => void;
+  /** Logs synced sleeps to a behaviour (deduped by data point id). Returns the updated imported ids. */
+  applyHealthSleeps: (behaviorId: string, sleeps: HealthSleep[], importedIds: string[]) => string[];
   logBehavior: (
     id: string,
     timestamp?: number,
@@ -260,6 +264,25 @@ export const useBehaviorStore = create<BehaviorStore>()(
             };
           }),
         })),
+      applyHealthSleeps: (behaviorId, sleeps, importedIds) => {
+        const behavior = get().behaviors.find(b => b.id === behaviorId);
+        if (!behavior) return importedIds;
+        const result = mergeSleepIntoLogs(behavior.logs, sleeps, importedIds, uuidv4);
+        if (result.changed) {
+          set(state => ({
+            behaviors: state.behaviors.map(b =>
+              b.id === behaviorId
+                ? {
+                    ...b,
+                    logs: result.logs,
+                    lastTimestamp: Math.max(b.lastTimestamp ?? 0, ...result.logs.map(log => getLogEndTimestamp(log))),
+                  }
+                : b,
+            ),
+          }));
+        }
+        return result.importedIds;
+      },
       removeBehavior: id =>
         set(state => {
           useCuesStore.getState().removeBehaviorReferences(id);

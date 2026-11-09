@@ -33,9 +33,21 @@ export interface LogEntry {
   cues?: CueRef[];
   /** Shared by logs saved together with habit stacking. Undefined for logs saved on their own. */
   stackId?: string;
+  /** Id of the record this log was imported from (e.g. a Google Health sleep data point), used to dedupe syncs. */
+  externalId?: string;
+  /** Sleep details from a wearable. The Energy need refills by `asleepMinutes`, not time in bed. */
+  sleep?: LogSleepDetails;
 }
 
-export type LogSource = 'app-usage' | 'site-visit';
+export interface LogSleepDetails {
+  asleepMinutes: number;
+  awakeMinutes?: number;
+  deepMinutes?: number;
+  lightMinutes?: number;
+  remMinutes?: number;
+}
+
+export type LogSource = 'app-usage' | 'site-visit' | 'google-health';
 
 /** Automatic logging from Android app usage (screen time). */
 export interface AutoTrackApp {

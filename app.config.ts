@@ -33,6 +33,17 @@ const plugins: NonNullable<ExpoConfig['plugins']> = [
   ['react-native-maps', { androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY }],
 ];
 
+// Google Health (Fitbit) sign-in: an iOS-type OAuth client id from Google Cloud (works on Android with PKCE,
+// no client secret). Its reversed id is registered as a URL scheme so the sign-in redirect returns to the app.
+const googleHealthClientId = process.env.GOOGLE_HEALTH_CLIENT_ID;
+const googleHealthSuffix = '.apps.googleusercontent.com';
+const googleHealthScheme = googleHealthClientId?.endsWith(googleHealthSuffix)
+  ? `com.googleusercontent.apps.${googleHealthClientId.slice(0, -googleHealthSuffix.length)}`
+  : undefined;
+if (!googleHealthScheme) {
+  console.warn('GOOGLE_HEALTH_CLIENT_ID is not set: Settings > Google Health will be unavailable.');
+}
+
 if (!process.env.GOOGLE_MAPS_API_KEY) {
   console.warn('GOOGLE_MAPS_API_KEY is not set: the location cue map will render blank on Android.');
 }
@@ -70,6 +81,10 @@ const config: ExpoConfig = {
         data: [{ scheme: 'exp+recupero' }],
         category: ['BROWSABLE', 'DEFAULT'],
       },
+      // Google Health sign-in redirect.
+      ...(googleHealthScheme
+        ? [{ action: 'VIEW', data: [{ scheme: googleHealthScheme }], category: ['BROWSABLE', 'DEFAULT'] }]
+        : []),
       // Dev build only: receive JSON backups from prod/preview ("Send to dev") or the share sheet.
       ...(isDev
         ? [
@@ -87,6 +102,7 @@ const config: ExpoConfig = {
   },
   runtimeVersion: '0.0.1',
   extra: {
+    googleHealthClientId,
     eas: {
       projectId: '8a864518-09f4-4aac-b87c-44f7cfe5ae0c',
     },
