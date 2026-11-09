@@ -105,6 +105,12 @@ export function getStripSwipe(dx: number, dy: number, minDistance = 24): 'expand
   return dy > 0 ? 'expand' : 'collapse';
 }
 
+/** Where the strip settles after a drag: a fast flick wins (down expands), otherwise whichever end is nearer. */
+export function getStripSettleTarget(progress: number, velocityY: number): boolean {
+  if (Math.abs(velocityY) > 0.4) return velocityY > 0;
+  return progress >= 0.5;
+}
+
 /** Slot offset (-1, 0 or 1) for the row at `index` while the row at `from` is dragged to `to`. */
 export function getDragShift(index: number, drag: { from: number; to: number } | null): number {
   if (!drag || index === drag.from) return 0;

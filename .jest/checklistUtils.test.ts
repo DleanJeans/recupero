@@ -5,6 +5,7 @@ import {
   getChecklistProgress,
   getDragShift,
   getRunnableItems,
+  getStripSettleTarget,
   getStripSwipe,
   getTodayRun,
   isRunDone,
@@ -96,6 +97,13 @@ describe('checklist-utils', () => {
     expect(getStripSwipe(60, 30)).toBeNull();
     expect(getStripSwipe(0, 10)).toBeNull();
     expect(getStripSwipe(30, 40)).toBeNull();
+  });
+
+  it('settles the strip by flick direction, else by the nearer end', () => {
+    expect(getStripSettleTarget(0.2, 1)).toBe(true);
+    expect(getStripSettleTarget(0.9, -1)).toBe(false);
+    expect(getStripSettleTarget(0.6, 0.1)).toBe(true);
+    expect(getStripSettleTarget(0.4, -0.1)).toBe(false);
   });
 
   it('describes status for the Routines strip', () => {
