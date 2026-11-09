@@ -12,6 +12,7 @@ import { useBehaviorStore } from '../../../store/behavior-store';
 import { useSettingsStore } from '../../../store/settings-store';
 import type { BehaviorEntry, Category } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
+import { iconText } from '../../../utils/icon-utils';
 import { getMoneyRewardForLog, getStarMoneyMultiplierForLog } from '../../../utils/money-utils';
 import { formatStopwatchDuration } from '../../../utils/stopwatch-utils';
 import { formatTime } from '../../../utils/time-utils';
@@ -160,7 +161,7 @@ function TimerBehaviorChip({ behavior, category, status }: TimerBehaviorChipProp
       <View style={styles.behaviorChipText}>
         {category && (
           <Text style={styles.categoryLabel}>
-            {category.emoji} {category.name}
+            {iconText(category.emoji)} {category.name}
           </Text>
         )}
         <View style={styles.behaviorNameRow}>

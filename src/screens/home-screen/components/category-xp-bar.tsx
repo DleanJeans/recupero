@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text } from '../../../components/text';
+import { AppIcon } from '../../../components/app-icon';
 import { XPBar } from '../../../components/xp-bar';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useSettingsStore } from '../../../store/settings-store';
@@ -37,7 +37,10 @@ export function CategoryXPBar({ selectedCategoryId, motionEnabled = true }: Prop
   return (
     <View style={styles.section}>
       <View style={styles.row}>
-        <Text style={styles.emoji}>{category.emoji}</Text>
+        <AppIcon
+          value={category.emoji}
+          style={styles.emoji}
+        />
         <View style={styles.barContainer}>
           <XPBar
             xp={xp}

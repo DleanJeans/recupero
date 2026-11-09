@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { AppIcon } from '../../../components/app-icon';
 import { Text } from '../../../components/text';
 import type { SavedPlace } from '../../../types/cue';
 import { Colors } from '../../../utils/colors';
@@ -21,7 +22,10 @@ export function SavedPlaceRow({ place, onPress }: SavedPlaceRowProps) {
       accessibilityHint="Double tap to edit this saved place."
     >
       <View style={[styles.icon, place.isHome && styles.homeIcon]}>
-        <Text style={styles.emoji}>{getPlaceEmoji(place)}</Text>
+        <AppIcon
+          value={getPlaceEmoji(place)}
+          style={styles.emoji}
+        />
       </View>
       <View style={styles.copy}>
         <View style={styles.nameRow}>

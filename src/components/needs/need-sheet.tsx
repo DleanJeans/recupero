@@ -28,6 +28,7 @@ import {
   NEED_INFO,
 } from '../../utils/need-utils';
 import { formatCompactDate, formatElapsedNumeric, formatTime } from '../../utils/time-utils';
+import { AppIcon } from '../app-icon';
 import { BehaviorIcon } from '../behavior-icon';
 import { CueSectionLabel } from '../cues/cue-section-label';
 import { Text, TextInput } from '../text';
@@ -391,7 +392,10 @@ function CategoryRefillRow({ emoji, name, count, amount, onPress, onAmountPress,
       disabled={!onPress}
       accessibilityRole={onPress ? 'button' : undefined}
     >
-      <Text style={styles.categoryEmoji}>{emoji}</Text>
+      <AppIcon
+        value={emoji}
+        style={styles.categoryEmoji}
+      />
       <View style={styles.rowText}>
         <Text
           style={styles.rowName}

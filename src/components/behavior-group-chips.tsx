@@ -10,6 +10,7 @@ import {
   normalizeGroupName,
 } from '../utils/behavior-group-utils';
 import { Colors } from '../utils/colors';
+import { iconText } from '../utils/icon-utils';
 import { BehaviorIcon } from './behavior-icon';
 import { Text } from './text';
 
@@ -41,7 +42,7 @@ export function BehaviorGroupChips({ behavior, onSelect }: Props) {
           style={styles.groupName}
           numberOfLines={1}
         >
-          {groupEmoji ? `${groupEmoji} ` : ''}
+          {iconText(groupEmoji) ? `${iconText(groupEmoji)} ` : ''}
           {groupName}
         </Text>
         <Text

@@ -2,6 +2,7 @@ import React from 'react';
 import type { GestureResponderEvent, StyleProp, ViewStyle } from 'react-native';
 import { StyleSheet } from 'react-native';
 import { Colors } from '../../utils/colors';
+import { AppIcon } from '../app-icon';
 import { Button } from '../button';
 import { Text } from '../text';
 
@@ -59,7 +60,12 @@ export function CategoryBarChip({
 
 function renderIcon(icon: React.ReactNode, active?: boolean) {
   if (typeof icon === 'string') {
-    return <Text style={[styles.chipEmoji, !active && styles.chipEmojiInactive]}>{icon}</Text>;
+    return (
+      <AppIcon
+        value={icon}
+        style={[styles.chipEmoji, !active && styles.chipEmojiInactive]}
+      />
+    );
   }
   return icon;
 }

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { AppIcon } from '../../../components/app-icon';
 import { CueTriggerIcon } from '../../../components/cues/cue-trigger-icon';
 import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
@@ -29,7 +30,10 @@ export function CueSourceRow({ source, stats, maxXp, onPress }: CueSourceRowProp
     >
       {source.emoji ? (
         <View style={[styles.emojiIcon, { backgroundColor: `${accent}1f` }]}>
-          <Text style={styles.emoji}>{source.emoji}</Text>
+          <AppIcon
+            value={source.emoji}
+            style={styles.emoji}
+          />
         </View>
       ) : (
         <CueTriggerIcon type={type} />

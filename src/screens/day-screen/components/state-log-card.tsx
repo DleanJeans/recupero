@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { AppIcon } from '../../../components/app-icon';
 import { Text } from '../../../components/text';
 import { useCustomCueOptions } from '../../../hooks/use-custom-cue-options';
 import type { BodySensationLog, MoodLog } from '../../../types/cue';
@@ -26,7 +27,10 @@ export function StateLogCard(props: StateLogCardProps) {
       accessibilityLabel={`${kindLabel}: ${option.label} at ${formatTime(props.log.ts)}`}
     >
       <View style={styles.header}>
-        <Text style={styles.emoji}>{option.emoji}</Text>
+        <AppIcon
+          value={option.emoji}
+          style={styles.emoji}
+        />
         <Text
           style={[styles.kind, { color: accent }]}
           numberOfLines={1}

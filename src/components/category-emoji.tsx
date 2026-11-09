@@ -1,7 +1,7 @@
 import React from 'react';
 import { useBehaviorStore } from '../store/behavior-store';
 import type { BehaviorEntry } from '../types/behavior';
-import { Text } from './text';
+import { AppIcon } from './app-icon';
 
 interface Props {
   behavior: BehaviorEntry;
@@ -15,5 +15,10 @@ export const CategoryEmoji = React.memo(function CategoryEmoji({ behavior, size 
   });
 
   if (!emoji) return null;
-  return <Text style={{ fontSize: size }}>{emoji}</Text>;
+  return (
+    <AppIcon
+      value={emoji}
+      size={size}
+    />
+  );
 });

@@ -13,6 +13,7 @@ import {
   getCueSources,
   moodCueRef,
 } from '../../utils/cue-utils';
+import { AppIcon } from '../app-icon';
 import { Text } from '../text';
 import { type AddCueOptionKind, AddCueOptionModal } from './add-cue-option-modal';
 
@@ -124,7 +125,10 @@ function CueChip({ source, active, onPress }: CueChipProps) {
       accessibilityState={{ checked: active }}
     >
       {source.emoji ? (
-        <Text style={styles.emoji}>{source.emoji}</Text>
+        <AppIcon
+          value={source.emoji}
+          style={styles.emoji}
+        />
       ) : (
         <Ionicons
           name="location-outline"

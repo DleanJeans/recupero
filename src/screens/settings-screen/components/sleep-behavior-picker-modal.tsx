@@ -5,6 +5,7 @@ import { useBehaviorStore } from '../../../store/behavior-store';
 import { useHealthStore } from '../../../store/health-store';
 import { Colors } from '../../../utils/colors';
 import { filterBehaviorsByName, getSleepBehaviorChoices } from '../../../utils/google-health-utils';
+import { iconText } from '../../../utils/icon-utils';
 
 interface SleepBehaviorPickerModalProps {
   visible: boolean;
@@ -83,7 +84,7 @@ export function SleepBehaviorPickerModal({ visible, onClose }: SleepBehaviorPick
                 onPress={() => choose(behavior.id)}
               >
                 <Text style={[styles.choiceText, sleepBehaviorId === behavior.id && styles.choiceSelected]}>
-                  {typeof behavior.icon === 'string' ? `${behavior.icon} ` : ''}
+                  {iconText(behavior.icon) ? `${iconText(behavior.icon)} ` : ''}
                   {behavior.name}
                 </Text>
               </Pressable>

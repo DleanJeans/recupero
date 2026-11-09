@@ -3,6 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { AppIcon } from '../../../components/app-icon';
 import { CueSegmentedControl } from '../../../components/cues/cue-segmented-control';
 import { Text } from '../../../components/text';
 import { useCuesStore } from '../../../store/cues-store';
@@ -41,7 +42,10 @@ export function LocationTriggerEditor({ value, onChange }: LocationTriggerEditor
               style={({ pressed }) => [styles.place, selected && styles.selectedPlace, pressed && styles.pressed]}
               onPress={() => onChange({ ...value, placeId: place.id })}
             >
-              <Text style={styles.placeIcon}>{getPlaceEmoji(place)}</Text>
+              <AppIcon
+                value={getPlaceEmoji(place)}
+                style={styles.placeIcon}
+              />
               <View style={styles.placeCopy}>
                 <Text style={styles.placeName}>{place.name}</Text>
                 <Text style={styles.placeDetail}>{place.address || `${place.radiusM} m radius`}</Text>

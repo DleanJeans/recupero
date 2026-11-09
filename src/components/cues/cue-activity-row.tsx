@@ -6,6 +6,7 @@ import type { CueActivityEvent } from '../../types/cue';
 import { Colors } from '../../utils/colors';
 import { getBodySensationOption, getMoodOption, getPlaceEmoji } from '../../utils/cue-utils';
 import { formatTime } from '../../utils/time-utils';
+import { AppIcon } from '../app-icon';
 import { Text } from '../text';
 
 const TITLES: Record<CueActivityEvent['kind'], string> = {
@@ -31,7 +32,10 @@ export function CueActivityRow({ event }: CueActivityRowProps) {
 
   return (
     <View style={styles.row}>
-      <Text style={styles.icon}>{icon}</Text>
+      <AppIcon
+        value={icon}
+        style={styles.icon}
+      />
       <View style={styles.copy}>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.detail}>{detail}</Text>

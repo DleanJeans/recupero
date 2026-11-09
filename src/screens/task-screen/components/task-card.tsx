@@ -13,7 +13,7 @@ import type { SavedPlace } from '../../../types/cue';
 import type { RootStackParamList } from '../../../types/navigation';
 import type { TaskEntry } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
-import { getPlaceEmoji } from '../../../utils/cue-utils';
+import { getPlaceIconText } from '../../../utils/cue-utils';
 import { isTaskCompleteOnDate } from '../../../utils/task-utils';
 import { TaskStarRow } from './task-star-row';
 
@@ -37,7 +37,7 @@ function TaskCardComponent({ task, behavior, place, selectedDate, onToggle, onEd
   const complete = isTaskCompleteOnDate(task, selectedDate);
   const isBehaviorTask = task.source === 'behavior' || (!task.source && task.behaviorId);
   const kindMeta = isBehaviorTask ? 'Behavior task' : behavior ? `One-off · ${behavior.name}` : 'One-off';
-  const taskMeta = place ? `${kindMeta} · ${getPlaceEmoji(place)} ${place.name}` : kindMeta;
+  const taskMeta = place ? `${kindMeta} · ${getPlaceIconText(place)} ${place.name}` : kindMeta;
   const canTrack = behavior?.xpEnabled === true && behavior.durationXpEnabled === true;
 
   const handlePlay = () => {

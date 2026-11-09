@@ -15,6 +15,7 @@ import type { ChecklistItem } from '../../types/checklist';
 import type { RootStackParamList } from '../../types/navigation';
 import { CHECKLIST_DEFAULT_EMOJI } from '../../utils/checklist-utils';
 import { Colors } from '../../utils/colors';
+import { iconText } from '../../utils/icon-utils';
 import { ChecklistRunRow } from './components/checklist-run-row';
 
 type ChecklistRunRoute = NativeStackScreenProps<RootStackParamList, 'ChecklistRun'>['route'];
@@ -95,7 +96,7 @@ export function ChecklistRunScreen() {
         <BackButton />
         <ScreenTitle
           style={styles.title}
-        >{`${checklist.emoji || CHECKLIST_DEFAULT_EMOJI} ${checklist.name}`}</ScreenTitle>
+        >{`${iconText(checklist.emoji) || CHECKLIST_DEFAULT_EMOJI} ${checklist.name}`}</ScreenTitle>
         <Button
           variant="icon"
           onPress={() => navigation.navigate('ChecklistForm', { checklistId })}

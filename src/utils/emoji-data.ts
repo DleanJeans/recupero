@@ -149,3 +149,10 @@ export function findEmojiByKeyword(keyword: string): string | null {
 
   return null;
 }
+
+/** The keyboard's categories with only the emoji that pass the filter; empty categories are dropped. */
+export function filterEmojiData(keep: (emoji: string) => boolean): EmojisByCategory[] {
+  return emojiData
+    .map(category => ({ ...category, data: category.data.filter(item => keep(item.emoji)) }))
+    .filter(category => category.data.length > 0);
+}

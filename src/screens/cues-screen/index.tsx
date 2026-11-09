@@ -27,6 +27,7 @@ import {
   getMoodOption,
   getRecentBodySensation,
 } from '../../utils/cue-utils';
+import { iconText } from '../../utils/icon-utils';
 import { ActivityPreview } from './components/activity-preview';
 import { CueCard } from './components/cue-card';
 import { CueSourceRow } from './components/cue-source-row';
@@ -147,7 +148,7 @@ function CueSourcesTab() {
       <View style={styles.group}>
         <SectionHeader
           label="Moods"
-          detail={currentMood ? `Now ${getMoodOption(currentMood.mood, custom.moods).emoji}` : undefined}
+          detail={currentMood ? `Now ${iconText(getMoodOption(currentMood.mood, custom.moods).emoji)}` : undefined}
           action="Log mood"
           onAction={() => navigation.navigate('MoodLog')}
         />
@@ -162,7 +163,9 @@ function CueSourcesTab() {
         <SectionHeader
           label="Body"
           detail={
-            recentBody ? `Now ${getBodySensationOption(recentBody.sensation, custom.sensations).emoji}` : undefined
+            recentBody
+              ? `Now ${iconText(getBodySensationOption(recentBody.sensation, custom.sensations).emoji)}`
+              : undefined
           }
           action="Log sensation"
           onAction={() => navigation.navigate('BodyLog')}

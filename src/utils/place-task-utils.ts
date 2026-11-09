@@ -1,6 +1,6 @@
 import type { SavedPlace } from '../types/cue';
 import type { TaskEntry } from '../types/task';
-import { getPlaceEmoji } from './cue-utils';
+import { getPlaceIconText } from './cue-utils';
 import type { GeofenceWatch } from './reminder-utils';
 import { isTaskCompleteOnDate, isTaskVisibleOnDate } from './task-utils';
 
@@ -36,5 +36,5 @@ export function getPlaceTaskNotificationContent(
 ): { title: string; body: string } {
   const title = tasks.length === 1 ? `Done: ${tasks[0].title}` : `${tasks.length} tasks done`;
   const names = tasks.length === 1 ? '' : ` ${tasks.map(task => task.title).join(', ')}.`;
-  return { title, body: `${getPlaceEmoji(place)} You arrived at ${place.name}.${names}` };
+  return { title, body: `${getPlaceIconText(place)} You arrived at ${place.name}.${names}` };
 }

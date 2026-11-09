@@ -4,6 +4,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { AppIcon } from '../../../components/app-icon';
 import { ToggleNamesButton } from '../../../components/category-picker/toggle-names-button';
 import { Text } from '../../../components/text';
 import { useBehaviorStore } from '../../../store/behavior-store';
@@ -261,16 +262,15 @@ function CategoryChip({
         pressed && styles.chipPressed,
       ]}
     >
-      {(icon || iconOnly) && (
-        <Text
-          style={
-            icon
-              ? [styles.icon, !active && styles.iconInactive]
-              : [styles.chipLabel, active ? styles.chipLabelActive : styles.chipLabelInactive]
-          }
-        >
-          {icon ?? label}
-        </Text>
+      {icon ? (
+        <AppIcon
+          value={icon}
+          style={[styles.icon, !active && styles.iconInactive]}
+        />
+      ) : (
+        iconOnly && (
+          <Text style={[styles.chipLabel, active ? styles.chipLabelActive : styles.chipLabelInactive]}>{label}</Text>
+        )
       )}
       {!iconOnly && (
         <Text style={[styles.chipLabel, active ? styles.chipLabelActive : styles.chipLabelInactive]}>{label}</Text>

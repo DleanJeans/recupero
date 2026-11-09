@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { AppIcon } from '../../../components/app-icon';
 import { Text } from '../../../components/text';
 import { useCuesStore } from '../../../store/cues-store';
 import type { MoodId } from '../../../types/cue';
@@ -26,7 +27,10 @@ export function MoodGrid({ selectedMood, onSelect }: MoodGridProps) {
             accessibilityLabel={option.label}
             accessibilityState={{ selected }}
           >
-            <Text style={styles.emoji}>{option.emoji}</Text>
+            <AppIcon
+              value={option.emoji}
+              style={styles.emoji}
+            />
             <Text style={[styles.label, selected && styles.selectedLabel]}>{option.label}</Text>
           </Pressable>
         );

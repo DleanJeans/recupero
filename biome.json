@@ -27,6 +27,14 @@
     }
   },
   "files": {
-    "includes": ["**", "!node_modules/**", "!android/**", "!build/**", "!.expo/**", "!profiling/**"]
+    "includes": [
+      "**",
+      "!node_modules/**",
+      "!android/**",
+      "!build/**",
+      "!.expo/**",
+      "!profiling/**",
+      "!src/data/emoji-kitchen-index.json"
+    ]
   }
 }

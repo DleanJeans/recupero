@@ -3,6 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppIcon } from '../../../components/app-icon';
 import { Text } from '../../../components/text';
 import type { SavedPlace } from '../../../types/cue';
 import type { RootStackParamList } from '../../../types/navigation';
@@ -45,7 +46,10 @@ export function TaskPlacePicker({ places, selectedPlaceId, onSelect }: TaskPlace
               accessibilityState={{ selected }}
               accessibilityLabel={`Go to ${place.name}`}
             >
-              <Text style={styles.chipEmoji}>{getPlaceEmoji(place)}</Text>
+              <AppIcon
+                value={getPlaceEmoji(place)}
+                style={styles.chipEmoji}
+              />
               <Text style={[styles.chipText, selected && styles.selectedChipText]}>{place.name}</Text>
             </Pressable>
           );

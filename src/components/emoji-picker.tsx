@@ -1,47 +1,26 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { Pressable, type StyleProp, StyleSheet, type ViewStyle } from 'react-native';
-import type { EmojiType } from 'rn-emoji-keyboard';
-import EmojiKeyboard from 'rn-emoji-keyboard';
 import { Colors } from '../utils/colors';
-import { emojiData, findEmojiByKeyword } from '../utils/emoji-data';
+import { findEmojiByKeyword } from '../utils/emoji-data';
+import { AppIcon } from './app-icon';
+import { IconPickerSheet } from './icon-picker/icon-picker-sheet';
 import { Text } from './text';
 
-const pickerTheme = {
-  backdrop: 'transparent',
-  knob: Colors.border.dim,
-  container: Colors.bg.card,
-  header: Colors.text.primary,
-  skinTonesContainer: Colors.bg.input,
-  category: {
-    icon: Colors.text.muted,
-    iconActive: Colors.text.primary,
-    container: Colors.bg.input,
-    containerActive: Colors.border.dim,
-  },
-  search: {
-    text: Colors.text.primary,
-    placeholder: Colors.text.faint + '88',
-    icon: Colors.text.muted,
-    background: Colors.bg.input,
-  },
-  emoji: {
-    selected: Colors.border.default,
-  },
-};
-
 interface Props {
+  /** Stored icon: plain emoji, Emoji Kitchen mix, stacked emoji or image link (see icon-utils). */
   value: string;
   onChangeText: (v: string) => void;
   /** Current name input value, used to suggest a matching emoji as placeholder. */
   nameHint?: string;
-  /** Called after an emoji is selected (e.g. to focus the next input). */
+  /** Called after an icon is picked (e.g. to focus the next input). */
   onPick?: () => void;
-  /** Called when the emoji keyboard opens or closes. */
+  /** Called when the picker opens or closes. */
   onOpenChange?: (open: boolean) => void;
   style?: StyleProp<ViewStyle>;
 }
 
+/** Icon field used by every form. Opens the Emoji / Mix / Image picker sheet. */
 export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChange, style }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -64,9 +43,8 @@ export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChang
     onOpenChange?.(false);
   };
 
-  const handlePick = (emojiObject: EmojiType) => {
-    onChangeText(emojiObject.emoji);
-    handleClose();
+  const handleChange = (next: string) => {
+    onChangeText(next);
     onPick?.();
   };
 
@@ -75,9 +53,13 @@ export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChang
       <Pressable
         style={[styles.input, style]}
         onPress={handlePress}
+        accessibilityLabel="Choose icon"
       >
         {value ? (
-          <Text style={styles.emoji}>{value}</Text>
+          <AppIcon
+            value={value}
+            style={styles.emoji}
+          />
         ) : suggestedEmoji ? (
           <Text style={styles.emojiPlaceholder}>{suggestedEmoji}</Text>
         ) : (
@@ -89,13 +71,10 @@ export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChang
         )}
       </Pressable>
       {open && (
-        <EmojiKeyboard
-          open={open}
-          onEmojiSelected={handlePick}
+        <IconPickerSheet
+          value={value || suggestedEmoji || ''}
+          onChange={handleChange}
           onClose={handleClose}
-          enableSearchBar
-          theme={pickerTheme}
-          emojisByCategory={emojiData}
         />
       )}
     </>

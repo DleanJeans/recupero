@@ -16,6 +16,7 @@ import type {
   SavedPlace,
 } from '../types/cue';
 import { Colors } from './colors';
+import { iconText } from './icon-utils';
 import { getLogXp } from './xp-utils';
 
 export const MOOD_OPTIONS: ReadonlyArray<CueOption & { id: BuiltInMoodId }> = [
@@ -224,6 +225,11 @@ export interface CueSource {
 /** Emoji for a saved place in emoji-only spots (lists, pickers): the user's pick, else 🏠 for Home, else 📍. */
 export function getPlaceEmoji(place: Pick<SavedPlace, 'emoji' | 'isHome'>): string {
   return place.emoji || (place.isHome ? '🏠' : '📍');
+}
+
+/** The place's icon as text, for notifications and inline labels (an image icon falls back to the pin or 🏠). */
+export function getPlaceIconText(place: Pick<SavedPlace, 'emoji' | 'isHome'>): string {
+  return iconText(place.emoji) || (place.isHome ? '🏠' : '📍');
 }
 
 export function getCueSources(places: SavedPlace[], custom: CustomCueOptions = NO_CUSTOM_CUE_OPTIONS): CueSource[] {

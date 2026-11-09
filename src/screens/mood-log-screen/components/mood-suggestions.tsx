@@ -10,6 +10,7 @@ import type { MoodId } from '../../../types/cue';
 import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
 import { getMoodOption, getMoodSuggestedBehaviorIds, moodCueRef } from '../../../utils/cue-utils';
+import { iconText } from '../../../utils/icon-utils';
 
 interface MoodSuggestionsProps {
   mood: MoodId;
@@ -29,7 +30,7 @@ export function MoodSuggestions({ mood }: MoodSuggestionsProps) {
   return (
     <View style={styles.card}>
       <Text style={styles.heading}>
-        Because you feel {moodOption.emoji} {moodOption.label}, Recupero suggests
+        Because you feel {iconText(moodOption.emoji)} {moodOption.label}, Recupero suggests
       </Text>
       {suggested.length === 0 ? (
         <Text style={styles.empty}>No reminders match this mood yet.</Text>

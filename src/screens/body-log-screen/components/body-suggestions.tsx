@@ -10,6 +10,7 @@ import type { BodySensationId } from '../../../types/cue';
 import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
 import { bodyCueRef, getBodySensationOption, getBodySuggestedBehaviorIds } from '../../../utils/cue-utils';
+import { iconText } from '../../../utils/icon-utils';
 
 interface BodySuggestionsProps {
   sensation: BodySensationId;
@@ -29,7 +30,7 @@ export function BodySuggestions({ sensation }: BodySuggestionsProps) {
   return (
     <View style={styles.card}>
       <Text style={styles.heading}>
-        {option.emoji} {option.label}. Recupero suggests
+        {iconText(option.emoji)} {option.label}. Recupero suggests
       </Text>
       {suggested.length === 0 ? (
         <Text style={styles.empty}>No reminders match this sensation yet.</Text>

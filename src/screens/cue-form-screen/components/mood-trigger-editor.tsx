@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { AppIcon } from '../../../components/app-icon';
 import { Text } from '../../../components/text';
 import { useCuesStore } from '../../../store/cues-store';
 import type { CueTrigger, MoodId } from '../../../types/cue';
@@ -32,7 +33,10 @@ export function MoodTriggerEditor({ value, onChange }: MoodTriggerEditorProps) {
             style={({ pressed }) => [styles.chip, selected && styles.selectedChip, pressed && styles.pressed]}
             onPress={() => toggleMood(option.id)}
           >
-            <Text style={styles.emoji}>{option.emoji}</Text>
+            <AppIcon
+              value={option.emoji}
+              style={styles.emoji}
+            />
             <Text style={[styles.label, selected && styles.selectedLabel]}>{option.label}</Text>
           </Pressable>
         );

@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
 import { useActiveBehaviors } from '../../../hooks/use-active-behaviors';
 import { Colors } from '../../../utils/colors';
+import { iconText } from '../../../utils/icon-utils';
 import { StackBehaviorPickerModal } from '../../behavior-screen/components/stack-behavior-picker-modal';
 
 interface CravingAlternativesFieldProps {
@@ -37,7 +38,7 @@ export function CravingAlternativesField({ behaviorId, value, onChange }: Cravin
               style={styles.pillText}
               numberOfLines={1}
             >
-              {typeof behavior.icon === 'string' ? `${behavior.icon} ` : ''}
+              {iconText(behavior.icon) ? `${iconText(behavior.icon)} ` : ''}
               {behavior.name}
             </Text>
             <Ionicons

@@ -16,6 +16,7 @@ import { getBehaviorTypeColor } from '../../utils/behavior-type-utils';
 import { Colors } from '../../utils/colors';
 import { isCooldownActive } from '../../utils/cooldown-utils';
 import { toDateString } from '../../utils/date-utils';
+import { iconText } from '../../utils/icon-utils';
 import { getStarLogCountSummary, getThresholds } from '../../utils/star-utils';
 import { formatElapsedNumeric } from '../../utils/time-utils';
 import { getEffectiveXp, getLevel, getLevelProgress, getLevelXp, getXpToNextLevel } from '../../utils/xp-utils';
@@ -98,7 +99,7 @@ export function BehaviorHeader({
               style={styles.subtitle}
               numberOfLines={1}
             >
-              {category.emoji}
+              {iconText(category.emoji)}
               {hideCategoryNames ? '' : ` ${category.name}`}
             </Text>
           )}

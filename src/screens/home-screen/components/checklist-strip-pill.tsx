@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { AppIcon } from '../../../components/app-icon';
 import { Text } from '../../../components/text';
 import { useChecklistStatus } from '../../../hooks/use-checklist-status';
 import type { Checklist } from '../../../types/checklist';
@@ -40,7 +41,11 @@ export function ChecklistStripPill({ checklist }: ChecklistStripPillProps) {
           style={[styles.fill, { width: `${Math.round(fraction * 100)}%` }]}
         />
       )}
-      <Text style={styles.emoji}>{checklist.emoji || CHECKLIST_DEFAULT_EMOJI}</Text>
+      <AppIcon
+        value={checklist.emoji}
+        fallback={CHECKLIST_DEFAULT_EMOJI}
+        style={styles.emoji}
+      />
       {done ? (
         <Text style={styles.check}>✓</Text>
       ) : (
