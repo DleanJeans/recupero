@@ -14,19 +14,20 @@ export function normalizeGroupName(name: string | undefined): string | undefined
   return normalized === '' ? undefined : normalized;
 }
 
-function groupKey(name: string | undefined): string | undefined {
+/** Key a group is stored and matched by: its normalized name in lower case. */
+export function getGroupKey(name: string | undefined): string | undefined {
   return normalizeGroupName(name)?.toLocaleLowerCase();
 }
 
 export function isSameGroup(a: string | undefined, b: string | undefined): boolean {
-  const key = groupKey(a);
-  return key != null && key === groupKey(b);
+  const key = getGroupKey(a);
+  return key != null && key === getGroupKey(b);
 }
 
 /** Behaviours in the same group as `behavior` (including it), sorted by name. Archived members are left out,
  *  except `behavior` itself so its own chip still shows. Empty when it has no group. */
 export function getGroupMembers(behaviors: BehaviorEntry[], behavior: BehaviorEntry): BehaviorEntry[] {
-  if (!groupKey(behavior.group)) return [];
+  if (!getGroupKey(behavior.group)) return [];
   return behaviors
     .filter(b => isSameGroup(b.group, behavior.group) && (b.id === behavior.id || !isArchived(b)))
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -117,11 +118,14 @@ export function matchesBehaviorOrGroupName(behavior: BehaviorEntry, lowerCaseQue
 /** Replaces each group's members with one entry named after the group, for lists that show only the group.
  *  The entry takes the id, icon and settings of the most recently logged member, so opening it lands on that
  *  member (whose screen has chips for the others), and holds every member's logs so XP and "last logged" are
- *  the group's totals. Ungrouped behaviours and single-member groups pass through unchanged, in order. */
-export function collapseBehaviorGroups(behaviors: BehaviorEntry[]): BehaviorEntry[] {
+ *  the group's totals. The group's emoji, when set, replaces the icon. Ungrouped behaviours and single-member groups pass through unchanged, in order. */
+export function collapseBehaviorGroups(
+  behaviors: BehaviorEntry[],
+  groupEmojis: Record<string, string> = {},
+): BehaviorEntry[] {
   const membersByKey = new Map<string, BehaviorEntry[]>();
   for (const behavior of behaviors) {
-    const key = groupKey(behavior.group);
+    const key = getGroupKey(behavior.group);
     if (!key) continue;
     const members = membersByKey.get(key);
     if (members) members.push(behavior);
@@ -131,7 +135,7 @@ export function collapseBehaviorGroups(behaviors: BehaviorEntry[]): BehaviorEntr
   const result: BehaviorEntry[] = [];
   const emitted = new Set<string>();
   for (const behavior of behaviors) {
-    const key = groupKey(behavior.group);
+    const key = getGroupKey(behavior.group);
     const members = key ? membersByKey.get(key) : undefined;
     if (!key || !members || members.length < 2) {
       result.push(behavior);
@@ -146,6 +150,7 @@ export function collapseBehaviorGroups(behaviors: BehaviorEntry[]): BehaviorEntr
     result.push({
       ...representative,
       name: normalizeGroupName(representative.group) ?? representative.name,
+      icon: groupEmojis[key] ?? representative.icon,
       lastTimestamp: lastTimestamps.length > 0 ? Math.max(...lastTimestamps) : null,
       logs: members.flatMap(member => member.logs).sort((a, b) => a.timestamp - b.timestamp),
       xpEnabled: members.some(member => member.xpEnabled) ? true : undefined,

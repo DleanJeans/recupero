@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useBehaviorStore } from '../store/behavior-store';
 import type { BehaviorEntry } from '../types/behavior';
 import {
+  getGroupKey,
   getGroupMemberLabel,
   getGroupMembers,
   getGroupTotals,
@@ -21,6 +22,7 @@ interface Props {
  *  Renders nothing unless the group has at least two members. */
 export function BehaviorGroupChips({ behavior, onSelect }: Props) {
   const behaviors = useBehaviorStore(state => state.behaviors);
+  const groupEmoji = useBehaviorStore(state => state.groupEmojis?.[getGroupKey(behavior.group) ?? '']);
   const members = useMemo(() => getGroupMembers(behaviors, behavior), [behaviors, behavior]);
   const totals = useMemo(() => getGroupTotals(members), [members]);
 
@@ -39,6 +41,7 @@ export function BehaviorGroupChips({ behavior, onSelect }: Props) {
           style={styles.groupName}
           numberOfLines={1}
         >
+          {groupEmoji ? `${groupEmoji} ` : ''}
           {groupName}
         </Text>
         <Text

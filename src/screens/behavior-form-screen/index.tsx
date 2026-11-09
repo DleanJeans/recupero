@@ -24,7 +24,7 @@ import type { BehaviorEntry, BehaviorType } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { syncAppUsage } from '../../utils/app-usage-sync';
 import { getAutoTrackApp, getAutoTrackSite, normalizeSiteDomain } from '../../utils/app-usage-utils';
-import { normalizeGroupName } from '../../utils/behavior-group-utils';
+import { getGroupKey, normalizeGroupName } from '../../utils/behavior-group-utils';
 import { Colors } from '../../utils/colors';
 import {
   getAmountMetadataFields,
@@ -90,6 +90,11 @@ export function BehaviorFormScreen() {
   const [emojiKeyboardOpen, setEmojiKeyboardOpen] = useState(false);
   const [isPrivate, setIsPrivate] = useState(() => behavior?.private ?? false);
   const [group, setGroup] = useState(() => behavior?.group ?? '');
+  const groupEmojis = useBehaviorStore(s => s.groupEmojis);
+  const savedGroupEmoji = groupEmojis?.[getGroupKey(group) ?? ''] ?? '';
+  /** Emoji picked here for the group. Undefined = untouched, so it follows the typed group's saved emoji. */
+  const [groupEmojiDraft, setGroupEmojiDraft] = useState<string>();
+  const groupEmoji = groupEmojiDraft ?? savedGroupEmoji;
   // Existing behaviors inherit their saved state; new behaviors can receive route-specific defaults.
   const [xpEnabled, setXpEnabled] = useState(() =>
     behavior ? behavior.xpEnabled === true : defaultXpEnabled === true,
@@ -312,6 +317,7 @@ export function BehaviorFormScreen() {
       categoryId !== behavior.categoryId ||
       isPrivate !== (behavior.private ?? false) ||
       normalizeGroupName(group) !== normalizeGroupName(behavior.group) ||
+      groupEmoji !== savedGroupEmoji ||
       xpEnabled !== (behavior.xpEnabled === true) ||
       durationXpEnabled !== (behavior.durationXpEnabled === true) ||
       hideTotalXp !== (behavior.hideTotalXp === true) ||
@@ -441,6 +447,10 @@ export function BehaviorFormScreen() {
         normalizeGroupName(group),
       );
     }
+    const groupName = normalizeGroupName(group);
+    if (groupName && groupEmoji.trim() !== savedGroupEmoji) {
+      useBehaviorStore.getState().setGroupEmoji(groupName, groupEmoji.trim() || undefined);
+    }
     if (autoTrackApp || autoTrackSite) syncAppUsage();
     savedRef.current = true;
     navigation.goBack();
@@ -495,6 +505,8 @@ export function BehaviorFormScreen() {
             <BehaviorGroupField
               value={group}
               onChange={setGroup}
+              emoji={groupEmoji}
+              onEmojiChange={setGroupEmojiDraft}
             />
 
             {/* Only undesirable behaviours get ridden out. Hiding it keeps the saved list untouched. */}

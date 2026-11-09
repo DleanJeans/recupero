@@ -30,6 +30,7 @@ export function HomeScreen() {
   const behaviors = useBehaviorStore(s => s.behaviors);
   const categories = useBehaviorStore(s => s.categories);
   const tasks = useBehaviorStore(s => s.tasks);
+  const groupEmojis = useBehaviorStore(s => s.groupEmojis);
   const hidePrivate = useSettingsStore(s => s.hidePrivate);
   const showXp = useSettingsStore(s => s.showXp);
   const setShowXp = useSettingsStore(s => s.setShowXp);
@@ -111,8 +112,8 @@ export function HomeScreen() {
 
   /** Grouped behaviours (e.g. Omachi flavours) show as one card named after the group. Archived stays per behaviour. */
   const listedBehaviors = useMemo(
-    () => (listArchivedSelected ? filteredBehaviors : collapseBehaviorGroups(filteredBehaviors)),
-    [filteredBehaviors, listArchivedSelected],
+    () => (listArchivedSelected ? filteredBehaviors : collapseBehaviorGroups(filteredBehaviors, groupEmojis)),
+    [filteredBehaviors, groupEmojis, listArchivedSelected],
   );
 
   const addBehaviorDefaultCategoryId =

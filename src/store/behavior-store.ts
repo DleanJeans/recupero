@@ -15,6 +15,7 @@ import type {
 import type { CueRef } from '../types/cue';
 import type { AddTaskInput, TaskEntry } from '../types/task';
 import { mergeTrackedSessionsIntoLogs, siteMatchesDomain } from '../utils/app-usage-utils';
+import { getGroupKey } from '../utils/behavior-group-utils';
 import { getLogEndTimestamp } from '../utils/log-utils';
 import {
   getLoggableDefaultMetadata,
@@ -30,6 +31,9 @@ interface BehaviorStore {
   behaviors: BehaviorEntry[];
   categories: Category[];
   tasks: TaskEntry[];
+  /** Emoji per behaviour group, keyed by lower-case group name (see `getGroupKey`). Missing = use a member's icon. */
+  groupEmojis: Record<string, string>;
+  setGroupEmoji: (groupName: string, emoji: string | undefined) => void;
   addBehavior: (
     name: string,
     type: BehaviorType,
@@ -136,6 +140,14 @@ export const useBehaviorStore = create<BehaviorStore>()(
       behaviors: [],
       categories: [],
       tasks: [],
+      groupEmojis: {},
+      setGroupEmoji: (groupName, emoji) =>
+        set(state => {
+          const key = getGroupKey(groupName);
+          if (!key) return state;
+          const { [key]: _previous, ...rest } = state.groupEmojis ?? {};
+          return { groupEmojis: emoji ? { ...rest, [key]: emoji } : rest };
+        }),
       addBehavior: (
         name,
         type,

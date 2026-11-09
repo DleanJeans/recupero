@@ -149,3 +149,12 @@ describe('collapseBehaviorGroups', () => {
     expect(matchesBehaviorOrGroupName(water, 'omachi')).toBe(false);
   });
 });
+
+describe('group emoji', () => {
+  it('uses the group emoji as the collapsed card icon', () => {
+    const a = behavior('a', { name: 'Omachi Bò', group: 'Omachi', icon: '🍜' });
+    const b = behavior('b', { name: 'Omachi Tôm', group: 'Omachi', icon: '🦐' });
+    expect(collapseBehaviorGroups([a, b], { omachi: '🍲' })[0].icon).toBe('🍲');
+    expect(collapseBehaviorGroups([a, b])[0].icon).toBe('🍜');
+  });
+});
