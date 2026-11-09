@@ -49,6 +49,7 @@ export function ChecklistStrip() {
 const styles = StyleSheet.create({
   strip: {
     flexGrow: 0,
+    flexShrink: 0,
     marginBottom: 10,
   },
   content: {
@@ -69,6 +70,7 @@ const styles = StyleSheet.create({
   addEmpty: {
     flexDirection: 'row',
     gap: 6,
+    minHeight: 44,
     paddingVertical: 10,
   },
   pressed: {
