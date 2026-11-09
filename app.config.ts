@@ -100,7 +100,7 @@ const config: ExpoConfig = {
   updates: {
     url: 'https://u.expo.dev/8a864518-09f4-4aac-b87c-44f7cfe5ae0c',
   },
-  runtimeVersion: '0.0.1',
+  runtimeVersion: { policy: 'fingerprint' },
   extra: {
     googleHealthClientId,
     eas: {

@@ -10,6 +10,7 @@ import { BottomNav, type BottomNavRoute } from './src/components/bottom-nav';
 import { ConfettiOverlay } from './src/components/confetti-overlay';
 import { RunningTimerPill } from './src/components/running-timer-pill';
 import { Text } from './src/components/text';
+import { UpdateReadyPill } from './src/components/update-ready-pill';
 import { useAppFonts } from './src/hooks/use-app-fonts';
 import { useAppUsageSync } from './src/hooks/use-app-usage-sync';
 import { useDeferredBottomNavNavigation } from './src/hooks/use-deferred-bottom-nav-navigation';
@@ -255,6 +256,7 @@ export default function App() {
                   </View>
                 )}
               </View>
+              {isBottomNavRoute(activeRouteName) && <UpdateReadyPill />}
               {isBottomNavRoute(activeRouteName) && (
                 <RunningTimerPill onPress={() => navigationRef.isReady() && navigationRef.navigate('Timer')} />
               )}

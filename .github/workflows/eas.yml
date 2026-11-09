@@ -25,5 +25,8 @@ jobs:
       expo-project-slug: recupero
       ota-label: send ota
       profile: ${{ inputs.profile || '' }}
+      # Build these APKs on push whenever the native fingerprint changes (no build-apk keyword needed).
+      auto-build-profiles: development,preview
     secrets:
       expo-token: ${{ secrets.EXPO_TOKEN }}
+      ntfy-topic: ${{ secrets.NTFY_TOPIC }}
