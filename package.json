@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
+    "start": "expo start",
+    "start-tunnel": "expo start --tunnel",
     "format:changed": "biome format --write $(git diff --name-only HEAD --diff-filter=ACMR; git ls-files --others --exclude-standard | grep -E '\\.(ts|tsx|json)$')",
     "format:imports": "biome check --write --only=organizeImports",
-    "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "build:android:local": "eas build --platform android --profile development --local --non-interactive --output ./builds/recupero.apk && cd builds && NAME=recupero-$(date +%Y%m%d%H%M) && mv recupero.apk $NAME.apk && zip $NAME.zip $NAME.apk",
