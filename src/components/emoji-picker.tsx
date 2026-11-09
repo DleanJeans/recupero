@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, type StyleProp, StyleSheet, type ViewStyle } from 'react-native';
 import { Colors } from '../utils/colors';
 import { findEmojiByKeyword } from '../utils/emoji-data';
+import { parseIcon } from '../utils/icon-utils';
 import { AppIcon } from './app-icon';
 import { IconPickerSheet } from './icon-picker/icon-picker-sheet';
 import { Text } from './text';
@@ -38,6 +39,12 @@ export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChang
     onOpenChange?.(true);
   };
 
+  // Square button: the side follows the height callers give it (their name inputs set the row height).
+  const flat = StyleSheet.flatten([styles.input, style]);
+  const side = typeof flat.height === 'number' ? flat.height : DEFAULT_SIDE;
+  const radius = typeof flat.borderRadius === 'number' ? flat.borderRadius : 8;
+  const kind = value ? parseIcon(value).kind : 'none';
+
   const handleClose = () => {
     setOpen(false);
     onOpenChange?.(false);
@@ -51,7 +58,7 @@ export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChang
   return (
     <>
       <Pressable
-        style={[styles.input, style]}
+        style={[styles.input, style, { width: side, height: side }]}
         onPress={handlePress}
         accessibilityLabel="Choose icon"
       >
@@ -59,6 +66,10 @@ export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChang
           <AppIcon
             value={value}
             style={styles.emoji}
+            boxSize={
+              kind === 'image' ? side : kind === 'none' || kind === 'emoji' ? undefined : Math.round(side * 0.86)
+            }
+            imageRadius={radius}
           />
         ) : suggestedEmoji ? (
           <Text style={styles.emojiPlaceholder}>{suggestedEmoji}</Text>
@@ -81,10 +92,13 @@ export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChang
   );
 }
 
+const DEFAULT_SIDE = 44;
+
 const styles = StyleSheet.create({
   input: {
-    width: 48,
-    height: 40,
+    width: DEFAULT_SIDE,
+    height: DEFAULT_SIDE,
+    overflow: 'hidden',
     backgroundColor: Colors.bg.input,
     borderRadius: 8,
     justifyContent: 'center',

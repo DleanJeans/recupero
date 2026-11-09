@@ -13,13 +13,17 @@ interface Props {
   style?: StyleProp<TextStyle>;
   /** Shown when the value is empty. */
   fallback?: string;
+  /** Exact box size for drawn icons (mix, stack, image), e.g. to fill a button. Defaults to about `size`. */
+  boxSize?: number;
+  /** Corner radius for image icons. Defaults to 22% of the box. */
+  imageRadius?: number;
 }
 
 /** Glyphs draw a little larger than their font size, so drawn icons use a slightly bigger box to line up. */
 const BOX_PER_FONT_SIZE = 1.18;
 
 /** Any icon value: plain emoji, Emoji Kitchen mix, stacked emoji or an image link (cached after the first load). */
-export const AppIcon = React.memo(function AppIcon({ value, size, style, fallback }: Props) {
+export const AppIcon = React.memo(function AppIcon({ value, size, style, fallback, boxSize, imageRadius }: Props) {
   const parsed = useMemo(() => parseIcon(value), [value]);
   const flat = StyleSheet.flatten(style) ?? {};
   const fontSize = size ?? flat.fontSize ?? 20;
@@ -30,7 +34,7 @@ export const AppIcon = React.memo(function AppIcon({ value, size, style, fallbac
     return <Text style={[style, { fontSize }]}>{text}</Text>;
   }
 
-  const box = Math.round(fontSize * BOX_PER_FONT_SIZE);
+  const box = boxSize ?? Math.round(fontSize * BOX_PER_FONT_SIZE);
   return (
     <View style={{ width: box, height: box, opacity: flat.opacity ?? 1 }}>
       {parsed.kind === 'stack' ? (
@@ -42,6 +46,7 @@ export const AppIcon = React.memo(function AppIcon({ value, size, style, fallbac
         <RemoteIcon
           parsed={parsed}
           box={box}
+          imageRadius={imageRadius}
         />
       )}
     </View>

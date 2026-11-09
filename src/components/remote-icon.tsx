@@ -8,10 +8,13 @@ import { Text } from './text';
 interface Props {
   parsed: Extract<ParsedIcon, { kind: 'mix' | 'image' }>;
   box: number;
+  /** Corner radius for image links. Defaults to 22% of the box. */
+  imageRadius?: number;
 }
 
 /** An Emoji Kitchen mix or image link, shown from the on-device copy once downloaded. */
-export function RemoteIcon({ parsed, box }: Props) {
+export function RemoteIcon({ parsed, box, imageRadius }: Props) {
+  const radius = imageRadius ?? Math.round(box * 0.22);
   const url = getIconImageUrl(parsed);
   const image = useIconImage(url);
 
@@ -20,7 +23,7 @@ export function RemoteIcon({ parsed, box }: Props) {
       <Image
         source={{ uri: image.uri }}
         resizeMode={parsed.kind === 'image' ? 'cover' : 'contain'}
-        style={{ width: box, height: box, borderRadius: parsed.kind === 'image' ? Math.round(box * 0.22) : 0 }}
+        style={{ width: box, height: box, borderRadius: parsed.kind === 'image' ? radius : 0 }}
       />
     );
   }
@@ -46,7 +49,7 @@ export function RemoteIcon({ parsed, box }: Props) {
   }
 
   return (
-    <View style={[styles.placeholder, { width: box, height: box, borderRadius: Math.round(box * 0.22) }]}>
+    <View style={[styles.placeholder, { width: box, height: box, borderRadius: radius }]}>
       {image.status === 'failed' && <Text style={{ fontSize: box * 0.5, opacity: 0.6 }}>🖼️</Text>}
     </View>
   );
