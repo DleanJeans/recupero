@@ -17,6 +17,8 @@ export type RootStackParamList = {
     timerEndTimestamp?: number;
     /** Cues to pre-select on a new log, e.g. the mood that suggested this behaviour. */
     initialCues?: CueRef[];
+    /** Opened from a checklist row: the new log joins today's checklist run and ticks this item. */
+    checklistItem?: { checklistId: string; itemId: string };
   };
   BehaviorForm: {
     behaviorId?: string;
@@ -45,4 +47,7 @@ export type RootStackParamList = {
   Cravings: undefined;
   /** Urge-surfing timer for a craving. Resumes cravingId, or an unfinished craving for the behaviour, or starts one. */
   RideItOut: { behaviorId: string; cravingId?: string };
+  /** Create (no checklistId) or edit a checklist. behaviorIds prefills a new one from select mode on Routines. */
+  ChecklistForm: { checklistId?: string; behaviorIds?: string[] };
+  ChecklistRun: { checklistId: string };
 };

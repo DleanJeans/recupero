@@ -1,6 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { BehaviorIcon } from '../../../components/behavior-icon';
+import { Button } from '../../../components/button';
 import { Text, TextInput } from '../../../components/text';
 import { useActiveBehaviors } from '../../../hooks/use-active-behaviors';
 import type { BehaviorEntry } from '../../../types/behavior';
@@ -22,7 +24,10 @@ interface StackBehaviorPickerModalProps {
   /** Behaviours already in the stack (and the one being logged), left out of the list. */
   excludeIds: string[];
   onClose: () => void;
-  onPick: (behaviorId: string) => void;
+  /** Single pick: called with the tapped behaviour. Ignored when `onPickMany` is set. */
+  onPick?: (behaviorId: string) => void;
+  /** Multi pick: rows get checkboxes and an Add button, which calls this with the ticked ids in tap order. */
+  onPickMany?: (behaviorIds: string[]) => void;
 }
 
 export function StackBehaviorPickerModal({
@@ -31,9 +36,12 @@ export function StackBehaviorPickerModal({
   excludeIds,
   onClose,
   onPick,
+  onPickMany,
 }: StackBehaviorPickerModalProps) {
   const behaviors = useActiveBehaviors();
   const [query, setQuery] = useState('');
+  const [picked, setPicked] = useState<string[]>([]);
+  const multiple = onPickMany != null;
 
   const ranked = useMemo(() => {
     if (!visible) return [];
@@ -57,7 +65,24 @@ export function StackBehaviorPickerModal({
 
   const close = () => {
     setQuery('');
+    setPicked([]);
     onClose();
+  };
+
+  const handleRowPress = (id: string) => {
+    if (multiple) {
+      setPicked(current => (current.includes(id) ? current.filter(pickedId => pickedId !== id) : [...current, id]));
+      return;
+    }
+    setQuery('');
+    onPick?.(id);
+  };
+
+  const handleAdd = () => {
+    const ids = picked;
+    setQuery('');
+    setPicked([]);
+    onPickMany?.(ids);
   };
 
   return (
@@ -90,11 +115,21 @@ export function StackBehaviorPickerModal({
               return (
                 <Pressable
                   style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-                  onPress={() => {
-                    setQuery('');
-                    onPick(item.id);
-                  }}
+                  onPress={() => handleRowPress(item.id)}
+                  accessibilityRole={multiple ? 'checkbox' : 'button'}
+                  accessibilityState={multiple ? { checked: picked.includes(item.id) } : undefined}
                 >
+                  {multiple && (
+                    <View style={[styles.checkbox, picked.includes(item.id) && styles.checkboxOn]}>
+                      {picked.includes(item.id) && (
+                        <Ionicons
+                          name="checkmark"
+                          size={16}
+                          color={Colors.bg.black}
+                        />
+                      )}
+                    </View>
+                  )}
                   <BehaviorIcon
                     behavior={item}
                     size={22}
@@ -110,6 +145,15 @@ export function StackBehaviorPickerModal({
             }}
             ListEmptyComponent={<Text style={styles.empty}>No behaviours found</Text>}
           />
+          {multiple && (
+            <Button
+              variant="primary"
+              disabled={picked.length === 0}
+              onPress={handleAdd}
+            >
+              {picked.length > 0 ? `Add ${picked.length}` : 'Add'}
+            </Button>
+          )}
         </View>
       </View>
     </Modal>
@@ -157,6 +201,19 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 2,
     paddingHorizontal: 4,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: Colors.border.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxOn: {
+    backgroundColor: Colors.type.desirable,
+    borderColor: Colors.type.desirable,
   },
   name: {
     flex: 1,

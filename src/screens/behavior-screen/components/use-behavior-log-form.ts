@@ -5,6 +5,7 @@ import { Alert, Keyboard } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 import { type MoneyRewardPreview, REWARD_ANIMATION_MS } from '../../../components/log-reward-preview';
 import { useBehaviorStore } from '../../../store/behavior-store';
+import { useChecklistsStore } from '../../../store/checklists-store';
 import { useCuesStore } from '../../../store/cues-store';
 import { useSettingsStore } from '../../../store/settings-store';
 import { useTimerStore } from '../../../store/timer-store';
@@ -48,6 +49,8 @@ export interface BehaviorLogFormProps {
   editLogId?: string;
   initialNotes?: string;
   initialCues?: CueRef[];
+  /** Opened from a checklist row: the log joins today's checklist run and ticks the item. */
+  checklistItem?: { checklistId: string; itemId: string };
   timerStartTimestamp?: number;
   timerEndTimestamp?: number;
   onSaved: () => void;
@@ -59,6 +62,7 @@ export function useBehaviorLogForm({
   editLogId,
   initialNotes,
   initialCues,
+  checklistItem,
   timerStartTimestamp,
   timerEndTimestamp,
   onSaved,
@@ -440,8 +444,16 @@ export function useBehaviorLogForm({
       return;
     }
 
-    const stackId = stackedLogs.length > 0 ? uuidv4() : undefined;
-    logBehavior(behaviorId, startTimestamp, metadataOrUndefined, saveEndTimestamp, selectedCues, stackId);
+    const checklistRun = checklistItem
+      ? useChecklistsStore.getState().ensureRun(checklistItem.checklistId, todayStr)
+      : undefined;
+    const stackId = checklistRun?.stackId ?? (stackedLogs.length > 0 ? uuidv4() : undefined);
+    const logId = logBehavior(behaviorId, startTimestamp, metadataOrUndefined, saveEndTimestamp, selectedCues, stackId);
+    if (checklistItem) {
+      useChecklistsStore
+        .getState()
+        .setTick(checklistItem.checklistId, checklistItem.itemId, { at: Date.now(), logId, behaviorId });
+    }
     // Habit stack: every stacked behaviour shares the time, cues and notes, with its own metadata.
     for (const stacked of stackedLogs) {
       const stackedBehavior = allBehaviors.find(b => b.id === stacked.behaviorId);
@@ -487,6 +499,7 @@ export function useBehaviorLogForm({
     behavior.defaultMetadata,
     behaviorId,
     categories,
+    checklistItem,
     editLogId,
     endHour,
     endMinute,

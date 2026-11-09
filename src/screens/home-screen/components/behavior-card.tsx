@@ -6,6 +6,7 @@ import { BehaviorSummary } from '../../../components/behavior-summary';
 import { Text } from '../../../components/text';
 import { useBehaviorActionSheetStore } from '../../../store/behavior-action-sheet-store';
 import { useBehaviorStore } from '../../../store/behavior-store';
+import { useChecklistSelectionStore } from '../../../store/checklist-selection-store';
 import type { BehaviorEntry } from '../../../types/behavior';
 import type { RootStackParamList } from '../../../types/navigation';
 import { isArchived } from '../../../utils/archive-utils';
@@ -97,23 +98,36 @@ export const BehaviorCard = React.memo(function BehaviorCard({
   );
 
   const accentColor = getBehaviorTypeColor(behavior.type);
+  const selecting = useChecklistSelectionStore(state => state.active);
+  const selectionIndex = useChecklistSelectionStore(state => state.behaviorIds.indexOf(behavior.id));
+  const toggleSelection = useChecklistSelectionStore(state => state.toggle);
+  const selected = selecting && selectionIndex >= 0;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, selected && styles.selectedCard]}>
       <View
         pointerEvents="none"
         style={[styles.accent, { backgroundColor: accentColor }]}
       />
+      {selecting && (
+        <View
+          pointerEvents="none"
+          style={[styles.selectBox, selected && styles.selectBoxOn]}
+        >
+          {selected && <Text style={styles.selectNumber}>{selectionIndex + 1}</Text>}
+        </View>
+      )}
       <View style={styles.column}>
         <Pressable
           ref={pressableRef}
-          style={[styles.content, archived && styles.archivedContent]}
-          onPress={archived ? () => goToMode('details') : handlePress}
-          onLongPress={handleLongPress}
+          style={[styles.content, selecting && styles.selectingContent, archived && styles.archivedContent]}
+          onPress={selecting ? () => toggleSelection(behavior.id) : archived ? () => goToMode('details') : handlePress}
+          onLongPress={selecting ? () => toggleSelection(behavior.id) : handleLongPress}
           onLayout={handleLayout}
           onPressIn={refreshBounds}
           accessibilityRole="button"
           accessibilityLabel={behavior.name}
+          accessibilityState={selecting ? { selected } : undefined}
           accessibilityHint="Choose View details or Log behavior from accessibility actions. Long-press for more."
           accessibilityActions={[
             { name: 'view-details', label: 'View details' },
@@ -171,6 +185,35 @@ const styles = StyleSheet.create({
     bottom: 12,
     width: 4,
     borderRadius: 4,
+  },
+  selectedCard: {
+    borderColor: Colors.cooldown.yellow,
+    backgroundColor: '#262113',
+  },
+  selectBox: {
+    position: 'absolute',
+    left: 20,
+    top: '50%',
+    marginTop: -12,
+    width: 24,
+    height: 24,
+    borderRadius: 7,
+    borderWidth: 2,
+    borderColor: Colors.border.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectBoxOn: {
+    backgroundColor: Colors.cooldown.yellow,
+    borderColor: Colors.cooldown.yellow,
+  },
+  selectNumber: {
+    color: Colors.bg.black,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  selectingContent: {
+    paddingLeft: 56,
   },
   column: {
     flex: 1,

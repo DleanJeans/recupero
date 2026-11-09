@@ -6,6 +6,7 @@ import { Alert, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBehaviorActionSheetStore } from '../store/behavior-action-sheet-store';
 import { useBehaviorStore } from '../store/behavior-store';
+import { useChecklistSelectionStore } from '../store/checklist-selection-store';
 import type { RootStackParamList } from '../types/navigation';
 import { isArchived } from '../utils/archive-utils';
 import { Colors } from '../utils/colors';
@@ -14,8 +15,13 @@ import { Text } from './text';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
-/** Bottom sheet opened by long-pressing a behaviour: Edit, Archive (or Unarchive) and Delete. */
-export function BehaviorActionSheet() {
+interface BehaviorActionSheetProps {
+  /** Show "Select", which starts picking behaviours for a new checklist. Only Routines supports select mode. */
+  showSelect?: boolean;
+}
+
+/** Bottom sheet opened by long-pressing a behaviour: Edit, Select, Archive (or Unarchive) and Delete. */
+export function BehaviorActionSheet({ showSelect = false }: BehaviorActionSheetProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const behaviorId = useBehaviorActionSheetStore(state => state.behaviorId);
@@ -29,6 +35,7 @@ export function BehaviorActionSheet() {
   const archiveBehavior = useBehaviorStore(state => state.archiveBehavior);
   const unarchiveBehavior = useBehaviorStore(state => state.unarchiveBehavior);
   const removeBehavior = useBehaviorStore(state => state.removeBehavior);
+  const startSelection = useChecklistSelectionStore(state => state.start);
 
   if (!behavior) return null;
   const archived = isArchived(behavior);
@@ -36,6 +43,11 @@ export function BehaviorActionSheet() {
   const handleEdit = () => {
     close();
     navigation.navigate('BehaviorForm', { behaviorId: behavior.id });
+  };
+
+  const handleSelect = () => {
+    close();
+    startSelection(behavior.id);
   };
 
   const handleArchive = () => {
@@ -91,6 +103,14 @@ export function BehaviorActionSheet() {
             label="Edit"
             onPress={handleEdit}
           />
+          {!archived && showSelect && (
+            <SheetOption
+              icon="checkbox-outline"
+              label="Select"
+              hint="Pick several behaviours to make a checklist."
+              onPress={handleSelect}
+            />
+          )}
           <SheetOption
             icon={archived ? 'arrow-undo-outline' : 'archive-outline'}
             label={archived ? 'Unarchive' : 'Archive'}

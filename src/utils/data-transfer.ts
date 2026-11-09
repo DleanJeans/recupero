@@ -3,6 +3,7 @@ import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { sendFileToDev } from '../../modules/dev-handoff';
 import { useBehaviorStore } from '../store/behavior-store';
+import { CHECKLISTS_STORAGE_KEY, useChecklistsStore } from '../store/checklists-store';
 import { useCuesStore } from '../store/cues-store';
 import { useSettingsStore } from '../store/settings-store';
 import { useShopStore } from '../store/shop-store';
@@ -12,6 +13,7 @@ const STORAGE_KEYS = {
   settings: 'recupero-settings',
   shop: 'recupero-shop',
   cues: 'recupero-cues',
+  checklists: CHECKLISTS_STORAGE_KEY,
 } as const;
 
 interface ExportData {
@@ -21,6 +23,7 @@ interface ExportData {
   settings: string | null;
   shop?: string | null;
   cues?: string | null;
+  checklists?: string | null;
 }
 
 function isPersistedStore(value: string | null | undefined): value is string {
@@ -34,14 +37,23 @@ function isPersistedStore(value: string | null | undefined): value is string {
 }
 
 async function writeBackupFile(): Promise<{ file: File; summary: string }> {
-  const [behaviors, settings, shop, cues] = await Promise.all([
+  const [behaviors, settings, shop, cues, checklists] = await Promise.all([
     AsyncStorage.getItem(STORAGE_KEYS.behaviors),
     AsyncStorage.getItem(STORAGE_KEYS.settings),
     AsyncStorage.getItem(STORAGE_KEYS.shop),
     AsyncStorage.getItem(STORAGE_KEYS.cues),
+    AsyncStorage.getItem(STORAGE_KEYS.checklists),
   ]);
 
-  const data: ExportData = { version: 2, exportedAt: new Date().toISOString(), behaviors, settings, shop, cues };
+  const data: ExportData = {
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    behaviors,
+    settings,
+    shop,
+    cues,
+    checklists,
+  };
 
   const json = JSON.stringify(data, null, 2);
   const filename = `recupero-backup-${new Date().toISOString().slice(0, 10)}.json`;
@@ -95,6 +107,7 @@ export async function importFromFile(fileUri: string): Promise<{ success: boolea
       ...(data.settings == null ? [] : [[STORAGE_KEYS.settings, data.settings]]),
       ...(data.shop == null ? [] : [[STORAGE_KEYS.shop, data.shop]]),
       ...(data.cues == null ? [] : [[STORAGE_KEYS.cues, data.cues]]),
+      ...(data.checklists == null ? [] : [[STORAGE_KEYS.checklists, data.checklists]]),
     ] as Array<[string, string]>;
     if (entries.some(([, value]) => !isPersistedStore(value))) {
       return { success: false, message: 'Invalid format — export from Recupero first' };
@@ -108,6 +121,7 @@ export async function importFromFile(fileUri: string): Promise<{ success: boolea
         useSettingsStore.persist.rehydrate(),
         useShopStore.persist.rehydrate(),
         useCuesStore.persist.rehydrate(),
+        useChecklistsStore.persist.rehydrate(),
       ]);
     } catch (error) {
       try {
@@ -120,6 +134,7 @@ export async function importFromFile(fileUri: string): Promise<{ success: boolea
           useSettingsStore.persist.rehydrate(),
           useShopStore.persist.rehydrate(),
           useCuesStore.persist.rehydrate(),
+          useChecklistsStore.persist.rehydrate(),
         ]);
       } catch {
         // Preserve the original import error; the caller still receives failure.

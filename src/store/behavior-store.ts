@@ -109,7 +109,7 @@ interface BehaviorStore {
     cues?: CueRef[],
     /** Links logs saved together with habit stacking. */
     stackId?: string,
-  ) => void;
+  ) => string;
   removeBehavior: (id: string) => void;
   /** Hides a behaviour from lists, pickers and suggestions without touching its logs. */
   archiveBehavior: (id: string) => void;
@@ -209,7 +209,8 @@ export const useBehaviorStore = create<BehaviorStore>()(
             },
           ],
         })),
-      logBehavior: (id, timestamp, metadata = {}, endTimestamp, cues, stackId) =>
+      logBehavior: (id, timestamp, metadata = {}, endTimestamp, cues, stackId) => {
+        const logId = uuidv4();
         set(state => ({
           behaviors: state.behaviors.map(t => {
             if (t.id !== id) return t;
@@ -225,7 +226,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               logs: [
                 ...t.logs,
                 {
-                  id: uuidv4(),
+                  id: logId,
                   timestamp: newTimestamp,
                   endTimestamp,
                   metadata,
@@ -235,7 +236,9 @@ export const useBehaviorStore = create<BehaviorStore>()(
               ],
             };
           }),
-        })),
+        }));
+        return logId;
+      },
       applyAppUsageSessions: (appSessions, siteSessions, syncedUntil) =>
         set(state => ({
           behaviors: state.behaviors.map(b => {

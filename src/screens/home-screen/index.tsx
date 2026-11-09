@@ -10,6 +10,7 @@ import { useAfterInteractionsFlag } from '../../hooks/use-after-interactions-fla
 import { useBackGuard } from '../../hooks/use-back-guard';
 import { useDeferredCategorySelection } from '../../hooks/use-deferred-category-selection';
 import { useBehaviorStore } from '../../store/behavior-store';
+import { useChecklistSelectionStore } from '../../store/checklist-selection-store';
 import { useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
 import type { RootStackParamList } from '../../types/navigation';
@@ -21,6 +22,8 @@ import { BehaviorList } from './components/behavior-list';
 import { BehaviorTypeXPPanel } from './components/behavior-type-xp-panel';
 import { CategoriesFilter } from './components/categories-filter';
 import { CategoryXPBar } from './components/category-xp-bar';
+import { ChecklistSelectionBar } from './components/checklist-selection-bar';
+import { ChecklistStrip } from './components/checklist-strip';
 import { HomeHeader } from './components/home-header';
 import { HomeSearchBar } from './components/home-search-bar';
 
@@ -36,6 +39,7 @@ export function HomeScreen() {
   const setShowXp = useSettingsStore(s => s.setShowXp);
   const homeSelectedCategoryId = useScreenUiStore(s => s.homeSelectedCategoryId);
   const setHomeSelectedCategoryId = useScreenUiStore(s => s.setHomeSelectedCategoryId);
+  const selecting = useChecklistSelectionStore(s => s.active);
   const {
     selectedCategoryId,
     listCategoryId,
@@ -125,21 +129,27 @@ export function HomeScreen() {
       style={styles.container}
       edges={['top', 'left', 'right']}
     >
-      <HomeHeader
-        showXp={showXp}
-        onToggleXp={() => setShowXp(!showXp)}
-        isSearching={isSearching}
-        onSearchPress={() => {
-          if (isSearching) {
-            setSearchQuery('');
-            setIsSearching(false);
-          } else {
-            setIsSearching(true);
-          }
-        }}
-      />
+      {selecting ? (
+        <ChecklistSelectionBar />
+      ) : (
+        <HomeHeader
+          showXp={showXp}
+          onToggleXp={() => setShowXp(!showXp)}
+          isSearching={isSearching}
+          onSearchPress={() => {
+            if (isSearching) {
+              setSearchQuery('');
+              setIsSearching(false);
+            } else {
+              setIsSearching(true);
+            }
+          }}
+        />
+      )}
 
-      {isSearching ? (
+      {!selecting && !isSearching && !archivedSelected && <ChecklistStrip />}
+
+      {selecting ? null : isSearching ? (
         <HomeSearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -163,7 +173,7 @@ export function HomeScreen() {
         onSelectCategory={handleSelectCategory}
       />
 
-      {isSearching
+      {isSearching || selecting
         ? null
         : showXp &&
           !archivedSelected && (
@@ -192,16 +202,18 @@ export function HomeScreen() {
         />
       )}
 
-      <BehaviorActionSheet />
+      <BehaviorActionSheet showSelect />
 
-      <Button
-        fab
-        variant="primary"
-        onPress={() => navigation.navigate('BehaviorForm', { defaultCategoryId: addBehaviorDefaultCategoryId })}
-        style={styles.addButton}
-      >
-        + Add behavior
-      </Button>
+      {!selecting && (
+        <Button
+          fab
+          variant="primary"
+          onPress={() => navigation.navigate('BehaviorForm', { defaultCategoryId: addBehaviorDefaultCategoryId })}
+          style={styles.addButton}
+        >
+          + Add behavior
+        </Button>
+      )}
     </SafeAreaView>
   );
 }

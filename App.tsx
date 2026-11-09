@@ -21,6 +21,8 @@ import { BehaviorFormScreen } from './src/screens/behavior-form-screen';
 import { BehaviorScreen } from './src/screens/behavior-screen';
 import { BodyLogScreen } from './src/screens/body-log-screen';
 import { CategoryFormScreen } from './src/screens/category-form-screen';
+import { ChecklistFormScreen } from './src/screens/checklist-form-screen';
+import { ChecklistRunScreen } from './src/screens/checklist-run-screen';
 import { CravingsScreen } from './src/screens/cravings-screen';
 import { CueActivityScreen } from './src/screens/cue-activity-screen';
 import { CueFormScreen } from './src/screens/cue-form-screen';
@@ -37,6 +39,7 @@ import { ShopScreen } from './src/screens/shop-screen';
 import { TaskScreen } from './src/screens/task-screen';
 import { TimerScreen } from './src/screens/timer-screen';
 import { useBehaviorStore } from './src/store/behavior-store';
+import { useChecklistsStore } from './src/store/checklists-store';
 import { useCravingsStore } from './src/store/cravings-store';
 import { useCuesStore } from './src/store/cues-store';
 import { useHealthStore } from './src/store/health-store';
@@ -51,6 +54,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const BOTTOM_NAV_ROUTES = new Set<string>(['Cues', 'Cravings', 'Home', 'Day', 'Tasks']);
 const PERSISTED_STORES = [
   useBehaviorStore,
+  useChecklistsStore,
   useCravingsStore,
   useCuesStore,
   useHealthStore,
@@ -231,6 +235,14 @@ export default function App() {
                   <Stack.Screen
                     name="RideItOut"
                     component={RideItOutScreen}
+                  />
+                  <Stack.Screen
+                    name="ChecklistForm"
+                    component={ChecklistFormScreen}
+                  />
+                  <Stack.Screen
+                    name="ChecklistRun"
+                    component={ChecklistRunScreen}
                   />
                 </Stack.Navigator>
                 {pendingRouteName != null && (
