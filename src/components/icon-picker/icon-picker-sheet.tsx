@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../utils/colors';
 import { parseIcon } from '../../utils/icon-utils';
 import { CueSegmentedControl } from '../cues/cue-segmented-control';
@@ -40,6 +41,7 @@ function initialTabs(value: string): { tab: Tab; mixMode: MixMode } {
 /** Bottom sheet for any icon: a plain emoji, an Emoji Kitchen mix, stacked emoji, or an image link. */
 export function IconPickerSheet({ value, onChange, onClose }: Props) {
   const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const [{ tab, mixMode }, setTabs] = useState(() => initialTabs(value));
 
   const use = (next: string) => {
@@ -61,7 +63,7 @@ export function IconPickerSheet({ value, onChange, onClose }: Props) {
           onPress={onClose}
           accessibilityLabel="Close icon picker"
         />
-        <View style={[styles.sheet, { height: Math.round(height * 0.82) }]}>
+        <View style={[styles.sheet, { height: Math.round(height * 0.82), paddingBottom: 16 + insets.bottom }]}>
           <View style={styles.knob} />
           <View style={styles.header}>
             <View style={styles.flex}>
@@ -132,7 +134,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 18,
     paddingHorizontal: 12,
     paddingTop: 8,
-    paddingBottom: 24,
     gap: 10,
   },
   knob: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border.dim },
