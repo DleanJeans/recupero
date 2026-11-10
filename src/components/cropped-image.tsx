@@ -10,7 +10,8 @@ interface Props {
   crop?: ImageCrop;
 }
 
-/** An image filling a square box, showing the part picked in the crop editor (the centre when uncropped). */
+/** An image filling a square box, showing the part picked in the crop editor (the centre when uncropped),
+ *  turned. */
 export function CroppedImage({ uri, box, radius, crop }: Props) {
   const size = useImageSize(crop ? uri : null);
 
@@ -24,12 +25,24 @@ export function CroppedImage({ uri, box, radius, crop }: Props) {
     );
   }
 
-  const frame = getCropFrame(size.width, size.height, box, crop);
+  const { rotation, originX, originY, ...frame } = getCropFrame(size.width, size.height, box, crop);
   return (
-    <View style={{ width: box, height: box, borderRadius: radius, overflow: 'hidden' }}>
+    <View
+      style={{
+        width: box,
+        height: box,
+        borderRadius: radius,
+        overflow: 'hidden',
+      }}
+    >
       <Image
         source={{ uri }}
-        style={{ position: 'absolute', ...frame }}
+        style={{
+          position: 'absolute',
+          ...frame,
+          transformOrigin: [originX, originY, 0],
+          transform: [{ rotate: `${rotation}deg` }],
+        }}
       />
     </View>
   );

@@ -6,8 +6,10 @@ import { getBehaviorTypeColor } from '../utils/behavior-type-utils';
 import { Colors } from '../utils/colors';
 import { isCooldownActive } from '../utils/cooldown-utils';
 import { toDateString } from '../utils/date-utils';
+import { parseIcon } from '../utils/icon-utils';
 import { getStarLogCountSummary } from '../utils/star-utils';
 import { getEffectiveXp } from '../utils/xp-utils';
+import { AppIcon } from './app-icon';
 import { AutoFitHeaderTitle } from './auto-fit-header-title';
 import { BehaviorElapsed } from './behavior-elapsed';
 import { BehaviorIcon } from './behavior-icon';
@@ -18,6 +20,10 @@ import { STAR_PROGRESS_LABEL_WIDTH, StarProgressBar } from './star-progress-bar'
 import { StarRow } from './star-row';
 import { Text } from './text';
 import { XPBar } from './xp-bar';
+
+/** The square behind a behaviour's icon on Routines cards. Image icons fill all of it. */
+const CARD_ICON_SIZE = 46;
+const CARD_ICON_RADIUS = 13;
 
 interface Props {
   behavior: BehaviorEntry;
@@ -102,9 +108,12 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
       <View style={[styles.iconColumn, isHomeCard && styles.cardIconColumn]}>
         {isHomeCard ? (
           <View style={styles.cardIconShell}>
-            <BehaviorIcon
-              behavior={behavior}
+            <AppIcon
+              value={behavior.icon}
               size={26}
+              fallback="⏱️"
+              boxSize={parseIcon(behavior.icon).kind === 'image' ? CARD_ICON_SIZE : undefined}
+              imageRadius={CARD_ICON_RADIUS}
             />
           </View>
         ) : (
@@ -258,16 +267,17 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   cardIconColumn: {
-    width: 46,
+    width: CARD_ICON_SIZE,
     gap: 6,
   },
   cardIconShell: {
-    width: 46,
-    height: 46,
+    width: CARD_ICON_SIZE,
+    height: CARD_ICON_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.bg.input,
-    borderRadius: 13,
+    borderRadius: CARD_ICON_RADIUS,
+    overflow: 'hidden',
   },
   info: {
     flex: 1,

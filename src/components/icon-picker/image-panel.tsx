@@ -2,7 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Colors } from '../../utils/colors';
-import { DEFAULT_CROP, type ImageCrop, imageIcon, isImageUrl, parseIcon } from '../../utils/icon-utils';
+import {
+  DEFAULT_CROP,
+  type ImageClear,
+  type ImageCrop,
+  imageIcon,
+  isImageUrl,
+  parseIcon,
+} from '../../utils/icon-utils';
 import { Button } from '../button';
 import { Text, TextInput } from '../text';
 import { ImageCropEditor } from './image-crop-editor';
@@ -22,10 +29,11 @@ const PREVIEW_DELAY_MS = 600;
 export function ImagePanel({ value, nameHint, onUse }: Props) {
   const [initial] = useState(() => {
     const parsed = parseIcon(value);
-    return parsed.kind === 'image' ? { url: parsed.uri, crop: parsed.crop ?? DEFAULT_CROP } : null;
+    return parsed.kind === 'image' ? { url: parsed.uri, crop: parsed.crop ?? DEFAULT_CROP, clear: parsed.clear } : null;
   });
   const [url, setUrl] = useState(initial?.url ?? '');
   const [crop, setCrop] = useState<ImageCrop>(initial?.crop ?? DEFAULT_CROP);
+  const [clear, setClear] = useState<ImageClear | undefined>(initial?.clear);
   const [preview, setPreview] = useState(url);
   const [searching, setSearching] = useState(false);
 
@@ -36,7 +44,10 @@ export function ImagePanel({ value, nameHint, onUse }: Props) {
 
   const changeUrl = (next: string) => {
     setUrl(next);
-    if (next.trim() !== initial?.url) setCrop(DEFAULT_CROP);
+    if (next.trim() !== initial?.url) {
+      setCrop(DEFAULT_CROP);
+      setClear(undefined);
+    }
   };
 
   const valid = isImageUrl(url);
@@ -81,6 +92,8 @@ export function ImagePanel({ value, nameHint, onUse }: Props) {
             url={preview}
             crop={crop}
             onChange={setCrop}
+            clear={clear}
+            onClearChange={setClear}
           />
         ) : (
           <Text style={styles.note}>
@@ -91,7 +104,7 @@ export function ImagePanel({ value, nameHint, onUse }: Props) {
       <Button
         variant="primary"
         disabled={!valid}
-        onPress={() => onUse(imageIcon(url, crop))}
+        onPress={() => onUse(imageIcon(url, crop, clear))}
       >
         Use image
       </Button>

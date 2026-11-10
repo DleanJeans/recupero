@@ -30,19 +30,36 @@ export type ParsedIcon =
   | { kind: 'emoji'; emoji: string }
   | { kind: 'mix'; left: string; right: string; mix: KitchenMix | null }
   | { kind: 'stack'; layers: StackLayer[] }
-  | { kind: 'image'; uri: string; crop?: ImageCrop };
+  | { kind: 'image'; uri: string; crop?: ImageCrop; clear?: ImageClear };
 
-/** Which part of an image an icon shows: the centre point (fractions of the image) and how far it is zoomed in.
- *  Zoom 1 means the image's short side fills the icon. */
+/** Which part of an image an icon shows: the centre point (fractions of the image), how far it is zoomed in and how
+ *  it is turned. Zoom 1 means the image's short side fills the icon; below 1 the image is smaller than the icon. */
 export interface ImageCrop {
   x: number;
   y: number;
   zoom: number;
+  /** Degrees clockwise around the crop centre. Undefined = 0. */
+  rotation?: number;
 }
 
+/** Replaces the picture's own background (the colour that runs along its edges, e.g. the white behind a product
+ *  shot). Only colour connected to the edges is replaced, so the same colour inside the subject stays. */
+export interface ImageClear {
+  /** 0-100: how far from the background colour a pixel may be and still count as background. */
+  tolerance: number;
+  /** Colour to put there as "rrggbb". Undefined = transparent. */
+  fill?: string;
+}
+
+export const DEFAULT_CLEAR_TOLERANCE = 20;
+
 export const DEFAULT_CROP: ImageCrop = { x: 0.5, y: 0.5, zoom: 1 };
+export const MIN_CROP_ZOOM = 0.3;
 export const MAX_CROP_ZOOM = 5;
-const IMAGE_PATTERN = /^(https?:\/\/\S+)(?:\s+crop:(-?[\d.]+),(-?[\d.]+),(-?[\d.]+))?$/i;
+/** `<url> crop:x,y,zoom[,rotation] clear:tolerance,none|rrggbb`; both parts are optional. (An older build also wrote a
+ *  background colour after the rotation; it is read and ignored.) */
+const IMAGE_PATTERN =
+  /^(https?:\/\/\S+)(?:\s+crop:(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)(?:,(-?[\d.]+))?(?:,[0-9a-f]{6}(?:[0-9a-f]{2})?)?)?(?:\s+clear:(\d+),(none|[0-9a-f]{6}))?$/i;
 
 const MIX_PREFIX = 'mix:';
 const STACK_PREFIX = 'stack:';
@@ -64,36 +81,86 @@ export function isImageUrl(value: string): boolean {
 function parseImage(text: string): ParsedIcon | null {
   const match = IMAGE_PATTERN.exec(text);
   if (!match) return null;
-  const [, uri, x, y, zoom] = match;
-  if (x == null) return { kind: 'image', uri };
-  return { kind: 'image', uri, crop: { x: Number(x), y: Number(y), zoom: Number(zoom) } };
+  const [, uri, x, y, zoom, rotation, tolerance, fill] = match;
+  const parsed: Extract<ParsedIcon, { kind: 'image' }> = { kind: 'image', uri };
+  if (x != null) {
+    parsed.crop = { x: Number(x), y: Number(y), zoom: Number(zoom) };
+    if (rotation != null) parsed.crop.rotation = Number(rotation);
+  }
+  if (tolerance != null) {
+    parsed.clear = { tolerance: Math.min(100, Number(tolerance)) };
+    if (fill && fill.toLowerCase() !== 'none') parsed.clear.fill = fill.toLowerCase();
+  }
+  return parsed;
 }
 
-/** Stores an image link with its crop; an untouched crop is left off. */
-export function imageIcon(uri: string, crop?: ImageCrop): string {
-  const url = uri.trim();
-  if (!crop || (crop.x === DEFAULT_CROP.x && crop.y === DEFAULT_CROP.y && crop.zoom === DEFAULT_CROP.zoom)) return url;
-  return `${url} crop:${round(crop.x, 3)},${round(crop.y, 3)},${round(crop.zoom, 2)}`;
+/** Stores an image link with its crop and background change; an untouched crop is left off. */
+export function imageIcon(uri: string, crop?: ImageCrop, clear?: ImageClear): string {
+  let text = uri.trim();
+  if (crop) {
+    const rotation = Math.round(normalizeRotation(crop.rotation ?? 0));
+    if (crop.x !== DEFAULT_CROP.x || crop.y !== DEFAULT_CROP.y || crop.zoom !== DEFAULT_CROP.zoom || rotation !== 0) {
+      const parts = [round(crop.x, 3), round(crop.y, 3), round(crop.zoom, 2)];
+      if (rotation !== 0) parts.push(String(rotation));
+      text += ` crop:${parts.join(',')}`;
+    }
+  }
+  if (clear) text += ` clear:${Math.round(Math.min(100, Math.max(0, clear.tolerance)))},${clear.fill ?? 'none'}`;
+  return text;
 }
 
-/** Keeps the crop inside the image: zoom 1-MAX, and the centre far enough in that the icon is always covered. */
+/** Name of the processed copy of an image, for a given background change. */
+export function getClearedCacheName(url: string, clear: ImageClear): string {
+  return getIconCacheName(`${url}#clear:${Math.round(clear.tolerance)},${clear.fill ?? 'none'}`).replace(
+    /\.[a-z]+$/,
+    '.png',
+  );
+}
+
+/** Degrees folded into -180..180. */
+export function normalizeRotation(degrees: number): number {
+  const wrapped = ((((degrees + 180) % 360) + 360) % 360) - 180;
+  return wrapped === -180 ? 180 : wrapped;
+}
+
+/** Keeps the crop sensible. Unrotated and zoomed in, the icon stays fully covered by the image; otherwise the centre
+ *  just has to stay on the image, since nothing has to cover the whole icon. */
 export function clampCrop(crop: ImageCrop, width: number, height: number): ImageCrop {
-  const zoom = Math.min(MAX_CROP_ZOOM, Math.max(1, crop.zoom));
+  const zoom = Math.min(MAX_CROP_ZOOM, Math.max(MIN_CROP_ZOOM, crop.zoom));
+  const rest = { rotation: crop.rotation };
+  if (zoom < 1 || normalizeRotation(crop.rotation ?? 0) !== 0) {
+    return { x: Math.min(1, Math.max(0, crop.x)), y: Math.min(1, Math.max(0, crop.y)), zoom, ...rest };
+  }
   const short = Math.min(width, height);
   // Half the visible box as a fraction of each image dimension.
   const halfX = short / zoom / width / 2;
   const halfY = short / zoom / height / 2;
   const clamp = (v: number, half: number) => Math.min(1 - half, Math.max(half, v));
-  return { x: clamp(crop.x, halfX), y: clamp(crop.y, halfY), zoom };
+  return { x: clamp(crop.x, halfX), y: clamp(crop.y, halfY), zoom, ...rest };
 }
 
-/** Where to draw an image of natural size width x height so the crop fills a square box. */
+/** Where to draw an image of natural size width x height so the crop fills a square box. `originX/originY` is the
+ *  crop centre inside the drawn image, which the rotation turns around. */
 export function getCropFrame(width: number, height: number, box: number, crop: ImageCrop = DEFAULT_CROP) {
-  const { x, y, zoom } = clampCrop(crop, width, height);
+  const { x, y, zoom, rotation } = clampCrop(crop, width, height);
   const scale = (box / Math.min(width, height)) * zoom;
   const w = width * scale;
   const h = height * scale;
-  return { width: w, height: h, left: box / 2 - x * w, top: box / 2 - y * h };
+  return {
+    width: w,
+    height: h,
+    left: box / 2 - x * w,
+    top: box / 2 - y * h,
+    originX: x * w,
+    originY: y * h,
+    rotation: rotation ?? 0,
+  };
+}
+
+/** Converts a finger movement on screen into the matching movement across the image, undoing its rotation. */
+export function screenToImageDelta(dx: number, dy: number, rotation = 0) {
+  const r = (rotation * Math.PI) / 180;
+  return { x: dx * Math.cos(r) + dy * Math.sin(r), y: -dx * Math.sin(r) + dy * Math.cos(r) };
 }
 
 function toNumber(raw: string | undefined, fallback: number): number {

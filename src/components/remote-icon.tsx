@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image, StyleSheet, View } from 'react-native';
+import { useClearedImage } from '../hooks/use-cleared-image';
 import { useIconImage } from '../hooks/use-icon-image';
 import { DEFAULT_LAYER, getIconImageUrl, type ParsedIcon, presetLayer } from '../utils/icon-utils';
 import { CroppedImage } from './cropped-image';
@@ -18,11 +19,16 @@ export function RemoteIcon({ parsed, box, imageRadius }: Props) {
   const radius = imageRadius ?? Math.round(box * 0.22);
   const url = getIconImageUrl(parsed);
   const image = useIconImage(url);
+  const shown = useClearedImage(
+    url,
+    image.status === 'ready' ? image.uri : null,
+    parsed.kind === 'image' ? parsed.clear : undefined,
+  );
 
   if (image.status === 'ready' && parsed.kind === 'image') {
     return (
       <CroppedImage
-        uri={image.uri}
+        uri={shown ?? image.uri}
         box={box}
         radius={radius}
         crop={parsed.crop}

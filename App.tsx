@@ -8,6 +8,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context';
 import { BottomNav, type BottomNavRoute } from './src/components/bottom-nav';
 import { ConfettiOverlay } from './src/components/confetti-overlay';
+import { ImageClearHost } from './src/components/image-clear-host';
 import { RunningTimerPill } from './src/components/running-timer-pill';
 import { Text } from './src/components/text';
 import { UpdateReadyPill } from './src/components/update-ready-pill';
@@ -261,6 +262,7 @@ export default function App() {
                   </View>
                 )}
               </View>
+              <ImageClearHost />
               {isBottomNavRoute(activeRouteName) && <UpdateReadyPill />}
               {isBottomNavRoute(activeRouteName) && (
                 <RunningTimerPill onPress={() => navigationRef.isReady() && navigationRef.navigate('Timer')} />
