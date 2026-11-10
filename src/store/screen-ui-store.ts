@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 
 export type DayTab = 'logs' | 'metadata';
+/** Metadata tab scope: totals for the selected day, or the last 7 days against each daily goal. */
+export type DayMetadataRange = 'day' | 'week';
 
 interface ScreenUiStore {
   /** Routines checklist strip: true shows full cards, false shows slim pills. Resets to pills on app start. */
@@ -12,6 +14,8 @@ interface ScreenUiStore {
   setDayScreenSelectedDate: (date: string) => void;
   dayScreenSelectedTab: DayTab;
   setDayScreenSelectedTab: (tab: DayTab) => void;
+  dayScreenMetadataRange: DayMetadataRange;
+  setDayScreenMetadataRange: (range: DayMetadataRange) => void;
   taskScreenSelectedDate: string | null;
   setTaskScreenSelectedDate: (date: string) => void;
 }
@@ -22,9 +26,11 @@ export const useScreenUiStore = create<ScreenUiStore>()(set => ({
   homeSelectedCategoryId: null,
   dayScreenSelectedDate: null,
   dayScreenSelectedTab: 'metadata',
+  dayScreenMetadataRange: 'day',
   taskScreenSelectedDate: null,
   setHomeSelectedCategoryId: id => set({ homeSelectedCategoryId: id }),
   setDayScreenSelectedDate: date => set({ dayScreenSelectedDate: date }),
   setDayScreenSelectedTab: tab => set({ dayScreenSelectedTab: tab }),
+  setDayScreenMetadataRange: range => set({ dayScreenMetadataRange: range }),
   setTaskScreenSelectedDate: date => set({ taskScreenSelectedDate: date }),
 }));

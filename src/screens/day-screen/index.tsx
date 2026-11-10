@@ -29,7 +29,9 @@ import { DateNavigationRow } from '../components/date-navigation-row';
 import { DayStatsStrip } from './components/day-stats-strip';
 import { DayTabSelector } from './components/day-tab-selector';
 import { LogList } from './components/log-list';
+import { MetadataRangeSelector } from './components/metadata-range-selector';
 import { MetadataSummaryRow } from './components/metadata-summary-row';
+import { WeeklyGoalList } from './components/weekly-goal-list';
 
 export function DayScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -43,6 +45,7 @@ export function DayScreen() {
   const setDayScreenSelectedDate = useScreenUiStore(s => s.setDayScreenSelectedDate);
   const selectedTab = useScreenUiStore(s => s.dayScreenSelectedTab);
   const setSelectedTab = useScreenUiStore(s => s.setDayScreenSelectedTab);
+  const metadataRange = useScreenUiStore(s => s.dayScreenMetadataRange);
 
   const todayStr = toDateString(new Date(), dayCutoffHour);
   const selectedDate = dayScreenSelectedDate ?? todayStr;
@@ -174,10 +177,17 @@ export function DayScreen() {
       />
 
       {selectedTab === 'metadata' ? (
-        <MetadataSummaryRow
-          totals={metadataTotals}
-          contributions={metadataContributions}
-        />
+        <>
+          <MetadataRangeSelector />
+          {metadataRange === 'week' ? (
+            <WeeklyGoalList selectedDate={selectedDate} />
+          ) : (
+            <MetadataSummaryRow
+              totals={metadataTotals}
+              contributions={metadataContributions}
+            />
+          )}
+        </>
       ) : (
         <>
           <DayStatsStrip items={summaryItems} />
