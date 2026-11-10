@@ -26,6 +26,7 @@ import {
 } from '../utils/metadata-calculation-utils';
 import { DEFAULT_MONEY_REWARD } from '../utils/money-utils';
 import { isTaskCompleteOnDate, timestampForTaskDate } from '../utils/task-utils';
+import { toggleSkippedDate } from '../utils/weekly-goal-utils';
 import { useCuesStore } from './cues-store';
 import { useSettingsStore } from './settings-store';
 
@@ -129,6 +130,8 @@ interface BehaviorStore {
   removeCategory: (id: string) => void;
   updateCategory: (id: string, updates: { name?: string; emoji?: string; metadataFields?: MetadataField[] }) => void;
   updateCategoryMetadataFields: (id: string, metadataFields: MetadataField[]) => void;
+  /** Leaves a date out of (or back in) the category's 7-day goal averages. */
+  toggleCategoryGoalSkippedDate: (id: string, date: string) => void;
   addTask: (input: AddTaskInput) => void;
   updateTask: (
     taskId: string,
@@ -387,6 +390,12 @@ export const useBehaviorStore = create<BehaviorStore>()(
       updateCategory: (id, updates) =>
         set(state => ({
           categories: state.categories.map(c => (c.id === id ? { ...c, ...updates } : c)),
+        })),
+      toggleCategoryGoalSkippedDate: (id, date) =>
+        set(state => ({
+          categories: state.categories.map(c =>
+            c.id === id ? { ...c, goalSkippedDates: toggleSkippedDate(c.goalSkippedDates, date) } : c,
+          ),
         })),
       updateCategoryMetadataFields: (id, metadataFields) =>
         set(state => ({

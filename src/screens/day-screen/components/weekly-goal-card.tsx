@@ -4,7 +4,7 @@ import { Text } from '../../../components/text';
 import { useScreenUiStore } from '../../../store/screen-ui-store';
 import { Colors } from '../../../utils/colors';
 import { formatGoalNumber, formatSignedNumber } from '../../../utils/weekly-goal-format';
-import type { WeeklyGoalSummary } from '../../../utils/weekly-goal-utils';
+import { WEEKLY_GOAL_DAYS, type WeeklyGoalSummary } from '../../../utils/weekly-goal-utils';
 import { WeeklyGoalBars } from './weekly-goal-bars';
 
 interface WeeklyGoalCardProps {
@@ -39,7 +39,7 @@ export function WeeklyGoalCard({ summary, selectedDate }: WeeklyGoalCardProps) {
           selectable
           style={styles.average}
         >
-          {formatGoalNumber(summary.average)}
+          {summary.countedDays > 0 ? formatGoalNumber(summary.average) : '\u2014'}
           <Text style={styles.averageGoal}>
             {' '}
             avg /{formatGoalNumber(summary.goal)}
@@ -53,17 +53,23 @@ export function WeeklyGoalCard({ summary, selectedDate }: WeeklyGoalCardProps) {
         onSelectDay={openDay}
       />
       <View style={styles.footer}>
-        <Text style={styles.footerText}>
-          Avg is{' '}
-          <Text style={[styles.footerStrong, { color: hit ? Colors.type.desirable : Colors.star.filled }]}>
-            {summary.percent}%
-          </Text>{' '}
-          of goal
-        </Text>
-        <Text style={styles.footerText}>
-          Net <Text style={styles.footerStrong}>{formatSignedNumber(summary.net)}</Text> vs{' '}
-          {formatGoalNumber(summary.weekGoal)}
-        </Text>
+        {summary.countedDays > 0 ? (
+          <>
+            <Text style={styles.footerText}>
+              Avg is{' '}
+              <Text style={[styles.footerStrong, { color: hit ? Colors.type.desirable : Colors.star.filled }]}>
+                {summary.percent}%
+              </Text>{' '}
+              of goal{summary.countedDays < WEEKLY_GOAL_DAYS ? ` \u00b7 ${summary.countedDays} days` : ''}
+            </Text>
+            <Text style={styles.footerText}>
+              Net <Text style={styles.footerStrong}>{formatSignedNumber(summary.net)}</Text> vs{' '}
+              {formatGoalNumber(summary.weekGoal)}
+            </Text>
+          </>
+        ) : (
+          <Text style={styles.footerText}>No days counted. Every day is skipped or still in progress.</Text>
+        )}
       </View>
     </View>
   );

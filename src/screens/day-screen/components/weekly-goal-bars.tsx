@@ -43,7 +43,7 @@ export function WeeklyGoalBars({ summary, selectedDate, onSelectDay }: WeeklyGoa
               accessibilityRole="button"
               accessibilityLabel={`${day.date}: ${day.value} of ${summary.goal} ${summary.unit ?? ''}${
                 day.partial ? ', today so far' : ''
-              }`}
+              }${day.skipped ? ', skipped' : ''}`}
               onPress={() => onSelectDay(day.date)}
             >
               {day.value > 0 && (
@@ -60,6 +60,7 @@ export function WeeklyGoalBars({ summary, selectedDate, onSelectDay }: WeeklyGoa
                   { height },
                   { backgroundColor: over ? Colors.star.filled : Colors.type.desirable },
                   day.partial && styles.partialBar,
+                  day.skipped && styles.skippedBar,
                 ]}
               />
             </Pressable>
@@ -75,7 +76,11 @@ export function WeeklyGoalBars({ summary, selectedDate, onSelectDay }: WeeklyGoa
         {summary.days.map(day => (
           <Text
             key={day.date}
-            style={[styles.dayLabel, day.date === selectedDate && styles.selectedDayLabel]}
+            style={[
+              styles.dayLabel,
+              day.date === selectedDate && styles.selectedDayLabel,
+              day.skipped && styles.skippedDayLabel,
+            ]}
           >
             {formatWeekdayInitial(day.date)}
             {day.date.slice(8).replace(/^0/, '')}
@@ -106,6 +111,10 @@ const styles = StyleSheet.create({
   },
   partialBar: {
     opacity: 0.4,
+  },
+  skippedBar: {
+    backgroundColor: Colors.border.light,
+    opacity: 0.6,
   },
   valueLabel: {
     position: 'absolute',
@@ -149,5 +158,8 @@ const styles = StyleSheet.create({
   },
   selectedDayLabel: {
     color: Colors.text.primary,
+  },
+  skippedDayLabel: {
+    textDecorationLine: 'line-through',
   },
 });

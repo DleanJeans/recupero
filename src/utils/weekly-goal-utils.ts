@@ -9,6 +9,8 @@ export interface WeeklyGoalDay {
   value: number;
   /** True for today while the day is still in progress. Partial days stay out of the average. */
   partial: boolean;
+  /** Day the user marked as not worth counting (e.g. dinner out). Shown, but left out of the average and net. */
+  skipped: boolean;
 }
 
 export interface WeeklyGoalSummary {
@@ -20,7 +22,7 @@ export interface WeeklyGoalSummary {
   goal: number;
   /** Oldest first. The last entry is the selected date. */
   days: WeeklyGoalDay[];
-  /** Number of days that count toward the average and net (partial today excluded). */
+  /** Number of days that count toward the average and net (partial today and skipped days excluded). 0 when every day is skipped. */
   countedDays: number;
   average: number;
   /** Average as a percentage of the daily goal. */
@@ -42,7 +44,8 @@ export function getWeekDates(endDate: string, count = WEEKLY_GOAL_DAYS): string[
 
 /** Per-day totals of every metadata field that has a daily goal, for the 7 days ending on `endDate`.
  *  Days without logs count as 0. When `endDate` is `todayStr`, today is shown but left out of the average
- *  and net because the day is not over yet. Order follows category then field order. */
+ *  and net because the day is not over yet. Dates in `category.goalSkippedDates` are shown but also left out.
+ *  Order follows category then field order. */
 export function getWeeklyGoalSummaries(
   behaviors: BehaviorEntry[],
   categories: Category[],
@@ -53,7 +56,6 @@ export function getWeeklyGoalSummaries(
   const dates = getWeekDates(endDate);
   const dateIndex = new Map(dates.map((date, index) => [date, index]));
   const hasPartialDay = endDate === todayStr;
-  const countedDays = hasPartialDay ? WEEKLY_GOAL_DAYS - 1 : WEEKLY_GOAL_DAYS;
 
   const goalFieldsByCategory = new Map<string, Set<string>>();
   for (const category of categories) {
@@ -102,13 +104,17 @@ export function getWeeklyGoalSummaries(
       if (goal == null || !goalFieldsByCategory.get(category.id)?.has(field.key)) continue;
 
       const perDay = fieldTotals?.get(field.key) ?? new Array<number>(WEEKLY_GOAL_DAYS).fill(0);
+      const skippedDates = new Set(category.goalSkippedDates ?? []);
       const days = dates.map((date, index) => ({
         date,
         value: roundTo2(Math.max(perDay[index], 0)),
         partial: hasPartialDay && index === WEEKLY_GOAL_DAYS - 1,
+        skipped: skippedDates.has(date),
       }));
-      const countedTotal = days.slice(0, countedDays).reduce((sum, day) => sum + day.value, 0);
-      const average = countedTotal / countedDays;
+      const counted = days.filter(day => !day.partial && !day.skipped);
+      const countedDays = counted.length;
+      const countedTotal = counted.reduce((sum, day) => sum + day.value, 0);
+      const average = countedDays > 0 ? countedTotal / countedDays : 0;
 
       summaries.push({
         categoryId: category.id,
@@ -127,4 +133,11 @@ export function getWeeklyGoalSummaries(
     }
   }
   return summaries;
+}
+
+/** Adds `date` to the skipped dates, or removes it when already skipped. Keeps the list sorted. */
+export function toggleSkippedDate(dates: string[] | undefined, date: string): string[] {
+  const current = dates ?? [];
+  if (current.includes(date)) return current.filter(existing => existing !== date);
+  return [...current, date].sort();
 }

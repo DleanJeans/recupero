@@ -1,11 +1,12 @@
-import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useSettingsStore } from '../../../store/settings-store';
 import { Colors } from '../../../utils/colors';
 import { toDateString } from '../../../utils/date-utils';
 import { getWeeklyGoalSummaries } from '../../../utils/weekly-goal-utils';
+import { SkipDaysRow } from './skip-days-row';
 import { WeeklyGoalCard } from './weekly-goal-card';
 
 interface WeeklyGoalListProps {
@@ -17,6 +18,7 @@ export function WeeklyGoalList({ selectedDate }: WeeklyGoalListProps) {
   const categories = useBehaviorStore(s => s.categories);
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const todayStr = toDateString(new Date(), dayCutoffHour);
+  const [skipEditingId, setSkipEditingId] = useState<string | undefined>();
 
   const groups = useMemo(() => {
     const summaries = getWeeklyGoalSummaries(behaviors, categories, selectedDate, todayStr, dayCutoffHour);
@@ -66,7 +68,22 @@ export function WeeklyGoalList({ selectedDate }: WeeklyGoalListProps) {
               key={group.categoryId}
               style={styles.group}
             >
-              <Text style={styles.groupTitle}>{group.categoryName}</Text>
+              <View style={styles.groupHeader}>
+                <Text style={styles.groupTitle}>{group.categoryName}</Text>
+                <Pressable
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  onPress={() => setSkipEditingId(skipEditingId === group.categoryId ? undefined : group.categoryId)}
+                >
+                  <Text style={styles.skipButton}>{skipEditingId === group.categoryId ? 'Done' : 'Skip days'}</Text>
+                </Pressable>
+              </View>
+              {skipEditingId === group.categoryId && (
+                <SkipDaysRow
+                  categoryId={group.categoryId}
+                  days={group.items[0].days}
+                />
+              )}
               {group.items.map(summary => (
                 <WeeklyGoalCard
                   key={`${summary.categoryId}:${summary.fieldKey}`}
@@ -139,6 +156,16 @@ const styles = StyleSheet.create({
   },
   group: {
     gap: 10,
+  },
+  groupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  skipButton: {
+    color: Colors.metadataBar[0],
+    fontSize: 12,
+    fontWeight: '700',
   },
   groupTitle: {
     color: Colors.text.faint,

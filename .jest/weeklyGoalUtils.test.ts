@@ -1,5 +1,5 @@
 import type { BehaviorEntry, Category } from '../src/types/behavior';
-import { getWeekDates, getWeeklyGoalSummaries } from '../src/utils/weekly-goal-utils';
+import { getWeekDates, getWeeklyGoalSummaries, toggleSkippedDate } from '../src/utils/weekly-goal-utils';
 
 const category: Category = {
   id: 'food',
@@ -97,5 +97,32 @@ describe('getWeeklyGoalSummaries', () => {
     expect(calories.average).toBe(0);
     const noGoals: Category = { ...category, metadataFields: [{ key: 'fat', label: 'Fat' }] };
     expect(getWeeklyGoalSummaries([behavior], [noGoals], '2026-11-09', '2026-11-10')).toEqual([]);
+  });
+
+  it('leaves skipped days out of the average and net but still shows them', () => {
+    const skippedCategory: Category = { ...category, goalSkippedDates: ['2026-11-06'] };
+    const [calories] = getWeeklyGoalSummaries([makeBehavior(week)], [skippedCategory], '2026-11-09', '2026-11-10');
+    expect(calories.days[3]).toMatchObject({ date: '2026-11-06', value: 2600, skipped: true });
+    expect(calories.countedDays).toBe(6);
+    expect(calories.average).toBeCloseTo(2091.67, 1);
+    expect(calories.net).toBe(-650);
+    expect(calories.weekGoal).toBe(13200);
+  });
+
+  it('combines skipped days with partial today and handles every day skipped', () => {
+    const skippedCategory: Category = { ...category, goalSkippedDates: ['2026-11-06'] };
+    const [partial] = getWeeklyGoalSummaries([makeBehavior(week)], [skippedCategory], '2026-11-09', '2026-11-09');
+    expect(partial.countedDays).toBe(5);
+    const all: Category = { ...category, goalSkippedDates: getWeekDates('2026-11-09') };
+    const [none] = getWeeklyGoalSummaries([makeBehavior(week)], [all], '2026-11-09', '2026-11-10');
+    expect(none).toMatchObject({ countedDays: 0, average: 0, net: 0, weekGoal: 0 });
+  });
+});
+
+describe('toggleSkippedDate', () => {
+  it('adds a date in sorted order and removes it when toggled again', () => {
+    expect(toggleSkippedDate(undefined, '2026-11-06')).toEqual(['2026-11-06']);
+    expect(toggleSkippedDate(['2026-11-08'], '2026-11-06')).toEqual(['2026-11-06', '2026-11-08']);
+    expect(toggleSkippedDate(['2026-11-06', '2026-11-08'], '2026-11-06')).toEqual(['2026-11-08']);
   });
 });

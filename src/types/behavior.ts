@@ -19,6 +19,8 @@ export interface Category {
   name: string;
   emoji: string;
   metadataFields?: MetadataField[];
+  /** Dates (YYYY-MM-DD) left out of the 7-day goal averages, e.g. dinners out. Undefined when none. */
+  goalSkippedDates?: string[];
 }
 
 export interface LogEntry {
