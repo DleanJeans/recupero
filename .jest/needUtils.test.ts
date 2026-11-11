@@ -13,6 +13,7 @@ import {
   getNeedNudgePlans,
   getNeedRefillHistory,
   getRefillBehaviorIds,
+  getSleepQualityFactor,
   getSuggestedRefillIds,
   isNeedNotificationData,
   learnEmptyHours,
@@ -97,6 +98,24 @@ describe('getNeedEvents + simulateNeed', () => {
     const sleep = makeBehavior('sleep', [{ id: 'z', timestamp: T0, endTimestamp: T0 + 4 * H }]);
     const events = getNeedEvents('energy', config, [sleep], [], undefined, 0);
     expect(events).toMatchObject([{ ts: T0 + 4 * H, kind: 'add', amount: 50, behaviorId: 'sleep' }]);
+  });
+
+  it('scales a wearable sleep refill by time asleep and deep + REM share', () => {
+    const config = {
+      ...DEFAULT_NEED_CONFIGS.energy,
+      refills: { sleep: { mode: 'duration' as const, fullMinutes: 480 } },
+    };
+    const sleep = makeBehavior('sleep', [
+      {
+        id: 'z',
+        timestamp: T0,
+        endTimestamp: T0 + 9 * H,
+        sleep: { asleepMinutes: 480, deepMinutes: 48, remMinutes: 48, lightMinutes: 384 },
+      },
+    ]);
+    const [event] = getNeedEvents('energy', config, [sleep], [], undefined, 0);
+    expect(event).toMatchObject({ ts: T0 + 9 * H, kind: 'add' });
+    expect(event.kind === 'add' && event.amount).toBeCloseTo(90);
   });
 
   it('lets a check-in set the level and ignores other needs and old logs', () => {
@@ -321,5 +340,21 @@ describe('metadata categories', () => {
       ['rice', 50],
       ['snack', 10],
     ]);
+  });
+});
+
+describe('getSleepQualityFactor', () => {
+  it('is 1 without stage data', () => {
+    expect(getSleepQualityFactor(undefined)).toBe(1);
+    expect(getSleepQualityFactor({ asleepMinutes: 420 })).toBe(1);
+    expect(getSleepQualityFactor({ asleepMinutes: 0, deepMinutes: 0, remMinutes: 0 })).toBe(1);
+  });
+
+  it('maps the deep + REM share onto 0.8 to 1.1, with 40% as a normal night', () => {
+    expect(getSleepQualityFactor({ asleepMinutes: 400, deepMinutes: 80, remMinutes: 80 })).toBeCloseTo(1);
+    expect(getSleepQualityFactor({ asleepMinutes: 400, deepMinutes: 40, remMinutes: 40 })).toBeCloseTo(0.9);
+    expect(getSleepQualityFactor({ asleepMinutes: 400, deepMinutes: 0, remMinutes: 0 })).toBeCloseTo(0.8);
+    expect(getSleepQualityFactor({ asleepMinutes: 400, deepMinutes: 120, remMinutes: 120 })).toBeCloseTo(1.1);
+    expect(getSleepQualityFactor({ asleepMinutes: 400, deepMinutes: 200, remMinutes: 200 })).toBeCloseTo(1.1);
   });
 });

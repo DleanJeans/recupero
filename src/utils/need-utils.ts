@@ -1,4 +1,4 @@
-import type { BehaviorEntry, Category, MetadataField } from '../types/behavior';
+import type { BehaviorEntry, Category, LogSleepDetails, MetadataField } from '../types/behavior';
 import type { NeedCheckIn, NeedConfig, NeedId, NeedMetadataSource, NeedRefill } from '../types/need';
 
 const MS_PER_HOUR = 3_600_000;
@@ -130,6 +130,24 @@ export type NeedEvent =
   | { ts: number; kind: 'add'; amount: number; behaviorId: string; logId?: string }
   | { ts: number; kind: 'set'; level: number; behaviorId?: string; checkIn?: boolean; logId?: string };
 
+/** Share of time asleep spent in deep + REM sleep that counts as a normal night (factor 1). */
+export const SLEEP_RESTORATIVE_TARGET = 0.4;
+export const SLEEP_QUALITY_MIN_FACTOR = 0.8;
+export const SLEEP_QUALITY_MAX_FACTOR = 1.1;
+
+/**
+ * How well a wearable-tracked sleep refills Energy, from its deep + REM share of time asleep:
+ * 0% gives 0.8, the 40% target gives 1, and 60% or more gives 1.1. Sleeps without stage data
+ * (manual logs, short naps Fitbit only tracks as asleep/restless) count as 1.
+ */
+export function getSleepQualityFactor(sleep: LogSleepDetails | undefined): number {
+  if (!sleep || sleep.asleepMinutes <= 0) return 1;
+  if (sleep.deepMinutes == null && sleep.remMinutes == null) return 1;
+  const share = ((sleep.deepMinutes ?? 0) + (sleep.remMinutes ?? 0)) / sleep.asleepMinutes;
+  const factor = SLEEP_QUALITY_MIN_FACTOR + (1 - SLEEP_QUALITY_MIN_FACTOR) * (share / SLEEP_RESTORATIVE_TARGET);
+  return Math.min(SLEEP_QUALITY_MAX_FACTOR, Math.max(SLEEP_QUALITY_MIN_FACTOR, factor));
+}
+
 export function getRefillEvent(
   behaviorId: string,
   log: BehaviorEntry['logs'][number],
@@ -151,12 +169,13 @@ export function getRefillEvent(
   if (refill.mode === 'add')
     return { ts: log.timestamp, kind: 'add', amount: refill.amount, behaviorId, logId: log.id };
   if (log.endTimestamp == null || refill.fullMinutes <= 0) return undefined;
-  // Wearable sleep logs count only time asleep, so a restless night refills less than its time in bed.
+  // Wearable sleep logs count only time asleep, so a restless night refills less than its time in bed,
+  // and are scaled by how much of it was deep and REM sleep.
   const minutes = log.sleep?.asleepMinutes ?? (log.endTimestamp - log.timestamp) / 60_000;
   return {
     ts: log.endTimestamp,
     kind: 'add',
-    amount: (minutes / refill.fullMinutes) * 100,
+    amount: (minutes / refill.fullMinutes) * 100 * getSleepQualityFactor(log.sleep),
     behaviorId,
     logId: log.id,
   };

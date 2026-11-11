@@ -37,7 +37,7 @@ export interface LogEntry {
   stackId?: string;
   /** Id of the record this log was imported from (e.g. a Google Health sleep data point), used to dedupe syncs. */
   externalId?: string;
-  /** Sleep details from a wearable. The Energy need refills by `asleepMinutes`, not time in bed. */
+  /** Sleep details from a wearable. Energy refills by `asleepMinutes`, scaled by the deep + REM share. */
   sleep?: LogSleepDetails;
 }
 
