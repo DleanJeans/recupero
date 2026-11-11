@@ -4,13 +4,16 @@ import { LogRewardPreview } from '../../../components/log-reward-preview';
 import { Text } from '../../../components/text';
 import { useSettingsStore } from '../../../store/settings-store';
 import type { BehaviorEntry, LogEntry, MetadataField } from '../../../types/behavior';
+import type { NeedRefill } from '../../../types/need';
 import { Colors } from '../../../utils/colors';
 import { getLogDurationMs, getLogEndTimestamp, hasTimedLogRange } from '../../../utils/log-utils';
 import { formatMetadataValueUnit } from '../../../utils/metadata-calculation-utils';
 import { buildLogMetadataDisplay } from '../../../utils/metadata-list-display-utils';
 import { getMoneyRewardForLog, getStarMoneyMultiplierForLog } from '../../../utils/money-utils';
+import { getSleepEnergyScore } from '../../../utils/need-utils';
 import { formatDuration, formatElapsedNumeric, formatTimeRange } from '../../../utils/time-utils';
 import { getLogXp } from '../../../utils/xp-utils';
+import { SleepEnergyAmount, SleepEnergyBreakdown } from './sleep-energy-score';
 
 interface Props {
   behavior: BehaviorEntry;
@@ -19,6 +22,8 @@ interface Props {
   metadataFields?: MetadataField[];
   elapsedTick: number;
   isDecayed?: boolean;
+  /** Set when this behaviour refills Energy by duration: shows how each log scores. */
+  energyRefill?: NeedRefill;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -29,6 +34,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
   metadataFields,
   elapsedTick,
   isDecayed = false,
+  energyRefill,
   style,
 }: Props) {
   const timeFormat = useSettingsStore(state => state.timeFormat);
@@ -57,7 +63,8 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
   const { big, bars, texts } = metadataDisplay;
   const notes = log.metadata?.notes ? String(log.metadata.notes) : undefined;
   const hasReward = xp != null || money != null;
-  const hasSide = hasReward || big != null || texts.length > 0;
+  const energyScore = useMemo(() => getSleepEnergyScore(log, energyRefill), [energyRefill, log]);
+  const hasSide = hasReward || big != null || texts.length > 0 || energyScore != null;
 
   const handlePress = useCallback(() => onEdit(), [onEdit]);
 
@@ -88,6 +95,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
                 decayed={isDecayed}
               />
             ) : null}
+            {energyScore ? <SleepEnergyAmount score={energyScore} /> : null}
             {big ? (
               <Text style={[styles.bigValue, isDecayed && styles.decayedText]}>
                 {big.text}
@@ -144,6 +152,12 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
             ))}
           </View>
         </View>
+      ) : null}
+      {energyScore ? (
+        <SleepEnergyBreakdown
+          log={log}
+          score={energyScore}
+        />
       ) : null}
       {notes ? (
         <Text

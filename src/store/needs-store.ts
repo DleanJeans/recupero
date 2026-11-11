@@ -30,6 +30,9 @@ export interface NeedsStore {
   /** Needs history screen: one chart per need, or all needs on one chart. */
   historyDisplay: NeedHistoryDisplay;
   setHistoryDisplay: (display: NeedHistoryDisplay) => void;
+  /** The Energy scoring explainer atop a sleep behaviour's log list was dismissed. */
+  energyRuleHidden: boolean;
+  setEnergyRuleHidden: (hidden: boolean) => void;
   /** Records how the need feels now and nudges its decay rate toward what that implies. */
   checkIn: (needId: NeedId, level: number, source: NeedCheckInSource) => void;
   setRefill: (needId: NeedId, behaviorId: string, refill: NeedRefill | undefined) => void;
@@ -80,6 +83,8 @@ export const useNeedsStore = create<NeedsStore>()(
       rateHistory: emptyRateHistory(),
       historyDisplay: 'lanes',
       setHistoryDisplay: display => set({ historyDisplay: display }),
+      energyRuleHidden: false,
+      setEnergyRuleHidden: hidden => set({ energyRuleHidden: hidden }),
       checkIn: (needId, level, source) =>
         set(state => {
           const now = Date.now();

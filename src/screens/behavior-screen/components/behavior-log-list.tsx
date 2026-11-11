@@ -2,14 +2,17 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { SectionList, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
 import { useBehaviorStore } from '../../../store/behavior-store';
+import { useNeedsStore } from '../../../store/needs-store';
 import { useSettingsStore } from '../../../store/settings-store';
 import type { BehaviorEntry } from '../../../types/behavior';
 import { groupLogsByRecency } from '../../../utils/behavior-utils';
 import { Colors } from '../../../utils/colors';
 import { getLogGapBounds } from '../../../utils/log-utils';
+import { getBehaviorRefill } from '../../../utils/need-utils';
 import { getDecayedLogs } from '../../../utils/xp-utils';
 import { BehaviorLogItem } from './behavior-log-item';
 import { DecayedXPSummary } from './decayed-xp-summary';
+import { EnergyRuleCard } from './energy-rule-card';
 import { HabitXPBars } from './habit-xp-bars';
 import { LogGap } from './log-gap';
 
@@ -26,6 +29,13 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
       [behavior.categoryId],
     ),
   );
+  const energyConfig = useNeedsStore(state => state.needs.energy);
+  // Only behaviours set (directly or via their category) to refill Energy by duration, e.g. Sleep.
+  const energyRefill = useMemo(() => {
+    if (!energyConfig.enabled) return undefined;
+    const refill = getBehaviorRefill(energyConfig, behavior);
+    return refill?.mode === 'duration' ? refill : undefined;
+  }, [behavior, energyConfig]);
   const [elapsedTick, setElapsedTick] = useState(0);
 
   const logs = behavior.logs ?? [];
@@ -71,11 +81,12 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
           metadataFields={metadataFields}
           elapsedTick={elapsedTick}
           isDecayed={decayedLogIds.has(item.id)}
+          energyRefill={energyRefill}
           onEdit={() => onEditLog(item.id)}
         />
       </>
     ),
-    [behavior, dayCutoffHour, decayedLogIds, elapsedTick, metadataFields, onEditLog],
+    [behavior, dayCutoffHour, decayedLogIds, elapsedTick, energyRefill, metadataFields, onEditLog],
   );
 
   const renderSectionHeader = useCallback(
@@ -118,9 +129,10 @@ export function BehaviorLogList({ behavior, onEditLog }: BehaviorLogListProps) {
           behavior={behavior}
           now={now}
         />
+        {energyRefill && logs.length > 0 ? <EnergyRuleCard fullMinutes={energyRefill.fullMinutes} /> : null}
       </View>
     ),
-    [behavior, now],
+    [behavior, energyRefill, logs.length, now],
   );
   const contentContainerStyle = useMemo(
     () => [styles.listContent, logs.length === 0 && styles.emptyContainer],

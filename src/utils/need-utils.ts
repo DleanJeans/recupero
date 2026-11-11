@@ -148,6 +148,36 @@ export function getSleepQualityFactor(sleep: LogSleepDetails | undefined): numbe
   return Math.min(SLEEP_QUALITY_MAX_FACTOR, Math.max(SLEEP_QUALITY_MIN_FACTOR, factor));
 }
 
+export interface SleepEnergyScore {
+  /** Percentage points this log adds to Energy (can pass 100; the level itself caps at 100%). */
+  amount: number;
+  /** Time asleep from the wearable, else the log's length. */
+  asleepMinutes: number;
+  /** Deep + REM share of time asleep, 0-1. Undefined without stage data. */
+  restorativeShare?: number;
+  factor: number;
+}
+
+/** How a timed log scores for Energy under a duration refill, for showing the working in the log list. */
+export function getSleepEnergyScore(
+  log: BehaviorEntry['logs'][number],
+  refill: NeedRefill | undefined,
+): SleepEnergyScore | undefined {
+  if (refill?.mode !== 'duration') return undefined;
+  const event = getRefillEvent('', log, refill, undefined);
+  if (event?.kind !== 'add' || log.endTimestamp == null) return undefined;
+  const sleep = log.sleep;
+  const hasStages = sleep != null && sleep.asleepMinutes > 0 && (sleep.deepMinutes != null || sleep.remMinutes != null);
+  return {
+    amount: event.amount,
+    asleepMinutes: sleep?.asleepMinutes ?? (log.endTimestamp - log.timestamp) / 60_000,
+    restorativeShare: hasStages
+      ? ((sleep.deepMinutes ?? 0) + (sleep.remMinutes ?? 0)) / sleep.asleepMinutes
+      : undefined,
+    factor: getSleepQualityFactor(sleep),
+  };
+}
+
 export function getRefillEvent(
   behaviorId: string,
   log: BehaviorEntry['logs'][number],

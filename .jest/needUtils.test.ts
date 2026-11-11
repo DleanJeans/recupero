@@ -13,6 +13,7 @@ import {
   getNeedNudgePlans,
   getNeedRefillHistory,
   getRefillBehaviorIds,
+  getSleepEnergyScore,
   getSleepQualityFactor,
   getSuggestedRefillIds,
   isNeedNotificationData,
@@ -356,5 +357,36 @@ describe('getSleepQualityFactor', () => {
     expect(getSleepQualityFactor({ asleepMinutes: 400, deepMinutes: 0, remMinutes: 0 })).toBeCloseTo(0.8);
     expect(getSleepQualityFactor({ asleepMinutes: 400, deepMinutes: 120, remMinutes: 120 })).toBeCloseTo(1.1);
     expect(getSleepQualityFactor({ asleepMinutes: 400, deepMinutes: 200, remMinutes: 200 })).toBeCloseTo(1.1);
+  });
+});
+
+describe('getSleepEnergyScore', () => {
+  const refill = { mode: 'duration' as const, fullMinutes: 480 };
+
+  it('shows the working for a wearable sleep with stages', () => {
+    const score = getSleepEnergyScore(
+      {
+        id: 'z',
+        timestamp: T0,
+        endTimestamp: T0 + 6 * H,
+        sleep: { asleepMinutes: 300, deepMinutes: 60, remMinutes: 60, lightMinutes: 180 },
+      },
+      refill,
+    );
+    expect(score?.asleepMinutes).toBe(300);
+    expect(score?.restorativeShare).toBeCloseTo(0.4);
+    expect(score?.factor).toBeCloseTo(1);
+    expect(score?.amount).toBeCloseTo(62.5);
+  });
+
+  it('uses the log length and no share for a manual log', () => {
+    const score = getSleepEnergyScore({ id: 'm', timestamp: T0, endTimestamp: T0 + 2 * H }, refill);
+    expect(score).toMatchObject({ asleepMinutes: 120, factor: 1, amount: 25 });
+    expect(score?.restorativeShare).toBeUndefined();
+  });
+
+  it('is undefined without a duration refill or an end time', () => {
+    expect(getSleepEnergyScore({ id: 'a', timestamp: T0, endTimestamp: T0 + H }, { mode: 'set' })).toBeUndefined();
+    expect(getSleepEnergyScore({ id: 'b', timestamp: T0 }, refill)).toBeUndefined();
   });
 });

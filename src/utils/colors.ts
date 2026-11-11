@@ -82,4 +82,11 @@ export const Colors = {
     mood: '#b98cf0',
     body: '#f0936c',
   },
+  energy: '#fbbf24',
+  sleepStage: {
+    deep: '#5b6cff',
+    rem: '#b06cff',
+    light: '#5ab0ff',
+    awake: '#f2795a',
+  },
 } as const;
