@@ -5,6 +5,7 @@ import {
   createDefaultCueTrigger,
   getBodySensationOption,
   getBodySuggestedBehaviorIds,
+  getCueLogDays,
   getCueSources,
   getCueTriggerLabel,
   getCueXpStats,
@@ -177,5 +178,28 @@ describe('custom moods and body sensations', () => {
     expect(isCueOptionLabelTaken(' stressed ', MOOD_OPTIONS)).toBe(true);
     expect(isCueOptionLabelTaken('Anxious', MOOD_OPTIONS)).toBe(false);
     expect(buildCustomCueOption('  Anxious ', ' ', '🙂')).toEqual({ label: 'Anxious', emoji: '🙂' });
+  });
+
+  it('groups logs tagged with a cue by day, newest first', () => {
+    const day1 = new Date(2026, 10, 10, 9).getTime();
+    const day2 = new Date(2026, 10, 11, 9).getTime();
+    const walk = {
+      ...behavior,
+      logs: [
+        { id: 'a', timestamp: day1, endTimestamp: day1 + 5 * 60_000, cues: ['place:home'] },
+        { id: 'b', timestamp: day2, endTimestamp: day2 + 3 * 60_000, cues: ['place:home', 'mood:good'] },
+        { id: 'c', timestamp: day2 + 3_600_000, endTimestamp: day2 + 3_600_000 + 2 * 60_000, cues: ['place:home'] },
+        { id: 'd', timestamp: day2, endTimestamp: day2 + 9 * 60_000, cues: ['place:cafe'] },
+        { id: 'e', timestamp: day2, endTimestamp: day2 + 9 * 60_000 },
+      ],
+    } satisfies BehaviorEntry;
+
+    const days = getCueLogDays([walk], 'place:home');
+
+    expect(days.map(day => day.date)).toEqual(['2026-11-11', '2026-11-10']);
+    expect(days[0].entries.map(entry => entry.log.id)).toEqual(['c', 'b']);
+    expect(days[0].xp).toBe(5);
+    expect(days[1].xp).toBe(5);
+    expect(getCueLogDays([walk], 'place:nowhere')).toEqual([]);
   });
 });

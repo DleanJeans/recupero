@@ -16,6 +16,7 @@ import type {
   SavedPlace,
 } from '../types/cue';
 import { Colors } from './colors';
+import { toDateString } from './date-utils';
 import { iconText } from './icon-utils';
 import { getLogXp } from './xp-utils';
 
@@ -277,6 +278,36 @@ export function getCueXpStats(behaviors: BehaviorEntry[]): Map<CueRef, CueXpStat
     }
   }
   return stats;
+}
+
+export interface CueLogEntry {
+  behavior: BehaviorEntry;
+  log: BehaviorEntry['logs'][number];
+}
+
+export interface CueLogDay {
+  /** Operational date string (YYYY-MM-DD) after the day cutoff. */
+  date: string;
+  xp: number;
+  entries: CueLogEntry[];
+}
+
+/** Logs tagged with one cue, grouped by day. Newest day first, newest log first within a day. */
+export function getCueLogDays(behaviors: BehaviorEntry[], ref: CueRef, dayCutoffHour = 0): CueLogDay[] {
+  const days = new Map<string, CueLogDay>();
+  for (const behavior of behaviors) {
+    for (const log of behavior.logs) {
+      if (!log.cues?.includes(ref)) continue;
+      const date = toDateString(new Date(log.timestamp), dayCutoffHour);
+      const day = days.get(date) ?? { date, xp: 0, entries: [] };
+      day.xp += getLogXp(log);
+      day.entries.push({ behavior, log });
+      days.set(date, day);
+    }
+  }
+  const sorted = [...days.values()].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  for (const day of sorted) day.entries.sort((a, b) => b.log.timestamp - a.log.timestamp);
+  return sorted;
 }
 
 export function cueKindToTriggerType(kind: CueSourceKind): Extract<CueTriggerType, 'location' | 'mood' | 'body'> {

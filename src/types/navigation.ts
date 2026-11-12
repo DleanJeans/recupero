@@ -42,6 +42,8 @@ export type RootStackParamList = {
   Cues: undefined;
   CueForm: { cueId?: string } | undefined;
   CueActivity: undefined;
+  /** Behaviour logs tagged with one cue (saved place, mood or body sensation), grouped by day. */
+  CueLogs: { cueRef: CueRef };
   SavedPlaces: undefined;
   LocationEdit: { placeId?: string } | undefined;
   MoodLog: undefined;

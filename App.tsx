@@ -29,6 +29,7 @@ import { ChecklistRunScreen } from './src/screens/checklist-run-screen';
 import { CravingsScreen } from './src/screens/cravings-screen';
 import { CueActivityScreen } from './src/screens/cue-activity-screen';
 import { CueFormScreen } from './src/screens/cue-form-screen';
+import { CueLogsScreen } from './src/screens/cue-logs-screen';
 import { CuesScreen } from './src/screens/cues-screen';
 import { DayScreen } from './src/screens/day-screen';
 import { HomeScreen } from './src/screens/home-screen';
@@ -87,6 +88,7 @@ const linking: LinkingOptions<RootStackParamList> = {
       Cues: 'cues',
       CueForm: 'cues/form',
       CueActivity: 'cues/activity',
+      CueLogs: 'cues/logs',
       SavedPlaces: 'cues/places',
       LocationEdit: 'cues/places/edit',
       MoodLog: 'cues/mood',
@@ -226,6 +228,10 @@ export default function App() {
                   <Stack.Screen
                     name="CueActivity"
                     component={CueActivityScreen}
+                  />
+                  <Stack.Screen
+                    name="CueLogs"
+                    component={CueLogsScreen}
                   />
                   <Stack.Screen
                     name="SavedPlaces"

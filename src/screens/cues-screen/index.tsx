@@ -102,7 +102,7 @@ function CueSourcesTab() {
 
   const openSource = (source: CueSource) => {
     if (source.kind === 'place') {
-      navigation.navigate('LocationEdit', { placeId: source.ref.slice('place:'.length) });
+      navigation.navigate('CueLogs', { cueRef: source.ref });
     } else if (source.kind === 'mood') {
       navigation.navigate('MoodLog');
     } else {
