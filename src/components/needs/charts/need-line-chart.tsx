@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
+import { simplifyPolyline } from '../../../utils/chart-utils';
 import { Colors } from '../../../utils/colors';
 import { Text } from '../../text';
 
@@ -58,6 +59,8 @@ function thin(points: readonly ChartPoint[]): readonly ChartPoint[] {
 
 /**
  * Line chart drawn with plain Views (no SVG dependency): each segment is a thin rotated bar.
+ * Points that lie on a straight line are merged first, and each bar overlaps the next by its
+ * rounded cap, so lines draw as solid strokes rather than a chain of tiny dots.
  * Used for need levels over time and for the learned rate.
  */
 export function NeedLineChart({
@@ -92,15 +95,12 @@ export function NeedLineChart({
       w: number;
     }> = [];
     for (const line of series) {
-      const points = thin(line.points);
+      const w = line.width ?? 2;
+      const points = simplifyPolyline(thin(line.points).map(point => ({ x: sx(point.x), y: sy(point.y) })));
       for (let i = 0; i + 1 < points.length; i++) {
-        const x1 = sx(points[i].x);
-        const y1 = sy(points[i].y);
-        const x2 = sx(points[i + 1].x);
-        const y2 = sy(points[i + 1].y);
-        const length = Math.hypot(x2 - x1, y2 - y1);
-        if (length < 0.5) continue;
-        const w = line.width ?? 2;
+        const { x: x1, y: y1 } = points[i];
+        const { x: x2, y: y2 } = points[i + 1];
+        const length = Math.hypot(x2 - x1, y2 - y1) + w;
         result.push({
           key: `${line.key}-${i}`,
           left: (x1 + x2) / 2 - length / 2,
