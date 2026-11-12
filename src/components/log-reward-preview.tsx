@@ -19,7 +19,8 @@ interface LogRewardPreviewProps {
   undesirable?: boolean;
   decayed?: boolean;
   animate?: boolean;
-  variant?: 'default' | 'pill';
+  /** `inline` sits inside a white button: dark text on a tinted chip, final money amount only. */
+  variant?: 'default' | 'pill' | 'inline';
 }
 
 export const REWARD_ANIMATION_MS = 850;
@@ -48,26 +49,26 @@ export function LogRewardPreview({
 
   if (xp == null && money == null) return null;
 
+  const isInline = variant === 'inline';
   const showMoneyMultiplier =
-    money != null && moneyOriginal != null && moneyMultiplier != null && moneyMultiplier !== 1;
-  const moneyStyle = money != null && money < 0 ? styles.penalty : styles.money;
-  const isPillVariant = variant === 'pill';
-  const wrapReward = (content: React.ReactNode, positive: boolean) =>
-    isPillVariant ? (
-      <View style={[styles.pill, positive ? styles.pillPositive : styles.pillPenalty]}>{content}</View>
-    ) : (
-      content
-    );
+    !isInline && money != null && moneyOriginal != null && moneyMultiplier != null && moneyMultiplier !== 1;
+  const penaltyStyle = isInline ? styles.inlinePenalty : styles.penalty;
+  const moneyStyle = money != null && money < 0 ? penaltyStyle : isInline ? styles.inlinePositive : styles.money;
+  const xpStyle = undesirable ? penaltyStyle : isInline ? styles.inlinePositive : styles.xp;
+  const wrapReward = (content: React.ReactNode, positive: boolean) => {
+    if (variant === 'pill')
+      return <View style={[styles.pill, positive ? styles.pillPositive : styles.pillPenalty]}>{content}</View>;
+    if (isInline)
+      return (
+        <View style={[styles.inline, positive ? styles.inlineBgPositive : styles.inlineBgPenalty]}>{content}</View>
+      );
+    return content;
+  };
 
   return (
-    <Animated.View style={[styles.container, animate && animatedStyle]}>
+    <Animated.View style={[styles.container, isInline && styles.inlineContainer, animate && animatedStyle]}>
       {xp != null &&
-        wrapReward(
-          <Text style={[styles.reward, undesirable ? styles.penalty : styles.xp, decayed && styles.decayed]}>
-            +{xp} XP
-          </Text>,
-          !undesirable,
-        )}
+        wrapReward(<Text style={[styles.reward, xpStyle, decayed && styles.decayed]}>+{xp} XP</Text>, !undesirable)}
       {money != null &&
         (showMoneyMultiplier
           ? wrapReward(
@@ -131,5 +132,25 @@ const styles = StyleSheet.create({
   },
   penalty: {
     color: Colors.type.undesirable,
+  },
+  inlineContainer: {
+    gap: 6,
+  },
+  inline: {
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  inlineBgPositive: {
+    backgroundColor: Colors.rewardOnLight.positiveBg,
+  },
+  inlineBgPenalty: {
+    backgroundColor: Colors.rewardOnLight.penaltyBg,
+  },
+  inlinePositive: {
+    color: Colors.rewardOnLight.positive,
+  },
+  inlinePenalty: {
+    color: Colors.rewardOnLight.penalty,
   },
 });

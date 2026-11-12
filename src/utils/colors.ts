@@ -90,4 +90,17 @@ export const Colors = {
     light: '#5ab0ff',
     awake: '#f2795a',
   },
+  // ── Split Log button (white main part, light grey end segment) ──
+  splitButton: {
+    segment: '#e4e4e4',
+    divider: '#c4c4c4',
+  },
+
+  // ── Reward shown inside a white button ──
+  rewardOnLight: {
+    positive: '#166534',
+    positiveBg: 'rgba(22, 163, 74, 0.16)',
+    penalty: '#b91c1c',
+    penaltyBg: 'rgba(220, 38, 38, 0.14)',
+  },
 } as const;

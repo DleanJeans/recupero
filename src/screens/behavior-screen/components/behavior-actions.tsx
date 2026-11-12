@@ -1,13 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { StyleSheet } from 'react-native';
 import { Button } from '../../../components/button';
+import { Text } from '../../../components/text';
+import { useBehaviorStore } from '../../../store/behavior-store';
 import { useTimerStore } from '../../../store/timer-store';
 import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
+import { prefersTimer } from '../../../utils/log-action-utils';
 import { FabButtonRow } from '../../components/fab-button-row';
+import { SplitLogButton } from '../../components/split-log-button';
+import { BehaviorMoreSheet } from './behavior-more-sheet';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -18,80 +23,94 @@ interface BehaviorActionsProps {
   onLog: () => void;
 }
 
+/** Bottom row on a behaviour's details view: ⋯ (Edit, Archive, Delete), a split Log / Timer button whose main
+ *  main part is the likeliest action (Start timer for usually-timed habits), and Ride it out for undesirable behaviours. */
 export function BehaviorActions({ behaviorId, onDelete, onEdit, onLog }: BehaviorActionsProps) {
   const navigation = useNavigation<NavigationProp>();
   const startTimer = useTimerStore(s => s.start);
+  const behavior = useBehaviorStore(useCallback(state => state.behaviors.find(b => b.id === behaviorId), [behaviorId]));
+  const [menuOpen, setMenuOpen] = useState(false);
+  const timerFirst = useMemo(() => (behavior ? prefersTimer(behavior) : false), [behavior]);
+
+  if (!behavior) return null;
+  const undesirable = behavior.type === 'undesirable';
+  // Undesirable behaviours already lead with Ride it out, so their split stays Log | ⏱.
+  const timerMain = timerFirst && !undesirable;
 
   const handleStartTimer = () => {
     startTimer(behaviorId);
     navigation.navigate('Timer');
   };
+  const handleRideOut = () => navigation.navigate('RideItOut', { behaviorId });
 
   return (
-    <FabButtonRow>
-      <Button
-        variant="danger"
-        style={styles.deleteButton}
-        onPress={onDelete}
-        accessibilityLabel="Delete behavior"
-      >
-        <View style={styles.deleteIconWrapper}>
+    <>
+      <FabButtonRow>
+        <Button
+          variant="icon"
+          style={styles.iconAction}
+          onPress={() => setMenuOpen(true)}
+          accessibilityLabel="More actions"
+        >
           <Ionicons
-            name="trash-outline"
+            name="ellipsis-horizontal"
             size={20}
-            color={Colors.text.primary}
+            color={Colors.text.secondary}
           />
-        </View>
-      </Button>
-      <Button
-        variant="icon"
-        style={styles.iconAction}
-        onPress={onEdit}
-        accessibilityLabel="Edit behavior"
-      >
-        <Ionicons
-          name="create-outline"
-          size={18}
-          color={Colors.text.light}
+        </Button>
+        {timerMain ? (
+          <SplitLogButton
+            style={styles.split}
+            icon="stopwatch-outline"
+            onPress={handleStartTimer}
+            segmentLabel="Log"
+            onSegmentPress={onLog}
+            segmentAccessibilityLabel="Log without a timer"
+          >
+            Start timer
+          </SplitLogButton>
+        ) : (
+          <SplitLogButton
+            style={styles.split}
+            onPress={onLog}
+            segmentIcon="stopwatch-outline"
+            onSegmentPress={handleStartTimer}
+            segmentAccessibilityLabel="Start timer"
+          >
+            Log
+          </SplitLogButton>
+        )}
+        {undesirable && (
+          <Button
+            variant="danger"
+            style={styles.rideOut}
+            onPress={handleRideOut}
+            accessibilityLabel="Ride out a craving"
+          >
+            <Ionicons
+              name="flame"
+              size={18}
+              color={Colors.typeText.undesirable}
+            />
+            <Text style={styles.rideOutLabel}>Ride it out</Text>
+          </Button>
+        )}
+      </FabButtonRow>
+      {menuOpen && (
+        <BehaviorMoreSheet
+          behavior={behavior}
+          showRideOut={!undesirable}
+          onClose={() => setMenuOpen(false)}
+          onEdit={onEdit}
+          onRideOut={handleRideOut}
+          onDelete={onDelete}
         />
-      </Button>
-      <Button
-        variant="primary"
-        style={styles.detailAction}
-        onPress={onLog}
-      >
-        Log
-      </Button>
-      <Button
-        variant="icon"
-        style={styles.iconAction}
-        onPress={() => navigation.navigate('RideItOut', { behaviorId })}
-        accessibilityLabel="Ride out a craving"
-      >
-        <Ionicons
-          name="flame-outline"
-          size={20}
-          color={Colors.type.undesirable}
-        />
-      </Button>
-      <Button
-        variant="icon"
-        style={styles.iconAction}
-        onPress={handleStartTimer}
-        accessibilityLabel="Start timer"
-      >
-        <Ionicons
-          name="stopwatch-outline"
-          size={20}
-          color={Colors.text.light}
-        />
-      </Button>
-    </FabButtonRow>
+      )}
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  detailAction: { flex: 1 },
   iconAction: {
     width: 48,
     height: 48,
@@ -99,18 +118,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: Colors.bg.input,
   },
-  deleteButton: {
-    width: 48,
-    height: 48,
-    padding: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 12,
+  split: {
+    flex: 1,
   },
-  deleteIconWrapper: {
-    width: 24,
-    height: 24,
+  rideOut: {
+    flex: 1.15,
+    height: 48,
+    paddingVertical: 0,
+    flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
+    gap: 6,
+    borderRadius: 12,
+    backgroundColor: Colors.typeBtn.undesirable,
+  },
+  rideOutLabel: {
+    color: Colors.typeText.undesirable,
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

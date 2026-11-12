@@ -1,16 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet } from 'react-native';
 import { Button } from '../../../components/button';
 import { LogRewardPreview } from '../../../components/log-reward-preview';
+import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 import { FabButtonRow } from '../../components/fab-button-row';
+import { SplitLogButton } from '../../components/split-log-button';
 import type { BehaviorLogFormModel } from './use-behavior-log-form';
 
 interface Props {
   form: BehaviorLogFormModel;
 }
 
+/** Bottom row of the log form: a split Log (reward inside) | ⏱ button for a new log, or Delete + Save when editing. */
 export function BehaviorLogActions({ form }: Props) {
   const {
     behavior,
@@ -27,42 +30,45 @@ export function BehaviorLogActions({ form }: Props) {
     stackedLogs,
   } = form;
 
+  const label = editLogId ? 'Save' : stackedLogs.length > 0 ? `Log ${stackedLogs.length + 1}` : 'Log';
+  const showTimerSegment = !editLogId && !hasTimerRange;
+
   return (
     <FabButtonRow>
-      {editLogId ? (
+      {editLogId && (
         <Button
-          variant="danger"
+          variant="icon"
           style={styles.deleteButton}
           onPress={handleDelete}
+          disabled={pending}
           accessibilityLabel="Delete log"
         >
-          <View style={styles.deleteIconWrapper}>
-            <Ionicons
-              name="trash-outline"
-              size={20}
-              color={Colors.text.primary}
-            />
-          </View>
+          <Ionicons
+            name="trash-outline"
+            size={20}
+            color={Colors.type.undesirable}
+          />
         </Button>
-      ) : (
-        !hasTimerRange && (
-          <Button
-            variant="icon"
-            style={styles.timerButton}
-            onPress={handleStartTimer}
-            disabled={pending}
-            accessibilityLabel="Start a timer instead"
-          >
-            <Ionicons
-              name="stopwatch-outline"
-              size={20}
-              color={Colors.text.light}
-            />
-          </Button>
-        )
       )}
-      <View style={styles.logAction}>
+      <SplitLogButton
+        style={styles.logButton}
+        onPress={handleConfirm}
+        disabled={pending}
+        accessibilityLabel={label}
+        segmentIcon={showTimerSegment ? 'stopwatch-outline' : undefined}
+        onSegmentPress={showTimerSegment ? handleStartTimer : undefined}
+        segmentAccessibilityLabel="Start a timer instead"
+      >
+        {pending ? (
+          <ActivityIndicator
+            size="small"
+            color={Colors.bg.black}
+          />
+        ) : (
+          <Text style={styles.label}>{label}</Text>
+        )}
         <LogRewardPreview
+          variant="inline"
           xp={behavior.xpEnabled ? earnedXp : undefined}
           money={moneyRewardAmount}
           moneyOriginal={moneyRewardOriginalAmount}
@@ -70,46 +76,19 @@ export function BehaviorLogActions({ form }: Props) {
           undesirable={behavior.type === 'undesirable'}
           animate={pending}
         />
-        <Button
-          variant="primary"
-          style={styles.logButton}
-          onPress={handleConfirm}
-          disabled={pending}
-        >
-          {pending ? (
-            <ActivityIndicator
-              size="small"
-              color={Colors.bg.black}
-            />
-          ) : editLogId ? (
-            'Save'
-          ) : stackedLogs.length > 0 ? (
-            `Log ${stackedLogs.length + 1}`
-          ) : (
-            'Log'
-          )}
-        </Button>
-      </View>
+      </SplitLogButton>
     </FabButtonRow>
   );
 }
 
 const styles = StyleSheet.create({
-  logAction: {
-    flex: 1,
-    gap: 6,
-  },
   logButton: {
     flex: 1,
   },
-  timerButton: {
-    width: 48,
-    height: 48,
-    padding: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.bg.input,
-    marginTop: 'auto',
+  label: {
+    color: Colors.bg.black,
+    fontSize: 16,
+    fontWeight: '600',
   },
   deleteButton: {
     width: 48,
@@ -118,12 +97,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 12,
-    marginTop: 'auto',
-  },
-  deleteIconWrapper: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: Colors.bg.input,
   },
 });

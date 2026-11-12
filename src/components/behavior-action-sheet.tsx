@@ -137,7 +137,7 @@ interface SheetOptionProps {
   onPress: () => void;
 }
 
-function SheetOption({ icon, label, hint, danger = false, onPress }: SheetOptionProps) {
+export function SheetOption({ icon, label, hint, danger = false, onPress }: SheetOptionProps) {
   const color = danger ? Colors.type.undesirable : Colors.text.primary;
   return (
     <Pressable
