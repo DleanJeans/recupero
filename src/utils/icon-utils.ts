@@ -55,7 +55,7 @@ export const DEFAULT_CLEAR_TOLERANCE = 20;
 
 export const DEFAULT_CROP: ImageCrop = { x: 0.5, y: 0.5, zoom: 1 };
 export const MIN_CROP_ZOOM = 0.3;
-export const MAX_CROP_ZOOM = 5;
+export const MAX_CROP_ZOOM = 3;
 /** `<url> crop:x,y,zoom[,rotation] clear:tolerance,none|rrggbb`; both parts are optional. (An older build also wrote a
  *  background colour after the rotation; it is read and ignored.) */
 const IMAGE_PATTERN =

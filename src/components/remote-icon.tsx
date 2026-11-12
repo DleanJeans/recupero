@@ -32,6 +32,7 @@ export function RemoteIcon({ parsed, box, imageRadius }: Props) {
         box={box}
         radius={radius}
         crop={parsed.crop}
+        background={parsed.clear?.fill}
       />
     );
   }

@@ -5,6 +5,7 @@ import { useClearedImage } from '../../hooks/use-cleared-image';
 import { useIconImage } from '../../hooks/use-icon-image';
 import { useImageSize } from '../../hooks/use-image-size';
 import { Colors } from '../../utils/colors';
+import { hexToColor } from '../../utils/hex-color-utils';
 import {
   clampCrop,
   DEFAULT_CROP,
@@ -119,7 +120,7 @@ export function ImageCropEditor({ url, crop, onChange, clear, onClearChange }: P
   return (
     <View style={styles.editor}>
       <View
-        style={styles.viewport}
+        style={[styles.viewport, clear?.fill != null && { backgroundColor: hexToColor(clear.fill) }]}
         {...responder.panHandlers}
       >
         {localUri ? (
@@ -128,6 +129,7 @@ export function ImageCropEditor({ url, crop, onChange, clear, onClearChange }: P
             box={VIEW}
             radius={RADIUS}
             crop={crop}
+            background={clear?.fill}
           />
         ) : (
           <Text style={styles.status}>{image.status === 'failed' ? "Couldn't load this image" : 'Loading…'}</Text>
@@ -141,6 +143,8 @@ export function ImageCropEditor({ url, crop, onChange, clear, onClearChange }: P
             min={MIN_CROP_ZOOM}
             max={MAX_CROP_ZOOM}
             step={0.05}
+            center={1}
+            stepper
             format={zoom => `${zoom.toFixed(2)}×`}
             onChange={setZoom}
           />
@@ -165,6 +169,7 @@ export function ImageCropEditor({ url, crop, onChange, clear, onClearChange }: P
             min={-180}
             max={180}
             step={1}
+            stepper
             format={degrees}
             onChange={setRotation}
           />

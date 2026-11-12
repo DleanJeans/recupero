@@ -158,7 +158,7 @@ describe('image crop', () => {
   it('keeps the icon covered', () => {
     // A 200x100 image at zoom 1 shows its middle 100x100: x can range 0.25-0.75, y is fixed at 0.5.
     expect(clampCrop({ x: 0, y: 0, zoom: 1 }, 200, 100)).toEqual({ x: 0.25, y: 0.5, zoom: 1 });
-    expect(clampCrop({ x: 0.5, y: 0.5, zoom: 9 }, 100, 100).zoom).toBe(5);
+    expect(clampCrop({ x: 0.5, y: 0.5, zoom: 9 }, 100, 100).zoom).toBe(3);
   });
 
   it('places the image so the crop centre is in the middle', () => {

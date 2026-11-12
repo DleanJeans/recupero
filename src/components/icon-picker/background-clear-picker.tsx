@@ -102,6 +102,7 @@ export function BackgroundClearPicker({ value, onChange }: Props) {
             min={0}
             max={100}
             step={5}
+            stepper
             format={percent}
             onChange={next => onChange({ ...value, tolerance: next })}
           />
