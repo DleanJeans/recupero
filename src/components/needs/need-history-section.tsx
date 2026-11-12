@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useNeedHistory } from '../../hooks/use-need-history';
 import { useBehaviorStore } from '../../store/behavior-store';
+import { useNeedsStore } from '../../store/needs-store';
 import { useSettingsStore } from '../../store/settings-store';
 import type { NeedId } from '../../types/need';
 import { Colors } from '../../utils/colors';
@@ -42,15 +43,17 @@ export function NeedHistorySection({ needId, onEditLog }: NeedHistorySectionProp
   const hour12 = useSettingsStore(state => state.timeFormat === '12h');
   const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
   const behaviors = useBehaviorStore(state => state.behaviors);
+  const checkIns = useNeedsStore(state => state.checkIns);
 
-  // Fixed per range so the chart doesn't recompute every render.
+  // Fixed per range so the chart doesn't recompute every render, but moved on to now whenever a check-in
+  // or top-up is saved so it shows at once.
   const { from, to, dayStarts } = useMemo(() => {
     const now = Date.now();
     if (range !== '7d') return { from: now - RANGE_MS[range], to: now, dayStarts: [] as number[] };
     const today = getDayStartTimestamp(toDateString(new Date(now), dayCutoffHour), dayCutoffHour);
     const starts = Array.from({ length: 8 }, (_, i) => addLocalDays(today, i - 6));
     return { from: starts[0], to: now, dayStarts: starts };
-  }, [range, dayCutoffHour]);
+  }, [range, dayCutoffHour, checkIns]);
   const ids = useMemo(() => [needId], [needId]);
   const [history] = useNeedHistory(ids, from, to, getChartStepMs(to - from));
   const color = NEED_CHART_COLORS[needId];
