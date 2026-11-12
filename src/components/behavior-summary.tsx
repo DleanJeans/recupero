@@ -6,16 +6,15 @@ import { getBehaviorTypeColor } from '../utils/behavior-type-utils';
 import { Colors } from '../utils/colors';
 import { isCooldownActive } from '../utils/cooldown-utils';
 import { toDateString } from '../utils/date-utils';
-import { parseIcon } from '../utils/icon-utils';
 import { getStarLogCountSummary } from '../utils/star-utils';
 import { getEffectiveXp } from '../utils/xp-utils';
-import { AppIcon } from './app-icon';
 import { AutoFitHeaderTitle } from './auto-fit-header-title';
 import { BehaviorElapsed } from './behavior-elapsed';
 import { BehaviorIcon } from './behavior-icon';
 import { CategoryEmoji } from './category-emoji';
 import { CooldownBar } from './cooldown-bar';
 import { DecayBar } from './decay-bar';
+import { IconTile } from './icon-tile';
 import { STAR_PROGRESS_LABEL_WIDTH, StarProgressBar } from './star-progress-bar';
 import { StarRow } from './star-row';
 import { Text } from './text';
@@ -107,15 +106,13 @@ export const BehaviorSummary = React.memo(function BehaviorSummary({
     <View style={[styles.body, isHomeCard && styles.cardBody]}>
       <View style={[styles.iconColumn, isHomeCard && styles.cardIconColumn]}>
         {isHomeCard ? (
-          <View style={styles.cardIconShell}>
-            <AppIcon
-              value={behavior.icon}
-              size={26}
-              fallback="⏱️"
-              boxSize={parseIcon(behavior.icon).kind === 'image' ? CARD_ICON_SIZE : undefined}
-              imageRadius={CARD_ICON_RADIUS}
-            />
-          </View>
+          <IconTile
+            value={behavior.icon}
+            fallback="⏱️"
+            size={CARD_ICON_SIZE}
+            radius={CARD_ICON_RADIUS}
+            emojiSize={26}
+          />
         ) : (
           <BehaviorIcon
             behavior={behavior}
@@ -269,15 +266,6 @@ const styles = StyleSheet.create({
   cardIconColumn: {
     width: CARD_ICON_SIZE,
     gap: 6,
-  },
-  cardIconShell: {
-    width: CARD_ICON_SIZE,
-    height: CARD_ICON_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.bg.input,
-    borderRadius: CARD_ICON_RADIUS,
-    overflow: 'hidden',
   },
   info: {
     flex: 1,

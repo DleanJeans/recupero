@@ -333,3 +333,12 @@ export function getIconCacheName(url: string): string {
   const extension = /\.(png|jpe?g|gif|webp)(?:[?#]|$)/i.exec(url)?.[1]?.toLowerCase() ?? 'img';
   return `${fnv.toString(16).padStart(8, '0')}${djb.toString(16).padStart(8, '0')}.${extension}`;
 }
+
+/** Box size for an icon drawn in a square tile of `side` px: image icons fill the tile, mixes and stacks take
+ *  `drawnScale` of it (or the AppIcon default when unset), plain emoji need no box. */
+export function getIconTileBox(value: IconValue, side: number, drawnScale?: number): number | undefined {
+  const kind = parseIcon(value).kind;
+  if (kind === 'image') return side;
+  if ((kind === 'mix' || kind === 'stack') && drawnScale != null) return Math.round(side * drawnScale);
+  return undefined;
+}

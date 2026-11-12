@@ -3,9 +3,8 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, type StyleProp, StyleSheet, type ViewStyle } from 'react-native';
 import { Colors } from '../utils/colors';
 import { findEmojiByKeyword } from '../utils/emoji-data';
-import { parseIcon } from '../utils/icon-utils';
-import { AppIcon } from './app-icon';
 import { IconPickerSheet } from './icon-picker/icon-picker-sheet';
+import { IconTile } from './icon-tile';
 import { Text } from './text';
 
 interface Props {
@@ -43,7 +42,6 @@ export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChang
   const flat = StyleSheet.flatten([styles.input, style]);
   const side = typeof flat.height === 'number' ? flat.height : DEFAULT_SIDE;
   const radius = typeof flat.borderRadius === 'number' ? flat.borderRadius : 8;
-  const kind = value ? parseIcon(value).kind : 'none';
 
   const handleClose = () => {
     setOpen(false);
@@ -63,13 +61,14 @@ export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChang
         accessibilityLabel="Choose icon"
       >
         {value ? (
-          <AppIcon
+          <IconTile
             value={value}
-            style={styles.emoji}
-            boxSize={
-              kind === 'image' ? side : kind === 'none' || kind === 'emoji' ? undefined : Math.round(side * 0.86)
-            }
-            imageRadius={radius}
+            size={side}
+            radius={radius}
+            emojiSize={20}
+            drawnScale={0.86}
+            emojiStyle={styles.emoji}
+            style={styles.transparent}
           />
         ) : suggestedEmoji ? (
           <Text style={styles.emojiPlaceholder}>{suggestedEmoji}</Text>
@@ -108,6 +107,9 @@ const styles = StyleSheet.create({
   emoji: {
     color: Colors.text.primary,
     fontSize: 20,
+  },
+  transparent: {
+    backgroundColor: 'transparent',
   },
   emojiPlaceholder: {
     color: Colors.text.primary,

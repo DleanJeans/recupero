@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { AppIcon } from '../../../components/app-icon';
 import { CueTriggerIcon } from '../../../components/cues/cue-trigger-icon';
+import { IconTile } from '../../../components/icon-tile';
 import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 import { type CueSource, type CueXpStats, cueKindToTriggerType, getCueAccent } from '../../../utils/cue-utils';
@@ -29,12 +29,13 @@ export function CueSourceRow({ source, stats, maxXp, onPress }: CueSourceRowProp
       accessibilityLabel={`${source.label}, ${Math.round(stats.xp)} XP, ${logLabel}`}
     >
       {source.emoji ? (
-        <View style={[styles.emojiIcon, { backgroundColor: `${accent}1f` }]}>
-          <AppIcon
-            value={source.emoji}
-            style={styles.emoji}
-          />
-        </View>
+        <IconTile
+          value={source.emoji}
+          size={38}
+          radius={12}
+          emojiSize={19}
+          style={{ backgroundColor: `${accent}1f` }}
+        />
       ) : (
         <CueTriggerIcon type={type} />
       )}
@@ -74,14 +75,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 11,
   },
-  emojiIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emoji: { fontSize: 19 },
   copy: { flex: 1, minWidth: 0, gap: 5 },
   titleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
   title: { flex: 1, color: Colors.text.primary, fontSize: 14, fontWeight: '700' },

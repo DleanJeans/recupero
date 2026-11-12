@@ -3,9 +3,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 import { BackButton } from '../../components/back-button';
-import { BehaviorIcon } from '../../components/behavior-icon';
 import { CooldownBar } from '../../components/cooldown-bar';
 import { DecayBar } from '../../components/decay-bar';
+import { EditableIconTile } from '../../components/editable-icon-tile';
 import { StarRow } from '../../components/star-row';
 import { Text } from '../../components/text';
 import { XPBar } from '../../components/xp-bar';
@@ -47,6 +47,7 @@ export function BehaviorHeader({
   const hideCategoryNames = useSettingsStore(s => s.hideCategoryNames);
   const expanded = useSettingsStore(s => s.behaviorHeaderExpanded);
   const setExpanded = useSettingsStore(s => s.setBehaviorHeaderExpanded);
+  const updateBehavior = useBehaviorStore(s => s.updateBehavior);
   const category = useBehaviorStore(s =>
     behavior.categoryId ? s.categories.find(c => c.id === behavior.categoryId) : undefined,
   );
@@ -78,12 +79,16 @@ export function BehaviorHeader({
     <View style={styles.container}>
       <View style={styles.navRow}>
         <BackButton onPress={onBack} />
-        <View style={styles.iconTile}>
-          <BehaviorIcon
-            behavior={behavior}
-            size={26}
-          />
-        </View>
+        <EditableIconTile
+          value={behavior.icon}
+          fallback="⏱️"
+          size={44}
+          radius={13}
+          emojiSize={26}
+          style={styles.iconTile}
+          nameHint={behavior.name}
+          onChange={icon => updateBehavior(behavior.id, { icon })}
+        />
         <View style={styles.titleColumn}>
           <Text
             style={styles.title}
@@ -260,12 +265,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   iconTile: {
-    width: 44,
-    height: 44,
-    borderRadius: 13,
     backgroundColor: Colors.bg.card,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   titleColumn: {
     flex: 1,

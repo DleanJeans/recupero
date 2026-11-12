@@ -15,6 +15,7 @@ import {
   getCropFrame,
   getIconCacheName,
   getIconImageUrl,
+  getIconTileBox,
   getLayerOffset,
   getLayerPolar,
   iconText,
@@ -342,5 +343,18 @@ describe('clearing the picture background', () => {
     clearBackground(data, SIZE, SIZE, 20, null);
     expect(data[at(0, 0) + 3]).toBe(0);
     expect(data[at(20, 20) + 3]).toBe(255);
+  });
+});
+
+describe('getIconTileBox', () => {
+  it('fills the tile with image icons and leaves emoji unboxed', () => {
+    expect(getIconTileBox('https://example.com/a.png', 44)).toBe(44);
+    expect(getIconTileBox('🍕', 44, 0.86)).toBeUndefined();
+    expect(getIconTileBox(undefined, 44)).toBeUndefined();
+  });
+
+  it('scales mixes and stacks only when asked', () => {
+    expect(getIconTileBox(mixIcon('🍕', '🔥'), 44)).toBeUndefined();
+    expect(getIconTileBox(mixIcon('🍕', '🔥'), 50, 0.86)).toBe(43);
   });
 });

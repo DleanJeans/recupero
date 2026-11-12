@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { AppIcon } from '../../../components/app-icon';
+import { IconTile } from '../../../components/icon-tile';
 import { Text } from '../../../components/text';
 import type { SavedPlace } from '../../../types/cue';
 import { Colors } from '../../../utils/colors';
@@ -21,12 +21,13 @@ export function SavedPlaceRow({ place, onPress }: SavedPlaceRowProps) {
       accessibilityLabel={`${place.isHome ? 'Home, ' : ''}${place.name}, ${place.radiusM} meter radius`}
       accessibilityHint="Double tap to edit this saved place."
     >
-      <View style={[styles.icon, place.isHome && styles.homeIcon]}>
-        <AppIcon
-          value={getPlaceEmoji(place)}
-          style={styles.emoji}
-        />
-      </View>
+      <IconTile
+        value={getPlaceEmoji(place)}
+        size={38}
+        radius={12}
+        emojiSize={21}
+        style={place.isHome && styles.homeIcon}
+      />
       <View style={styles.copy}>
         <View style={styles.nameRow}>
           <Text
@@ -66,16 +67,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   homeRow: { borderColor: `${Colors.cue.location}88`, backgroundColor: `${Colors.cue.location}0f` },
-  icon: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.bg.input,
-  },
   homeIcon: { backgroundColor: `${Colors.cue.location}1f` },
-  emoji: { fontSize: 21 },
   copy: { flex: 1, minWidth: 0, gap: 3 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   name: { flexShrink: 1, color: Colors.text.primary, fontSize: 15, fontWeight: '700' },

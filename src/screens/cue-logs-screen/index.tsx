@@ -4,10 +4,11 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo } from 'react';
 import { SectionList, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AppIcon } from '../../components/app-icon';
 import { BackButton } from '../../components/back-button';
 import { Button } from '../../components/button';
 import { CueTriggerIcon } from '../../components/cues/cue-trigger-icon';
+import { EditableIconTile } from '../../components/editable-icon-tile';
+import { IconTile } from '../../components/icon-tile';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { Text } from '../../components/text';
@@ -29,6 +30,8 @@ import { DayLogCard } from '../day-screen/components/day-log-card';
 
 type CueLogsRoute = RouteProp<RootStackParamList, 'CueLogs'>;
 
+const ICON_TILE_SIZE = 38;
+
 /** Every behaviour log tagged with one cue (a saved place, mood or body sensation), grouped by day. */
 export function CueLogsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -37,6 +40,7 @@ export function CueLogsScreen() {
   const behaviors = useBehaviorStore(state => state.behaviors);
   const categories = useBehaviorStore(state => state.categories);
   const places = useCuesStore(state => state.places);
+  const updatePlace = useCuesStore(state => state.updatePlace);
   const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
   const custom = useCustomCueOptions();
 
@@ -92,13 +96,30 @@ export function CueLogsScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: 32 + insets.bottom }]}
         ListHeaderComponent={
           <View style={styles.summary}>
-            {source?.emoji ? (
-              <View style={[styles.emojiIcon, { backgroundColor: `${accent}1f` }]}>
-                <AppIcon
-                  value={source.emoji}
-                  style={styles.emoji}
+            {placeExists && placeId ? (
+              <EditableIconTile
+                value={source?.emoji}
+                size={ICON_TILE_SIZE}
+                radius={12}
+                emojiSize={19}
+                style={{ backgroundColor: `${accent}1f` }}
+                nameHint={source?.label}
+                onChange={emoji => updatePlace(placeId, { emoji })}
+              >
+                <Ionicons
+                  name="location-outline"
+                  size={19}
+                  color={accent}
                 />
-              </View>
+              </EditableIconTile>
+            ) : source?.emoji ? (
+              <IconTile
+                value={source.emoji}
+                size={ICON_TILE_SIZE}
+                radius={12}
+                emojiSize={19}
+                style={{ backgroundColor: `${accent}1f` }}
+              />
             ) : (
               <CueTriggerIcon type={type} />
             )}
@@ -171,8 +192,6 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     marginBottom: 4,
   },
-  emojiIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  emoji: { fontSize: 19 },
   summaryCopy: { flex: 1, gap: 2 },
   summaryXp: { color: Colors.text.faint, fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'] },
   summaryDetail: { color: Colors.text.faint, fontSize: 12 },
