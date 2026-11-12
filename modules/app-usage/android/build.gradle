@@ -17,5 +17,21 @@ android {
 dependencies {
   implementation 'com.facebook.react:react-android'
   // AppOpenWatcher posts app-open reminders through expo-notifications so their buttons reach the JS task.
-  implementation project(':expo-notifications')
+  // Expo links expo-notifications as a prebuilt AAR (host.exp.exponent:expo.modules.notifications) unless it
+  // is built from source, and only then is there a ':expo-notifications' project. The app already ships it,
+  // so compile against whichever form is linked.
+  def notificationsProject = rootProject.findProject(':expo-notifications')
+  if (notificationsProject != null) {
+    compileOnly notificationsProject
+  } else {
+    compileOnly "host.exp.exponent:expo.modules.notifications:${expoNotificationsVersion()}"
+  }
+}
+
+// The local Maven repository Expo adds only serves the exact version that is installed.
+def expoNotificationsVersion() {
+  def script = "console.log(require(require.resolve('expo-notifications/package.json', { paths: [process.argv[1]] })).version)"
+  return providers.exec {
+    commandLine('node', '-e', script, projectDir.absolutePath)
+  }.standardOutput.asText.get().trim()
 }
