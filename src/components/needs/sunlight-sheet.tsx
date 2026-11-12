@@ -200,6 +200,7 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
               value={radiusM}
               onChange={setRadiusM}
               color={SUNLIGHT_COLOR}
+              revealOnTap
             />
             <SunlightPlacesMap />
 

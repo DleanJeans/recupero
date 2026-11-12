@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useRef, useState } from 'react';
-import { type GestureResponderEvent, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { type GestureResponderEvent, Pressable, StyleSheet, View } from 'react-native';
 import { Colors } from '../utils/colors';
 import {
   clampGeofenceRadius,
@@ -17,6 +17,8 @@ const THUMB_SIZE = 24;
 /** Labels under the log-scale track, placed at their real positions. */
 const TICKS = [1, 10, 50, 200];
 const TICK_LABEL_WIDTH = 40;
+/** With `revealOnTap`, the slider tucks away again after this long untouched. */
+const REVEAL_IDLE_MS = 4000;
 
 interface RadiusSliderProps {
   value: number;
@@ -24,6 +26,11 @@ interface RadiusSliderProps {
   label?: string;
   /** Accent for the value, fill and −/+ buttons. */
   color?: string;
+  /**
+   * Hide the slider until −, + or the value is tapped, and tuck it away after a few idle seconds, so swiping
+   * to scroll a sheet can't change the radius by accident.
+   */
+  revealOnTap?: boolean;
 }
 
 /** Log-scale radius slider (1–200 m) with −/+ buttons at both ends of the value. */
@@ -32,8 +39,27 @@ export function RadiusSlider({
   onChange,
   label = 'Geofence radius',
   color = Colors.cue.location,
+  revealOnTap = false,
 }: RadiusSliderProps) {
   const sliderRef = useRef<View>(null);
+  const [revealed, setRevealed] = useState(!revealOnTap);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const holdOpen = useCallback(() => {
+    if (!revealOnTap) return;
+    clearTimeout(hideTimer.current);
+    setRevealed(true);
+  }, [revealOnTap]);
+  const scheduleHide = useCallback(() => {
+    if (!revealOnTap) return;
+    clearTimeout(hideTimer.current);
+    setRevealed(true);
+    hideTimer.current = setTimeout(() => setRevealed(false), REVEAL_IDLE_MS);
+  }, [revealOnTap]);
+  useEffect(() => () => clearTimeout(hideTimer.current), []);
+  const step = (direction: 1 | -1) => {
+    onChange(stepGeofenceRadius(normalized, direction));
+    scheduleHide();
+  };
   const [trackX, setTrackX] = useState(0);
   const [trackWidth, setTrackWidth] = useState(0);
   const [tickWidth, setTickWidth] = useState(0);
@@ -67,7 +93,7 @@ export function RadiusSlider({
         <View style={styles.stepper}>
           <Button
             variant="icon"
-            onPress={() => onChange(stepGeofenceRadius(normalized, -1))}
+            onPress={() => step(-1)}
             disabled={normalized <= MIN_GEOFENCE_RADIUS_M}
             accessibilityLabel="Decrease radius"
           >
@@ -77,10 +103,18 @@ export function RadiusSlider({
               color={color}
             />
           </Button>
-          <Text style={[styles.value, { color }]}>{normalized} m</Text>
+          <Pressable
+            onPress={revealOnTap ? () => (revealed ? setRevealed(false) : scheduleHide()) : undefined}
+            disabled={!revealOnTap}
+            hitSlop={8}
+            accessibilityRole={revealOnTap ? 'button' : undefined}
+            accessibilityHint={revealOnTap ? 'Shows the radius slider' : undefined}
+          >
+            <Text style={[styles.value, { color }]}>{normalized} m</Text>
+          </Pressable>
           <Button
             variant="icon"
-            onPress={() => onChange(stepGeofenceRadius(normalized, 1))}
+            onPress={() => step(1)}
             disabled={normalized >= MAX_GEOFENCE_RADIUS_M}
             accessibilityLabel="Increase radius"
           >
@@ -92,57 +126,65 @@ export function RadiusSlider({
           </Button>
         </View>
       </View>
-      <View
-        ref={sliderRef}
-        style={styles.hitArea}
-        accessible
-        accessibilityRole="adjustable"
-        accessibilityLabel={label}
-        accessibilityValue={{
-          min: MIN_GEOFENCE_RADIUS_M,
-          max: MAX_GEOFENCE_RADIUS_M,
-          now: normalized,
-          text: `${normalized} metres`,
-        }}
-        accessibilityActions={[{ name: 'decrement' }, { name: 'increment' }]}
-        onAccessibilityAction={event => {
-          onChange(stepGeofenceRadius(normalized, event.nativeEvent.actionName === 'increment' ? 1 : -1));
-        }}
-        onLayout={measure}
-        onStartShouldSetResponder={() => true}
-        onMoveShouldSetResponder={() => true}
-        onResponderStart={measure}
-        // Keep the drag when the slider sits inside a scroll view or sheet.
-        onResponderTerminationRequest={() => false}
-        onResponderGrant={handleResponder}
-        onResponderMove={handleResponder}
-      >
-        <View style={styles.track}>
-          <View style={[styles.fill, { width: `${progress * 100}%`, backgroundColor: color }]} />
-        </View>
-        <View style={[styles.thumb, { left: thumbLeft }]} />
-      </View>
-      <View
-        style={styles.range}
-        onLayout={event => setTickWidth(event.nativeEvent.layout.width)}
-      >
-        {TICKS.map((tick, index) => {
-          const isLast = index === TICKS.length - 1;
-          const left = radiusToSliderRatio(tick) * tickWidth;
-          return (
-            <Text
-              key={tick}
-              style={[
-                styles.rangeText,
-                isLast ? { right: 0 } : { left: index === 0 ? 0 : left - TICK_LABEL_WIDTH / 2 },
-                index > 0 && !isLast && styles.centeredTick,
-              ]}
-            >
-              {tick} m
-            </Text>
-          );
-        })}
-      </View>
+      {revealed && (
+        <>
+          <View
+            ref={sliderRef}
+            style={styles.hitArea}
+            accessible
+            accessibilityRole="adjustable"
+            accessibilityLabel={label}
+            accessibilityValue={{
+              min: MIN_GEOFENCE_RADIUS_M,
+              max: MAX_GEOFENCE_RADIUS_M,
+              now: normalized,
+              text: `${normalized} metres`,
+            }}
+            accessibilityActions={[{ name: 'decrement' }, { name: 'increment' }]}
+            onAccessibilityAction={event => {
+              onChange(stepGeofenceRadius(normalized, event.nativeEvent.actionName === 'increment' ? 1 : -1));
+            }}
+            onLayout={measure}
+            onStartShouldSetResponder={() => true}
+            onMoveShouldSetResponder={() => true}
+            onResponderStart={measure}
+            // Keep the drag when the slider sits inside a scroll view or sheet.
+            onResponderTerminationRequest={() => false}
+            onResponderGrant={event => {
+              holdOpen();
+              handleResponder(event);
+            }}
+            onResponderMove={handleResponder}
+            onResponderRelease={scheduleHide}
+          >
+            <View style={styles.track}>
+              <View style={[styles.fill, { width: `${progress * 100}%`, backgroundColor: color }]} />
+            </View>
+            <View style={[styles.thumb, { left: thumbLeft }]} />
+          </View>
+          <View
+            style={styles.range}
+            onLayout={event => setTickWidth(event.nativeEvent.layout.width)}
+          >
+            {TICKS.map((tick, index) => {
+              const isLast = index === TICKS.length - 1;
+              const left = radiusToSliderRatio(tick) * tickWidth;
+              return (
+                <Text
+                  key={tick}
+                  style={[
+                    styles.rangeText,
+                    isLast ? { right: 0 } : { left: index === 0 ? 0 : left - TICK_LABEL_WIDTH / 2 },
+                    index > 0 && !isLast && styles.centeredTick,
+                  ]}
+                >
+                  {tick} m
+                </Text>
+              );
+            })}
+          </View>
+        </>
+      )}
     </View>
   );
 }
