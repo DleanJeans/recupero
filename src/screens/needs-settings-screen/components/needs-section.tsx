@@ -6,6 +6,7 @@ import { Colors } from '../../../utils/colors';
 import { NEED_IDS } from '../../../utils/need-utils';
 import { NeedSettingsRow } from './need-settings-row';
 import { NeedSourcePickerModal } from './need-source-picker-modal';
+import { SunlightSettingsRow } from './sunlight-settings-row';
 
 /** Needs: on/off, the learned decay rate, and which metadata field fills each need (Hunger from calories). */
 export function NeedsSection() {
@@ -23,6 +24,7 @@ export function NeedsSection() {
             onPickSource={() => setPicking(id)}
           />
         ))}
+        <SunlightSettingsRow />
       </View>
       <NeedSourcePickerModal
         needId={picking}

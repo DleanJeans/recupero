@@ -1,0 +1,62 @@
+import * as Location from 'expo-location';
+import { useCuesStore } from '../store/cues-store';
+import { useSunlightStore } from '../store/sunlight-store';
+import { findPlaceAtPoint } from './geofence-utils';
+import { geofenceRadius } from './reminder-utils';
+import {
+  getIndoorPlaces,
+  getSunReferencePoint,
+  getWeatherUrl,
+  parseWeatherHours,
+  roundCoordinate,
+  shouldRefreshWeather,
+} from './sunlight-utils';
+
+const MIN_SAMPLE_GAP_MS = 5 * 60_000;
+/** A fix vaguer than this can't tell inside a place from just outside it. */
+const MAX_SAMPLE_ACCURACY_M = 150;
+const SAMPLE_COORD_DECIMALS = 3;
+
+/** Checks where the phone is now (only if location is already allowed) and records whether it's at a tracked place. */
+async function samplePresence(now: number): Promise<void> {
+  const { samples, outdoorPlaceIds, addSample } = useSunlightStore.getState();
+  const last = samples[samples.length - 1];
+  if (last && now - last.ts < MIN_SAMPLE_GAP_MS) return;
+  const { status } = await Location.getForegroundPermissionsAsync();
+  if (status !== 'granted') return;
+  const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+  const { latitude, longitude, accuracy } = position.coords;
+  if (accuracy != null && accuracy > MAX_SAMPLE_ACCURACY_M) return;
+  // Same enlarged radius as the geofences, so a check agrees with the arrive/leave events.
+  const indoor = getIndoorPlaces(useCuesStore.getState().places, outdoorPlaceIds).map(place => ({
+    ...place,
+    radiusM: geofenceRadius(place.radiusM),
+  }));
+  const place = findPlaceAtPoint(indoor, { lat: latitude, lng: longitude });
+  addSample({
+    ts: position.timestamp || now,
+    placeId: place?.id ?? null,
+    lat: roundCoordinate(latitude, SAMPLE_COORD_DECIMALS),
+    lng: roundCoordinate(longitude, SAMPLE_COORD_DECIMALS),
+  });
+}
+
+/** Refreshes hourly sunshine for the past week (estimated lux) when it's over an hour old or you've moved. */
+async function refreshWeather(now: number): Promise<void> {
+  const { samples, weather, setWeather } = useSunlightStore.getState();
+  const point = getSunReferencePoint(samples, useCuesStore.getState().places);
+  if (!point || !shouldRefreshWeather(weather, point, now)) return;
+  const response = await fetch(getWeatherUrl(point));
+  if (!response.ok) throw new Error(`Weather request failed: ${response.status}`);
+  const hours = parseWeatherHours(await response.json());
+  if (hours.length === 0) return;
+  setWeather({ fetchedAt: now, lat: roundCoordinate(point.lat), lng: roundCoordinate(point.lng), hours });
+}
+
+/** Run on launch and whenever Recupero comes to the foreground. */
+export async function syncSunlight(): Promise<void> {
+  if (!useSunlightStore.getState().enabled) return;
+  const now = Date.now();
+  await samplePresence(now).catch(error => console.warn('Sunlight position check failed', error));
+  await refreshWeather(now).catch(error => console.warn('Sunlight weather failed', error));
+}

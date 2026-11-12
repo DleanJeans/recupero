@@ -19,6 +19,7 @@ import { useDevHandoffImport } from './src/hooks/use-dev-handoff-import';
 import { useGoogleHealthSync } from './src/hooks/use-google-health-sync';
 import { useNeedNudges } from './src/hooks/use-need-nudges';
 import { useReminderEngine } from './src/hooks/use-reminder-engine';
+import { useSunlightTracking } from './src/hooks/use-sunlight-tracking';
 import { BehaviorFormScreen } from './src/screens/behavior-form-screen';
 import { BehaviorScreen } from './src/screens/behavior-screen';
 import { BodyLogScreen } from './src/screens/body-log-screen';
@@ -50,6 +51,7 @@ import { useHealthStore } from './src/store/health-store';
 import { useNeedsStore } from './src/store/needs-store';
 import { useSettingsStore } from './src/store/settings-store';
 import { useShopStore } from './src/store/shop-store';
+import { useSunlightStore } from './src/store/sunlight-store';
 import { useTimerStore } from './src/store/timer-store';
 import type { RootStackParamList } from './src/types/navigation';
 import { Colors } from './src/utils/colors';
@@ -65,6 +67,7 @@ const PERSISTED_STORES = [
   useNeedsStore,
   useSettingsStore,
   useShopStore,
+  useSunlightStore,
   useTimerStore,
 ];
 
@@ -108,6 +111,7 @@ export default function App() {
   useGoogleHealthSync(storesReady);
   useReminderEngine(storesReady, navigationRef);
   useNeedNudges(storesReady, navigationRef);
+  useSunlightTracking(storesReady);
   useDevHandoffImport(storesReady);
 
   useEffect(() => {
