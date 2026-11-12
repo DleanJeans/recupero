@@ -239,6 +239,8 @@ describe('image rotation and background', () => {
     expect(normalizeRotation(270)).toBe(-90);
     expect(normalizeRotation(-190)).toBe(170);
     expect(normalizeRotation(180)).toBe(180);
+    expect(normalizeRotation(-180)).toBe(-180);
+    expect(normalizeRotation(540)).toBe(180);
     expect(normalizeRotation(360)).toBe(0);
   });
 

@@ -117,8 +117,9 @@ export function getClearedCacheName(url: string, clear: ImageClear): string {
   );
 }
 
-/** Degrees folded into -180..180. */
+/** Degrees folded into -180..180; both ends stay as given so Rotate can rest at -180. */
 export function normalizeRotation(degrees: number): number {
+  if (degrees >= -180 && degrees <= 180) return degrees;
   const wrapped = ((((degrees + 180) % 360) + 360) % 360) - 180;
   return wrapped === -180 ? 180 : wrapped;
 }
