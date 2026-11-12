@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useTimerStore } from '../store/timer-store';
 import { Colors } from '../utils/colors';
@@ -9,10 +9,14 @@ import { Text } from './text';
 
 interface RunningTimerPillProps {
   onPress: () => void;
+  style?: StyleProp<ViewStyle>;
 }
 
-/** Floats above the bottom nav while a timer is running or waiting to be logged, since Timer has no tab. */
-export function RunningTimerPill({ onPress }: RunningTimerPillProps) {
+/**
+ * Floats above the bottom nav while a timer is running or waiting to be logged, since Timer has no tab.
+ * On Routines it sits above the Add behavior button instead (see FloatingPills).
+ */
+export function RunningTimerPill({ onPress, style }: RunningTimerPillProps) {
   const lockedBehaviorId = useTimerStore(s => s.lockedBehaviorId);
   const startTimestamp = useTimerStore(s => s.startTimestamp);
   const stopTimestamp = useTimerStore(s => s.stopTimestamp);
@@ -33,7 +37,7 @@ export function RunningTimerPill({ onPress }: RunningTimerPillProps) {
 
   return (
     <View
-      style={styles.wrap}
+      style={[styles.wrap, style]}
       pointerEvents="box-none"
     >
       <Pressable

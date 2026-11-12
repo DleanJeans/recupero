@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Updates from 'expo-updates';
 import React, { useEffect, useRef, useState } from 'react';
-import { AppState, Pressable, StyleSheet, View } from 'react-native';
+import { AppState, Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Colors } from '../utils/colors';
 import { Text } from './text';
 
@@ -12,7 +12,7 @@ const FOREGROUND_CHECK_INTERVAL_MS = 10 * 60 * 1000;
  * Floats above the bottom nav once an OTA update has downloaded, so it can be applied with one tap
  * instead of closing and reopening the app twice. Also checks for updates when the app returns to the foreground.
  */
-export function UpdateReadyPill() {
+export function UpdateReadyPill({ style }: { style?: StyleProp<ViewStyle> }) {
   const { isUpdatePending } = Updates.useUpdates();
   const lastCheckRef = useRef(Date.now());
   const [isReloading, setIsReloading] = useState(false);
@@ -46,7 +46,7 @@ export function UpdateReadyPill() {
 
   return (
     <View
-      style={styles.wrap}
+      style={[styles.wrap, style]}
       pointerEvents="box-none"
     >
       <Pressable

@@ -268,8 +268,9 @@ export default function App() {
                 )}
               </View>
               <ImageClearHost />
-              {isBottomNavRoute(activeRouteName) && <UpdateReadyPill />}
-              {isBottomNavRoute(activeRouteName) && (
+              {/* Routines shows these above its Add behavior button instead. */}
+              {isBottomNavRoute(activeRouteName) && activeRouteName !== 'Home' && <UpdateReadyPill />}
+              {isBottomNavRoute(activeRouteName) && activeRouteName !== 'Home' && (
                 <RunningTimerPill onPress={() => navigationRef.isReady() && navigationRef.navigate('Timer')} />
               )}
               {isBottomNavRoute(activeRouteName) && (

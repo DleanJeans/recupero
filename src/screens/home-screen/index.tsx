@@ -4,8 +4,10 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { BehaviorActionSheet } from '../../components/behavior-action-sheet';
 import { Button } from '../../components/button';
+import { RunningTimerPill } from '../../components/running-timer-pill';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text } from '../../components/text';
+import { UpdateReadyPill } from '../../components/update-ready-pill';
 import { useAfterInteractionsFlag } from '../../hooks/use-after-interactions-flag';
 import { useBackGuard } from '../../hooks/use-back-guard';
 import { useDeferredCategorySelection } from '../../hooks/use-deferred-category-selection';
@@ -40,6 +42,7 @@ export function HomeScreen() {
   const homeSelectedCategoryId = useScreenUiStore(s => s.homeSelectedCategoryId);
   const setHomeSelectedCategoryId = useScreenUiStore(s => s.setHomeSelectedCategoryId);
   const selecting = useChecklistSelectionStore(s => s.active);
+  const [bottomBarHeight, setBottomBarHeight] = useState(0);
   const {
     selectedCategoryId,
     listCategoryId,
@@ -199,21 +202,33 @@ export function HomeScreen() {
           selectedCategoryId={listCategoryId}
           searchQuery={isSearching ? searchQuery : undefined}
           motionEnabled={motionEnabled}
+          bottomPadding={bottomBarHeight + 24}
         />
       )}
 
       <BehaviorActionSheet showSelect />
 
-      {!selecting && (
-        <Button
-          fab
-          variant="primary"
-          onPress={() => navigation.navigate('BehaviorForm', { defaultCategoryId: addBehaviorDefaultCategoryId })}
-          style={styles.addButton}
-        >
-          + Add behavior
-        </Button>
-      )}
+      <View
+        style={styles.bottomBar}
+        pointerEvents="box-none"
+        onLayout={e => setBottomBarHeight(e.nativeEvent.layout.height)}
+      >
+        <UpdateReadyPill style={styles.pill} />
+        <RunningTimerPill
+          style={styles.pill}
+          onPress={() => navigation.navigate('Timer')}
+        />
+        {!selecting && (
+          <Button
+            fab
+            variant="primary"
+            onPress={() => navigation.navigate('BehaviorForm', { defaultCategoryId: addBehaviorDefaultCategoryId })}
+            style={styles.addButton}
+          >
+            + Add behavior
+          </Button>
+        )}
+      </View>
     </SafeAreaView>
   );
 }
@@ -223,7 +238,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bg.primary,
   },
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 16,
+    right: 16,
+    gap: 8,
+  },
+  pill: {
+    paddingTop: 0,
+    backgroundColor: 'transparent',
+  },
   addButton: {
+    position: 'relative',
+    left: 0,
+    right: 0,
     bottom: 0,
   },
   listLoading: {

@@ -21,6 +21,8 @@ interface BehaviorListProps {
   selectedCategoryId: string | null;
   searchQuery?: string;
   motionEnabled?: boolean;
+  /** Space kept clear under the last card for the floating Add behavior button and pills. */
+  bottomPadding?: number;
 }
 
 export const BehaviorList = React.memo(function BehaviorList({
@@ -30,6 +32,7 @@ export const BehaviorList = React.memo(function BehaviorList({
   selectedCategoryId,
   searchQuery,
   motionEnabled = true,
+  bottomPadding,
 }: BehaviorListProps) {
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const [now, setNow] = useState(() => Date.now());
@@ -69,8 +72,12 @@ export const BehaviorList = React.memo(function BehaviorList({
   })();
   const listEmptyComponent = useMemo(() => <Text style={styles.empty}>{emptyMessage}</Text>, [emptyMessage]);
   const contentContainerStyle = useMemo(
-    () => [styles.listContent, behaviors.length === 0 && styles.emptyContainer],
-    [behaviors.length],
+    () => [
+      styles.listContent,
+      bottomPadding != null && { paddingBottom: Math.max(styles.listContent.paddingBottom, bottomPadding) },
+      behaviors.length === 0 && styles.emptyContainer,
+    ],
+    [behaviors.length, bottomPadding],
   );
   const renderItem = useCallback(
     ({ item, section }: { item: BehaviorEntry; section: { title: string } }) => (
