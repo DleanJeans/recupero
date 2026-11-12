@@ -22,7 +22,8 @@ export interface NeedMetadataSource {
   categoryIds?: string[];
 }
 
-export type NeedCheckInSource = 'tap' | 'body' | 'notification';
+/** `update` = topped up by hand without logging a behaviour (e.g. a meal with several foods). */
+export type NeedCheckInSource = 'tap' | 'body' | 'notification' | 'update';
 
 /** The user saying how a need feels right now. Sets the level and teaches the decay rate. */
 export interface NeedCheckIn {
@@ -31,6 +32,11 @@ export interface NeedCheckIn {
   ts: number;
   level: number;
   source: NeedCheckInSource;
+  /**
+   * Set on updates: percentage points added without a log. The entry then counts as a refill
+   * (it doesn't set the level or teach the decay rate), and `level` is what it came to.
+   */
+  amount?: number;
 }
 
 export interface NeedConfig {

@@ -408,3 +408,21 @@ describe('getRefilledNeedIds', () => {
     expect(getRefilledNeedIds([{ id: 'energy', config: energy, level: 10 }])).toEqual([]);
   });
 });
+
+describe('updates without a log', () => {
+  const update: NeedCheckIn = { id: 'u', needId: 'hunger', ts: T0 + H, level: 0, source: 'update', amount: 25 };
+
+  it('adds points as a refill instead of setting the level', () => {
+    const checkIns: NeedCheckIn[] = [{ id: 'c', needId: 'hunger', ts: T0, level: 45, source: 'tap' }, update];
+    const events = getNeedEvents('hunger', DEFAULT_NEED_CONFIGS.hunger, [], checkIns, undefined, 0);
+    expect(events.map(event => event.kind)).toEqual(['set', 'add']);
+    const state = simulateNeed(events, 10, T0 + H);
+    expect(state.level).toBeCloseTo(60, 5);
+    expect(state.lastRefillAt).toBe(T0 + H);
+  });
+
+  it('shows in the refill history without a behaviour', () => {
+    const history = getNeedRefillHistory(DEFAULT_NEED_CONFIGS.hunger, [], undefined, () => true, [update]);
+    expect(history.entries).toEqual([{ logId: 'u', update: true, ts: T0 + H, amountLabel: '+25%' }]);
+  });
+});

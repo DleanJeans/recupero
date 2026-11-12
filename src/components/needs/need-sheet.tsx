@@ -26,6 +26,8 @@ import {
   getRefillBehaviorIds,
   getSuggestedRefillIds,
   NEED_INFO,
+  NEED_UPDATE_AMOUNTS,
+  NEED_UPDATE_QUESTIONS,
 } from '../../utils/need-utils';
 import { formatCompactDate, formatElapsedNumeric, formatTime } from '../../utils/time-utils';
 import { AppIcon } from '../app-icon';
@@ -53,6 +55,9 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
   const hidePrivate = useSettingsStore(state => state.hidePrivate);
   const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
   const checkIn = useNeedsStore(state => state.checkIn);
+  const checkIns = useNeedsStore(state => state.checkIns);
+  const updateLevel = useNeedsStore(state => state.updateLevel);
+  const removeCheckIn = useNeedsStore(state => state.removeCheckIn);
   const setRefill = useNeedsStore(state => state.setRefill);
   const setCategoryRefill = useNeedsStore(state => state.setCategoryRefill);
   const [adding, setAdding] = useState(false);
@@ -73,8 +78,9 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
       behaviors,
       need.source,
       ts => toDateString(new Date(ts), dayCutoffHour) === today,
+      checkIns.filter(entry => entry.needId === need.id),
     );
-  }, [behaviors, dayCutoffHour, need, now]);
+  }, [behaviors, checkIns, dayCutoffHour, need, now]);
   const suggestedIds = useMemo(
     () => (need ? getSuggestedRefillIds(need.id, need.config, behaviors).filter(id => !refillIds.includes(id)) : []),
     [behaviors, need, refillIds],
@@ -211,18 +217,66 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
               ))}
             </View>
 
+            <CueSectionLabel>{NEED_UPDATE_QUESTIONS[need.id]}</CueSectionLabel>
+            <View style={styles.checkIns}>
+              {NEED_UPDATE_AMOUNTS.map(amount => (
+                <Pressable
+                  key={amount}
+                  style={({ pressed }) => [styles.checkIn, pressed && styles.pressed]}
+                  onPress={() => updateLevel(need.id, amount)}
+                  accessibilityRole="button"
+                  accessibilityLabel={amount >= 100 ? `Fill ${info.label}` : `Add ${amount}% to ${info.label}`}
+                >
+                  <Text style={styles.updateAmount}>{amount >= 100 ? 'Full' : `+${amount}%`}</Text>
+                </Pressable>
+              ))}
+            </View>
+
             {history && history.entries.length > 0 ? (
               <>
                 <CueSectionLabel>{history.today ? 'Refilled today' : 'Last refill'}</CueSectionLabel>
                 <View style={styles.history}>
                   {history.entries.map(entry => {
-                    const behavior = behaviorById.get(entry.behaviorId);
+                    const time = history.today
+                      ? formatTime(entry.ts)
+                      : `${formatCompactDate(entry.ts)} ${formatTime(entry.ts)} · ${formatElapsedNumeric(entry.ts, now)}`;
+                    if (entry.update) {
+                      return (
+                        <View
+                          key={entry.logId}
+                          style={styles.historyRow}
+                        >
+                          <Text style={styles.historyEmoji}>{info.emoji}</Text>
+                          <Text
+                            style={styles.historyName}
+                            numberOfLines={1}
+                          >
+                            Updated without a log
+                          </Text>
+                          <Text style={styles.historyAmount}>{entry.amountLabel}</Text>
+                          <Text style={styles.historyTime}>{time}</Text>
+                          <Pressable
+                            onPress={() => removeCheckIn(entry.logId)}
+                            hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Undo update"
+                          >
+                            <Ionicons
+                              name="close"
+                              size={16}
+                              color={Colors.text.faint}
+                            />
+                          </Pressable>
+                        </View>
+                      );
+                    }
+                    const behavior = entry.behaviorId ? behaviorById.get(entry.behaviorId) : undefined;
                     if (!behavior) return null;
                     return (
                       <Pressable
                         key={entry.logId}
                         style={({ pressed }) => [styles.historyRow, pressed && styles.pressed]}
-                        onPress={() => editLog(entry.behaviorId, entry.logId)}
+                        onPress={() => editLog(behavior.id, entry.logId)}
                         accessibilityRole="button"
                         accessibilityLabel={`Edit ${behavior.name} log`}
                       >
@@ -237,11 +291,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                           {behavior.name}
                         </Text>
                         <Text style={styles.historyAmount}>{entry.amountLabel}</Text>
-                        <Text style={styles.historyTime}>
-                          {history.today
-                            ? formatTime(entry.ts)
-                            : `${formatCompactDate(entry.ts)} ${formatTime(entry.ts)} · ${formatElapsedNumeric(entry.ts, now)}`}
-                        </Text>
+                        <Text style={styles.historyTime}>{time}</Text>
                       </Pressable>
                     );
                   })}
@@ -575,6 +625,11 @@ const styles = StyleSheet.create({
     color: Colors.text.faint,
     fontSize: 10,
   },
+  updateAmount: {
+    color: Colors.type.desirable,
+    fontSize: 13,
+    fontWeight: '700',
+  },
   hint: {
     color: Colors.text.faint,
     fontSize: 12,
@@ -635,6 +690,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingVertical: 6,
+  },
+  historyEmoji: {
+    width: 20,
+    fontSize: 15,
+    textAlign: 'center',
   },
   historyName: {
     flex: 1,

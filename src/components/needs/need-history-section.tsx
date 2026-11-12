@@ -167,7 +167,7 @@ export function NeedHistorySection({ needId, onEditLog }: NeedHistorySectionProp
             style={styles.selectedName}
             numberOfLines={1}
           >
-            {selectedBehavior?.name ?? 'You checked in'}
+            {selectedBehavior?.name ?? (selected.event.kind === 'add' ? 'Updated without a log' : 'You checked in')}
           </Text>
           <Text style={[styles.selectedAmount, { color: selected.color }]}>{describeNeedEvent(selected.event)}</Text>
           <Text style={styles.selectedTime}>{formatTime(selected.event.ts)}</Text>

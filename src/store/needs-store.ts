@@ -13,6 +13,7 @@ import {
   learnEmptyHours,
   NEED_IDS,
   NEED_LOOKBACK_MS,
+  NEED_UNKNOWN_START_LEVEL,
   simulateNeed,
 } from '../utils/need-utils';
 import { useBehaviorStore } from './behavior-store';
@@ -35,6 +36,10 @@ export interface NeedsStore {
   setEnergyRuleHidden: (hidden: boolean) => void;
   /** Records how the need feels now and nudges its decay rate toward what that implies. */
   checkIn: (needId: NeedId, level: number, source: NeedCheckInSource) => void;
+  /** Tops a need up by `amount` points without logging a behaviour. Doesn't teach the decay rate. */
+  updateLevel: (needId: NeedId, amount: number) => void;
+  /** Undoes a check-in or update. */
+  removeCheckIn: (id: string) => void;
   setRefill: (needId: NeedId, behaviorId: string, refill: NeedRefill | undefined) => void;
   setCategoryRefill: (needId: NeedId, categoryId: string, refill: NeedRefill | undefined) => void;
   setMetadataSource: (needId: NeedId, source: NeedMetadataSource | null | undefined) => void;
@@ -75,6 +80,21 @@ function withDefaults(needs: Partial<Record<NeedId, Partial<NeedConfig>>> | unde
   return result;
 }
 
+/** A need's state right now, from logs and earlier check-ins. */
+function getCurrentNeedState(state: Pick<NeedsStore, 'needs' | 'checkIns'>, needId: NeedId, now: number) {
+  const config = state.needs[needId];
+  const { behaviors, categories } = useBehaviorStore.getState();
+  const events = getNeedEvents(
+    needId,
+    config,
+    behaviors,
+    state.checkIns,
+    getNeedMetadataSource(needId, config, categories),
+    now - NEED_LOOKBACK_MS,
+  );
+  return simulateNeed(events, getDecayPerHour(config), now);
+}
+
 export const useNeedsStore = create<NeedsStore>()(
   persist(
     set => ({
@@ -89,16 +109,7 @@ export const useNeedsStore = create<NeedsStore>()(
         set(state => {
           const now = Date.now();
           const config = state.needs[needId];
-          const { behaviors, categories } = useBehaviorStore.getState();
-          const events = getNeedEvents(
-            needId,
-            config,
-            behaviors,
-            state.checkIns,
-            getNeedMetadataSource(needId, config, categories),
-            now - NEED_LOOKBACK_MS,
-          );
-          const { anchor } = simulateNeed(events, getDecayPerHour(config), now);
+          const { anchor } = getCurrentNeedState(state, needId, now);
           const entry: NeedCheckIn = { id: uuidv4(), needId, ts: now, level: clampLevel(level), source };
           const emptyHours = learnEmptyHours(config.emptyHours, anchor, entry);
           const learned = emptyHours !== config.emptyHours;
@@ -117,6 +128,21 @@ export const useNeedsStore = create<NeedsStore>()(
             },
           };
         }),
+      updateLevel: (needId, amount) =>
+        set(state => {
+          const now = Date.now();
+          const { level } = getCurrentNeedState(state, needId, now);
+          const entry: NeedCheckIn = {
+            id: uuidv4(),
+            needId,
+            ts: now,
+            level: clampLevel((level ?? NEED_UNKNOWN_START_LEVEL) + amount),
+            source: 'update',
+            amount,
+          };
+          return { checkIns: [...state.checkIns, entry].slice(-MAX_CHECK_INS) };
+        }),
+      removeCheckIn: id => set(state => ({ checkIns: state.checkIns.filter(checkIn => checkIn.id !== id) })),
       setRefill: (needId, behaviorId, refill) =>
         set(state => {
           const refills = { ...state.needs[needId].refills };

@@ -125,9 +125,10 @@ export function getNeedMetadataSource(
   return field ? withCategories(field.key, DEFAULT_HUNGER_FULL_KCAL) : undefined;
 }
 
-/** `logId` is the refill's log, or the check-in's id for check-ins. */
+/** `logId` is the refill's log, or the check-in's id for check-ins and updates. */
 export type NeedEvent =
-  | { ts: number; kind: 'add'; amount: number; behaviorId: string; logId?: string }
+  /** `update` marks a top-up made by hand without a log, which has no behaviour. */
+  | { ts: number; kind: 'add'; amount: number; behaviorId?: string; logId?: string; update?: boolean }
   | { ts: number; kind: 'set'; level: number; behaviorId?: string; checkIn?: boolean; logId?: string };
 
 /** Share of time asleep spent in deep + REM sleep that counts as a normal night (factor 1). */
@@ -261,7 +262,10 @@ export function getNeedEvents(
     }
   }
   for (const checkIn of checkIns) {
-    if (checkIn.needId === needId && checkIn.ts >= since) {
+    if (checkIn.needId !== needId || checkIn.ts < since) continue;
+    if (checkIn.amount != null) {
+      events.push({ ts: checkIn.ts, kind: 'add', amount: checkIn.amount, logId: checkIn.id, update: true });
+    } else {
       events.push({ ts: checkIn.ts, kind: 'set', level: checkIn.level, checkIn: true, logId: checkIn.id });
     }
   }
@@ -555,9 +559,23 @@ export function isNeedNotificationData(data: unknown): data is NeedNotificationD
   return value.kind === 'need' && typeof value.needId === 'string' && Array.isArray(value.behaviorIds);
 }
 
+/** Top-ups offered in the need sheet for refills you didn't log; 100 fills it. */
+export const NEED_UPDATE_AMOUNTS: readonly number[] = [10, 25, 50, 100];
+
+/** "Ate something you didn't log?" */
+export const NEED_UPDATE_QUESTIONS: Record<NeedId, string> = {
+  hunger: "Ate something you didn't log?",
+  thirst: "Drank something you didn't log?",
+  hygiene: 'Freshened up without logging?',
+  energy: 'Rested without logging?',
+};
+
 export interface NeedRefillEntry {
-  behaviorId: string;
+  /** Undefined for updates made without a log. */
+  behaviorId?: string;
+  /** The log's id, or the update's check-in id. */
   logId: string;
+  update?: boolean;
   ts: number;
   /** "+45%" or "Full". */
   amountLabel: string;
@@ -572,8 +590,16 @@ export function getNeedRefillHistory(
   behaviors: BehaviorEntry[],
   source: NeedMetadataSource | undefined,
   isToday: (ts: number) => boolean,
+  updates: NeedCheckIn[] = [],
 ): { entries: NeedRefillEntry[]; today: boolean } {
-  const all: NeedRefillEntry[] = [];
+  const all: NeedRefillEntry[] = updates
+    .filter(update => update.amount != null)
+    .map(update => ({
+      logId: update.id,
+      update: true,
+      ts: update.ts,
+      amountLabel: (update.amount ?? 0) >= 100 ? 'Full' : `+${Math.round(update.amount ?? 0)}%`,
+    }));
   for (const behavior of behaviors) {
     const refill = getBehaviorRefill(config, behavior, source);
     if (!refill && !source) continue;
