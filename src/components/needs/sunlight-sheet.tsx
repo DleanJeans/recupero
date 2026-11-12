@@ -17,6 +17,7 @@ import {
   type SunlightBrightness,
 } from '../../utils/sunlight-utils';
 import { formatTime } from '../../utils/time-utils';
+import { AppIcon } from '../app-icon';
 import { CueSectionLabel } from '../cues/cue-section-label';
 import { Text } from '../text';
 import { SUNLIGHT_COLOR } from './sunlight-bar-row';
@@ -187,9 +188,12 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
                         accessibilityRole="checkbox"
                         accessibilityState={{ checked: outdoor }}
                       >
-                        <Text style={[styles.chipText, outdoor && styles.chipTextOn]}>
-                          {place.emoji ?? (place.isHome ? '🏠' : '📍')} {place.name}
-                        </Text>
+                        <AppIcon
+                          value={place.emoji}
+                          fallback={place.isHome ? '🏠' : '📍'}
+                          size={15}
+                        />
+                        <Text style={[styles.chipText, outdoor && styles.chipTextOn]}>{place.name}</Text>
                       </Pressable>
                     );
                   })}
@@ -339,6 +343,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: Colors.bg.input,
     borderRadius: 16,
     paddingHorizontal: 12,
