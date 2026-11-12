@@ -6,9 +6,7 @@ import { ScreenTitle } from '../../components/screen-title';
 import { Colors } from '../../utils/colors';
 import { DataTransferSection } from './components/data-transfer-section';
 import { DayCutoffPicker } from './components/day-cutoff-picker';
-import { GoogleHealthSection } from './components/google-health-section';
 import { MoneyRewardsSection } from './components/money-rewards-section';
-import { NeedsSection } from './components/needs-section';
 import { PrivateBehaviorSection } from './components/private-behavior-section';
 import { TimeFormatPicker } from './components/time-format-picker';
 
@@ -27,8 +25,6 @@ export function SettingsScreen() {
         <TimeFormatPicker />
         <DayCutoffPicker />
         <MoneyRewardsSection />
-        <NeedsSection />
-        <GoogleHealthSection />
         <PrivateBehaviorSection />
         <DataTransferSection />
       </ScrollView>

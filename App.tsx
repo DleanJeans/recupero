@@ -35,6 +35,7 @@ import { LocationEditScreen } from './src/screens/location-edit-screen';
 import { MoneyLogScreen } from './src/screens/money-log-screen';
 import { MoodLogScreen } from './src/screens/mood-log-screen';
 import { NeedsHistoryScreen } from './src/screens/needs-history-screen';
+import { NeedsSettingsScreen } from './src/screens/needs-settings-screen';
 import { RideItOutScreen } from './src/screens/ride-it-out-screen';
 import { SavedPlacesScreen } from './src/screens/saved-places-screen';
 import { SettingsScreen } from './src/screens/settings-screen';
@@ -205,6 +206,10 @@ export default function App() {
                   <Stack.Screen
                     name="NeedsHistory"
                     component={NeedsHistoryScreen}
+                  />
+                  <Stack.Screen
+                    name="NeedsSettings"
+                    component={NeedsSettingsScreen}
                   />
                   <Stack.Screen
                     name="Cues"

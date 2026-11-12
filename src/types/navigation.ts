@@ -38,6 +38,7 @@ export type RootStackParamList = {
   MoneyLog: undefined;
   Settings: undefined;
   NeedsHistory: undefined;
+  NeedsSettings: undefined;
   Cues: undefined;
   CueForm: { cueId?: string } | undefined;
   CueActivity: undefined;
