@@ -20,6 +20,7 @@ export function RunningTimerPill({ onPress, style }: RunningTimerPillProps) {
   const lockedBehaviorId = useTimerStore(s => s.lockedBehaviorId);
   const startTimestamp = useTimerStore(s => s.startTimestamp);
   const stopTimestamp = useTimerStore(s => s.stopTimestamp);
+  const pausedAt = useTimerStore(s => s.pausedAt);
   const behaviorName = useBehaviorStore(s => s.behaviors.find(b => b.id === lockedBehaviorId)?.name);
   const isRunning = startTimestamp != null && stopTimestamp == null;
   const [now, setNow] = useState(() => Date.now());
@@ -31,9 +32,12 @@ export function RunningTimerPill({ onPress, style }: RunningTimerPillProps) {
     return () => clearInterval(interval);
   }, [isRunning]);
 
-  if (startTimestamp == null || behaviorName == null) return null;
+  const isPaused = pausedAt != null && startTimestamp == null;
+  if ((startTimestamp == null && !isPaused) || behaviorName == null) return null;
 
-  const elapsed = formatStopwatchDuration(Math.max(0, (stopTimestamp ?? now) - startTimestamp));
+  const elapsed =
+    startTimestamp == null ? 'paused' : formatStopwatchDuration(Math.max(0, (stopTimestamp ?? now) - startTimestamp));
+  const hint = isRunning ? '' : isPaused ? ' · tap to resume' : ' · tap to log';
 
   return (
     <View
@@ -48,7 +52,7 @@ export function RunningTimerPill({ onPress, style }: RunningTimerPillProps) {
       >
         {isRunning && <View style={styles.dot} />}
         <Ionicons
-          name="stopwatch-outline"
+          name={isPaused ? 'pause' : 'stopwatch-outline'}
           size={15}
           color={isRunning ? Colors.typeText.desirable : Colors.text.secondary}
         />
@@ -57,7 +61,7 @@ export function RunningTimerPill({ onPress, style }: RunningTimerPillProps) {
           numberOfLines={1}
         >
           {behaviorName} · {elapsed}
-          {isRunning ? '' : ' · tap to log'}
+          {hint}
         </Text>
       </Pressable>
     </View>

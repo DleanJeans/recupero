@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { BehaviorIcon } from '../../../components/behavior-icon';
 import { Button } from '../../../components/button';
 import { LogRewardPreview } from '../../../components/log-reward-preview';
@@ -14,9 +13,10 @@ import type { BehaviorEntry, Category } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 import { iconText } from '../../../utils/icon-utils';
 import { getMoneyRewardForLog, getStarMoneyMultiplierForLog } from '../../../utils/money-utils';
-import { formatStopwatchDuration } from '../../../utils/stopwatch-utils';
-import { formatTime } from '../../../utils/time-utils';
-import { getTimerXp } from '../../../utils/xp-utils';
+import { getTimerLevelProgress } from '../../../utils/timer-utils';
+import { getEffectiveXp, getTimerXp } from '../../../utils/xp-utils';
+import { TimerLevelRing } from './timer-level-ring';
+import { TimerSessionList } from './timer-session-list';
 
 interface TimerRunningPanelProps {
   behavior: BehaviorEntry;
@@ -24,13 +24,16 @@ interface TimerRunningPanelProps {
   isRunning: boolean;
   hasStarted: boolean;
   hasStopped: boolean;
+  isPaused: boolean;
   startTimestamp: number | undefined;
   dayCutoffHour: number;
   onBack: () => void;
   onDiscard: () => void;
   onStart: () => void;
   onStop: () => void;
+  onPause: () => void;
   onResume: () => void;
+  onDone: () => void;
   onRewindStart: () => void;
 }
 
@@ -40,13 +43,16 @@ export function TimerRunningPanel({
   isRunning,
   hasStarted,
   hasStopped,
+  isPaused,
   startTimestamp,
   dayCutoffHour,
   onBack,
   onDiscard,
   onStart,
   onStop,
+  onPause,
   onResume,
+  onDone,
   onRewindStart,
 }: TimerRunningPanelProps) {
   const category = useBehaviorStore(state =>
@@ -74,6 +80,11 @@ export function TimerRunningPanel({
     rewardMoneyOriginal == null || rewardMoneyMultiplier == null
       ? undefined
       : rewardMoneyOriginal * rewardMoneyMultiplier;
+  // Logged segments are already in the behaviour's XP; only the one on the clock is added on top.
+  const levelProgress = getTimerLevelProgress(
+    getEffectiveXp(behavior, Date.now(), dayCutoffHour),
+    hasStarted ? getTimerXp(elapsedMs) : 0,
+  );
 
   return (
     <View style={styles.panel}>
@@ -102,13 +113,15 @@ export function TimerRunningPanel({
       <TimerBehaviorChip
         behavior={behavior}
         category={category}
-        status={isRunning ? 'Running' : hasStarted ? 'Paused' : 'Ready'}
+        status={isRunning ? 'Running' : isPaused ? 'Paused' : hasStopped ? 'Stopped' : 'Ready'}
       />
 
       <View style={styles.hero}>
-        <TimerRing
+        <TimerLevelRing
+          progress={levelProgress}
           elapsedMs={elapsedMs}
           startTimestamp={startTimestamp}
+          paused={isPaused}
           onRewindStart={onRewindStart}
         />
 
@@ -127,19 +140,21 @@ export function TimerRunningPanel({
           hasStarted={hasStarted}
           hasStopped={hasStopped}
           isRunning={isRunning}
+          isPaused={isPaused}
           onStart={onStart}
           onStop={onStop}
+          onPause={onPause}
           onResume={onResume}
+          onDone={onDone}
+          onDiscard={onDiscard}
         />
-        {hasStarted && (
-          <Button
-            variant="ghost"
-            onPress={onDiscard}
-            accessibilityLabel="Discard timer"
-          >
-            <Text style={styles.discardText}>Discard</Text>
-          </Button>
-        )}
+
+        <TimerSessionList
+          behavior={behavior}
+          currentStart={startTimestamp}
+          currentElapsedMs={elapsedMs}
+          isRunning={isRunning}
+        />
       </View>
     </View>
   );
@@ -178,56 +193,55 @@ function TimerBehaviorChip({ behavior, category, status }: TimerBehaviorChipProp
   );
 }
 
-interface TimerRingProps {
-  elapsedMs: number;
-  startTimestamp: number | undefined;
-  onRewindStart: () => void;
-}
-
-function TimerRing({ elapsedMs, startTimestamp, onRewindStart }: TimerRingProps) {
-  const rotation = useSharedValue(0);
-
-  useEffect(() => {
-    rotation.value = withTiming((elapsedMs / 60_000) * 360, { duration: 900 });
-  }, [elapsedMs, rotation]);
-
-  const progressStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value}deg` }],
-  }));
-
-  return (
-    <View style={styles.timerRing}>
-      <Animated.View style={[styles.timerRingProgress, progressStyle]} />
-      <View style={styles.timerRingHole}>
-        <Text style={styles.timerValue}>{formatStopwatchDuration(elapsedMs)}</Text>
-        {startTimestamp != null && (
-          <View style={styles.startedRow}>
-            <Text style={styles.startedAt}>{formatTime(startTimestamp)}</Text>
-            <Button
-              variant="secondary"
-              onPress={onRewindStart}
-              accessibilityLabel="Move start time back 1 minute"
-              style={styles.rewindButton}
-            >
-              <Text style={styles.rewindText}>-1 min</Text>
-            </Button>
-          </View>
-        )}
-      </View>
-    </View>
-  );
-}
-
 interface TimerActionsProps {
   hasStarted: boolean;
   hasStopped: boolean;
   isRunning: boolean;
+  isPaused: boolean;
   onStart: () => void;
   onStop: () => void;
+  onPause: () => void;
   onResume: () => void;
+  onDone: () => void;
+  onDiscard: () => void;
 }
 
-function TimerActions({ hasStarted, hasStopped, isRunning, onStart, onStop, onResume }: TimerActionsProps) {
+function TimerActions({
+  hasStarted,
+  hasStopped,
+  isRunning,
+  isPaused,
+  onStart,
+  onStop,
+  onPause,
+  onResume,
+  onDone,
+  onDiscard,
+}: TimerActionsProps) {
+  if (isPaused) {
+    // Every segment so far is already logged, so Done just closes the timer.
+    return (
+      <View style={styles.actions}>
+        <View style={styles.secondaryActions}>
+          <Button
+            variant="secondary"
+            onPress={onDone}
+            style={styles.secondaryAction}
+          >
+            Done
+          </Button>
+          <Button
+            variant="primary"
+            onPress={onResume}
+            style={styles.wideAction}
+          >
+            Resume
+          </Button>
+        </View>
+      </View>
+    );
+  }
+
   if (hasStopped) {
     return (
       <View style={styles.actions}>
@@ -254,29 +268,68 @@ function TimerActions({ hasStarted, hasStopped, isRunning, onStart, onStop, onRe
             Restart
           </Button>
         </View>
+        <DiscardButton onPress={onDiscard} />
+      </View>
+    );
+  }
+
+  if (!hasStarted) {
+    return (
+      <View style={styles.actions}>
+        <Button
+          variant="primary"
+          onPress={onStart}
+          style={styles.primaryAction}
+        >
+          Start
+        </Button>
       </View>
     );
   }
 
   return (
     <View style={styles.actions}>
-      <Button
-        variant="primary"
-        onPress={onStop}
-        disabled={!hasStarted}
-        style={styles.primaryAction}
-      >
-        Stop
-      </Button>
-      <Button
-        variant="secondary"
-        onPress={onStart}
-        disabled={isRunning}
-        style={styles.secondaryAction}
-      >
-        {hasStarted ? 'Restart' : 'Start'}
-      </Button>
+      <View style={styles.secondaryActions}>
+        <Button
+          variant="secondary"
+          onPress={onPause}
+          disabled={!isRunning}
+          style={styles.secondaryAction}
+        >
+          Pause
+        </Button>
+        <Button
+          variant="primary"
+          onPress={onStop}
+          style={styles.wideAction}
+        >
+          Stop
+        </Button>
+      </View>
+      <View style={styles.ghostActions}>
+        <Button
+          variant="ghost"
+          onPress={onStart}
+          accessibilityLabel="Restart timer"
+        >
+          <Text style={styles.restartText}>Restart</Text>
+        </Button>
+        <DiscardButton onPress={onDiscard} />
+      </View>
     </View>
+  );
+}
+
+/** Pure: red text button that discards the segment on the clock. */
+function DiscardButton({ onPress }: { onPress: () => void }) {
+  return (
+    <Button
+      variant="ghost"
+      onPress={onPress}
+      accessibilityLabel="Discard timer"
+    >
+      <Text style={styles.discardText}>Discard</Text>
+    </Button>
   );
 }
 
@@ -356,70 +409,29 @@ const styles = StyleSheet.create({
   hero: {
     flex: 1,
     alignItems: 'center',
-    gap: 20,
-    paddingTop: 8,
-  },
-  timerRing: {
-    width: 226,
-    height: 226,
-    borderRadius: 113,
-    borderWidth: 8,
-    borderColor: Colors.bg.input,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  timerRingProgress: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    borderRadius: 113,
-    borderWidth: 8,
-    borderColor: 'transparent',
-    borderTopColor: Colors.type.desirable,
-    borderRightColor: Colors.type.desirable,
-  },
-  timerRingHole: {
-    width: 202,
-    height: 202,
-    borderRadius: 101,
-    backgroundColor: Colors.bg.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  timerValue: {
-    color: Colors.text.primary,
-    fontSize: 52,
-    fontWeight: '800',
-    fontVariant: ['tabular-nums'],
-  },
-  startedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  startedAt: {
-    color: Colors.text.muted,
-    fontSize: 13,
-    fontWeight: '600',
-    fontVariant: ['tabular-nums'],
-  },
-  rewindButton: {
-    borderRadius: 9,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-  },
-  rewindText: {
-    color: Colors.text.muted,
-    fontSize: 11,
-    fontWeight: '700',
+    gap: 18,
+    paddingTop: 4,
   },
   actions: {
     alignSelf: 'stretch',
     gap: 11,
-    marginTop: 'auto',
+  },
+  ghostActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: -4,
+  },
+  restartText: {
+    color: Colors.text.muted,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  wideAction: {
+    flex: 2,
+    minHeight: 56,
+    borderRadius: 15,
+    justifyContent: 'center',
+    paddingVertical: 0,
   },
   primaryAction: {
     minHeight: 56,

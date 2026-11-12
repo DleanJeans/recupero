@@ -17,15 +17,17 @@ interface TimerStore {
    *  the user just backed out and the stopped timer should stay (so Relog
    *  remains available). */
   pendingLogBehaviorLogCount: number | undefined;
+  /** Set while paused: the segment before it was already saved as its own log, and Resume starts a new one. */
+  pausedAt: number | undefined;
   start: (behaviorId: string, timestamp?: number, initialNotes?: string) => void;
   setLockedBehavior: (behaviorId: string) => void;
   setStart: (timestamp: number) => void;
   rewindStartMinute: () => void;
   setStop: (timestamp: number) => void;
-  /** Clear the stop timestamp so the timer resumes from the original start
-   *  instant. Also clears any pending-log snapshot since the user is
-   *  abandoning the previous log attempt. */
-  resume: () => void;
+  /** Pause after the running segment was logged: no segment runs until `resume`. */
+  pause: (timestamp: number) => void;
+  /** Start a new segment at `timestamp`, so paused time is never counted. Clears any stop and pending-log state. */
+  resume: (timestamp: number) => void;
   markLogPending: (logCount: number) => void;
   clearPendingLog: () => void;
   reset: () => void;
@@ -39,6 +41,7 @@ export const useTimerStore = create<TimerStore>()(
       startTimestamp: undefined,
       stopTimestamp: undefined,
       pendingLogBehaviorLogCount: undefined,
+      pausedAt: undefined,
       start: (behaviorId, timestamp = Date.now(), initialNotes) =>
         set({
           lockedBehaviorId: behaviorId,
@@ -46,13 +49,27 @@ export const useTimerStore = create<TimerStore>()(
           startTimestamp: timestamp,
           stopTimestamp: undefined,
           pendingLogBehaviorLogCount: undefined,
+          pausedAt: undefined,
         }),
       setLockedBehavior: behaviorId => set({ lockedBehaviorId: behaviorId }),
-      setStart: timestamp => set({ startTimestamp: timestamp, stopTimestamp: undefined }),
+      setStart: timestamp => set({ startTimestamp: timestamp, stopTimestamp: undefined, pausedAt: undefined }),
       rewindStartMinute: () =>
         set(state => (state.startTimestamp == null ? {} : { startTimestamp: state.startTimestamp - 60_000 })),
       setStop: timestamp => set({ stopTimestamp: timestamp }),
-      resume: () => set({ stopTimestamp: undefined, pendingLogBehaviorLogCount: undefined }),
+      pause: timestamp =>
+        set({
+          startTimestamp: undefined,
+          stopTimestamp: undefined,
+          pendingLogBehaviorLogCount: undefined,
+          pausedAt: timestamp,
+        }),
+      resume: timestamp =>
+        set({
+          startTimestamp: timestamp,
+          stopTimestamp: undefined,
+          pendingLogBehaviorLogCount: undefined,
+          pausedAt: undefined,
+        }),
       markLogPending: logCount => set({ pendingLogBehaviorLogCount: logCount }),
       clearPendingLog: () => set({ pendingLogBehaviorLogCount: undefined }),
       reset: () =>
@@ -62,6 +79,7 @@ export const useTimerStore = create<TimerStore>()(
           startTimestamp: undefined,
           stopTimestamp: undefined,
           pendingLogBehaviorLogCount: undefined,
+          pausedAt: undefined,
         }),
     }),
     {

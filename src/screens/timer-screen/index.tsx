@@ -11,7 +11,9 @@ import { useSettingsStore } from '../../store/settings-store';
 import { useTimerStore } from '../../store/timer-store';
 import type { RootStackParamList } from '../../types/navigation';
 import { isArchived } from '../../utils/archive-utils';
+import { buildQuickLogMetadata } from '../../utils/checklist-utils';
 import { Colors } from '../../utils/colors';
+import { shouldLogTimerSegment } from '../../utils/timer-utils';
 import { TimerPicker } from './components/timer-picker';
 import { TimerRunningPanel } from './components/timer-running-panel';
 
@@ -25,12 +27,14 @@ export function TimerScreen() {
   const startTimestamp = useTimerStore(state => state.startTimestamp);
   const stopTimestamp = useTimerStore(state => state.stopTimestamp);
   const pendingLogBehaviorLogCount = useTimerStore(state => state.pendingLogBehaviorLogCount);
+  const pausedAt = useTimerStore(state => state.pausedAt);
   const setLockedBehavior = useTimerStore(state => state.setLockedBehavior);
   const setStart = useTimerStore(state => state.setStart);
   const rewindStartMinute = useTimerStore(state => state.rewindStartMinute);
   const setStop = useTimerStore(state => state.setStop);
   const markLogPending = useTimerStore(state => state.markLogPending);
   const clearPendingLog = useTimerStore(state => state.clearPendingLog);
+  const pauseTimer = useTimerStore(state => state.pause);
   const resumeTimer = useTimerStore(state => state.resume);
   const resetTimer = useTimerStore(state => state.reset);
   const [behaviorQuery, setBehaviorQuery] = useState('');
@@ -56,6 +60,7 @@ export function TimerScreen() {
   const behaviorById = useMemo(() => new Map(behaviors.map(behavior => [behavior.id, behavior])), [behaviors]);
   const lockedBehavior = lockedBehaviorId ? behaviorById.get(lockedBehaviorId) : undefined;
   const isRunning = startTimestamp != null && stopTimestamp == null;
+  const isPaused = pausedAt != null && startTimestamp == null;
   const elapsedMs = startTimestamp == null ? 0 : Math.max(0, (stopTimestamp ?? nowTick) - startTimestamp);
 
   useEffect(() => {
@@ -99,8 +104,35 @@ export function TimerScreen() {
     setNowTick(Date.now());
   };
 
+  /** Saves a segment as its own log with the behaviour's default metadata, like a one-tap log. */
+  const logSegment = (segmentStart: number, segmentEnd: number) => {
+    if (!lockedBehaviorId || !shouldLogTimerSegment(segmentStart, segmentEnd)) return;
+    const { behaviors: latestBehaviors, categories, logBehavior } = useBehaviorStore.getState();
+    const behavior = latestBehaviors.find(candidate => candidate.id === lockedBehaviorId);
+    if (!behavior) return;
+    const metadata = buildQuickLogMetadata(behavior, categories);
+    const notes = initialNotes?.trim();
+    logBehavior(behavior.id, segmentStart, notes ? { ...metadata, notes } : metadata, segmentEnd);
+  };
+
+  // Pause logs the segment so far; Resume starts a new segment, so paused time is never counted.
+  const handlePause = () => {
+    if (startTimestamp == null || stopTimestamp != null) return;
+    const pausedTimestamp = Date.now();
+    logSegment(startTimestamp, pausedTimestamp);
+    pauseTimer(pausedTimestamp);
+    setNowTick(pausedTimestamp);
+  };
+
+  const handleDone = () => {
+    resetTimer();
+    setSelectedBehaviorId(undefined);
+    setBehaviorQuery('');
+    leave();
+  };
+
   const handleDiscard = () => {
-    Alert.alert('Discard timer?', 'This session will not be logged.', [
+    Alert.alert('Discard timer?', 'The time on the clock will not be logged.', [
       { text: 'Keep', style: 'cancel' },
       {
         text: 'Discard',
@@ -122,8 +154,11 @@ export function TimerScreen() {
   };
 
   const handleResume = () => {
-    resumeTimer();
-    setNowTick(Date.now());
+    // Backed out of the log form after Stop: save that segment as is, then keep going from now.
+    if (startTimestamp != null && stopTimestamp != null) logSegment(startTimestamp, stopTimestamp);
+    const resumedAt = Date.now();
+    resumeTimer(resumedAt);
+    setNowTick(resumedAt);
   };
 
   const handleRewindStart = () => {
@@ -168,13 +203,16 @@ export function TimerScreen() {
             isRunning={isRunning}
             hasStarted={startTimestamp != null}
             hasStopped={stopTimestamp != null}
+            isPaused={isPaused}
             startTimestamp={startTimestamp}
             dayCutoffHour={dayCutoffHour}
             onBack={leave}
             onDiscard={handleDiscard}
             onStart={handleStart}
             onStop={handleStop}
+            onPause={handlePause}
             onResume={handleResume}
+            onDone={handleDone}
             onRewindStart={handleRewindStart}
           />
         ) : (
