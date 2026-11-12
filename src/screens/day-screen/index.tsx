@@ -2,7 +2,6 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { AzmGoalCard } from '../../components/health/azm-goal-card';
 import { MoneyBalance } from '../../components/money-balance';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
@@ -167,8 +166,6 @@ export function DayScreen() {
         onPrevious={goToPrevDay}
         onNext={goToNextDay}
       />
-
-      <AzmGoalCard date={selectedDate} />
 
       <DayTabSelector
         selectedTab={selectedTab}

@@ -12,6 +12,7 @@ import { formatNextCraving } from '../../utils/need-utils';
 import { formatTime } from '../../utils/time-utils';
 import { CueSectionLabel } from '../cues/cue-section-label';
 import { Text } from '../text';
+import { AzmBarRow } from './azm-bar-row';
 import { NeedBarRow } from './need-bar-row';
 import { NeedSheet } from './need-sheet';
 import { SunlightBarRow } from './sunlight-bar-row';
@@ -66,6 +67,7 @@ export function NeedsPanel() {
             onPress={() => setOpenId(need.id)}
           />
         ))}
+        <AzmBarRow now={now} />
         {sunlight.enabled && (
           <SunlightBarRow
             sunlight={sunlight}
