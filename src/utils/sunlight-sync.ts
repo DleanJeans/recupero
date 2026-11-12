@@ -12,26 +12,23 @@ import {
 } from './sunlight-utils';
 
 const MIN_SAMPLE_GAP_MS = 5 * 60_000;
-/** A fix vaguer than this can't tell inside a place from just outside it. */
-const MAX_SAMPLE_ACCURACY_M = 150;
+/** A fix vaguer than this is a cell-tower guess; keep the last known state instead. */
+const MAX_SAMPLE_ACCURACY_M = 100;
 const SAMPLE_COORD_DECIMALS = 3;
 
 /** Checks where the phone is now (only if location is already allowed) and records whether it's at a tracked place. */
-async function samplePresence(now: number): Promise<void> {
+async function samplePresence(now: number, force: boolean): Promise<void> {
   const { samples, outdoorPlaceIds, radiusM, addSample } = useSunlightStore.getState();
   const last = samples[samples.length - 1];
-  if (last && now - last.ts < MIN_SAMPLE_GAP_MS) return;
+  if (!force && last && now - last.ts < MIN_SAMPLE_GAP_MS) return;
   const { status } = await Location.getForegroundPermissionsAsync();
   if (status !== 'granted') return;
-  const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+  // GPS, not Wi-Fi/cell: with a 10 m radius a Balanced fix (often 50-100 m off) can't tell home from the street.
+  const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
   const { latitude, longitude, accuracy } = position.coords;
   if (accuracy != null && accuracy > MAX_SAMPLE_ACCURACY_M) return;
-  // A fuzzy fix near a place gets the benefit of the doubt (inside), so it never invents time outside.
-  const slack = accuracy ?? 0;
-  const indoor = getIndoorPlaces(useCuesStore.getState().places, outdoorPlaceIds).map(place => ({
-    ...place,
-    radiusM: radiusM + slack,
-  }));
+  // Judge by the fix's centre (the blue dot), not its accuracy circle, so being down the street counts as out.
+  const indoor = getIndoorPlaces(useCuesStore.getState().places, outdoorPlaceIds).map(place => ({ ...place, radiusM }));
   const place = findPlaceAtPoint(indoor, { lat: latitude, lng: longitude });
   addSample({
     ts: position.timestamp || now,
@@ -53,10 +50,13 @@ async function refreshWeather(now: number): Promise<void> {
   setWeather({ fetchedAt: now, lat: roundCoordinate(point.lat), lng: roundCoordinate(point.lng), hours });
 }
 
-/** Run on launch and whenever Recupero comes to the foreground. */
-export async function syncSunlight(): Promise<void> {
+/**
+ * Run on launch and whenever Recupero comes to the foreground. `force` checks the position even if it
+ * was checked a moment ago (opening the Sunlight sheet).
+ */
+export async function syncSunlight(force = false): Promise<void> {
   if (!useSunlightStore.getState().enabled) return;
   const now = Date.now();
-  await samplePresence(now).catch(error => console.warn('Sunlight position check failed', error));
+  await samplePresence(now, force).catch(error => console.warn('Sunlight position check failed', error));
   await refreshWeather(now).catch(error => console.warn('Sunlight weather failed', error));
 }

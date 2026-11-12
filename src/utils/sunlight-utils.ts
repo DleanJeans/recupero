@@ -278,6 +278,8 @@ export function roundCoordinate(value: number, decimals = WEATHER_COORD_DECIMALS
 export function shouldRefreshWeather(weather: SunlightWeather | undefined, point: GeoPoint, now: number): boolean {
   if (!weather) return true;
   if (now - weather.fetchedAt >= WEATHER_REFRESH_MS) return true;
+  // An older fetch may stop before the current hour (it used to end at midnight UTC).
+  if (!weather.hours.some(hour => now > hour.ts - MS_PER_HOUR && now <= hour.ts)) return true;
   return weather.lat !== roundCoordinate(point.lat) || weather.lng !== roundCoordinate(point.lng);
 }
 
@@ -288,7 +290,8 @@ export function getWeatherUrl(point: GeoPoint): string {
     `longitude=${roundCoordinate(point.lng)}`,
     'hourly=shortwave_radiation',
     `past_days=${SUNLIGHT_HISTORY_DAYS}`,
-    'forecast_days=1',
+    // The response's days are UTC days, so 1 day would stop at 07:00 in Vietnam; 2 always covers "now".
+    'forecast_days=2',
     'timeformat=unixtime',
   ];
   return `https://api.open-meteo.com/v1/forecast?${params.join('&')}`;

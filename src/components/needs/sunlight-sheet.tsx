@@ -52,7 +52,7 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
   const locationAllowed = sunlight.locationAllowed || justAllowed;
 
   useEffect(() => {
-    if (visible) void syncSunlight();
+    if (visible) void syncSunlight(true);
   }, [visible]);
 
   if (!visible) return null;

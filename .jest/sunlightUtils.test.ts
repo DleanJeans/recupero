@@ -18,6 +18,7 @@ import {
   getWeatherUrl,
   MAX_OUTDOOR_STRETCH_MS,
   parseWeatherHours,
+  shouldRefreshWeather,
 } from '../src/utils/sunlight-utils';
 
 const MIN = 60_000;
@@ -261,5 +262,20 @@ describe('light dose', () => {
     expect(getLightDoseTarget(30)).toBe(300_000);
     expect(formatLuxMinutes(1_234_567)).toBe('1.2M');
     expect(formatLuxMinutes(42_400)).toBe('42k');
+  });
+});
+
+describe('weather refresh', () => {
+  const point = { lat: 21.03, lng: 105.85 };
+  it('refetches when the cached hours do not cover now, even if fetched recently', () => {
+    const now = 10 * HOUR + 30 * MIN;
+    const covered = { fetchedAt: now - MIN, lat: 21.03, lng: 105.85, hours: [{ ts: 11 * HOUR, wm2: 1 }] };
+    const stale = { ...covered, hours: [{ ts: 10 * HOUR, wm2: 1 }] };
+    expect(shouldRefreshWeather(covered, point, now)).toBe(false);
+    expect(shouldRefreshWeather(stale, point, now)).toBe(true);
+  });
+
+  it('asks for two UTC days so the local evening and early morning are covered', () => {
+    expect(getWeatherUrl(point)).toContain('forecast_days=2');
   });
 });
