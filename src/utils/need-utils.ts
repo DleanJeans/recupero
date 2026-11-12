@@ -539,6 +539,16 @@ export function getNeedNudgePlans(needs: NeedNudgeInput[], now: number): NeedNud
   return plans;
 }
 
+/**
+ * Needs whose shown "down to N%" push is stale: refilled back above the nudge line (or the need
+ * was turned off), so the push can be dismissed from the tray.
+ */
+export function getRefilledNeedIds(needs: Array<Pick<NeedNudgeInput, 'id' | 'config' | 'level'>>): NeedId[] {
+  return needs
+    .filter(need => !need.config.enabled || (need.level != null && need.level > need.config.nudgeLine))
+    .map(need => need.id);
+}
+
 export function isNeedNotificationData(data: unknown): data is NeedNotificationData {
   if (data == null || typeof data !== 'object') return false;
   const value = data as Partial<NeedNotificationData>;

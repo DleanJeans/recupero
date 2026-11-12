@@ -4,17 +4,19 @@ import { useEffect, useRef } from 'react';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useNeedsStore } from '../store/needs-store';
 import type { RootStackParamList } from '../types/navigation';
-import { syncNeedNudges } from '../utils/need-notifications';
+import { dismissRefilledNeedNudges, syncNeedNudges } from '../utils/need-notifications';
 import {
   getDecayPerHour,
   getNeedEvents,
   getNeedMetadataSource,
   getNeedNudgePlans,
   getRefillBehaviorIds,
+  getRefilledNeedIds,
   isNeedNotificationData,
   NEED_IDS,
   NEED_LOOKBACK_MS,
   NEED_NOT_YET_ACTION,
+  type NeedNudgeInput,
   type NeedNudgePlan,
   simulateNeed,
 } from '../utils/need-utils';
@@ -22,29 +24,27 @@ import {
 const NAVIGATION_RETRY_MS = 250;
 const NAVIGATION_MAX_RETRIES = 20;
 
-function buildPlans(now: number): NeedNudgePlan[] {
+function buildNudgeInputs(now: number): NeedNudgeInput[] {
   const { behaviors, categories } = useBehaviorStore.getState();
   const { needs, checkIns } = useNeedsStore.getState();
   const nameById = new Map(behaviors.map(behavior => [behavior.id, behavior.name]));
-  return getNeedNudgePlans(
-    NEED_IDS.map(id => {
-      const config = needs[id];
-      const source = getNeedMetadataSource(id, config, categories);
-      const events = getNeedEvents(id, config, behaviors, checkIns, source, now - NEED_LOOKBACK_MS);
-      const state = simulateNeed(events, getDecayPerHour(config), now);
-      const refills = getRefillBehaviorIds(config, behaviors, source, now, 2).map(behaviorId => ({
-        id: behaviorId,
-        name: nameById.get(behaviorId) ?? '',
-      }));
-      return { id, config, level: state.level, lastRefillAt: state.lastRefillAt, refills };
-    }),
-    now,
-  );
+  return NEED_IDS.map(id => {
+    const config = needs[id];
+    const source = getNeedMetadataSource(id, config, categories);
+    const events = getNeedEvents(id, config, behaviors, checkIns, source, now - NEED_LOOKBACK_MS);
+    const state = simulateNeed(events, getDecayPerHour(config), now);
+    const refills = getRefillBehaviorIds(config, behaviors, source, now, 2).map(behaviorId => ({
+      id: behaviorId,
+      name: nameById.get(behaviorId) ?? '',
+    }));
+    return { id, config, level: state.level, lastRefillAt: state.lastRefillAt, refills };
+  });
 }
 
 /**
  * Schedules a push for each need at the time it will cross its nudge line, re-planned whenever
- * logs or needs change, and handles taps on those pushes ("Not yet" counts as a check-in).
+ * logs or needs change, dismisses shown pushes once their need is refilled above the nudge line,
+ * and handles taps on those pushes ("Not yet" counts as a check-in).
  */
 export function useNeedNudges(ready: boolean, navigationRef: NavigationContainerRefWithCurrent<RootStackParamList>) {
   const lastSignature = useRef<string | null>(null);
@@ -54,7 +54,12 @@ export function useNeedNudges(ready: boolean, navigationRef: NavigationContainer
   useEffect(() => {
     if (!ready) return;
     const sync = () => {
-      const plans = buildPlans(Date.now());
+      const now = Date.now();
+      const inputs = buildNudgeInputs(now);
+      dismissRefilledNeedNudges(getRefilledNeedIds(inputs)).catch(error =>
+        console.warn('Need nudge dismiss failed', error),
+      );
+      const plans = getNeedNudgePlans(inputs, now);
       const signature = JSON.stringify(plans);
       if (signature === lastSignature.current) return;
       lastSignature.current = signature;

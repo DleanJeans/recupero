@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import type { NeedId } from '../types/need';
 import { NEED_NUDGE_ID_PREFIX, type NeedNudgePlan } from './need-utils';
 import { hasNotificationPermission, REMINDER_CHANNEL_ID, setupReminderNotifications } from './reminder-notifications';
 
@@ -33,4 +34,16 @@ export async function syncNeedNudges(plans: NeedNudgePlan[]): Promise<void> {
       },
     });
   }
+}
+
+/** Removes already-shown need pushes from the tray for needs that have been refilled. */
+export async function dismissRefilledNeedNudges(needIds: NeedId[]): Promise<void> {
+  if (needIds.length === 0) return;
+  const identifiers = new Set(needIds.map(id => `${NEED_NUDGE_ID_PREFIX}${id}`));
+  const presented = await Notifications.getPresentedNotificationsAsync();
+  await Promise.all(
+    presented
+      .filter(notification => identifiers.has(notification.request.identifier))
+      .map(notification => Notifications.dismissNotificationAsync(notification.request.identifier)),
+  );
 }

@@ -13,6 +13,7 @@ import {
   getNeedNudgePlans,
   getNeedRefillHistory,
   getRefillBehaviorIds,
+  getRefilledNeedIds,
   getSleepEnergyScore,
   getSleepQualityFactor,
   getSuggestedRefillIds,
@@ -388,5 +389,22 @@ describe('getSleepEnergyScore', () => {
   it('is undefined without a duration refill or an end time', () => {
     expect(getSleepEnergyScore({ id: 'a', timestamp: T0, endTimestamp: T0 + H }, { mode: 'set' })).toBeUndefined();
     expect(getSleepEnergyScore({ id: 'b', timestamp: T0 }, refill)).toBeUndefined();
+  });
+});
+
+describe('getRefilledNeedIds', () => {
+  const energy = DEFAULT_NEED_CONFIGS.energy; // nudge at 10%
+  it('lists needs refilled above their nudge line or turned off', () => {
+    expect(
+      getRefilledNeedIds([
+        { id: 'energy', config: energy, level: 80 },
+        { id: 'thirst', config: DEFAULT_NEED_CONFIGS.thirst, level: 12 },
+        { id: 'hunger', config: { ...DEFAULT_NEED_CONFIGS.hunger, enabled: false }, level: 5 },
+        { id: 'hygiene', config: DEFAULT_NEED_CONFIGS.hygiene },
+      ]),
+    ).toEqual(['energy', 'hunger']);
+  });
+  it('keeps a push that is still at or under the line', () => {
+    expect(getRefilledNeedIds([{ id: 'energy', config: energy, level: 10 }])).toEqual([]);
   });
 });
