@@ -403,3 +403,13 @@ export function formatLuxMinutes(value: number): string {
   if (value >= 1000) return `${Math.round(value / 1000)}k`;
   return `${Math.round(value)}`;
 }
+
+/** Light dose gained per minute right now: eye-level lux while counting, else nothing. */
+export function getLightDoseRate(counting: boolean, luxNow: number | undefined): number {
+  return counting && luxNow != null ? luxNow * EYE_LEVEL_LUX_FACTOR : 0;
+}
+
+/** The dose `at` a moment after the snapshot, growing at `ratePerMinute` (for the per-frame counter). */
+export function getLiveLuxMinutes(luxMinutes: number, ratePerMinute: number, snapshotAt: number, at: number): number {
+  return luxMinutes + (ratePerMinute * Math.max(0, at - snapshotAt)) / MS_PER_MINUTE;
+}

@@ -279,3 +279,14 @@ describe('weather refresh', () => {
     expect(getWeatherUrl(point)).toContain('forecast_days=2');
   });
 });
+
+describe('live light dose', () => {
+  it('grows at the eye-level rate only while counting', () => {
+    const { getLightDoseRate, getLiveLuxMinutes } = jest.requireActual('../src/utils/sunlight-utils');
+    expect(getLightDoseRate(true, 8000)).toBe(4000);
+    expect(getLightDoseRate(false, 8000)).toBe(0);
+    expect(getLightDoseRate(true, undefined)).toBe(0);
+    expect(getLiveLuxMinutes(5000, 4000, 0, 15_000)).toBe(6000);
+    expect(getLiveLuxMinutes(5000, 4000, 1000, 0)).toBe(5000);
+  });
+});

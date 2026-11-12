@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Colors } from '../../utils/colors';
 import {
   EYE_LEVEL_LUX_FACTOR,
-  formatLuxMinutes,
   getLightDoseTarget,
+  getLiveLuxMinutes,
   LIGHT_DOSE_TARGET_LUX,
 } from '../../utils/sunlight-utils';
 import { Text } from '../text';
@@ -12,31 +12,56 @@ import { SUNLIGHT_COLOR } from './sunlight-bar-row';
 
 interface SunlightLightDoseProps {
   luxMinutes: number;
+  /** Dose gained per minute right now (0 unless counting); the number and bar grow by this every frame. */
+  ratePerMinute: number;
+  /** When `luxMinutes` was worked out. */
+  snapshotAt: number;
   goalMinutes: number;
   hasWeather: boolean;
 }
 
-/** Today's light dose (eye-level lux × minutes outside) against 10,000 lux for every goal minute. */
-export function SunlightLightDose({ luxMinutes, goalMinutes, hasWeather }: SunlightLightDoseProps) {
+/** Re-renders every frame while `running`, returning the current time. */
+function useFrameClock(running: boolean): number {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    if (!running) return;
+    let frame = requestAnimationFrame(function tick() {
+      setNow(Date.now());
+      frame = requestAnimationFrame(tick);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [running]);
+  return now;
+}
+
+/** Today's light dose (eye-level lux × minutes outside) against 10,000 lux for every goal minute, live while out. */
+export function SunlightLightDose({
+  luxMinutes,
+  ratePerMinute,
+  snapshotAt,
+  goalMinutes,
+  hasWeather,
+}: SunlightLightDoseProps) {
+  const now = useFrameClock(ratePerMinute > 0);
+  const live = ratePerMinute > 0 ? getLiveLuxMinutes(luxMinutes, ratePerMinute, snapshotAt, now) : luxMinutes;
   const target = getLightDoseTarget(goalMinutes);
-  const ratio = Math.min(1, luxMinutes / target);
-  const done = luxMinutes >= target;
+  const ratio = Math.min(1, live / target);
+  const done = live >= target;
   const color = done ? Colors.type.desirable : SUNLIGHT_COLOR;
-  const percent = Math.floor((luxMinutes / target) * 100);
+  const percent = ((live / target) * 100).toFixed(1);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.label}>Light dose</Text>
-        <Text style={[styles.value, { color: luxMinutes > 0 ? color : Colors.text.faint }]}>
-          {formatLuxMinutes(luxMinutes)} / {formatLuxMinutes(target)} lux·min
-          <Text style={styles.percent}>{`  ${percent}%`}</Text>
-        </Text>
+        <Text style={styles.percent}>{percent}%</Text>
       </View>
+      <Text style={[styles.value, { color: live > 0 ? color : Colors.text.faint }]}>
+        {Math.floor(live).toLocaleString('en-US')}
+        <Text style={styles.target}>{` / ${target.toLocaleString('en-US')} lux·min`}</Text>
+      </Text>
       <View style={styles.track}>
-        {luxMinutes > 0 && (
-          <View style={[styles.fill, { width: `${Math.max(2, ratio * 100)}%`, backgroundColor: color }]} />
-        )}
+        {live > 0 && <View style={[styles.fill, { width: `${Math.max(1, ratio * 100)}%`, backgroundColor: color }]} />}
       </View>
       <Text style={styles.hint}>
         {hasWeather
@@ -66,13 +91,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   value: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: '800',
     fontVariant: ['tabular-nums'],
+  },
+  target: {
+    color: Colors.text.muted,
+    fontSize: 13,
+    fontWeight: '600',
   },
   percent: {
     color: Colors.text.muted,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   track: {
     height: 10,

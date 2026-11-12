@@ -11,6 +11,7 @@ import { syncSunlight } from '../../utils/sunlight-sync';
 import {
   formatLux,
   formatSunlightMinutes,
+  getLightDoseRate,
   getSunlightBrightness,
   SUNLIGHT_GOAL_STEP_MINUTES,
   type SunlightBrightness,
@@ -136,6 +137,8 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
 
             <SunlightLightDose
               luxMinutes={today.luxMinutes}
+              ratePerMinute={getLightDoseRate(sunlight.status.kind === 'counting', sunlight.luxNow)}
+              snapshotAt={sunlight.now}
               goalMinutes={goalMinutes}
               hasWeather={hasWeather}
             />
