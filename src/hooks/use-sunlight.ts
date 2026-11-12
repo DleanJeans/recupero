@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
+import { AppState } from 'react-native';
 import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
 import type { SunlightDay } from '../types/sunlight';
+import { hasBackgroundLocationPermission } from '../utils/reminder-geofencing';
 import { addLocalDays, getSunTimes, startOfLocalDay } from '../utils/sun-utils';
 import {
   getIndoorPlaces,
-  getOutdoorRanges,
   getSunlightDays,
+  getSunlightPresence,
+  getSunlightStatus,
   getSunReferencePoint,
   isOutNow,
+  type SunlightStatus,
 } from '../utils/sunlight-utils';
 
 const TICK_MS = 60_000;
@@ -20,21 +24,46 @@ export interface SunlightSnapshot {
   days: SunlightDay[];
   today: SunlightDay;
   outNow: boolean;
+  /** Whether the counter is running right now, and why not. */
+  status: SunlightStatus;
+  locationAllowed: boolean;
   tomorrowSunrise?: number;
   hasPlaces: boolean;
   now: number;
 }
 
+/** "Allow all the time" location, re-checked when Recupero comes back to the foreground. */
+function useBackgroundLocationAllowed(): boolean {
+  const [allowed, setAllowed] = useState(true);
+  useEffect(() => {
+    let active = true;
+    const check = () =>
+      hasBackgroundLocationPermission()
+        .then(result => active && setAllowed(result))
+        .catch(() => undefined);
+    check();
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') check();
+    });
+    return () => {
+      active = false;
+      subscription.remove();
+    };
+  }, []);
+  return allowed;
+}
+
 /** Today's (and the past week's) outdoor time while the sun was up, refreshed each minute. */
 export function useSunlight(): SunlightSnapshot {
-  const activity = useCuesStore(state => state.activity);
   const places = useCuesStore(state => state.places);
   const enabled = useSunlightStore(state => state.enabled);
   const goalMinutes = useSunlightStore(state => state.goalMinutes);
   const outdoorPlaceIds = useSunlightStore(state => state.outdoorPlaceIds);
+  const events = useSunlightStore(state => state.events);
   const samples = useSunlightStore(state => state.samples);
   const weather = useSunlightStore(state => state.weather);
   const trackingSince = useSunlightStore(state => state.trackingSince);
+  const locationAllowed = useBackgroundLocationAllowed();
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -46,20 +75,29 @@ export function useSunlight(): SunlightSnapshot {
   return useMemo(() => {
     const now = Date.now();
     const indoor = getIndoorPlaces(places, outdoorPlaceIds);
-    const ranges = getOutdoorRanges(activity, samples, indoor, trackingSince, now);
+    const presence = getSunlightPresence(events, samples, indoor, trackingSince, now);
     const point = getSunReferencePoint(samples, places);
-    const days = getSunlightDays(ranges, point, weather, now);
+    const days = getSunlightDays(presence.ranges, point, weather, now);
     const tomorrow = point ? getSunTimes(addLocalDays(startOfLocalDay(now), 1), point.lat, point.lng) : undefined;
+    const status = getSunlightStatus(
+      presence.insidePlaceIds,
+      days[0],
+      now,
+      locationAllowed,
+      id => places.find(place => place.id === id)?.name,
+    );
     return {
       enabled,
       goalMinutes,
       days,
       today: days[0],
-      outNow: isOutNow(ranges, now),
+      outNow: isOutNow(presence.ranges, now),
+      status,
+      locationAllowed,
       tomorrowSunrise: tomorrow?.sunrise,
       hasPlaces: indoor.length > 0,
       now,
     };
     // tick re-reads the clock each minute.
-  }, [activity, enabled, goalMinutes, outdoorPlaceIds, places, samples, trackingSince, weather, tick]);
+  }, [enabled, events, goalMinutes, locationAllowed, outdoorPlaceIds, places, samples, trackingSince, weather, tick]);
 }

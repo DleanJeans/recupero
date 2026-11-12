@@ -103,6 +103,8 @@ export function getReminderGeofenceRegions(
   cues: Cue[],
   places: SavedPlace[],
   extraWatches: GeofenceWatch[] = [],
+  /** Regions with their own identifier and radius (e.g. sunlight's small ones), added as they are. */
+  extraRegions: ReminderGeofenceRegion[] = [],
 ): ReminderGeofenceRegion[] {
   const directions = new Map<string, { enter: boolean; exit: boolean }>();
   const watch = (placeId: string, enter: boolean, exit: boolean) => {
@@ -114,7 +116,7 @@ export function getReminderGeofenceRegions(
     watch(cue.trigger.placeId, cue.trigger.direction === 'enter', cue.trigger.direction === 'exit');
   }
   for (const extra of extraWatches) watch(extra.placeId, extra.enter === true, extra.exit === true);
-  return places.flatMap(place => {
+  const regions = places.flatMap(place => {
     const direction = directions.get(place.id);
     if (!direction) return [];
     return [
@@ -128,6 +130,7 @@ export function getReminderGeofenceRegions(
       },
     ];
   });
+  return [...regions, ...extraRegions];
 }
 
 /** What the native app watcher needs to post one "Open <app>" suggestion by itself. */
@@ -262,6 +265,7 @@ export function getReminderScheduleSignature(
   places: SavedPlace[],
   behaviors: BehaviorEntry[],
   extraWatches: GeofenceWatch[] = [],
+  extraRegions: ReminderGeofenceRegion[] = [],
 ): string {
   const active = getActivePushReminders(cues);
   const behaviorIds = new Set(active.flatMap(cue => cue.behaviorIds));
@@ -272,6 +276,7 @@ export function getReminderScheduleSignature(
   return JSON.stringify({
     active,
     extraWatches,
+    extraRegions,
     places: places.filter(place => placeIds.has(place.id)),
     behaviors: behaviors
       .filter(behavior => behaviorIds.has(behavior.id))

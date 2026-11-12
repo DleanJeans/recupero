@@ -3,12 +3,19 @@ import * as TaskManager from 'expo-task-manager';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useCuesStore } from '../store/cues-store';
 import { useSettingsStore } from '../store/settings-store';
+import { useSunlightStore } from '../store/sunlight-store';
 import type { Cue, SavedPlace } from '../types/cue';
 import { toDateString } from './date-utils';
 import { getPlaceTaskNotificationContent, getPlaceTasksForArrival } from './place-task-utils';
 import { presentPlaceTaskNotification, presentReminderNotification } from './reminder-notifications';
-import { type GeofenceWatch, getReminderGeofenceRegions, getRemindersForGeofenceEvent } from './reminder-utils';
+import {
+  type GeofenceWatch,
+  getReminderGeofenceRegions,
+  getRemindersForGeofenceEvent,
+  type ReminderGeofenceRegion,
+} from './reminder-utils';
 import { waitForHydration } from './store-hydration';
+import { getSunlightRegionPlaceId } from './sunlight-utils';
 
 export const REMINDER_GEOFENCE_TASK = 'recupero-reminder-geofence';
 
@@ -21,6 +28,12 @@ async function handleGeofenceEvent({ eventType, region }: GeofenceTaskData): Pro
   const placeId = region.identifier;
   if (!placeId) return;
   const direction = eventType === Location.GeofencingEventType.Enter ? 'enter' : 'exit';
+  const sunlightPlaceId = getSunlightRegionPlaceId(placeId);
+  if (sunlightPlaceId) {
+    await waitForHydration(useSunlightStore);
+    useSunlightStore.getState().addEvent({ ts: Date.now(), kind: direction, placeId: sunlightPlaceId });
+    return;
+  }
   await Promise.all([waitForHydration(useCuesStore), waitForHydration(useBehaviorStore)]);
 
   const { cues, places, addActivityEvent } = useCuesStore.getState();
@@ -83,8 +96,9 @@ export async function syncReminderGeofences(
   cues: Cue[],
   places: SavedPlace[],
   extraWatches: GeofenceWatch[] = [],
+  extraRegions: ReminderGeofenceRegion[] = [],
 ): Promise<void> {
-  const regions = getReminderGeofenceRegions(cues, places, extraWatches);
+  const regions = getReminderGeofenceRegions(cues, places, extraWatches, extraRegions);
   const running = await Location.hasStartedGeofencingAsync(REMINDER_GEOFENCE_TASK).catch(() => false);
   if (regions.length === 0 || !(await hasBackgroundLocationPermission())) {
     if (running) await Location.stopGeofencingAsync(REMINDER_GEOFENCE_TASK);

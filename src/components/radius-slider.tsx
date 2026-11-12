@@ -1,9 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useRef, useState } from 'react';
 import { type GestureResponderEvent, StyleSheet, View } from 'react-native';
-import { Button } from '../../../components/button';
-import { Text } from '../../../components/text';
-import { Colors } from '../../../utils/colors';
+import { Colors } from '../utils/colors';
 import {
   clampGeofenceRadius,
   MAX_GEOFENCE_RADIUS_M,
@@ -11,7 +9,9 @@ import {
   radiusToSliderRatio,
   sliderRatioToRadius,
   stepGeofenceRadius,
-} from '../../../utils/geofence-utils';
+} from '../utils/geofence-utils';
+import { Button } from './button';
+import { Text } from './text';
 
 const THUMB_SIZE = 24;
 /** Labels under the log-scale track, placed at their real positions. */
@@ -21,9 +21,18 @@ const TICK_LABEL_WIDTH = 40;
 interface RadiusSliderProps {
   value: number;
   onChange: (value: number) => void;
+  label?: string;
+  /** Accent for the value, fill and −/+ buttons. */
+  color?: string;
 }
 
-export function RadiusSlider({ value, onChange }: RadiusSliderProps) {
+/** Log-scale radius slider (1–200 m) with −/+ buttons at both ends of the value. */
+export function RadiusSlider({
+  value,
+  onChange,
+  label = 'Geofence radius',
+  color = Colors.cue.location,
+}: RadiusSliderProps) {
   const sliderRef = useRef<View>(null);
   const [trackX, setTrackX] = useState(0);
   const [trackWidth, setTrackWidth] = useState(0);
@@ -54,7 +63,7 @@ export function RadiusSlider({ value, onChange }: RadiusSliderProps) {
   return (
     <View style={styles.container}>
       <View style={styles.valueRow}>
-        <Text style={styles.label}>Geofence radius</Text>
+        <Text style={styles.label}>{label}</Text>
         <View style={styles.stepper}>
           <Button
             variant="icon"
@@ -65,10 +74,10 @@ export function RadiusSlider({ value, onChange }: RadiusSliderProps) {
             <Ionicons
               name="remove-circle-outline"
               size={26}
-              color={Colors.cue.location}
+              color={color}
             />
           </Button>
-          <Text style={styles.value}>{normalized} m</Text>
+          <Text style={[styles.value, { color }]}>{normalized} m</Text>
           <Button
             variant="icon"
             onPress={() => onChange(stepGeofenceRadius(normalized, 1))}
@@ -78,7 +87,7 @@ export function RadiusSlider({ value, onChange }: RadiusSliderProps) {
             <Ionicons
               name="add-circle-outline"
               size={26}
-              color={Colors.cue.location}
+              color={color}
             />
           </Button>
         </View>
@@ -88,7 +97,7 @@ export function RadiusSlider({ value, onChange }: RadiusSliderProps) {
         style={styles.hitArea}
         accessible
         accessibilityRole="adjustable"
-        accessibilityLabel="Geofence radius"
+        accessibilityLabel={label}
         accessibilityValue={{
           min: MIN_GEOFENCE_RADIUS_M,
           max: MAX_GEOFENCE_RADIUS_M,
@@ -103,11 +112,13 @@ export function RadiusSlider({ value, onChange }: RadiusSliderProps) {
         onStartShouldSetResponder={() => true}
         onMoveShouldSetResponder={() => true}
         onResponderStart={measure}
+        // Keep the drag when the slider sits inside a scroll view or sheet.
+        onResponderTerminationRequest={() => false}
         onResponderGrant={handleResponder}
         onResponderMove={handleResponder}
       >
         <View style={styles.track}>
-          <View style={[styles.fill, { width: `${progress * 100}%` }]} />
+          <View style={[styles.fill, { width: `${progress * 100}%`, backgroundColor: color }]} />
         </View>
         <View style={[styles.thumb, { left: thumbLeft }]} />
       </View>

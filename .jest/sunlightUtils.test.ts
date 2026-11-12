@@ -6,7 +6,10 @@ import {
   getIndoorPlaces,
   getOutdoorRanges,
   getSunlightDay,
-  getSunlightGeofenceWatches,
+  getSunlightGeofenceRegions,
+  getSunlightPresence,
+  getSunlightRegionPlaceId,
+  getSunlightStatus,
   getSunReferencePoint,
   getWeatherUrl,
   MAX_OUTDOOR_STRETCH_MS,
@@ -183,10 +186,21 @@ describe('weather helpers', () => {
 });
 
 describe('places', () => {
-  it('watches arrive and leave for indoor places only when on', () => {
+  it('gives indoor places their own small sunlight geofences, only when on', () => {
     const places = [place('home'), place('park')];
-    expect(getSunlightGeofenceWatches(true, places, ['park'])).toEqual([{ placeId: 'home', enter: true, exit: true }]);
-    expect(getSunlightGeofenceWatches(false, places, [])).toEqual([]);
+    expect(getSunlightGeofenceRegions(true, places, ['park'], 10)).toEqual([
+      {
+        identifier: 'sunlight:home',
+        latitude: 21.03,
+        longitude: 105.85,
+        radius: 10,
+        notifyOnEnter: true,
+        notifyOnExit: true,
+      },
+    ]);
+    expect(getSunlightGeofenceRegions(false, places, [], 10)).toEqual([]);
+    expect(getSunlightRegionPlaceId('sunlight:home')).toBe('home');
+    expect(getSunlightRegionPlaceId('home')).toBeUndefined();
   });
 
   it('places the sun from the last checked position, then Home', () => {
@@ -194,5 +208,32 @@ describe('places', () => {
     expect(getSunReferencePoint([], places)).toEqual({ lat: 3, lng: 4 });
     expect(getSunReferencePoint([{ ts: 1, placeId: null, lat: 5, lng: 6 }], places)).toEqual({ lat: 5, lng: 6 });
     expect(getSunReferencePoint([], [])).toBeUndefined();
+  });
+});
+
+describe('getSunlightStatus', () => {
+  const london = { lat: 51.5074, lng: -0.1278 };
+  const dayStart = new Date(2024, 5, 21).getTime();
+  const today = getSunlightDay(dayStart, [], london, undefined, dayStart);
+  const noon = (today.sunrise as number) + 6 * HOUR;
+  const name = (id: string) => (id === 'home' ? 'Home' : undefined);
+
+  it('is counting only when out while the sun is up', () => {
+    expect(getSunlightStatus([], today, noon, true, name).kind).toBe('counting');
+    expect(getSunlightStatus(['home'], today, noon, true, name)).toEqual({
+      kind: 'indoors',
+      label: 'Paused · at Home',
+    });
+    expect(getSunlightStatus([], today, (today.sunset as number) + HOUR, true, name).kind).toBe('sunDown');
+    expect(getSunlightStatus(null, today, noon, true, name).kind).toBe('unknown');
+    expect(getSunlightStatus([], today, noon, false, name).kind).toBe('off');
+  });
+
+  it('knows where you are from the last event', () => {
+    const home = place('home');
+    const t0 = Date.UTC(2024, 5, 21, 8);
+    expect(getSunlightPresence([], [], [home], 0, t0).insidePlaceIds).toBeNull();
+    expect(getSunlightPresence([event('enter', 'home', t0)], [], [home], 0, t0 + MIN).insidePlaceIds).toEqual(['home']);
+    expect(getSunlightPresence([event('exit', 'home', t0)], [], [home], 0, t0 + MIN).insidePlaceIds).toEqual([]);
   });
 });

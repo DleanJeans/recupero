@@ -1,6 +1,7 @@
-import type { CueActivityEvent, SavedPlace } from '../types/cue';
+import type { SavedPlace } from '../types/cue';
 import type {
   SunlightDay,
+  SunlightGeofenceEvent,
   SunlightPresenceSample,
   SunlightRange,
   SunlightStretch,
@@ -8,13 +9,15 @@ import type {
   SunlightWeatherHour,
 } from '../types/sunlight';
 import type { GeoPoint } from './geofence-utils';
-import type { GeofenceWatch } from './reminder-utils';
+import type { ReminderGeofenceRegion } from './reminder-utils';
 import { addLocalDays, getDaylightRange, getSunTimes, startOfLocalDay } from './sun-utils';
 
 const MS_PER_MINUTE = 60_000;
 const MS_PER_HOUR = 3_600_000;
 
 export const DEFAULT_SUNLIGHT_GOAL_MINUTES = 30;
+/** Small enough that a walk around the block counts. */
+export const DEFAULT_SUNLIGHT_RADIUS_M = 10;
 export const SUNLIGHT_GOAL_STEP_MINUTES = 5;
 export const MIN_SUNLIGHT_GOAL_MINUTES = 5;
 export const MAX_SUNLIGHT_GOAL_MINUTES = 240;
@@ -44,18 +47,38 @@ export function getIndoorPlaces(places: SavedPlace[], outdoorPlaceIds: string[])
   return places.filter(place => !outdoor.has(place.id));
 }
 
-/** Arrive and leave events for every indoor place, so the shared geofence task records them. */
-export function getSunlightGeofenceWatches(
+export const SUNLIGHT_REGION_PREFIX = 'sunlight:';
+
+/**
+ * Sunlight's own geofence around every indoor place, at its own radius (reminders floor theirs to 100 m,
+ * which would hide a walk around the block). Events land in the sunlight store, not the cue activity log.
+ */
+export function getSunlightGeofenceRegions(
   enabled: boolean,
   places: SavedPlace[],
   outdoorPlaceIds: string[],
-): GeofenceWatch[] {
+  radiusM: number,
+): ReminderGeofenceRegion[] {
   if (!enabled) return [];
-  return getIndoorPlaces(places, outdoorPlaceIds).map(place => ({ placeId: place.id, enter: true, exit: true }));
+  return getIndoorPlaces(places, outdoorPlaceIds).map(place => ({
+    identifier: `${SUNLIGHT_REGION_PREFIX}${place.id}`,
+    latitude: place.lat,
+    longitude: place.lng,
+    radius: radiusM,
+    notifyOnEnter: true,
+    notifyOnExit: true,
+  }));
 }
 
+/** The place id behind a sunlight geofence identifier, or undefined for any other geofence. */
+export function getSunlightRegionPlaceId(identifier: string): string | undefined {
+  return identifier.startsWith(SUNLIGHT_REGION_PREFIX) ? identifier.slice(SUNLIGHT_REGION_PREFIX.length) : undefined;
+}
+
+type PlaceEvent = Pick<SunlightGeofenceEvent, 'ts'> & { kind: string; placeId?: string };
+
 function getPresenceEvents(
-  activity: CueActivityEvent[],
+  activity: PlaceEvent[],
   samples: SunlightPresenceSample[],
   indoorIds: Set<string>,
 ): PresenceEvent[] {
@@ -78,13 +101,30 @@ function getPresenceEvents(
  * Time away from every indoor place, from geofence arrive/leave events plus the app's own position checks.
  * Before the first event the state is unknown and nothing counts.
  */
+export interface SunlightPresence {
+  ranges: SunlightRange[];
+  /** Indoor places you're in now; empty = out; null = not known yet (no event or check so far). */
+  insidePlaceIds: string[] | null;
+}
+
 export function getOutdoorRanges(
-  activity: CueActivityEvent[],
+  activity: PlaceEvent[],
   samples: SunlightPresenceSample[],
   indoorPlaces: SavedPlace[],
   since: number,
   now: number,
 ): SunlightRange[] {
+  return getSunlightPresence(activity, samples, indoorPlaces, since, now).ranges;
+}
+
+/** Where you are now (inside a place, out, or unknown) and every stretch out since `since`. */
+export function getSunlightPresence(
+  activity: PlaceEvent[],
+  samples: SunlightPresenceSample[],
+  indoorPlaces: SavedPlace[],
+  since: number,
+  now: number,
+): SunlightPresence {
   const indoorIds = new Set(indoorPlaces.map(place => place.id));
   const ranges: SunlightRange[] = [];
   let inside: Set<string> | null = null;
@@ -121,7 +161,10 @@ export function getOutdoorRanges(
     }
   }
   if (outSince != null) close(now);
-  return ranges.filter(range => range.end > since);
+  return {
+    ranges: ranges.filter(range => range.end > since),
+    insidePlaceIds: inside == null ? null : [...(inside as Set<string>)],
+  };
 }
 
 export function isOutNow(ranges: SunlightRange[], now: number): boolean {
@@ -274,22 +317,60 @@ export function getSunlightBrightness(lux: number): SunlightBrightness {
   return 'dim';
 }
 
-/** One line under the Sunlight bar: what's happening now and when the sun sets or rises. */
-export function getSunlightDetail(
+/** When the sun next sets or rises, for the line under the Sunlight bar. */
+export function getSunEventText(
   today: SunlightDay,
-  outNow: boolean,
   now: number,
   formatTime: (ts: number) => string,
   tomorrowSunrise?: number,
-): string {
-  if (!today.located) return 'Save a place so the app knows when the sun is up';
-  const beforeSunrise = today.sunrise != null && now < today.sunrise;
-  const afterSunset = today.sunset != null && now >= today.sunset;
-  if (beforeSunrise) return `Sun rises at ${formatTime(today.sunrise as number)}`;
-  if (afterSunset) {
-    return tomorrowSunrise != null ? `Sun is down · rises at ${formatTime(tomorrowSunrise)}` : 'Sun is down';
+): string | undefined {
+  if (!today.located || today.polar === 'night') return undefined;
+  if (today.polar === 'day') return 'sun up all day';
+  if (today.sunrise != null && now < today.sunrise) return `sun rises at ${formatTime(today.sunrise)}`;
+  if (today.sunset != null && now < today.sunset) return `sun sets at ${formatTime(today.sunset)}`;
+  return tomorrowSunrise != null ? `rises at ${formatTime(tomorrowSunrise)}` : undefined;
+}
+
+export type SunlightStatusKind = 'counting' | 'indoors' | 'sunDown' | 'unknown' | 'off';
+
+export interface SunlightStatus {
+  kind: SunlightStatusKind;
+  label: string;
+}
+
+export function isSunUp(day: SunlightDay, now: number): boolean {
+  if (day.polar === 'day') return true;
+  if (day.sunrise == null || day.sunset == null) return false;
+  return now >= day.sunrise && now < day.sunset;
+}
+
+/** Whether the counter is running right now, and if not, why. */
+export function getSunlightStatus(
+  insidePlaceIds: string[] | null,
+  today: SunlightDay,
+  now: number,
+  locationAllowed: boolean,
+  getPlaceName: (placeId: string) => string | undefined,
+): SunlightStatus {
+  if (!locationAllowed) return { kind: 'off', label: 'Not tracking · location isn\'t "Allow all the time"' };
+  if (!today.located) return { kind: 'unknown', label: 'Waiting · save a place first' };
+  if (insidePlaceIds == null) return { kind: 'unknown', label: 'Waiting for the first time you leave a place' };
+  const out = insidePlaceIds.length === 0;
+  if (!isSunUp(today, now))
+    return { kind: 'sunDown', label: out ? 'Paused · you’re out, but the sun is down' : 'Paused · sun is down' };
+  if (!out) {
+    const names = insidePlaceIds.map(getPlaceName).filter(Boolean);
+    return { kind: 'indoors', label: `Paused · at ${names.length > 0 ? names.join(', ') : 'a saved place'}` };
   }
-  if (today.polar === 'night') return 'Sun is down all day';
-  const sets = today.sunset != null ? `sun sets at ${formatTime(today.sunset)}` : 'sun up all day';
-  return outNow ? `Outside now, counting · ${sets}` : `Indoors · ${sets}`;
+  return { kind: 'counting', label: 'Counting · you’re outside' };
+}
+
+/** About 400 m across: enough to see the radius around nearby places and a block or two. */
+const SUNLIGHT_MAP_SPAN_M = 400;
+const METERS_PER_DEGREE_LAT = 111_320;
+
+export function getSunlightMapRegion(point: GeoPoint) {
+  const latitudeDelta = SUNLIGHT_MAP_SPAN_M / METERS_PER_DEGREE_LAT;
+  const cosLat = Math.max(0.01, Math.cos((point.lat * Math.PI) / 180));
+  return { latitude: point.lat, longitude: point.lng, latitudeDelta, longitudeDelta: latitudeDelta / cosLat };
 }

@@ -23,22 +23,23 @@ import {
   isReminderNotificationData,
   parseReminderAction,
 } from '../utils/reminder-utils';
-import { getSunlightGeofenceWatches } from '../utils/sunlight-utils';
+import { getSunlightGeofenceRegions } from '../utils/sunlight-utils';
 import { isTimerNotificationData, isTimerRunning } from '../utils/timer-notification-utils';
 import { dismissRunningTimerNotification } from '../utils/timer-notifications';
 
 const NAVIGATION_RETRY_MS = 250;
 const NAVIGATION_MAX_RETRIES = 20;
 
-/** Places other features want arrive/leave events for: place tasks, and every indoor place for sunlight time. */
+/** Places other features want arrive/leave events for, e.g. place tasks. */
 function getExtraGeofenceWatches() {
+  return getPlaceTaskGeofenceWatches(useBehaviorStore.getState().tasks);
+}
+
+/** Sunlight's own small geofences around every indoor place (not floored to 100 m like reminders). */
+function getExtraGeofenceRegions() {
   const { places } = useCuesStore.getState();
-  const { tasks } = useBehaviorStore.getState();
-  const sunlight = useSunlightStore.getState();
-  return [
-    ...getPlaceTaskGeofenceWatches(tasks),
-    ...getSunlightGeofenceWatches(sunlight.enabled, places, sunlight.outdoorPlaceIds),
-  ];
+  const { enabled, outdoorPlaceIds, radiusM } = useSunlightStore.getState();
+  return getSunlightGeofenceRegions(enabled, places, outdoorPlaceIds, radiusM);
 }
 
 async function syncAll() {
@@ -46,7 +47,7 @@ async function syncAll() {
   const { behaviors } = useBehaviorStore.getState();
   await Promise.all([
     syncTimeReminders(cues, places, behaviors).catch(error => console.warn('Time reminder sync failed', error)),
-    syncReminderGeofences(cues, places, getExtraGeofenceWatches()).catch(error =>
+    syncReminderGeofences(cues, places, getExtraGeofenceWatches(), getExtraGeofenceRegions()).catch(error =>
       console.warn('Geofence sync failed', error),
     ),
     syncAppOpenWatches(cues, places, behaviors).catch(error => console.warn('App-open reminder sync failed', error)),
@@ -78,7 +79,13 @@ export function useReminderEngine(
     const syncIfChanged = () => {
       const { cues, places } = useCuesStore.getState();
       const { behaviors } = useBehaviorStore.getState();
-      const signature = getReminderScheduleSignature(cues, places, behaviors, getExtraGeofenceWatches());
+      const signature = getReminderScheduleSignature(
+        cues,
+        places,
+        behaviors,
+        getExtraGeofenceWatches(),
+        getExtraGeofenceRegions(),
+      );
       if (signature === lastSignature.current) return;
       lastSignature.current = signature;
       void syncAll();
@@ -87,7 +94,13 @@ export function useReminderEngine(
 
     const unsubscribeCues = useCuesStore.subscribe(syncIfChanged);
     const unsubscribeSunlight = useSunlightStore.subscribe((state, previous) => {
-      if (state.enabled !== previous.enabled || state.outdoorPlaceIds !== previous.outdoorPlaceIds) syncIfChanged();
+      if (
+        state.enabled !== previous.enabled ||
+        state.outdoorPlaceIds !== previous.outdoorPlaceIds ||
+        state.radiusM !== previous.radiusM
+      ) {
+        syncIfChanged();
+      }
     });
     const unsubscribeBehaviors = useBehaviorStore.subscribe((state, previous) => {
       if (state.tasks !== previous.tasks) syncIfChanged();

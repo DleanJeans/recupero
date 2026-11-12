@@ -2,9 +2,10 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { SunlightSnapshot } from '../../hooks/use-sunlight';
 import { Colors } from '../../utils/colors';
-import { getSunlightDetail } from '../../utils/sunlight-utils';
+import { getSunEventText } from '../../utils/sunlight-utils';
 import { formatTime } from '../../utils/time-utils';
 import { Text } from '../text';
+import { SUNLIGHT_STATUS_COLORS, SunlightStatusDot } from './sunlight-status-dot';
 
 export const SUNLIGHT_COLOR = '#fbbf24';
 
@@ -15,11 +16,11 @@ interface SunlightBarRowProps {
 
 /** Today's outdoor time while the sun is up, filling toward the daily goal (under the needs bars). */
 export function SunlightBarRow({ sunlight, onPress }: SunlightBarRowProps) {
-  const { today, goalMinutes, outNow, now, tomorrowSunrise } = sunlight;
+  const { today, goalMinutes, status, now, tomorrowSunrise } = sunlight;
   const ratio = Math.min(1, today.minutes / goalMinutes);
   const done = today.minutes >= goalMinutes;
   const color = done ? Colors.type.desirable : SUNLIGHT_COLOR;
-  const detail = getSunlightDetail(today, outNow, now, ts => formatTime(ts), tomorrowSunrise);
+  const sunEvent = getSunEventText(today, now, ts => formatTime(ts), tomorrowSunrise);
 
   return (
     <Pressable
@@ -38,10 +39,17 @@ export function SunlightBarRow({ sunlight, onPress }: SunlightBarRowProps) {
         </View>
         <Text style={[styles.value, { color: today.minutes > 0 ? color : Colors.text.faint }]}>{today.minutes}m</Text>
       </View>
-      <Text style={styles.detail}>
-        {`of ${goalMinutes} min · `}
-        {detail}
-      </Text>
+      <View style={styles.detailRow}>
+        <SunlightStatusDot kind={status.kind} />
+        <Text
+          style={styles.detail}
+          numberOfLines={1}
+        >
+          <Text style={{ color: SUNLIGHT_STATUS_COLORS[status.kind] }}>{status.label}</Text>
+          {` · of ${goalMinutes} min`}
+          {sunEvent ? ` · ${sunEvent}` : ''}
+        </Text>
+      </View>
     </Pressable>
   );
 }
@@ -90,9 +98,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginLeft: 30,
+  },
   detail: {
+    flex: 1,
     color: Colors.text.faint,
     fontSize: 11,
-    marginLeft: 30,
   },
 });

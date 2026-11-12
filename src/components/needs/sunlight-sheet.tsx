@@ -6,8 +6,7 @@ import { useSunlight } from '../../hooks/use-sunlight';
 import { useCuesStore } from '../../store/cues-store';
 import { useSunlightStore } from '../../store/sunlight-store';
 import { Colors } from '../../utils/colors';
-import { hasBackgroundLocationPermission, requestBackgroundLocationPermission } from '../../utils/reminder-geofencing';
-import { GEOFENCE_MIN_RADIUS_M } from '../../utils/reminder-utils';
+import { requestBackgroundLocationPermission } from '../../utils/reminder-geofencing';
 import { syncSunlight } from '../../utils/sunlight-sync';
 import {
   formatLux,
@@ -19,8 +18,11 @@ import {
 import { formatTime } from '../../utils/time-utils';
 import { AppIcon } from '../app-icon';
 import { CueSectionLabel } from '../cues/cue-section-label';
+import { RadiusSlider } from '../radius-slider';
 import { Text } from '../text';
 import { SUNLIGHT_COLOR } from './sunlight-bar-row';
+import { SunlightPlacesMap } from './sunlight-places-map';
+import { SUNLIGHT_STATUS_COLORS, SunlightStatusDot } from './sunlight-status-dot';
 import { SunlightWeekChart } from './sunlight-week-chart';
 
 const BRIGHTNESS_LABELS: Record<SunlightBrightness, string> = {
@@ -42,18 +44,13 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
   const toggleOutdoorPlace = useSunlightStore(state => state.toggleOutdoorPlace);
   const setGoalMinutes = useSunlightStore(state => state.setGoalMinutes);
   const insets = useSafeAreaInsets();
-  const [locationAllowed, setLocationAllowed] = useState(true);
+  const radiusM = useSunlightStore(state => state.radiusM);
+  const setRadiusM = useSunlightStore(state => state.setRadiusM);
+  const [justAllowed, setJustAllowed] = useState(false);
+  const locationAllowed = sunlight.locationAllowed || justAllowed;
 
   useEffect(() => {
-    if (!visible) return;
-    let active = true;
-    hasBackgroundLocationPermission()
-      .then(allowed => active && setLocationAllowed(allowed))
-      .catch(() => undefined);
-    void syncSunlight();
-    return () => {
-      active = false;
-    };
+    if (visible) void syncSunlight();
   }, [visible]);
 
   if (!visible) return null;
@@ -67,7 +64,7 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
 
   const allowLocation = async () => {
     const granted = await requestBackgroundLocationPermission();
-    setLocationAllowed(granted);
+    setJustAllowed(granted);
     if (granted) await resyncReminders();
     else await Linking.openSettings();
   };
@@ -101,6 +98,16 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
                   {today.lux != null ? ` · ${formatLux(today.lux)} avg outside` : ''}
                 </Text>
               </View>
+            </View>
+
+            <View style={styles.status}>
+              <SunlightStatusDot
+                kind={sunlight.status.kind}
+                size={10}
+              />
+              <Text style={[styles.statusText, { color: SUNLIGHT_STATUS_COLORS[sunlight.status.kind] }]}>
+                {sunlight.status.label}
+              </Text>
             </View>
 
             {!locationAllowed && (
@@ -174,6 +181,15 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
               </Pressable>
             </View>
 
+            <CueSectionLabel>Where it pauses</CueSectionLabel>
+            <RadiusSlider
+              label="Pause within"
+              value={radiusM}
+              onChange={setRadiusM}
+              color={SUNLIGHT_COLOR}
+            />
+            <SunlightPlacesMap />
+
             {places.length > 0 && (
               <>
                 <CueSectionLabel>Places that count as outside</CueSectionLabel>
@@ -202,9 +218,9 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
             )}
 
             <Text style={styles.hint}>
-              Counts time away from your saved places, only between sunrise and sunset where you are. Places are watched
-              at {GEOFENCE_MIN_RADIUS_M} m or more, so a walk around the block may not count. Light levels are estimated
-              from hourly weather (Open-Meteo).
+              Counts time more than {radiusM} m from your saved places, only between sunrise and sunset where you are.
+              Below about 50 m, phone GPS can wobble across the line, so very short trips (under 2 min) are ignored.
+              Light levels are estimated from hourly weather (Open-Meteo).
             </Text>
           </ScrollView>
         </View>
@@ -276,6 +292,20 @@ const styles = StyleSheet.create({
   },
   warningAction: {
     color: Colors.status.dangerLight,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  status: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.bg.input,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  statusText: {
+    flex: 1,
     fontSize: 13,
     fontWeight: '700',
   },

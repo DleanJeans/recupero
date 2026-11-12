@@ -1,14 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { SunlightPresenceSample, SunlightWeather } from '../types/sunlight';
+import type { SunlightGeofenceEvent, SunlightPresenceSample, SunlightWeather } from '../types/sunlight';
+import { clampGeofenceRadius } from '../utils/geofence-utils';
 import {
   DEFAULT_SUNLIGHT_GOAL_MINUTES,
+  DEFAULT_SUNLIGHT_RADIUS_M,
   MAX_SUNLIGHT_GOAL_MINUTES,
   MIN_SUNLIGHT_GOAL_MINUTES,
 } from '../utils/sunlight-utils';
 
 const MAX_SAMPLES = 500;
+const MAX_EVENTS = 2000;
 
 export interface SunlightStore {
   enabled: boolean;
@@ -17,11 +20,16 @@ export interface SunlightStore {
   goalMinutes: number;
   /** Saved places that count as being outside (a park, a running track). Every other place is indoors. */
   outdoorPlaceIds: string[];
+  /** Geofence radius around each indoor place; step past it and the counter starts. */
+  radiusM: number;
+  events: SunlightGeofenceEvent[];
   samples: SunlightPresenceSample[];
   weather?: SunlightWeather;
   setEnabled: (enabled: boolean) => void;
   setGoalMinutes: (minutes: number) => void;
   toggleOutdoorPlace: (placeId: string) => void;
+  setRadiusM: (radiusM: number) => void;
+  addEvent: (event: SunlightGeofenceEvent) => void;
   addSample: (sample: SunlightPresenceSample) => void;
   setWeather: (weather: SunlightWeather) => void;
 }
@@ -33,6 +41,8 @@ export const useSunlightStore = create<SunlightStore>()(
       trackingSince: Date.now(),
       goalMinutes: DEFAULT_SUNLIGHT_GOAL_MINUTES,
       outdoorPlaceIds: [],
+      radiusM: DEFAULT_SUNLIGHT_RADIUS_M,
+      events: [],
       samples: [],
       weather: undefined,
       setEnabled: enabled =>
@@ -49,6 +59,8 @@ export const useSunlightStore = create<SunlightStore>()(
             ? state.outdoorPlaceIds.filter(id => id !== placeId)
             : [...state.outdoorPlaceIds, placeId],
         })),
+      setRadiusM: radiusM => set({ radiusM: clampGeofenceRadius(Math.round(radiusM)) }),
+      addEvent: event => set(state => ({ events: [...state.events, event].slice(-MAX_EVENTS) })),
       addSample: sample => set(state => ({ samples: [...state.samples, sample].slice(-MAX_SAMPLES) })),
       setWeather: weather => set({ weather }),
     }),

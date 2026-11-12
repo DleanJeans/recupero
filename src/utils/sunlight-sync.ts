@@ -2,7 +2,6 @@ import * as Location from 'expo-location';
 import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
 import { findPlaceAtPoint } from './geofence-utils';
-import { geofenceRadius } from './reminder-utils';
 import {
   getIndoorPlaces,
   getSunReferencePoint,
@@ -19,7 +18,7 @@ const SAMPLE_COORD_DECIMALS = 3;
 
 /** Checks where the phone is now (only if location is already allowed) and records whether it's at a tracked place. */
 async function samplePresence(now: number): Promise<void> {
-  const { samples, outdoorPlaceIds, addSample } = useSunlightStore.getState();
+  const { samples, outdoorPlaceIds, radiusM, addSample } = useSunlightStore.getState();
   const last = samples[samples.length - 1];
   if (last && now - last.ts < MIN_SAMPLE_GAP_MS) return;
   const { status } = await Location.getForegroundPermissionsAsync();
@@ -27,10 +26,11 @@ async function samplePresence(now: number): Promise<void> {
   const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
   const { latitude, longitude, accuracy } = position.coords;
   if (accuracy != null && accuracy > MAX_SAMPLE_ACCURACY_M) return;
-  // Same enlarged radius as the geofences, so a check agrees with the arrive/leave events.
+  // A fuzzy fix near a place gets the benefit of the doubt (inside), so it never invents time outside.
+  const slack = accuracy ?? 0;
   const indoor = getIndoorPlaces(useCuesStore.getState().places, outdoorPlaceIds).map(place => ({
     ...place,
-    radiusM: geofenceRadius(place.radiusM),
+    radiusM: radiusM + slack,
   }));
   const place = findPlaceAtPoint(indoor, { lat: latitude, lng: longitude });
   addSample({

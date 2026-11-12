@@ -8,6 +8,13 @@ export interface SunlightPresenceSample {
   lng?: number;
 }
 
+/** Arriving at or leaving an indoor place, from sunlight's own geofences. */
+export interface SunlightGeofenceEvent {
+  ts: number;
+  kind: 'enter' | 'exit';
+  placeId: string;
+}
+
 /** Hourly sunshine from the weather service: mean W/m² on flat ground over the hour ending at `ts`. */
 export interface SunlightWeatherHour {
   ts: number;

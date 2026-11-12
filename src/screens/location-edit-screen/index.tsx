@@ -8,6 +8,7 @@ import { Button } from '../../components/button';
 import { CueScreenHeader } from '../../components/cues/cue-screen-header';
 import { CueToggle } from '../../components/cues/cue-toggle';
 import { EmojiPicker } from '../../components/emoji-picker';
+import { RadiusSlider } from '../../components/radius-slider';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text, TextInput } from '../../components/text';
 import { useCuesStore } from '../../store/cues-store';
@@ -16,7 +17,6 @@ import { Colors } from '../../utils/colors';
 import { clampGeofenceRadius, type GeoPoint } from '../../utils/geofence-utils';
 import { geocodeAddress, getCurrentPoint, reverseGeocodePoint } from '../../utils/location-utils';
 import { GeofenceMap } from './components/geofence-map';
-import { RadiusSlider } from './components/radius-slider';
 
 type LocationEditRoute = NativeStackScreenProps<RootStackParamList, 'LocationEdit'>['route'];
 
