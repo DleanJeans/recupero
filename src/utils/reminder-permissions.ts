@@ -1,10 +1,11 @@
 import { Alert } from 'react-native';
 import type { Cue, CueTrigger } from '../types/cue';
+import { isSiteTrackingEnabled } from './app-usage-sync';
 import { hasBackgroundLocationPermission, requestBackgroundLocationPermission } from './reminder-geofencing';
 import { hasNotificationPermission, requestNotificationPermission } from './reminder-notifications';
 import { canTriggerFireAutomatically, getActivePushReminders } from './reminder-utils';
 
-export type MissingReminderPermission = 'notifications' | 'location';
+export type MissingReminderPermission = 'notifications' | 'location' | 'appWatcher';
 
 const REMINDER_LOCATION_REASON = 'Place reminders need to know when you arrive or leave while Recupero is closed.';
 
@@ -32,6 +33,7 @@ export async function requestReminderPermissions(triggers: CueTrigger[]): Promis
     const granted = (await explainBackgroundLocation()) && (await requestBackgroundLocationPermission());
     if (!granted) missing.push('location');
   }
+  if (automatic.some(trigger => trigger.type === 'app') && !isSiteTrackingEnabled()) missing.push('appWatcher');
   return missing;
 }
 
@@ -58,5 +60,6 @@ export async function getMissingReminderPermissions(cues: Cue[]): Promise<Missin
   if (active.some(cue => cue.trigger.type === 'location') && !(await hasBackgroundLocationPermission())) {
     missing.push('location');
   }
+  if (active.some(cue => cue.trigger.type === 'app') && !isSiteTrackingEnabled()) missing.push('appWatcher');
   return missing;
 }

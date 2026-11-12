@@ -10,6 +10,7 @@ const ICONS = {
   habit: 'link-outline',
   mood: 'happy-outline',
   body: 'body-outline',
+  app: 'apps-outline',
 } as const;
 
 interface CueTriggerIconProps {

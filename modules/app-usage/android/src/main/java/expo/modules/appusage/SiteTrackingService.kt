@@ -1,6 +1,7 @@
 package expo.modules.appusage
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.ComponentName
 import android.content.Context
 import android.provider.Settings
@@ -10,6 +11,11 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
+ * Two jobs share this one accessibility service, so the user only has to turn on one:
+ * - "Open <app>" reminders: every app switch is passed to [AppOpenWatcher]. While any such
+ *   reminder exists the service listens to all apps; otherwise only to Firefox.
+ * - Website tracking (below).
+ *
  * Watches Firefox's address bar and records a "mark" each time the shown site changes.
  * A mark is (timestamp, host); an empty host means Firefox showed a page with no site
  * (new tab, home). Time per site is worked out in JS by combining marks with Firefox's
@@ -19,9 +25,36 @@ import org.json.JSONObject
 class SiteTrackingService : AccessibilityService() {
   private var lastCheckAt = 0L
 
+  override fun onServiceConnected() {
+    super.onServiceConnected()
+    instance = this
+    applyPackageFilter()
+  }
+
+  override fun onDestroy() {
+    if (instance === this) instance = null
+    super.onDestroy()
+  }
+
+  /** All apps while an app-open reminder exists (to see app switches), else just Firefox. */
+  private fun applyPackageFilter() {
+    val info = serviceInfo ?: return
+    val watchesApps = AppOpenWatcher.watchedPackages(this).isNotEmpty()
+    info.packageNames = if (watchesApps) null else FIREFOX_PACKAGES.toTypedArray()
+    info.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+    info.flags = info.flags or AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
+    serviceInfo = info
+  }
+
   override fun onAccessibilityEvent(event: AccessibilityEvent?) {
     if (event == null) return
     val isWindowChange = event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+    val eventPackage = event.packageName?.toString()
+    if (isWindowChange && eventPackage != null) {
+      AppOpenWatcher.onWindowChanged(this, eventPackage, event.className?.toString())
+    }
+    // Everything below is website tracking, which only cares about Firefox.
+    if (eventPackage != null && eventPackage !in FIREFOX_PACKAGES) return
     val now = System.currentTimeMillis()
     // Content changes fire constantly while scrolling; one look per second is plenty.
     if (!isWindowChange && now - lastCheckAt < 1000) return
@@ -46,6 +79,13 @@ class SiteTrackingService : AccessibilityService() {
   }
 
   companion object {
+    private var instance: SiteTrackingService? = null
+
+    /** Re-applies the package filter after the app-open reminders change. */
+    fun refreshPackageFilter() {
+      instance?.applyPackageFilter()
+    }
+
     val FIREFOX_PACKAGES = setOf("org.mozilla.firefox", "org.mozilla.firefox_beta", "org.mozilla.fenix")
 
     // Display (not edit) views of the toolbar; Firefox has used both over the years.

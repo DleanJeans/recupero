@@ -16,4 +16,6 @@ android {
 
 dependencies {
   implementation 'com.facebook.react:react-android'
+  // AppOpenWatcher posts app-open reminders through expo-notifications so their buttons reach the JS task.
+  implementation project(':expo-notifications')
 }

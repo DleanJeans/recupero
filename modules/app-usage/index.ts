@@ -14,6 +14,8 @@ interface AppUsageNativeModule {
   isSiteTrackingEnabled(): boolean;
   openAccessibilitySettings(): void;
   getSiteMarks(start: number, end: number): Promise<SiteMark[]>;
+  /** JSON array of AppOpenWatch. Missing in builds made before app-open reminders. */
+  setAppOpenWatches?(json: string): void;
 }
 
 /** Android-only. `null` on iOS, web, and builds made before this module existed. */

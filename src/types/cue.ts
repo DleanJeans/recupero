@@ -1,4 +1,4 @@
-export type CueTriggerType = 'location' | 'time' | 'habit' | 'mood' | 'body';
+export type CueTriggerType = 'location' | 'time' | 'habit' | 'mood' | 'body' | 'app';
 
 export type BuiltInMoodId = 'great' | 'good' | 'okay' | 'stressed' | 'low' | 'tired';
 
@@ -38,7 +38,9 @@ export type CueTrigger =
   | { type: 'time'; mode: 'auto'; pattern: 'afterBehavior'; behaviorId: string; delayMin: number }
   | { type: 'habit'; behaviorId: string; delayMin?: number }
   | { type: 'mood'; moods: MoodId[] }
-  | { type: 'body'; sensations: BodySensationId[] };
+  | { type: 'body'; sensations: BodySensationId[] }
+  /** Another Android app came to the foreground (seen by the accessibility service). */
+  | { type: 'app'; packageName: string; appLabel: string };
 
 export interface Cue {
   id: string;

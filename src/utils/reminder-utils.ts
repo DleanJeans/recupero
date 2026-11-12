@@ -12,6 +12,20 @@ export const FRESH_LOG_WINDOW_MS = 15 * 60 * 1000;
 /** Android shows at most three action buttons on a notification. */
 export const MAX_NOTIFICATION_ACTIONS = 3;
 export const TIME_REMINDER_ID_PREFIX = 'reminder-time:';
+/** "Later" on a suggestion brings the same suggestion back after this many minutes. */
+export const SNOOZE_MINUTES = 30;
+export const SNOOZE_ACTION_ID = 'snooze';
+export const TIMER_ACTION_PREFIX = 'timer:';
+export const LOG_ACTION_PREFIX = 'log:';
+/** How many recent logs to look at when deciding whether a behaviour is usually timed. */
+const TIMED_LOG_SAMPLE = 5;
+
+export interface ReminderNotificationAction {
+  id: string;
+  title: string;
+  /** False = handled in the background (start a timer, snooze) without opening Recupero. */
+  opensApp: boolean;
+}
 
 export interface TimeReminderSchedule {
   identifier: string;
@@ -48,7 +62,7 @@ export interface ReminderNotificationData {
 
 /** Whether the app can fire this trigger on its own (rather than only showing suggestions in-app). */
 export function canTriggerFireAutomatically(trigger: CueTrigger): boolean {
-  if (trigger.type === 'location' || trigger.type === 'habit') return true;
+  if (trigger.type === 'location' || trigger.type === 'habit' || trigger.type === 'app') return true;
   if (trigger.type === 'time') return trigger.mode === 'simple' || trigger.pattern === 'afterBehavior';
   return false;
 }
@@ -116,6 +130,22 @@ export function getReminderGeofenceRegions(
   });
 }
 
+/** What the native app watcher needs to post one "Open <app>" suggestion by itself. */
+export interface AppOpenWatch {
+  cueId: string;
+  packageName: string;
+  title: string;
+  body: string;
+  /** JSON of the notification data (ReminderNotificationData). */
+  data: string;
+  categoryIdentifier: string | null;
+  channelId: string;
+}
+
+export function getAppOpenReminders(cues: Cue[]): Cue[] {
+  return getActivePushReminders(cues).filter(cue => cue.trigger.type === 'app' && cue.trigger.packageName.length > 0);
+}
+
 export function getRemindersForGeofenceEvent(cues: Cue[], placeId: string, direction: 'enter' | 'exit'): Cue[] {
   return getActivePushReminders(cues).filter(
     cue => cue.trigger.type === 'location' && cue.trigger.placeId === placeId && cue.trigger.direction === direction,
@@ -160,14 +190,37 @@ export function getReminderCueRef(cue: Cue): CueRef | undefined {
   return cue.trigger.type === 'location' ? placeCueRef(cue.trigger.placeId) : undefined;
 }
 
+/** Whether a behaviour is usually timed, so its suggestion offers "Start timer" rather than "Log". */
+export function isTimedBehavior(behavior: BehaviorEntry): boolean {
+  if (behavior.durationXpEnabled || behavior.autoTrackApp || behavior.autoTrackSite) return true;
+  const recent = [...behavior.logs].sort((a, b) => b.timestamp - a.timestamp).slice(0, TIMED_LOG_SAMPLE);
+  return recent.some(log => log.endTimestamp != null && log.endTimestamp > log.timestamp);
+}
+
+/**
+ * Notification buttons for a suggestion: one per suggested behaviour (Start timer for timed ones, which runs
+ * without opening the app; Log for the rest), then "Later". Android shows at most three.
+ */
+export function getReminderNotificationActions(suggested: BehaviorEntry[]): ReminderNotificationAction[] {
+  const behaviorActions = suggested.slice(0, MAX_NOTIFICATION_ACTIONS - 1).map<ReminderNotificationAction>(behavior => {
+    const timed = isTimedBehavior(behavior);
+    const name = suggested.length === 1 ? '' : ` ${behavior.name}`;
+    return timed
+      ? { id: `${TIMER_ACTION_PREFIX}${behavior.id}`, title: `▶ Start${name || ' timer'}`, opensApp: false }
+      : { id: `${LOG_ACTION_PREFIX}${behavior.id}`, title: `Log${name}`, opensApp: true };
+  });
+  if (behaviorActions.length === 0) return [];
+  return [...behaviorActions, { id: SNOOZE_ACTION_ID, title: `Later (${SNOOZE_MINUTES} min)`, opensApp: false }];
+}
+
 export function getReminderNotificationContent(
   cue: Cue,
   places: SavedPlace[],
   behaviors: BehaviorEntry[],
-): { title: string; body: string; data: ReminderNotificationData; actions: Array<{ id: string; title: string }> } {
+): { title: string; body: string; data: ReminderNotificationData; actions: ReminderNotificationAction[] } {
   const suggested = cue.behaviorIds
     .map(id => behaviors.find(behavior => behavior.id === id))
-    .filter((behavior): behavior is BehaviorEntry => behavior != null);
+    .filter((behavior): behavior is BehaviorEntry => behavior != null && behavior.archivedAt == null);
   const names = suggested.map(behavior => behavior.name);
   const title = cue.name?.trim() || getCueTriggerLabel(cue.trigger, places, behaviors);
   const body =
@@ -176,12 +229,6 @@ export function getReminderNotificationContent(
       : names.length === 1
         ? `Time for ${names[0]}? Tap to log it.`
         : `Try ${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}.`;
-  const actions =
-    suggested.length > 1
-      ? suggested
-          .slice(0, MAX_NOTIFICATION_ACTIONS)
-          .map(behavior => ({ id: `log:${behavior.id}`, title: behavior.name }))
-      : [];
   return {
     title,
     body,
@@ -191,8 +238,22 @@ export function getReminderNotificationContent(
       behaviorIds: suggested.map(behavior => behavior.id),
       cueRef: getReminderCueRef(cue),
     },
-    actions,
+    actions: getReminderNotificationActions(suggested),
   };
+}
+
+/** Parses a notification action id into what it asks for. */
+export function parseReminderAction(
+  actionIdentifier: string,
+): { kind: 'timer' | 'log'; behaviorId: string } | { kind: 'snooze' } | { kind: 'open' } {
+  if (actionIdentifier === SNOOZE_ACTION_ID) return { kind: 'snooze' };
+  if (actionIdentifier.startsWith(TIMER_ACTION_PREFIX)) {
+    return { kind: 'timer', behaviorId: actionIdentifier.slice(TIMER_ACTION_PREFIX.length) };
+  }
+  if (actionIdentifier.startsWith(LOG_ACTION_PREFIX)) {
+    return { kind: 'log', behaviorId: actionIdentifier.slice(LOG_ACTION_PREFIX.length) };
+  }
+  return { kind: 'open' };
 }
 
 /** Changes whenever something that affects scheduled notifications or geofences changes. */
@@ -212,7 +273,9 @@ export function getReminderScheduleSignature(
     active,
     extraWatches,
     places: places.filter(place => placeIds.has(place.id)),
-    behaviors: behaviors.filter(behavior => behaviorIds.has(behavior.id)).map(behavior => [behavior.id, behavior.name]),
+    behaviors: behaviors
+      .filter(behavior => behaviorIds.has(behavior.id))
+      .map(behavior => [behavior.id, behavior.name, behavior.archivedAt != null, isTimedBehavior(behavior)]),
   });
 }
 

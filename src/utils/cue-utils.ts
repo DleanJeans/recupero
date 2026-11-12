@@ -40,7 +40,7 @@ export const BODY_SENSATION_OPTIONS: ReadonlyArray<CueOption & { id: BuiltInBody
 /** A body sensation counts as "current" for this long after it was logged. */
 export const BODY_SENSATION_FRESH_MS = 2 * 60 * 60 * 1000;
 
-export const CUE_TRIGGER_TYPES: CueTriggerType[] = ['location', 'time', 'habit', 'mood', 'body'];
+export const CUE_TRIGGER_TYPES: CueTriggerType[] = ['location', 'time', 'habit', 'app', 'mood', 'body'];
 
 export const NO_CUSTOM_CUE_OPTIONS: CustomCueOptions = { moods: [], sensations: [] };
 
@@ -106,6 +106,7 @@ export function getCueTriggerLabel(
     const behavior = behaviors.find(item => item.id === trigger.behaviorId)?.name ?? 'a behaviour';
     return `${trigger.delayMin ? `${trigger.delayMin} min after` : 'After logging'} ${behavior}`;
   }
+  if (trigger.type === 'app') return trigger.appLabel ? `Open ${trigger.appLabel}` : 'Open an app';
   if (trigger.type === 'body') {
     const labels = trigger.sensations.map(sensation =>
       getBodySensationOption(sensation, custom.sensations).label.toLowerCase(),
@@ -175,6 +176,7 @@ export function createDefaultCueTrigger(
   if (type === 'habit') return { type, behaviorId };
   if (type === 'mood') return { type, moods: [] };
   if (type === 'body') return { type, sensations: [] };
+  if (type === 'app') return { type, packageName: '', appLabel: '' };
   return {
     type,
     mode: 'simple',
@@ -188,6 +190,7 @@ export function isCueTriggerComplete(trigger: CueTrigger): boolean {
   if (trigger.type === 'habit') return trigger.behaviorId.length > 0;
   if (trigger.type === 'mood') return trigger.moods.length > 0;
   if (trigger.type === 'body') return trigger.sensations.length > 0;
+  if (trigger.type === 'app') return trigger.packageName.length > 0;
   if (trigger.mode === 'simple') return /^([01]\d|2[0-3]):[0-5]\d$/.test(trigger.at) && trigger.repeatDays.length > 0;
   if (trigger.pattern === 'afterBehavior') return trigger.behaviorId.length > 0 && trigger.delayMin >= 0;
   return true;

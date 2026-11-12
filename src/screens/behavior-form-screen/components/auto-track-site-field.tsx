@@ -60,9 +60,9 @@ export function AutoTrackSiteField({ enabled, domain, onToggle, onDomainChange }
           {!siteTracking && (
             <>
               <Text style={styles.note}>
-                Turn on "Recupero website tracking" in Accessibility. It reads only the site name in Firefox's address
-                bar. If Android says the setting is restricted, open Recupero's App info, tap ⋮, then "Allow restricted
-                settings".
+                Turn on "Recupero app & website watcher" in Accessibility. It reads only the site name in Firefox's
+                address bar. If Android says the setting is restricted, open Recupero's App info, tap ⋮, then "Allow
+                restricted settings".
               </Text>
               <Button
                 size="sm"

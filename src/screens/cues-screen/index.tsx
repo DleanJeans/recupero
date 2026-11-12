@@ -46,6 +46,7 @@ const TRIGGER_LABELS: Record<CueTriggerType, string> = {
   habit: 'Habit',
   mood: 'Mood',
   body: 'Body',
+  app: 'App',
 };
 
 const EMPTY_STATS = { xp: 0, logCount: 0 };

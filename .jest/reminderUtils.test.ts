@@ -2,6 +2,7 @@ import type { BehaviorEntry, LogEntry } from '../src/types/behavior';
 import type { Cue, CueTrigger, SavedPlace } from '../src/types/cue';
 import {
   canTriggerFireAutomatically,
+  getAppOpenReminders,
   getNewlyLoggedBehaviors,
   getReminderGeofenceRegions,
   getReminderNotificationContent,
@@ -10,6 +11,8 @@ import {
   getTimeReminderSchedules,
   isReminderNotificationData,
   isReminderOnCooldown,
+  isTimedBehavior,
+  parseReminderAction,
   REMINDER_COOLDOWN_MS,
 } from '../src/utils/reminder-utils';
 
@@ -160,18 +163,71 @@ describe('notification content', () => {
     const content = getReminderNotificationContent(c, [place('gym', 20)], [behavior('b1', 'Stretch')]);
     expect(content.title).toBe('Enter Place gym');
     expect(content.body).toBe('Time for Stretch? Tap to log it.');
-    expect(content.actions).toEqual([]);
+    expect(content.actions).toEqual([
+      { id: 'log:b1', title: 'Log', opensApp: true },
+      { id: 'snooze', title: 'Later (30 min)', opensApp: false },
+    ]);
     expect(content.data).toEqual({ kind: 'reminder', cueId: 'a', behaviorIds: ['b1'], cueRef: 'place:gym' });
     expect(isReminderNotificationData(content.data)).toBe(true);
   });
 
-  it('adds one action button per behaviour, up to three', () => {
+  it('adds one button per behaviour, up to two, then Later', () => {
     const c = cue('a', { type: 'habit', behaviorId: 'x' }, { name: 'After lunch', behaviorIds: ['1', '2', '3', '4'] });
     const behaviors = ['1', '2', '3', '4'].map(id => behavior(id, `B${id}`));
     const content = getReminderNotificationContent(c, [], behaviors);
     expect(content.title).toBe('After lunch');
     expect(content.body).toBe('Try B1, B2, B3 or B4.');
-    expect(content.actions.map(a => a.id)).toEqual(['log:1', 'log:2', 'log:3']);
+    expect(content.actions.map(a => a.id)).toEqual(['log:1', 'log:2', 'snooze']);
+  });
+
+  it('offers a background Start timer for timed behaviours', () => {
+    const c = cue(
+      'a',
+      { type: 'app', packageName: 'com.lyricsionary', appLabel: 'Lyricsionary' },
+      { behaviorIds: ['de'] },
+    );
+    const german = behavior('de', 'German', [{ id: 'l', timestamp: 1000, endTimestamp: 61_000 }]);
+    const content = getReminderNotificationContent(c, [], [german]);
+    expect(content.title).toBe('Open Lyricsionary');
+    expect(content.actions[0]).toEqual({ id: 'timer:de', title: '▶ Start timer', opensApp: false });
+    expect(content.data.cueRef).toBeUndefined();
+  });
+
+  it('leaves archived behaviours out', () => {
+    const archived = { ...behavior('b1', 'Old'), archivedAt: 1 } as BehaviorEntry;
+    const content = getReminderNotificationContent(cue('a', { type: 'habit', behaviorId: 'x' }), [], [archived]);
+    expect(content.data.behaviorIds).toEqual([]);
+    expect(content.actions).toEqual([]);
+  });
+});
+
+describe('isTimedBehavior', () => {
+  it('is timed with duration XP, auto-tracking or a recent timed log', () => {
+    expect(isTimedBehavior(behavior('a', 'A'))).toBe(false);
+    expect(isTimedBehavior({ ...behavior('a', 'A'), durationXpEnabled: true } as BehaviorEntry)).toBe(true);
+    expect(isTimedBehavior(behavior('a', 'A', [{ id: '1', timestamp: 5, endTimestamp: 5 }]))).toBe(false);
+    expect(isTimedBehavior(behavior('a', 'A', [{ id: '1', timestamp: 5, endTimestamp: 90 }]))).toBe(true);
+  });
+});
+
+describe('parseReminderAction', () => {
+  it('reads timer, log, snooze and the default tap', () => {
+    expect(parseReminderAction('timer:x')).toEqual({ kind: 'timer', behaviorId: 'x' });
+    expect(parseReminderAction('log:y')).toEqual({ kind: 'log', behaviorId: 'y' });
+    expect(parseReminderAction('snooze')).toEqual({ kind: 'snooze' });
+    expect(parseReminderAction('expo.modules.notifications.actions.DEFAULT')).toEqual({ kind: 'open' });
+  });
+});
+
+describe('getAppOpenReminders', () => {
+  it('keeps active app reminders that picked an app', () => {
+    const cues = [
+      cue('a', { type: 'app', packageName: 'com.x', appLabel: 'X' }),
+      cue('b', { type: 'app', packageName: '', appLabel: '' }),
+      cue('c', { type: 'app', packageName: 'com.y', appLabel: 'Y' }, { enabled: false }),
+      cue('d', { type: 'location', placeId: 'p', direction: 'enter' }),
+    ];
+    expect(getAppOpenReminders(cues).map(item => item.id)).toEqual(['a']);
   });
 });
 

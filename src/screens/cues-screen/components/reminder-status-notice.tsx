@@ -1,6 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { AppUsage } from '../../../../modules/app-usage';
 import { Text } from '../../../components/text';
 import { resyncReminders } from '../../../hooks/use-reminder-engine';
 import { useCuesStore } from '../../../store/cues-store';
@@ -15,6 +16,7 @@ import { getActivePushReminders } from '../../../utils/reminder-utils';
 const MISSING_LABELS: Record<MissingReminderPermission, string> = {
   notifications: 'notifications are off',
   location: 'location is not set to "Allow all the time"',
+  appWatcher: 'the app watcher is off in Accessibility',
 };
 
 export function ReminderStatusNotice() {
@@ -36,7 +38,8 @@ export function ReminderStatusNotice() {
   const handleFix = async () => {
     const stillMissing = await requestReminderPermissions(getActivePushReminders(cues).map(cue => cue.trigger));
     setMissing(stillMissing);
-    if (stillMissing.length > 0) await Linking.openSettings();
+    if (stillMissing.length === 1 && stillMissing[0] === 'appWatcher') AppUsage?.openAccessibilitySettings();
+    else if (stillMissing.length > 0) await Linking.openSettings();
     else await resyncReminders();
   };
 
@@ -61,8 +64,9 @@ export function ReminderStatusNotice() {
   return (
     <View style={styles.notice}>
       <Text style={styles.text}>
-        Place, time and habit reminders send a notification. Place reminders use at least a 100 m geofence, since
-        Android misses smaller ones. Mood and body reminders show as suggestions when you log them.
+        Place, time, habit and app reminders send a notification; timed behaviours get a Start timer button that works
+        without opening Recupero. Place reminders use at least a 100 m geofence, since Android misses smaller ones. Mood
+        and body reminders show as suggestions when you log them.
       </Text>
     </View>
   );

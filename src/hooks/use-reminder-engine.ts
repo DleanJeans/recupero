@@ -1,9 +1,13 @@
 import type { NavigationContainerRefWithCurrent } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
 import { useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useCuesStore } from '../store/cues-store';
+import { useTimerStore } from '../store/timer-store';
 import type { RootStackParamList } from '../types/navigation';
+import { syncAppOpenWatches } from '../utils/app-open-watches';
+import { handleBackgroundNotificationAction, isBackgroundNotificationAction } from '../utils/notification-actions';
 import { getPlaceTaskGeofenceWatches, PLACE_TASK_NOTIFICATION_KIND } from '../utils/place-task-utils';
 import { syncReminderGeofences } from '../utils/reminder-geofencing';
 import {
@@ -16,7 +20,10 @@ import {
   getReminderScheduleSignature,
   getRemindersForLoggedBehavior,
   isReminderNotificationData,
+  parseReminderAction,
 } from '../utils/reminder-utils';
+import { isTimerNotificationData, isTimerRunning } from '../utils/timer-notification-utils';
+import { dismissRunningTimerNotification } from '../utils/timer-notifications';
 
 const NAVIGATION_RETRY_MS = 250;
 const NAVIGATION_MAX_RETRIES = 20;
@@ -29,6 +36,7 @@ async function syncAll() {
     syncReminderGeofences(cues, places, getPlaceTaskGeofenceWatches(tasks)).catch(error =>
       console.warn('Geofence sync failed', error),
     ),
+    syncAppOpenWatches(cues, places, behaviors).catch(error => console.warn('App-open reminder sync failed', error)),
   ]);
 }
 
@@ -78,9 +86,16 @@ export function useReminderEngine(
         }
       }
     });
+    // A timer started from a notification shows an ongoing notification; clear it once the timer stops in the app.
+    const unsubscribeTimer = useTimerStore.subscribe((state, previous) => {
+      if (isTimerRunning(previous) && !isTimerRunning(state)) {
+        dismissRunningTimerNotification().catch(() => undefined);
+      }
+    });
     return () => {
       unsubscribeCues();
       unsubscribeBehaviors();
+      unsubscribeTimer();
     };
   }, [ready]);
 
@@ -96,11 +111,29 @@ export function useReminderEngine(
       Notifications.dismissNotificationAsync(notification.request.identifier).catch(() => undefined);
       return;
     }
+    if (isTimerNotificationData(data) || isBackgroundNotificationAction({ actionIdentifier, data })) {
+      handledResponseIds.current.add(responseId);
+      if (actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) {
+        // In the background the notification task already ran this button; only run it here in the foreground.
+        if (AppState.currentState === 'active') {
+          handleBackgroundNotificationAction({
+            actionIdentifier,
+            notificationId: notification.request.identifier,
+            notificationDate: notification.date,
+            data,
+          }).catch(error => console.warn('Notification action failed', error));
+        }
+        return;
+      }
+      if (navigationRef.isReady()) navigationRef.navigate('Timer');
+      return;
+    }
     if (!isReminderNotificationData(data)) return;
     handledResponseIds.current.add(responseId);
 
     const behaviors = useBehaviorStore.getState().behaviors;
-    const chosenId = actionIdentifier.startsWith('log:') ? actionIdentifier.slice(4) : data.behaviorIds[0];
+    const action = parseReminderAction(actionIdentifier);
+    const chosenId = action.kind === 'log' ? action.behaviorId : data.behaviorIds[0];
     const behaviorId = behaviors.some(behavior => behavior.id === chosenId)
       ? chosenId
       : data.behaviorIds.find(id => behaviors.some(behavior => behavior.id === id));

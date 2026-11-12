@@ -7,8 +7,11 @@ import {
   getReminderNotificationContent,
   getTimeReminderSchedules,
   isReminderOnCooldown,
+  SNOOZE_MINUTES,
   TIME_REMINDER_ID_PREFIX,
 } from './reminder-utils';
+
+const SNOOZE_ID_PREFIX = 'reminder-snooze:';
 
 export const REMINDER_CHANNEL_ID = 'reminders';
 const LAST_FIRED_KEY = 'recupero-reminder-last-fired';
@@ -68,11 +71,20 @@ async function buildContent(
       actions.map(action => ({
         identifier: action.id,
         buttonTitle: action.title,
-        options: { opensAppToForeground: true },
+        options: { opensAppToForeground: action.opensApp },
       })),
     );
   }
   return { title, body, data, categoryIdentifier };
+}
+
+/** The notification content (and its registered button category) a reminder shows, for native callers too. */
+export function buildReminderNotificationContent(
+  cue: Cue,
+  places: SavedPlace[],
+  behaviors: BehaviorEntry[],
+): Promise<Notifications.NotificationContentInput> {
+  return buildContent(cue, places, behaviors);
 }
 
 async function readLastFired(): Promise<Record<string, number>> {
@@ -130,6 +142,25 @@ export async function scheduleDelayedReminder(
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
       seconds: Math.round(delayMin * 60),
+      channelId: REMINDER_CHANNEL_ID,
+    },
+  });
+}
+
+/** "Later": shows the same suggestion again in SNOOZE_MINUTES. Snoozing again replaces the pending one. */
+export async function snoozeReminder(
+  cue: Cue,
+  places: SavedPlace[],
+  behaviors: BehaviorEntry[],
+  minutes = SNOOZE_MINUTES,
+): Promise<void> {
+  await setupReminderNotifications();
+  await Notifications.scheduleNotificationAsync({
+    identifier: `${SNOOZE_ID_PREFIX}${cue.id}`,
+    content: await buildContent(cue, places, behaviors),
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: Math.round(minutes * 60),
       channelId: REMINDER_CHANNEL_ID,
     },
   });

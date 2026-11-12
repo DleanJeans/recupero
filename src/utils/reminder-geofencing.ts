@@ -8,29 +8,13 @@ import { toDateString } from './date-utils';
 import { getPlaceTaskNotificationContent, getPlaceTasksForArrival } from './place-task-utils';
 import { presentPlaceTaskNotification, presentReminderNotification } from './reminder-notifications';
 import { type GeofenceWatch, getReminderGeofenceRegions, getRemindersForGeofenceEvent } from './reminder-utils';
+import { waitForHydration } from './store-hydration';
 
 export const REMINDER_GEOFENCE_TASK = 'recupero-reminder-geofence';
 
 interface GeofenceTaskData {
   eventType: Location.GeofencingEventType;
   region: Location.LocationRegion;
-}
-
-type PersistedStore = typeof useCuesStore | typeof useBehaviorStore | typeof useSettingsStore;
-
-/** The task can run headless (app closed), before the persisted stores have loaded. */
-function waitForHydration(store: PersistedStore): Promise<void> {
-  if (store.persist.hasHydrated()) return Promise.resolve();
-  return new Promise(resolve => {
-    const unsubscribe = store.persist.onFinishHydration(() => {
-      unsubscribe();
-      resolve();
-    });
-    if (store.persist.hasHydrated()) {
-      unsubscribe();
-      resolve();
-    }
-  });
 }
 
 async function handleGeofenceEvent({ eventType, region }: GeofenceTaskData): Promise<void> {

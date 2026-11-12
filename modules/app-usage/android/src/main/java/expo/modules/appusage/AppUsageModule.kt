@@ -64,6 +64,12 @@ class AppUsageModule : Module() {
       result
     }
 
+    // JSON array of { cueId, packageName, title, body, data, categoryIdentifier, channelId } (AppOpenWatch in JS).
+    Function("setAppOpenWatches") { json: String ->
+      AppOpenWatcher.setWatches(context, json)
+      SiteTrackingService.refreshPackageFilter()
+    }
+
     Function("isSiteTrackingEnabled") {
       SiteTrackingService.isEnabled(context)
     }

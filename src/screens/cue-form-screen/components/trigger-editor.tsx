@@ -1,5 +1,6 @@
 import React from 'react';
 import type { CueTrigger } from '../../../types/cue';
+import { AppTriggerEditor } from './app-trigger-editor';
 import { BodyTriggerEditor } from './body-trigger-editor';
 import { HabitTriggerEditor } from './habit-trigger-editor';
 import { LocationTriggerEditor } from './location-trigger-editor';
@@ -29,6 +30,13 @@ export function TriggerEditor({ value, onChange }: TriggerEditorProps) {
   if (value.type === 'habit')
     return (
       <HabitTriggerEditor
+        value={value}
+        onChange={onChange}
+      />
+    );
+  if (value.type === 'app')
+    return (
+      <AppTriggerEditor
         value={value}
         onChange={onChange}
       />

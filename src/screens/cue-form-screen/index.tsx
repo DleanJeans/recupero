@@ -54,7 +54,9 @@ export function CueFormScreen() {
       ? `Android can't reliably detect ${triggerPlace.radiusM} m, so the notification uses a ${GEOFENCE_MIN_RADIUS_M} m area around ${triggerPlace.name}. Log tagging still uses ${triggerPlace.radiusM} m.`
       : trigger.type === 'location'
         ? 'Notifies you in the background, even when Recupero is closed.'
-        : 'Sends a notification you can tap to log.';
+        : trigger.type === 'app'
+          ? 'Notifies you as soon as you open the app, even when Recupero is closed.'
+          : 'Sends a notification you can tap to log.';
 
   const changeTriggerType = (type: CueTriggerType) => {
     setTrigger(createDefaultCueTrigger(type, defaultOptions));

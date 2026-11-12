@@ -12,6 +12,7 @@ const LABELS: Record<CueTriggerType, string> = {
   habit: 'Habit',
   mood: 'Mood',
   body: 'Body',
+  app: 'App',
 };
 
 interface TriggerTypeGridProps {
