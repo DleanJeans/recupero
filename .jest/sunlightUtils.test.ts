@@ -1,9 +1,13 @@
 import type { CueActivityEvent, SavedPlace } from '../src/types/cue';
 import { getSunTimesForDate } from '../src/utils/sun-utils';
 import {
+  EYE_LEVEL_LUX_FACTOR,
   estimateLux,
+  formatLuxMinutes,
   getAverageLux,
   getIndoorPlaces,
+  getLightDoseTarget,
+  getLuxAt,
   getOutdoorRanges,
   getSunlightDay,
   getSunlightGeofenceRegions,
@@ -235,5 +239,27 @@ describe('getSunlightStatus', () => {
     expect(getSunlightPresence([], [], [home], 0, t0).insidePlaceIds).toBeNull();
     expect(getSunlightPresence([event('enter', 'home', t0)], [], [home], 0, t0 + MIN).insidePlaceIds).toEqual(['home']);
     expect(getSunlightPresence([event('exit', 'home', t0)], [], [home], 0, t0 + MIN).insidePlaceIds).toEqual([]);
+  });
+});
+
+describe('light dose', () => {
+  it('sums eye-level lux × minutes and finds the current hour', () => {
+    const london = { lat: 51.5074, lng: -0.1278 };
+    const dayStart = new Date(2024, 5, 21).getTime();
+    const start = (getSunTimesForDate(2024, 5, 21, london.lat, london.lng).sunrise as number) + 3 * HOUR;
+    const hours = [{ ts: start + HOUR, wm2: 500 }];
+    const day = getSunlightDay(
+      dayStart,
+      [{ start, end: start + 30 * MIN }],
+      london,
+      { fetchedAt: 0, lat: 0, lng: 0, hours },
+      start + HOUR,
+    );
+    expect(day.luxMinutes).toBeCloseTo(estimateLux(500) * EYE_LEVEL_LUX_FACTOR * 30);
+    expect(getLuxAt(start + 10 * MIN, hours)).toBe(estimateLux(500));
+    expect(getLuxAt(start + 2 * HOUR, hours)).toBeUndefined();
+    expect(getLightDoseTarget(30)).toBe(300_000);
+    expect(formatLuxMinutes(1_234_567)).toBe('1.2M');
+    expect(formatLuxMinutes(42_400)).toBe('42k');
   });
 });

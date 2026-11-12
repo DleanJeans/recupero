@@ -29,6 +29,10 @@ export const MAX_OUTDOOR_STRETCH_MS = 8 * MS_PER_HOUR;
 export const LUX_PER_WM2 = 120;
 /** Below this, daylight is too dim to count as "bright" (heavy overcast, dusk). */
 export const BRIGHT_LUX = 10_000;
+/** You mostly look ahead or down, not at the sky, so your eyes get about half the light on open ground. */
+export const EYE_LEVEL_LUX_FACTOR = 0.5;
+/** The light dose goal is this lux at your eyes for every minute of the daily goal. */
+export const LIGHT_DOSE_TARGET_LUX = 10_000;
 export const DIM_LUX = 1_000;
 export const SUNLIGHT_HISTORY_DAYS = 7;
 export const WEATHER_REFRESH_MS = MS_PER_HOUR;
@@ -225,6 +229,10 @@ export function getSunlightDay(
     luxMs > 0
       ? luxStretches.reduce((sum, stretch) => sum + (stretch.lux ?? 0) * (stretch.end - stretch.start), 0) / luxMs
       : undefined;
+  const luxMinutes = luxStretches.reduce(
+    (sum, stretch) => sum + (stretch.lux ?? 0) * EYE_LEVEL_LUX_FACTOR * ((stretch.end - stretch.start) / MS_PER_MINUTE),
+    0,
+  );
   return {
     dayStart,
     located: point != null,
@@ -234,6 +242,7 @@ export function getSunlightDay(
     sunset: sun?.sunset,
     polar: sun?.polar,
     lux,
+    luxMinutes,
   };
 }
 
@@ -373,4 +382,21 @@ export function getSunlightMapRegion(point: GeoPoint) {
   const latitudeDelta = SUNLIGHT_MAP_SPAN_M / METERS_PER_DEGREE_LAT;
   const cosLat = Math.max(0.01, Math.cos((point.lat * Math.PI) / 180));
   return { latitude: point.lat, longitude: point.lng, latitudeDelta, longitudeDelta: latitudeDelta / cosLat };
+}
+
+/** Estimated open-ground lux at a moment, from the hour that contains it (undefined if not in the forecast). */
+export function getLuxAt(ts: number, hours: SunlightWeatherHour[]): number | undefined {
+  const hour = hours.find(candidate => ts > candidate.ts - MS_PER_HOUR && ts <= candidate.ts);
+  return hour ? estimateLux(hour.wm2) : undefined;
+}
+
+export function getLightDoseTarget(goalMinutes: number): number {
+  return LIGHT_DOSE_TARGET_LUX * goalMinutes;
+}
+
+/** Lux·min in a short form: 850, 42k, 1.2M. */
+export function formatLuxMinutes(value: number): string {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(value >= 10_000_000 ? 0 : 1)}M`;
+  if (value >= 1000) return `${Math.round(value / 1000)}k`;
+  return `${Math.round(value)}`;
 }

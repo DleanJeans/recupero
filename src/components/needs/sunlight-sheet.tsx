@@ -21,6 +21,7 @@ import { CueSectionLabel } from '../cues/cue-section-label';
 import { RadiusSlider } from '../radius-slider';
 import { Text } from '../text';
 import { SUNLIGHT_COLOR } from './sunlight-bar-row';
+import { SunlightLightDose } from './sunlight-light-dose';
 import { SunlightPlacesMap } from './sunlight-places-map';
 import { SUNLIGHT_STATUS_COLORS, SunlightStatusDot } from './sunlight-status-dot';
 import { SunlightWeekChart } from './sunlight-week-chart';
@@ -45,6 +46,7 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
   const setGoalMinutes = useSunlightStore(state => state.setGoalMinutes);
   const insets = useSafeAreaInsets();
   const radiusM = useSunlightStore(state => state.radiusM);
+  const weather = useSunlightStore(state => state.weather);
   const setRadiusM = useSunlightStore(state => state.setRadiusM);
   const [justAllowed, setJustAllowed] = useState(false);
   const locationAllowed = sunlight.locationAllowed || justAllowed;
@@ -56,6 +58,7 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
   if (!visible) return null;
 
   const { today, goalMinutes, days } = sunlight;
+  const hasWeather = weather != null;
   const done = today.minutes >= goalMinutes;
   const sunWindow =
     today.sunrise != null && today.sunset != null
@@ -95,7 +98,8 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
                 </Text>
                 <Text style={styles.subtitle}>
                   {`Goal ${goalMinutes} min · ${sunWindow}`}
-                  {today.lux != null ? ` · ${formatLux(today.lux)} avg outside` : ''}
+                  {sunlight.luxNow != null ? ` · ${formatLux(sunlight.luxNow)} now` : ''}
+                  {today.lux != null ? ` · ${formatLux(today.lux)} avg while out` : ''}
                 </Text>
               </View>
             </View>
@@ -129,6 +133,12 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
                 Save the places where you spend time indoors (Home, work) under Places, so time away from them counts.
               </Text>
             )}
+
+            <SunlightLightDose
+              luxMinutes={today.luxMinutes}
+              goalMinutes={goalMinutes}
+              hasWeather={hasWeather}
+            />
 
             <CueSectionLabel>Today</CueSectionLabel>
             {today.stretches.length === 0 ? (

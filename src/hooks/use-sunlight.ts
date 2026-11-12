@@ -7,11 +7,13 @@ import { hasBackgroundLocationPermission } from '../utils/reminder-geofencing';
 import { addLocalDays, getSunTimes, startOfLocalDay } from '../utils/sun-utils';
 import {
   getIndoorPlaces,
+  getLuxAt,
   getSunlightDays,
   getSunlightPresence,
   getSunlightStatus,
   getSunReferencePoint,
   isOutNow,
+  isSunUp,
   type SunlightStatus,
 } from '../utils/sunlight-utils';
 
@@ -28,6 +30,8 @@ export interface SunlightSnapshot {
   status: SunlightStatus;
   locationAllowed: boolean;
   tomorrowSunrise?: number;
+  /** Estimated open-ground lux right now, while the sun is up and the forecast covers this hour. */
+  luxNow?: number;
   hasPlaces: boolean;
   now: number;
 }
@@ -86,9 +90,11 @@ export function useSunlight(): SunlightSnapshot {
       locationAllowed,
       id => places.find(place => place.id === id)?.name,
     );
+    const luxNow = weather && isSunUp(days[0], now) ? getLuxAt(now, weather.hours) : undefined;
     return {
       enabled,
       goalMinutes,
+      luxNow,
       days,
       today: days[0],
       outNow: isOutNow(presence.ranges, now),

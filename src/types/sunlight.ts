@@ -53,4 +53,6 @@ export interface SunlightDay {
   polar?: 'day' | 'night';
   /** Minute-weighted average lux across the stretches, if the weather is known. */
   lux?: number;
+  /** Light dose: eye-level lux × minutes summed over the stretches (0 where the weather is unknown). */
+  luxMinutes: number;
 }

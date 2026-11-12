@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { SunlightSnapshot } from '../../hooks/use-sunlight';
 import { Colors } from '../../utils/colors';
-import { getSunEventText } from '../../utils/sunlight-utils';
+import { formatLux, getSunEventText } from '../../utils/sunlight-utils';
 import { formatTime } from '../../utils/time-utils';
 import { Text } from '../text';
 import { SUNLIGHT_STATUS_COLORS, SunlightStatusDot } from './sunlight-status-dot';
@@ -16,7 +16,7 @@ interface SunlightBarRowProps {
 
 /** Today's outdoor time while the sun is up, filling toward the daily goal (under the needs bars). */
 export function SunlightBarRow({ sunlight, onPress }: SunlightBarRowProps) {
-  const { today, goalMinutes, status, now, tomorrowSunrise } = sunlight;
+  const { today, goalMinutes, status, now, tomorrowSunrise, luxNow } = sunlight;
   const ratio = Math.min(1, today.minutes / goalMinutes);
   const done = today.minutes >= goalMinutes;
   const color = done ? Colors.type.desirable : SUNLIGHT_COLOR;
@@ -46,6 +46,7 @@ export function SunlightBarRow({ sunlight, onPress }: SunlightBarRowProps) {
           numberOfLines={1}
         >
           <Text style={{ color: SUNLIGHT_STATUS_COLORS[status.kind] }}>{status.label}</Text>
+          {luxNow != null ? ` · ${formatLux(luxNow)} now` : ''}
           {` · of ${goalMinutes} min`}
           {sunEvent ? ` · ${sunEvent}` : ''}
         </Text>
