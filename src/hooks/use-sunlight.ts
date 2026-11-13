@@ -7,6 +7,7 @@ import type { GeoPoint } from '../utils/geofence-utils';
 import { hasBackgroundLocationPermission } from '../utils/reminder-geofencing';
 import { addLocalDays, getSunTimes, startOfLocalDay } from '../utils/sun-utils';
 import {
+  calibrateWeather,
   getIndoorPlaces,
   getLuxAt,
   getSunlightDays,
@@ -35,8 +36,11 @@ export interface SunlightSnapshot {
   ranges: SunlightRange[];
   point?: GeoPoint;
   weather?: SunlightWeather;
-  /** Estimated open-ground lux right now, while the sun is up and the forecast covers this hour. */
+  /** Estimated open-ground lux right now (calibrated), while the sun is up and the forecast covers this hour. */
   luxNow?: number;
+  /** The same before calibration, to work out a new calibration from a meter reading. */
+  rawLuxNow?: number;
+  luxCalibration: number;
   hasPlaces: boolean;
   now: number;
 }
@@ -70,7 +74,8 @@ export function useSunlight(): SunlightSnapshot {
   const outdoorPlaceIds = useSunlightStore(state => state.outdoorPlaceIds);
   const events = useSunlightStore(state => state.events);
   const samples = useSunlightStore(state => state.samples);
-  const weather = useSunlightStore(state => state.weather);
+  const rawWeather = useSunlightStore(state => state.weather);
+  const luxCalibration = useSunlightStore(state => state.luxCalibration);
   const trackingSince = useSunlightStore(state => state.trackingSince);
   const locationAllowed = useBackgroundLocationAllowed();
   const [tick, setTick] = useState(0);
@@ -83,6 +88,7 @@ export function useSunlight(): SunlightSnapshot {
 
   return useMemo(() => {
     const now = Date.now();
+    const weather = calibrateWeather(rawWeather, luxCalibration);
     const indoor = getIndoorPlaces(places, outdoorPlaceIds);
     const presence = getSunlightPresence(events, samples, indoor, trackingSince, now);
     const point = getSunReferencePoint(samples, places);
@@ -95,11 +101,15 @@ export function useSunlight(): SunlightSnapshot {
       locationAllowed,
       id => places.find(place => place.id === id)?.name,
     );
-    const luxNow = weather && isSunUp(days[0], now) ? getLuxAt(now, weather.hours) : undefined;
+    const sunUp = isSunUp(days[0], now);
+    const luxNow = weather && sunUp ? getLuxAt(now, weather.hours) : undefined;
+    const rawLuxNow = rawWeather && sunUp ? getLuxAt(now, rawWeather.hours) : undefined;
     return {
       enabled,
       goalMinutes,
       luxNow,
+      rawLuxNow,
+      luxCalibration,
       days,
       today: days[0],
       outNow: isOutNow(presence.ranges, now),
@@ -113,5 +123,17 @@ export function useSunlight(): SunlightSnapshot {
       now,
     };
     // tick re-reads the clock each minute.
-  }, [enabled, events, goalMinutes, locationAllowed, outdoorPlaceIds, places, samples, trackingSince, weather, tick]);
+  }, [
+    enabled,
+    events,
+    goalMinutes,
+    locationAllowed,
+    outdoorPlaceIds,
+    places,
+    samples,
+    trackingSince,
+    rawWeather,
+    luxCalibration,
+    tick,
+  ]);
 }

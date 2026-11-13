@@ -24,6 +24,9 @@ export interface SunlightStore {
   radiusM: number;
   /** Ongoing notification counting up while you're outside in daylight (Android). */
   liveNotification: boolean;
+  /** Scales the weather estimate to match your lux meter (1 = as estimated). */
+  luxCalibration: number;
+  setLuxCalibration: (factor: number) => void;
   setLiveNotification: (on: boolean) => void;
   events: SunlightGeofenceEvent[];
   samples: SunlightPresenceSample[];
@@ -46,6 +49,8 @@ export const useSunlightStore = create<SunlightStore>()(
       outdoorPlaceIds: [],
       radiusM: DEFAULT_SUNLIGHT_RADIUS_M,
       liveNotification: true,
+      luxCalibration: 1,
+      setLuxCalibration: luxCalibration => set({ luxCalibration }),
       setLiveNotification: liveNotification => set({ liveNotification }),
       events: [],
       samples: [],

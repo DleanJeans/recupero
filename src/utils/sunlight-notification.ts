@@ -3,6 +3,7 @@ import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
 import { startOfLocalDay } from './sun-utils';
 import {
+  calibrateWeather,
   getIndoorPlaces,
   getSunlightDay,
   getSunlightNotificationPlan,
@@ -20,8 +21,18 @@ let lastPlanKey: string | null = null;
 export function syncSunlightNotification(): void {
   if (!SunlightNotification) return;
   const { places } = useCuesStore.getState();
-  const { enabled, liveNotification, outdoorPlaceIds, events, samples, weather, trackingSince, goalMinutes } =
-    useSunlightStore.getState();
+  const {
+    enabled,
+    liveNotification,
+    outdoorPlaceIds,
+    events,
+    samples,
+    weather: rawWeather,
+    luxCalibration,
+    trackingSince,
+    goalMinutes,
+  } = useSunlightStore.getState();
+  const weather = calibrateWeather(rawWeather, luxCalibration);
   const now = Date.now();
   let plan = null;
   if (enabled && liveNotification) {

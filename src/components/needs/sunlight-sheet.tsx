@@ -23,6 +23,7 @@ import { CueSectionLabel } from '../cues/cue-section-label';
 import { RadiusSlider } from '../radius-slider';
 import { Text } from '../text';
 import { SUNLIGHT_COLOR } from './sunlight-bar-row';
+import { SunlightCalibration } from './sunlight-calibration';
 import { SunlightLightDose } from './sunlight-light-dose';
 import { SunlightPlacesMap } from './sunlight-places-map';
 import { SUNLIGHT_STATUS_COLORS, SunlightStatusDot } from './sunlight-status-dot';
@@ -154,6 +155,10 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
               snapshotAt={sunlight.now}
               goalMinutes={goalMinutes}
               hasWeather={hasWeather}
+            />
+            <SunlightCalibration
+              luxNow={sunlight.luxNow}
+              rawLuxNow={sunlight.rawLuxNow}
             />
 
             <CueSectionLabel>Today</CueSectionLabel>

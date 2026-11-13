@@ -190,18 +190,23 @@ export function estimateLux(wm2: number): number {
   return Math.max(0, wm2) * LUX_PER_WM2;
 }
 
-/** Minute-weighted average estimated lux over a range, from hourly weather (undefined if no hour covers it). */
+const LUX_SAMPLE_MS = 5 * MS_PER_MINUTE;
+
+/** Average estimated lux over a range, from the blended hourly curve (undefined if the weather doesn't cover it). */
 export function getAverageLux(range: SunlightRange, hours: SunlightWeatherHour[]): number | undefined {
-  let weighted = 0;
+  const length = range.end - range.start;
+  if (length <= 0) return undefined;
+  const count = Math.max(1, Math.ceil(length / LUX_SAMPLE_MS));
+  const step = length / count;
+  let total = 0;
   let covered = 0;
-  for (const hour of hours) {
-    const overlap = intersect(range, { start: hour.ts - MS_PER_HOUR, end: hour.ts });
-    if (!overlap) continue;
-    const ms = overlap.end - overlap.start;
-    weighted += estimateLux(hour.wm2) * ms;
-    covered += ms;
+  for (let index = 0; index < count; index++) {
+    const lux = getLuxAt(range.start + step * (index + 0.5), hours);
+    if (lux == null) continue;
+    total += lux;
+    covered++;
   }
-  return covered > 0 ? weighted / covered : undefined;
+  return covered > 0 ? total / covered : undefined;
 }
 
 /** Outdoor time on one local day, counted only between sunrise and sunset there. */
@@ -391,10 +396,50 @@ export function getSunlightMapRegion(point: GeoPoint) {
   return { latitude: point.lat, longitude: point.lng, latitudeDelta, longitudeDelta: latitudeDelta / cosLat };
 }
 
-/** Estimated open-ground lux at a moment, from the hour that contains it (undefined if not in the forecast). */
+/**
+ * Estimated open-ground lux at a moment. Each weather value is an hour's average, so it's placed at the middle
+ * of its hour and the curve is blended linearly between hours (a flat hour overshoots early on a sunny morning).
+ * Undefined outside the hours the weather covers.
+ */
 export function getLuxAt(ts: number, hours: SunlightWeatherHour[]): number | undefined {
-  const hour = hours.find(candidate => ts > candidate.ts - MS_PER_HOUR && ts <= candidate.ts);
-  return hour ? estimateLux(hour.wm2) : undefined;
+  if (hours.length === 0) return undefined;
+  const sorted =
+    hours.length > 1 && hours.some((hour, i) => i > 0 && hour.ts < hours[i - 1].ts)
+      ? [...hours].sort((a, b) => a.ts - b.ts)
+      : hours;
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  if (ts <= first.ts - MS_PER_HOUR || ts > last.ts) return undefined;
+  const half = MS_PER_HOUR / 2;
+  if (ts <= first.ts - half) return estimateLux(first.wm2);
+  if (ts >= last.ts - half) return estimateLux(last.wm2);
+  for (let index = 1; index < sorted.length; index++) {
+    const before = sorted[index - 1];
+    const after = sorted[index];
+    const from = before.ts - half;
+    const to = after.ts - half;
+    if (ts > to) continue;
+    // A gap of more than an hour between values: don't blend across missing data.
+    if (after.ts - before.ts > MS_PER_HOUR) return ts - from <= half ? estimateLux(before.wm2) : estimateLux(after.wm2);
+    const t = (ts - from) / (to - from);
+    return estimateLux(before.wm2 + (after.wm2 - before.wm2) * t);
+  }
+  return estimateLux(last.wm2);
+}
+
+export const MIN_LUX_CALIBRATION = 0.05;
+export const MAX_LUX_CALIBRATION = 5;
+
+/** The weather with every hour scaled by your meter calibration (1 = as estimated). */
+export function calibrateWeather(weather: SunlightWeather | undefined, factor: number): SunlightWeather | undefined {
+  if (!weather || factor === 1) return weather;
+  return { ...weather, hours: weather.hours.map(hour => ({ ...hour, wm2: hour.wm2 * factor })) };
+}
+
+/** Calibration factor so the estimate now matches what a lux meter reads. */
+export function getLuxCalibration(meterLux: number, estimatedLux: number): number | undefined {
+  if (!(meterLux > 0) || !(estimatedLux > 0)) return undefined;
+  return Math.min(MAX_LUX_CALIBRATION, Math.max(MIN_LUX_CALIBRATION, meterLux / estimatedLux));
 }
 
 export function getLightDoseTarget(goalMinutes: number): number {
@@ -418,6 +463,8 @@ export function getLiveLuxMinutes(luxMinutes: number, ratePerMinute: number, sna
   return luxMinutes + (ratePerMinute * Math.max(0, at - snapshotAt)) / MS_PER_MINUTE;
 }
 
+const RATE_STEP_MS = 10 * MS_PER_MINUTE;
+
 /** What the live notification needs; the Android service only adds elapsed time to it. */
 export interface SunlightNotificationPlan {
   snapshotAt: number;
@@ -429,7 +476,7 @@ export interface SunlightNotificationPlan {
   outSince: number;
   /** Sunset, or when an unconfirmed stretch would be capped, whichever comes first. */
   stopAt: number;
-  /** Eye-level lux per minute, each until the end of its weather hour. */
+  /** Eye-level lux per minute in 10-minute steps along the blended weather curve. */
   rates: Array<{ until: number; perMinute: number }>;
 }
 
@@ -446,10 +493,14 @@ export function getSunlightNotificationPlan(
   const sunset = today.polar === 'day' || today.sunset == null ? addLocalDays(today.dayStart, 1) : today.sunset;
   const stopAt = Math.min(sunset, presence.outSince + MAX_OUTDOOR_STRETCH_MS);
   if (stopAt <= now) return null;
-  const rates = (weather?.hours ?? [])
-    .filter(hour => hour.ts > now && hour.ts - MS_PER_HOUR < stopAt)
-    .sort((a, b) => a.ts - b.ts)
-    .map(hour => ({ until: hour.ts, perMinute: estimateLux(hour.wm2) * EYE_LEVEL_LUX_FACTOR }));
+  // 10-minute steps along the blended curve, until the stop time or the end of the weather.
+  const rates: SunlightNotificationPlan['rates'] = [];
+  for (let from = now; from < stopAt; from += RATE_STEP_MS) {
+    const until = Math.min(stopAt, from + RATE_STEP_MS);
+    const lux = weather ? getLuxAt((from + until) / 2, weather.hours) : undefined;
+    if (lux == null) break;
+    rates.push({ until, perMinute: lux * EYE_LEVEL_LUX_FACTOR });
+  }
   return {
     snapshotAt: now,
     luxMinutes: today.luxMinutes,

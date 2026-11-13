@@ -318,10 +318,10 @@ describe('getSunlightNotificationPlan', () => {
       noon,
     );
     expect(plan).toMatchObject({ target: 300_000, outSince: noon - 5 * MIN, snapshotAt: noon });
-    expect(plan.rates).toEqual([
-      { until: noon + 50 * MIN, perMinute: estimateLux(400) / 2 },
-      { until: noon + 110 * MIN, perMinute: estimateLux(500) / 2 },
-    ]);
+    // 10-minute steps along the blended curve, ending where the weather does (noon + 110 min).
+    expect(plan.rates).toHaveLength(11);
+    expect(plan.rates[0]).toEqual({ until: noon + 10 * MIN, perMinute: estimateLux(325) / 2 });
+    expect(plan.rates[10].until).toBe(noon + 110 * MIN);
     expect(plan.stopAt).toBe(Math.min(sun.sunset as number, noon - 5 * MIN + MAX_OUTDOOR_STRETCH_MS));
   });
 
@@ -332,5 +332,29 @@ describe('getSunlightNotificationPlan', () => {
     expect(
       getSunlightNotificationPlan({ insidePlaceIds: [], outSince: late - HOUR }, today, 30, weather, late),
     ).toBeNull();
+  });
+});
+
+describe('blended lux and calibration', () => {
+  const { getLuxAt: luxAt, calibrateWeather, getLuxCalibration } = jest.requireActual('../src/utils/sunlight-utils');
+  const hours = [
+    { ts: HOUR, wm2: 0 },
+    { ts: 2 * HOUR, wm2: 600 },
+  ];
+
+  it('places each hourly average mid-hour and blends between them', () => {
+    expect(luxAt(10 * MIN, hours)).toBe(0);
+    expect(luxAt(HOUR, hours)).toBeCloseTo(estimateLux(300));
+    expect(luxAt(100 * MIN, hours)).toBe(estimateLux(600));
+    expect(luxAt(2 * HOUR + MIN, hours)).toBeUndefined();
+  });
+
+  it('scales the weather to a meter reading', () => {
+    expect(getLuxCalibration(4500, 11_000)).toBeCloseTo(0.409, 3);
+    expect(getLuxCalibration(0, 11_000)).toBeUndefined();
+    expect(getLuxCalibration(1_000_000, 100)).toBe(5);
+    const weather = { fetchedAt: 0, lat: 0, lng: 0, hours };
+    expect(calibrateWeather(weather, 0.5).hours[1].wm2).toBe(300);
+    expect(calibrateWeather(weather, 1)).toBe(weather);
   });
 });
