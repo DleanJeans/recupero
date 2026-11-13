@@ -99,7 +99,7 @@ describe('getNeedEvents + simulateNeed', () => {
     };
     const sleep = makeBehavior('sleep', [{ id: 'z', timestamp: T0, endTimestamp: T0 + 4 * H }]);
     const events = getNeedEvents('energy', config, [sleep], [], undefined, 0);
-    expect(events).toMatchObject([{ ts: T0 + 4 * H, kind: 'add', amount: 50, behaviorId: 'sleep' }]);
+    expect(events).toMatchObject([{ ts: T0 + 4 * H, kind: 'add', amount: 50, behaviorId: 'sleep', startTs: T0 }]);
   });
 
   it('scales a wearable sleep refill by time asleep and deep + REM share', () => {

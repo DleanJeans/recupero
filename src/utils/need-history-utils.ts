@@ -25,10 +25,43 @@ export function getEmptyHoursAt(history: readonly NeedRatePoint[], fallback: num
   return hours;
 }
 
+/** Level at `ts` read off a point list (straight lines between points; after a jump, its end). */
+function levelAtPoint(points: readonly NeedLevelPoint[], ts: number): number | undefined {
+  let i = -1;
+  while (i + 1 < points.length && points[i + 1].ts <= ts) i++;
+  if (i < 0) return undefined;
+  const a = points[i];
+  const b = points[i + 1];
+  if (!b || a.ts === ts) return a.level;
+  return a.level + ((b.level - a.level) * (ts - a.ts)) / (b.ts - a.ts);
+}
+
+/**
+ * Draws a duration refill (sleep) as a straight rise from where the level was when it started to
+ * where it is right after it ends, instead of decay then a jump at the end. Both ends match the
+ * level model; a refill with another event inside it stays a jump, since the ramp would hide it.
+ */
+function rampDurationRefills(points: NeedLevelPoint[], sorted: readonly NeedEvent[]): NeedLevelPoint[] {
+  let out = points;
+  for (const event of sorted) {
+    if (event.kind !== 'add' || event.startTs == null || event.startTs >= event.ts) continue;
+    const { startTs, ts: endTs } = event;
+    if (sorted.some(other => other !== event && other.ts > startTs && other.ts <= endTs)) continue;
+    const startLevel = levelAtPoint(out, startTs);
+    const atEnd = out.filter(point => point.ts === endTs);
+    if (startLevel == null || atEnd.length === 0) continue;
+    const endLevel = atEnd[atEnd.length - 1].level;
+    const before = out.filter(point => point.ts <= startTs);
+    const rampStart = before[before.length - 1]?.ts === startTs ? [] : [{ ts: startTs, level: startLevel }];
+    out = [...before, ...rampStart, { ts: endTs, level: endLevel }, ...out.filter(point => point.ts > endTs)];
+  }
+  return out;
+}
+
 /**
  * Levels from `from` to `to`: a sample every `stepMs`, plus a point either side of each event so
- * refills show as straight jumps. Nothing is drawn before the first known event. Each stretch
- * decays at the rate that was in force then.
+ * refills show as straight jumps, except duration refills (sleep), which rise across their length.
+ * Nothing is drawn before the first known event. Each stretch decays at the rate in force then.
  */
 export function replayNeedLevels(
   events: readonly NeedEvent[],
@@ -39,10 +72,17 @@ export function replayNeedLevels(
 ): NeedLevelPoint[] {
   const sorted = events.filter(event => event.ts <= to).sort(compareNeedEvents);
   if (sorted.length === 0 || to <= from) return [];
+  // A sleep that started before the range but ends in it needs its start level, so draw from there.
+  let drawFrom = from;
+  for (const event of sorted) {
+    if (event.kind === 'add' && event.startTs != null && event.ts >= from && event.startTs < drawFrom) {
+      drawFrom = from - Math.ceil((from - event.startTs) / stepMs) * stepMs;
+    }
+  }
   const points: NeedLevelPoint[] = [];
   let level = NEED_UNKNOWN_START_LEVEL;
   let t = sorted[0].ts;
-  let nextSample = from;
+  let nextSample = drawFrom;
 
   const decayTo = (target: number) => {
     while (t < target) {
@@ -64,14 +104,20 @@ export function replayNeedLevels(
   for (const event of sorted) {
     sampleUntil(event.ts);
     decayTo(event.ts);
-    if (event.ts >= from) points.push({ ts: event.ts, level });
+    if (event.ts >= drawFrom) points.push({ ts: event.ts, level });
     level = event.kind === 'add' ? clampLevel(level + event.amount) : clampLevel(event.level);
-    if (event.ts >= from) points.push({ ts: event.ts, level });
+    if (event.ts >= drawFrom) points.push({ ts: event.ts, level });
   }
   sampleUntil(to + 1);
   decayTo(to);
   if (points.length === 0 || points[points.length - 1].ts < to) points.push({ ts: to, level });
-  return points;
+
+  const ramped = rampDurationRefills(points, sorted);
+  if (drawFrom === from) return ramped;
+  const inRange = ramped.filter(point => point.ts >= from);
+  const startLevel = levelAtPoint(ramped, from);
+  if (startLevel != null && inRange[0]?.ts !== from) inRange.unshift({ ts: from, level: startLevel });
+  return inRange;
 }
 
 export interface NeedRangeStats {

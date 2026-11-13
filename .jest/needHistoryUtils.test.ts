@@ -67,6 +67,38 @@ describe('replayNeedLevels', () => {
   });
 });
 
+describe('replayNeedLevels with a duration refill', () => {
+  const events: NeedEvent[] = [
+    { ts: T0, kind: 'set', level: 60, behaviorId: 'nap' },
+    { ts: T0 + 6 * H, kind: 'add', amount: 75, behaviorId: 'sleep', startTs: T0 + 2 * H },
+  ];
+
+  it('rises in a straight line from the sleep start to the refilled level at its end', () => {
+    const points = replayNeedLevels(events, () => 10, T0, T0 + 8 * H, H);
+    const during = points.filter(point => point.ts > T0 + 2 * H && point.ts < T0 + 6 * H);
+    expect(during).toEqual([]);
+    const start = points.findIndex(point => point.ts === T0 + 2 * H);
+    // 60 - 2h decay = 40 at bedtime; 40 - 4h decay = 0, + 75 = 75 at wake, same as the level model.
+    expect(points[start]).toEqual({ ts: T0 + 2 * H, level: 40 });
+    expect(points[start + 1]).toEqual({ ts: T0 + 6 * H, level: 75 });
+    expect(points.filter(point => point.ts === T0 + 6 * H)).toHaveLength(1);
+    expect(points[points.length - 1]).toEqual({ ts: T0 + 8 * H, level: 55 });
+  });
+
+  it('starts mid-ramp when the range begins during the sleep', () => {
+    const points = replayNeedLevels(events, () => 10, T0 + 4 * H, T0 + 8 * H, H);
+    expect(points[0].ts).toBe(T0 + 4 * H);
+    expect(points[0].level).toBeCloseTo(57.5);
+    expect(points[1]).toEqual({ ts: T0 + 6 * H, level: 75 });
+  });
+
+  it('keeps the jump when another event falls inside the sleep', () => {
+    const withCheckIn: NeedEvent[] = [...events, { ts: T0 + 3 * H, kind: 'set', level: 20, checkIn: true }];
+    const points = replayNeedLevels(withCheckIn, () => 10, T0, T0 + 8 * H, H);
+    expect(points.filter(point => point.ts === T0 + 6 * H).map(point => point.level)).toEqual([0, 75, 75]);
+  });
+});
+
 describe('stats and bands', () => {
   const points = [
     { ts: T0, level: 100 },

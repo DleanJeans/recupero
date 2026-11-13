@@ -127,8 +127,11 @@ export function getNeedMetadataSource(
 
 /** `logId` is the refill's log, or the check-in's id for check-ins and updates. */
 export type NeedEvent =
-  /** `update` marks a top-up made by hand without a log, which has no behaviour. */
-  | { ts: number; kind: 'add'; amount: number; behaviorId?: string; logId?: string; update?: boolean }
+  /**
+   * `update` marks a top-up made by hand without a log, which has no behaviour. `startTs` is when a
+   * duration refill (e.g. sleep) began: the level counts it at `ts`, charts ramp up from `startTs`.
+   */
+  | { ts: number; kind: 'add'; amount: number; behaviorId?: string; logId?: string; update?: boolean; startTs?: number }
   | { ts: number; kind: 'set'; level: number; behaviorId?: string; checkIn?: boolean; logId?: string };
 
 /** Share of time asleep spent in deep + REM sleep that counts as a normal night (factor 1). */
@@ -209,6 +212,7 @@ export function getRefillEvent(
     amount: (minutes / refill.fullMinutes) * 100 * getSleepQualityFactor(log.sleep),
     behaviorId,
     logId: log.id,
+    startTs: log.timestamp,
   };
 }
 
