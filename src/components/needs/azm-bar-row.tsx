@@ -8,7 +8,7 @@ import { Text } from '../text';
 
 const AZM_COLOR = '#f97316';
 
-/** Today's Fitbit Active Zone Minutes against the daily goal, under the needs bars. Hidden until Fitbit is connected. */
+/** Cardio: today's Fitbit Active Zone Minutes against the daily goal, under the needs bars. Hidden until Fitbit is connected. */
 export function AzmBarRow({ now }: { now: number }) {
   const connected = useHealthStore(state => state.tokens != null);
   const azmByDay = useHealthStore(state => state.azmByDay);
@@ -25,11 +25,11 @@ export function AzmBarRow({ now }: { now: number }) {
   return (
     <View
       style={styles.row}
-      accessibilityLabel={`Active Zone Minutes ${minutes} of ${goal}`}
+      accessibilityLabel={`Cardio ${minutes} of ${goal} Active Zone Minutes`}
     >
       <View style={styles.main}>
-        <Text style={styles.emoji}>⚡</Text>
-        <Text style={styles.label}>Active</Text>
+        <Text style={styles.emoji}>🫀</Text>
+        <Text style={styles.label}>Cardio</Text>
         <View style={styles.track}>
           {minutes > 0 && (
             <View style={[styles.fill, { width: `${Math.max(2, ratio * 100)}%`, backgroundColor: color }]} />

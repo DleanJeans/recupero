@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { AppState } from 'react-native';
 import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
-import type { SunlightDay } from '../types/sunlight';
+import type { SunlightDay, SunlightRange, SunlightWeather } from '../types/sunlight';
+import type { GeoPoint } from '../utils/geofence-utils';
 import { hasBackgroundLocationPermission } from '../utils/reminder-geofencing';
 import { addLocalDays, getSunTimes, startOfLocalDay } from '../utils/sun-utils';
 import {
@@ -30,6 +31,10 @@ export interface SunlightSnapshot {
   status: SunlightStatus;
   locationAllowed: boolean;
   tomorrowSunrise?: number;
+  /** Every stretch out since tracking started, and where the sun is worked out from (for other days). */
+  ranges: SunlightRange[];
+  point?: GeoPoint;
+  weather?: SunlightWeather;
   /** Estimated open-ground lux right now, while the sun is up and the forecast covers this hour. */
   luxNow?: number;
   hasPlaces: boolean;
@@ -101,6 +106,9 @@ export function useSunlight(): SunlightSnapshot {
       status,
       locationAllowed,
       tomorrowSunrise: tomorrow?.sunrise,
+      ranges: presence.ranges,
+      point,
+      weather,
       hasPlaces: indoor.length > 0,
       now,
     };

@@ -2,7 +2,9 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { AzmGoalCard } from '../../components/health/azm-goal-card';
 import { MoneyBalance } from '../../components/money-balance';
+import { SunlightDayCard } from '../../components/needs/sunlight-day-card';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { useDeferredComputation } from '../../hooks/use-deferred-computation';
@@ -166,6 +168,9 @@ export function DayScreen() {
         onPrevious={goToPrevDay}
         onNext={goToNextDay}
       />
+
+      <SunlightDayCard date={selectedDate} />
+      <AzmGoalCard date={selectedDate} />
 
       <DayTabSelector
         selectedTab={selectedTab}
