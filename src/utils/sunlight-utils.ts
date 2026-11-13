@@ -109,6 +109,8 @@ export interface SunlightPresence {
   ranges: SunlightRange[];
   /** Indoor places you're in now; empty = out; null = not known yet (no event or check so far). */
   insidePlaceIds: string[] | null;
+  /** When the current stretch out began (not yet clipped to sunrise or the 2-minute minimum), if out now. */
+  outSince?: number;
 }
 
 export function getOutdoorRanges(
@@ -164,8 +166,10 @@ export function getSunlightPresence(
       }
     }
   }
+  const currentOutSince = outSince ?? undefined;
   if (outSince != null) close(now);
   return {
+    outSince: currentOutSince,
     ranges: ranges.filter(range => range.end > since),
     insidePlaceIds: inside == null ? null : [...(inside as Set<string>)],
   };
@@ -412,4 +416,48 @@ export function getLightDoseRate(counting: boolean, luxNow: number | undefined):
 /** The dose `at` a moment after the snapshot, growing at `ratePerMinute` (for the per-frame counter). */
 export function getLiveLuxMinutes(luxMinutes: number, ratePerMinute: number, snapshotAt: number, at: number): number {
   return luxMinutes + (ratePerMinute * Math.max(0, at - snapshotAt)) / MS_PER_MINUTE;
+}
+
+/** What the live notification needs; the Android service only adds elapsed time to it. */
+export interface SunlightNotificationPlan {
+  snapshotAt: number;
+  luxMinutes: number;
+  minutes: number;
+  target: number;
+  goalMinutes: number;
+  /** Start of this stretch out (the notification's ticking clock). */
+  outSince: number;
+  /** Sunset, or when an unconfirmed stretch would be capped, whichever comes first. */
+  stopAt: number;
+  /** Eye-level lux per minute, each until the end of its weather hour. */
+  rates: Array<{ until: number; perMinute: number }>;
+}
+
+/** A plan for the live notification while you're out in daylight, or null when it should be hidden. */
+export function getSunlightNotificationPlan(
+  presence: Pick<SunlightPresence, 'insidePlaceIds' | 'outSince'>,
+  today: SunlightDay,
+  goalMinutes: number,
+  weather: SunlightWeather | undefined,
+  now: number,
+): SunlightNotificationPlan | null {
+  if (presence.insidePlaceIds == null || presence.insidePlaceIds.length > 0 || presence.outSince == null) return null;
+  if (!isSunUp(today, now)) return null;
+  const sunset = today.polar === 'day' || today.sunset == null ? addLocalDays(today.dayStart, 1) : today.sunset;
+  const stopAt = Math.min(sunset, presence.outSince + MAX_OUTDOOR_STRETCH_MS);
+  if (stopAt <= now) return null;
+  const rates = (weather?.hours ?? [])
+    .filter(hour => hour.ts > now && hour.ts - MS_PER_HOUR < stopAt)
+    .sort((a, b) => a.ts - b.ts)
+    .map(hour => ({ until: hour.ts, perMinute: estimateLux(hour.wm2) * EYE_LEVEL_LUX_FACTOR }));
+  return {
+    snapshotAt: now,
+    luxMinutes: today.luxMinutes,
+    minutes: today.minutes,
+    target: getLightDoseTarget(goalMinutes),
+    goalMinutes,
+    outSince: presence.outSince,
+    stopAt,
+    rates,
+  };
 }

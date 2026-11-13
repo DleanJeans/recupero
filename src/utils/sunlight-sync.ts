@@ -2,6 +2,7 @@ import * as Location from 'expo-location';
 import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
 import { findPlaceAtPoint } from './geofence-utils';
+import { syncSunlightNotification } from './sunlight-notification';
 import {
   getIndoorPlaces,
   getSunReferencePoint,
@@ -59,4 +60,5 @@ export async function syncSunlight(force = false): Promise<void> {
   const now = Date.now();
   await samplePresence(now, force).catch(error => console.warn('Sunlight position check failed', error));
   await refreshWeather(now).catch(error => console.warn('Sunlight weather failed', error));
+  syncSunlightNotification();
 }

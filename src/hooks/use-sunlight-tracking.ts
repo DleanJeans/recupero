@@ -1,10 +1,13 @@
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
+import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
+import { syncSunlightNotification } from '../utils/sunlight-notification';
 import { syncSunlight } from '../utils/sunlight-sync';
 
 /**
- * Checks where you are and refreshes the sunshine forecast on launch and when Recupero comes to the foreground.
+ * Checks where you are and refreshes the sunshine forecast on launch and when Recupero comes to the foreground,
+ * and keeps the live "counting sunlight" notification in step with settings and new events.
  * Arrive/leave events themselves come from the shared geofence task (see use-reminder-engine).
  */
 export function useSunlightTracking(ready: boolean) {
@@ -17,4 +20,17 @@ export function useSunlightTracking(ready: boolean) {
     });
     return () => subscription.remove();
   }, [ready, enabled]);
+
+  useEffect(() => {
+    if (!ready) return;
+    syncSunlightNotification();
+    const unsubscribeSunlight = useSunlightStore.subscribe(syncSunlightNotification);
+    const unsubscribePlaces = useCuesStore.subscribe((state, previous) => {
+      if (state.places !== previous.places) syncSunlightNotification();
+    });
+    return () => {
+      unsubscribeSunlight();
+      unsubscribePlaces();
+    };
+  }, [ready]);
 }

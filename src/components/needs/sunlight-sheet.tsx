@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Linking, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, Modal, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SunlightNotification } from '../../../modules/sunlight-notification';
 import { resyncReminders } from '../../hooks/use-reminder-engine';
 import { useSunlight } from '../../hooks/use-sunlight';
 import { useCuesStore } from '../../store/cues-store';
@@ -48,6 +49,8 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
   const insets = useSafeAreaInsets();
   const radiusM = useSunlightStore(state => state.radiusM);
   const weather = useSunlightStore(state => state.weather);
+  const liveNotification = useSunlightStore(state => state.liveNotification);
+  const setLiveNotification = useSunlightStore(state => state.setLiveNotification);
   const setRadiusM = useSunlightStore(state => state.setRadiusM);
   const [justAllowed, setJustAllowed] = useState(false);
   const locationAllowed = sunlight.locationAllowed || justAllowed;
@@ -114,6 +117,16 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
                 {sunlight.status.label}
               </Text>
             </View>
+            {SunlightNotification && (
+              <View style={styles.liveRow}>
+                <Text style={styles.liveLabel}>Live notification while outside</Text>
+                <Switch
+                  value={liveNotification}
+                  onValueChange={setLiveNotification}
+                  trackColor={{ true: SUNLIGHT_COLOR }}
+                />
+              </View>
+            )}
 
             {!locationAllowed && (
               <View style={styles.warning}>
@@ -317,6 +330,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
+  },
+  liveRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+  },
+  liveLabel: {
+    color: Colors.text.secondary,
+    fontSize: 13,
   },
   statusText: {
     flex: 1,

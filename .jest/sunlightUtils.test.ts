@@ -290,3 +290,47 @@ describe('live light dose', () => {
     expect(getLiveLuxMinutes(5000, 4000, 1000, 0)).toBe(5000);
   });
 });
+
+describe('getSunlightNotificationPlan', () => {
+  const { getSunlightNotificationPlan } = jest.requireActual('../src/utils/sunlight-utils');
+  const london = { lat: 51.5074, lng: -0.1278 };
+  const dayStart = new Date(2024, 5, 21).getTime();
+  const sun = getSunTimesForDate(2024, 5, 21, london.lat, london.lng);
+  const noon = (sun.sunrise as number) + 6 * HOUR;
+  const today = getSunlightDay(dayStart, [], london, undefined, noon);
+  const weather = {
+    fetchedAt: 0,
+    lat: 0,
+    lng: 0,
+    hours: [
+      { ts: noon - 10 * MIN, wm2: 100 },
+      { ts: noon + 50 * MIN, wm2: 400 },
+      { ts: noon + 110 * MIN, wm2: 500 },
+    ],
+  };
+
+  it('plans a notification while out in daylight, with hourly rates from now and a stop at the cap', () => {
+    const plan = getSunlightNotificationPlan(
+      { insidePlaceIds: [], outSince: noon - 5 * MIN },
+      today,
+      30,
+      weather,
+      noon,
+    );
+    expect(plan).toMatchObject({ target: 300_000, outSince: noon - 5 * MIN, snapshotAt: noon });
+    expect(plan.rates).toEqual([
+      { until: noon + 50 * MIN, perMinute: estimateLux(400) / 2 },
+      { until: noon + 110 * MIN, perMinute: estimateLux(500) / 2 },
+    ]);
+    expect(plan.stopAt).toBe(Math.min(sun.sunset as number, noon - 5 * MIN + MAX_OUTDOOR_STRETCH_MS));
+  });
+
+  it('shows nothing indoors, before the first event or after sunset', () => {
+    expect(getSunlightNotificationPlan({ insidePlaceIds: ['home'] }, today, 30, weather, noon)).toBeNull();
+    expect(getSunlightNotificationPlan({ insidePlaceIds: null }, today, 30, weather, noon)).toBeNull();
+    const late = (sun.sunset as number) + MIN;
+    expect(
+      getSunlightNotificationPlan({ insidePlaceIds: [], outSince: late - HOUR }, today, 30, weather, late),
+    ).toBeNull();
+  });
+});

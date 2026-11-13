@@ -15,6 +15,7 @@ import {
   type ReminderGeofenceRegion,
 } from './reminder-utils';
 import { waitForHydration } from './store-hydration';
+import { syncSunlightNotification } from './sunlight-notification';
 import { getSunlightRegionPlaceId } from './sunlight-utils';
 
 export const REMINDER_GEOFENCE_TASK = 'recupero-reminder-geofence';
@@ -30,8 +31,11 @@ async function handleGeofenceEvent({ eventType, region }: GeofenceTaskData): Pro
   const direction = eventType === Location.GeofencingEventType.Enter ? 'enter' : 'exit';
   const sunlightPlaceId = getSunlightRegionPlaceId(placeId);
   if (sunlightPlaceId) {
-    await waitForHydration(useSunlightStore);
+    await Promise.all([waitForHydration(useSunlightStore), waitForHydration(useCuesStore)]);
     useSunlightStore.getState().addEvent({ ts: Date.now(), kind: direction, placeId: sunlightPlaceId });
+    // Leaving starts the live "counting sunlight" notification, arriving ends it (the geofence event lets
+    // Android start its foreground service from the background).
+    syncSunlightNotification();
     return;
   }
   await Promise.all([waitForHydration(useCuesStore), waitForHydration(useBehaviorStore)]);

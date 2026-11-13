@@ -22,6 +22,9 @@ export interface SunlightStore {
   outdoorPlaceIds: string[];
   /** Geofence radius around each indoor place; step past it and the counter starts. */
   radiusM: number;
+  /** Ongoing notification counting up while you're outside in daylight (Android). */
+  liveNotification: boolean;
+  setLiveNotification: (on: boolean) => void;
   events: SunlightGeofenceEvent[];
   samples: SunlightPresenceSample[];
   weather?: SunlightWeather;
@@ -42,6 +45,8 @@ export const useSunlightStore = create<SunlightStore>()(
       goalMinutes: DEFAULT_SUNLIGHT_GOAL_MINUTES,
       outdoorPlaceIds: [],
       radiusM: DEFAULT_SUNLIGHT_RADIUS_M,
+      liveNotification: true,
+      setLiveNotification: liveNotification => set({ liveNotification }),
       events: [],
       samples: [],
       weather: undefined,
