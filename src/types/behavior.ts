@@ -98,6 +98,9 @@ export interface BehaviorEntry {
   metadata: Record<string, string | number>;
   defaultMetadata?: Record<string, number>;
   metadataAmountFieldKey?: string;
+  /** Amount the calculated ("per") rates in `defaultMetadata` are given for, e.g. 30 for nutrition facts per 30 g
+   *  portion. Undefined = 100 (per 100 g). */
+  metadataRateBasis?: number;
   metadataQuantityUnit?: string;
   logs: LogEntry[];
   cooldownMinutes: number;

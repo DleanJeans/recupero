@@ -54,6 +54,12 @@ describe('nutrition URL import', () => {
     expect(result.unmatchedFields.map(field => field.label)).toEqual(['Caffeine']);
   });
 
+  it('converts to rates per a custom portion weight', () => {
+    const result = mapNutritionToMetadata(parseNutritionHtml(eatThisMuchHtml), fields, 9);
+    expect(result.values.field_3).toBe('2');
+    expect(result.values.field_2).toBe('52.38');
+  });
+
   it('reads schema.org NutritionInformation and converts units', () => {
     const html = `<script type="application/ld+json">${JSON.stringify({
       '@type': 'Recipe',

@@ -27,10 +27,13 @@ import { getAutoTrackApp, getAutoTrackSite, normalizeSiteDomain } from '../../ut
 import { getGroupKey, normalizeGroupName } from '../../utils/behavior-group-utils';
 import { Colors } from '../../utils/colors';
 import {
+  DEFAULT_METADATA_RATE_BASIS,
   getAmountMetadataFields,
+  getMetadataRateBasis,
   getSelectedAmountMetadataField,
   NO_AMOUNT_FIELD_KEY,
   parseDecimalInput,
+  resolveMetadataRateBasis,
 } from '../../utils/metadata-calculation-utils';
 import { getMoneyRewardAmount, parseVndInput, sanitizeVndInput } from '../../utils/money-utils';
 import { AutoTrackAppField } from './components/auto-track-app-field';
@@ -132,6 +135,7 @@ export function BehaviorFormScreen() {
   const [metadataAmountFieldKey, setMetadataAmountFieldKey] = useState<string | undefined>(
     () => behavior?.metadataAmountFieldKey,
   );
+  const [rateBasisInput, setRateBasisInput] = useState(() => String(getMetadataRateBasis(behavior)));
   const [autoTrackEnabled, setAutoTrackEnabled] = useState(() => behavior?.autoTrackApp != null);
   const [autoTrackPick, setAutoTrackPick] = useState<{ packageName: string; label: string } | undefined>(
     () => behavior?.autoTrackApp,
@@ -181,6 +185,9 @@ export function BehaviorFormScreen() {
   );
   const amountFieldKeyToSave =
     metadataAmountFieldKey === NO_AMOUNT_FIELD_KEY ? NO_AMOUNT_FIELD_KEY : selectedAmountField?.key;
+  const rateBasis = resolveMetadataRateBasis(parseDecimalInput(rateBasisInput));
+  // 100 is the default, so it isn't stored; existing behaviours keep working unchanged.
+  const rateBasisToSave = rateBasis === DEFAULT_METADATA_RATE_BASIS ? undefined : rateBasis;
 
   const {
     enabled: starsEnabled,
@@ -255,6 +262,7 @@ export function BehaviorFormScreen() {
       Object.fromEntries(Object.entries(behavior.defaultMetadata ?? {}).map(([k, v]) => [k, String(v)])),
     );
     setMetadataAmountFieldKey(behavior.metadataAmountFieldKey);
+    setRateBasisInput(String(getMetadataRateBasis(behavior)));
     setAutoTrackEnabled(behavior.autoTrackApp != null);
     setAutoTrackPick(behavior.autoTrackApp);
     setSiteTrackEnabled(behavior.autoTrackSite != null);
@@ -329,6 +337,7 @@ export function BehaviorFormScreen() {
       cooldownType !== (behavior.cooldownType || 'rest') ||
       cooldownUnit !== behavior.cooldownUnit ||
       defaultMetadataChanged ||
+      rateBasis !== getMetadataRateBasis(behavior) ||
       amountFieldKeyToSave !==
         (behavior.metadataAmountFieldKey === NO_AMOUNT_FIELD_KEY
           ? NO_AMOUNT_FIELD_KEY
@@ -407,6 +416,7 @@ export function BehaviorFormScreen() {
         private: isPrivate,
         defaultMetadata: defaultMetadataObj,
         metadataAmountFieldKey: amountFieldKeyToSave,
+        metadataRateBasis: rateBasisToSave,
         starThresholds: starsEnabled ? (parsedStars.values ?? undefined) : undefined,
         starPeriod: starsEnabled ? starPeriod : undefined,
         starMoneyMultipliers: starMoneyMultipliersConfig,
@@ -445,6 +455,7 @@ export function BehaviorFormScreen() {
         autoTrackApp,
         autoTrackSite,
         normalizeGroupName(group),
+        rateBasisToSave,
       );
     }
     const groupName = normalizeGroupName(group);
@@ -523,6 +534,8 @@ export function BehaviorFormScreen() {
               categories={categories}
               defaults={behaviorDefaultMetadata}
               amountFieldKey={amountFieldKeyToSave}
+              rateBasis={rateBasisInput}
+              onRateBasisChange={setRateBasisInput}
               onChange={setBehaviorDefaultMetadata}
               onAmountFieldChange={setMetadataAmountFieldKey}
             />

@@ -15,6 +15,8 @@ import { metadataInputRowStyles } from './metadata-input-row';
 interface CalculatedMetadataFieldsProps {
   amountField?: MetadataField;
   defaultMetadata?: Record<string, number>;
+  /** Amount the rates are given for; undefined = 100. */
+  rateBasis?: number;
   fields: MetadataField[];
   metadataValues: Record<string, string>;
   calculatedMetadataValues: Record<string, number>;
@@ -27,6 +29,7 @@ interface CalculatedMetadataFieldsProps {
 export function CalculatedMetadataFields({
   amountField,
   defaultMetadata,
+  rateBasis,
   fields,
   metadataValues,
   calculatedMetadataValues,
@@ -53,7 +56,7 @@ export function CalculatedMetadataFields({
               <Text style={styles.metadataCalculatedValue}>{displayValue || '0'}</Text>
               <Text style={styles.metadataCalculatedRate}>
                 {defaultMetadata?.[field.key] ?? 0}{' '}
-                {formatMetadataRateUnit({ field, amountField, includeFieldUnit: false })}
+                {formatMetadataRateUnit({ field, amountField, includeFieldUnit: false, rateBasis })}
               </Text>
             </View>
             {progress && (

@@ -140,6 +140,7 @@ export function BehaviorLogForm({ form }: Props) {
                   key={field.key}
                   amountField={amountField}
                   defaultMetadata={behavior.defaultMetadata}
+                  rateBasis={behavior.metadataRateBasis}
                   fields={[field]}
                   metadataValues={metadataValues}
                   calculatedMetadataValues={calculatedMetadataValues}

@@ -9,6 +9,8 @@ import { fetchNutritionFromUrl, isGramAmountField } from '../../../utils/nutriti
 interface NutritionUrlImportProps {
   fields: MetadataField[];
   amountField: MetadataField | undefined;
+  /** Grams the rates are given for (the behaviour's rate basis). */
+  rateBasis: number;
   onChange: React.Dispatch<React.SetStateAction<Record<string, string>>>;
 }
 
@@ -17,7 +19,7 @@ interface ImportStatus {
   isError: boolean;
 }
 
-export function NutritionUrlImport({ fields, amountField, onChange }: NutritionUrlImportProps) {
+export function NutritionUrlImport({ fields, amountField, rateBasis, onChange }: NutritionUrlImportProps) {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<ImportStatus | null>(null);
@@ -29,14 +31,14 @@ export function NutritionUrlImport({ fields, amountField, onChange }: NutritionU
       return;
     }
     if (!isGramAmountField(amountField)) {
-      setStatus({ message: 'Select an Amount unit in grams to import per-100g rates.', isError: true });
+      setStatus({ message: 'Select an Amount unit in grams to import nutrition rates.', isError: true });
       return;
     }
 
     setLoading(true);
     setStatus(null);
     try {
-      const result = await fetchNutritionFromUrl(trimmedUrl, fields);
+      const result = await fetchNutritionFromUrl(trimmedUrl, fields, rateBasis);
       if (result.matchedFields.length === 0) {
         setStatus({ message: 'No nutrients on that page matched this category’s fields.', isError: true });
         return;
@@ -45,7 +47,7 @@ export function NutritionUrlImport({ fields, amountField, onChange }: NutritionU
       const filled = result.matchedFields.map(field => field.label).join(', ');
       const missing = result.unmatchedFields.map(field => field.label).join(', ');
       setStatus({
-        message: `Filled ${filled} from a ${result.servingGrams}g serving.${missing ? ` Not found: ${missing}.` : ''}`,
+        message: `Filled ${filled} per ${rateBasis}g from a ${result.servingGrams}g serving.${missing ? ` Not found: ${missing}.` : ''}`,
         isError: false,
       });
     } catch (error) {

@@ -21,6 +21,7 @@ import { mergeSleepIntoLogs } from '../utils/google-health-utils';
 import { getLogEndTimestamp } from '../utils/log-utils';
 import {
   getLoggableDefaultMetadata,
+  getMetadataRateBasis,
   getSelectedAmountMetadataField,
   syncBehaviorLogMetadata,
 } from '../utils/metadata-calculation-utils';
@@ -64,6 +65,7 @@ interface BehaviorStore {
     autoTrackApp?: AutoTrackApp,
     autoTrackSite?: AutoTrackSite,
     group?: string,
+    metadataRateBasis?: number,
   ) => void;
   updateBehaviorCooldown: (behaviorId: string, cooldownMinutes: number) => void;
   updateBehavior: (
@@ -85,6 +87,7 @@ interface BehaviorStore {
       private?: boolean;
       defaultMetadata?: Record<string, number>;
       metadataAmountFieldKey?: string;
+      metadataRateBasis?: number | undefined;
       starThresholds?: [number, number | null, number | null] | undefined;
       starPeriod?: StarPeriod | undefined;
       starMoneyMultipliers?: BehaviorEntry['starMoneyMultipliers'];
@@ -178,6 +181,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
         autoTrackApp,
         autoTrackSite,
         group,
+        metadataRateBasis,
       ) =>
         set(state => ({
           behaviors: [
@@ -193,6 +197,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               metadata: {},
               defaultMetadata,
               metadataAmountFieldKey,
+              metadataRateBasis,
               logs: [],
               cooldownMinutes,
               cooldownType,
@@ -343,7 +348,11 @@ export const useBehaviorStore = create<BehaviorStore>()(
             if (b.id !== behaviorId) return b;
 
             const nextBehavior = { ...b, ...updates };
-            if (!Object.prototype.hasOwnProperty.call(updates, 'defaultMetadata')) return nextBehavior;
+            const rateBasisChanged =
+              Object.prototype.hasOwnProperty.call(updates, 'metadataRateBasis') &&
+              getMetadataRateBasis(updates) !== getMetadataRateBasis(b);
+            if (!Object.prototype.hasOwnProperty.call(updates, 'defaultMetadata') && !rateBasisChanged)
+              return nextBehavior;
 
             const categoryId = Object.prototype.hasOwnProperty.call(updates, 'categoryId')
               ? updates.categoryId
@@ -363,8 +372,9 @@ export const useBehaviorStore = create<BehaviorStore>()(
                   metadata: log.metadata,
                   fields,
                   previousDefaultMetadata: b.defaultMetadata,
-                  defaultMetadata: updates.defaultMetadata,
+                  defaultMetadata: nextBehavior.defaultMetadata,
                   amountField,
+                  rateBasis: nextBehavior.metadataRateBasis,
                 }),
               })),
             };

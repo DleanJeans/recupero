@@ -131,6 +131,7 @@ export function buildQuickLogMetadata(
     amountField,
     values: getInitialLogMetadataValues(fields, amountField, behavior.defaultMetadata),
     defaultMetadata: behavior.defaultMetadata,
+    rateBasis: behavior.metadataRateBasis,
   });
 }
 

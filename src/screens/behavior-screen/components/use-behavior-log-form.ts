@@ -235,8 +235,13 @@ export function useBehaviorLogForm({
     if (!amountField) return {};
     const amountValue = metadataValues[amountField.key];
     if (amountValue === undefined || amountValue === '') return {};
-    return buildCalculatedMetadata(metadataFields, behavior.defaultMetadata, parseDecimalInput(amountValue));
-  }, [amountField, behavior.defaultMetadata, metadataFields, metadataValues]);
+    return buildCalculatedMetadata(
+      metadataFields,
+      behavior.defaultMetadata,
+      parseDecimalInput(amountValue),
+      behavior.metadataRateBasis,
+    );
+  }, [amountField, behavior.defaultMetadata, behavior.metadataRateBasis, metadataFields, metadataValues]);
 
   const progressByField = useMemo<Record<string, DailyGoalProgress | null>>(() => {
     const map: Record<string, DailyGoalProgress | null> = {};
@@ -435,6 +440,7 @@ export function useBehaviorLogForm({
       amountField,
       values: metadataValues,
       defaultMetadata: behavior.defaultMetadata,
+      rateBasis: behavior.metadataRateBasis,
       notes,
     });
 
@@ -467,6 +473,7 @@ export function useBehaviorLogForm({
           amountField: getBehaviorAmountField(stackedBehavior, stackedFields),
           values: stacked.metadataValues,
           defaultMetadata: stackedBehavior.defaultMetadata,
+          rateBasis: stackedBehavior.metadataRateBasis,
           notes,
         }),
         saveEndTimestamp,

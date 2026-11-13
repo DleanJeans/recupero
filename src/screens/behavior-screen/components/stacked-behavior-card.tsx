@@ -50,8 +50,13 @@ export function StackedBehaviorCard({ stacked, onChange, onRemove, onFocus }: St
   const calculatedValues = useMemo(() => {
     const amountValue = amountField ? stacked.metadataValues[amountField.key] : undefined;
     if (!amountValue) return {};
-    return buildCalculatedMetadata(fields, behavior?.defaultMetadata, parseDecimalInput(amountValue));
-  }, [amountField, behavior?.defaultMetadata, fields, stacked.metadataValues]);
+    return buildCalculatedMetadata(
+      fields,
+      behavior?.defaultMetadata,
+      parseDecimalInput(amountValue),
+      behavior?.metadataRateBasis,
+    );
+  }, [amountField, behavior?.defaultMetadata, behavior?.metadataRateBasis, fields, stacked.metadataValues]);
   const setValues = useCallback(
     (update: React.SetStateAction<Record<string, string>>) => onChange(stacked.behaviorId, update),
     [onChange, stacked.behaviorId],
@@ -104,6 +109,7 @@ export function StackedBehaviorCard({ stacked, onChange, onRemove, onFocus }: St
               key={field.key}
               amountField={amountField}
               defaultMetadata={behavior.defaultMetadata}
+              rateBasis={behavior.metadataRateBasis}
               fields={[field]}
               metadataValues={stacked.metadataValues}
               calculatedMetadataValues={calculatedValues}

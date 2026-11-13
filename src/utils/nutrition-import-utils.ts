@@ -1,5 +1,5 @@
 import type { MetadataField } from '../types/behavior';
-import { getCalculatedMetadataFields } from './metadata-calculation-utils';
+import { DEFAULT_METADATA_RATE_BASIS, getCalculatedMetadataFields } from './metadata-calculation-utils';
 import { roundTo2 } from './number-utils';
 
 export interface ParsedNutrient {
@@ -229,8 +229,12 @@ export function isGramAmountField(field: MetadataField | undefined): boolean {
   return GRAM_UNITS.has(field?.unit?.trim().toLowerCase() ?? '');
 }
 
-/** Converts parsed page values to per-100 g rates keyed by the category's `per100` fields. */
-export function mapNutritionToMetadata(parsed: ParsedNutrition, fields: MetadataField[]): NutritionImportResult {
+/** Converts parsed page values to rates per `rateBasis` grams (default 100 g) keyed by the category's `per100` fields. */
+export function mapNutritionToMetadata(
+  parsed: ParsedNutrition,
+  fields: MetadataField[],
+  rateBasis: number = DEFAULT_METADATA_RATE_BASIS,
+): NutritionImportResult {
   const servingGrams = parsed.servingGrams;
   if (!servingGrams || servingGrams <= 0) throw new Error("Couldn't find the serving weight in grams on that page.");
 
@@ -254,14 +258,18 @@ export function mapNutritionToMetadata(parsed: ParsedNutrition, fields: Metadata
       key === 'calories' && parsed.caloriesPer100g != null && convertUnit(1, 'kcal', field.unit) === 1
         ? parsed.caloriesPer100g
         : (convertUnit(nutrient.value, nutrient.unit, field.unit) * 100) / servingGrams;
-    values[field.key] = String(roundTo2(per100));
+    values[field.key] = String(roundTo2((per100 * rateBasis) / 100));
     matchedFields.push(field);
   }
 
   return { values, matchedFields, unmatchedFields, servingGrams };
 }
 
-export async function fetchNutritionFromUrl(url: string, fields: MetadataField[]): Promise<NutritionImportResult> {
+export async function fetchNutritionFromUrl(
+  url: string,
+  fields: MetadataField[],
+  rateBasis?: number,
+): Promise<NutritionImportResult> {
   const response = await fetch(url, {
     headers: {
       Accept: 'text/html,application/xhtml+xml',
@@ -270,5 +278,5 @@ export async function fetchNutritionFromUrl(url: string, fields: MetadataField[]
     },
   });
   if (!response.ok) throw new Error(`The page returned an error (${response.status}).`);
-  return mapNutritionToMetadata(parseNutritionHtml(await response.text()), fields);
+  return mapNutritionToMetadata(parseNutritionHtml(await response.text()), fields, rateBasis);
 }

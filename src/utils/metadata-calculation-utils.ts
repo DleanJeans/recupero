@@ -75,9 +75,23 @@ export function formatMetadataValueUnit(field: MetadataField): string {
   return unit ? ` ${unit}` : '';
 }
 
-export function formatMetadataAmountBasis(field?: MetadataField): string {
+/** The amount a behaviour's calculated rates are given for when it hasn't set its own (e.g. per 100 g). */
+export const DEFAULT_METADATA_RATE_BASIS = 100;
+
+/** Normalizes a stored rate basis: anything missing, non-finite or not positive falls back to 100. */
+export function resolveMetadataRateBasis(rateBasis: number | undefined): number {
+  return rateBasis != null && Number.isFinite(rateBasis) && rateBasis > 0 ? rateBasis : DEFAULT_METADATA_RATE_BASIS;
+}
+
+/** The amount a behaviour's calculated rates are given for, e.g. 30 when the label lists values per 30 g portion. */
+export function getMetadataRateBasis(behavior: Pick<BehaviorEntry, 'metadataRateBasis'> | undefined): number {
+  return resolveMetadataRateBasis(behavior?.metadataRateBasis);
+}
+
+export function formatMetadataAmountBasis(field?: MetadataField, rateBasis?: number): string {
   if (!field) return '';
-  return field.unit ? `100${field.unit}` : `100 ${field.label}`;
+  const basis = resolveMetadataRateBasis(rateBasis);
+  return field.unit ? `${basis}${field.unit}` : `${basis} ${field.label}`;
 }
 
 interface FormatMetadataRateUnitParams {
@@ -85,6 +99,7 @@ interface FormatMetadataRateUnitParams {
   amountField?: MetadataField;
   separator?: string;
   includeFieldUnit?: boolean;
+  rateBasis?: number;
 }
 
 export function formatMetadataRateUnit({
@@ -92,9 +107,10 @@ export function formatMetadataRateUnit({
   amountField,
   separator = '',
   includeFieldUnit = true,
+  rateBasis,
 }: FormatMetadataRateUnitParams): string {
   const unit = includeFieldUnit && field.unit ? `${field.unit} ` : '';
-  return `${unit}${separator}/ ${formatMetadataAmountBasis(amountField)}`;
+  return `${unit}${separator}/ ${formatMetadataAmountBasis(amountField, rateBasis)}`;
 }
 
 export function getLoggableDefaultMetadata(
@@ -117,15 +133,17 @@ export function buildCalculatedMetadata(
   fields: MetadataField[],
   defaultMetadata: Record<string, number> | undefined,
   amountValue: number | undefined,
+  rateBasis?: number,
 ): Record<string, number> {
   if (amountValue == null || !Number.isFinite(amountValue)) return {};
+  const basis = resolveMetadataRateBasis(rateBasis);
 
   return Object.fromEntries(
     getCalculatedMetadataFields(fields)
       .map(field => {
         const rate = defaultMetadata?.[field.key];
         if (rate == null || !Number.isFinite(rate)) return null;
-        return [field.key, roundTo2((rate * amountValue) / 100)] as const;
+        return [field.key, roundTo2((rate * amountValue) / basis)] as const;
       })
       .filter((entry): entry is readonly [string, number] => entry != null),
   );
@@ -137,6 +155,7 @@ interface SyncBehaviorLogMetadataParams {
   previousDefaultMetadata?: Record<string, number>;
   defaultMetadata?: Record<string, number>;
   amountField?: MetadataField;
+  rateBasis?: number;
 }
 
 export function syncBehaviorLogMetadata({
@@ -145,6 +164,7 @@ export function syncBehaviorLogMetadata({
   previousDefaultMetadata,
   defaultMetadata,
   amountField,
+  rateBasis,
 }: SyncBehaviorLogMetadataParams): LogEntry['metadata'] {
   const nextMetadata = { ...(metadata ?? {}) };
   const previousManualMetadata = getLoggableDefaultMetadata(previousDefaultMetadata, fields);
@@ -163,7 +183,7 @@ export function syncBehaviorLogMetadata({
         : undefined
       : parseDecimalInput(String(rawAmount ?? ''));
   if (amountValue != null) {
-    const calculatedMetadata = buildCalculatedMetadata(fields, defaultMetadata, amountValue);
+    const calculatedMetadata = buildCalculatedMetadata(fields, defaultMetadata, amountValue, rateBasis);
     for (const field of getCalculatedMetadataFields(fields)) {
       const value = calculatedMetadata[field.key];
       if (value != null) {
@@ -283,15 +303,17 @@ interface BuildLogMetadataParams {
   amountField?: MetadataField;
   values: Record<string, string>;
   defaultMetadata?: Record<string, number>;
+  rateBasis?: number;
   notes?: string;
 }
 
-/** Turns log form inputs into the metadata saved on a LogEntry (per-100 fields are calculated from the amount). */
+/** Turns log form inputs into the metadata saved on a LogEntry (rate fields are calculated from the amount). */
 export function buildLogMetadata({
   fields,
   amountField,
   values,
   defaultMetadata,
+  rateBasis,
   notes,
 }: BuildLogMetadataParams): Record<string, string | number> | undefined {
   const metadata: Record<string, string | number> = {};
@@ -309,7 +331,10 @@ export function buildLogMetadata({
   if (amountField) {
     const amountValue = values[amountField.key];
     if (amountValue !== undefined && amountValue !== '') {
-      Object.assign(metadata, buildCalculatedMetadata(fields, defaultMetadata, parseDecimalInput(amountValue)));
+      Object.assign(
+        metadata,
+        buildCalculatedMetadata(fields, defaultMetadata, parseDecimalInput(amountValue), rateBasis),
+      );
     }
     for (const field of getCalculatedMetadataFields(fields)) {
       if (metadata[field.key] != null) continue;

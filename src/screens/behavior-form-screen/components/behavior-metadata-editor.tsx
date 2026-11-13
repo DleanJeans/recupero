@@ -1,17 +1,20 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SelectPill } from '../../../components/select-pill';
-import { Text } from '../../../components/text';
+import { Text, TextInput } from '../../../components/text';
 import type { Category, MetadataField } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 import {
-  formatMetadataAmountBasis,
+  evaluateDecimalInput,
   formatMetadataFieldLabel,
   getAmountMetadataFields,
   getCalculatedMetadataFields,
   getManualMetadataFields,
   getSelectedAmountMetadataField,
   NO_AMOUNT_FIELD_KEY,
+  parseDecimalInput,
+  resolveMetadataRateBasis,
+  sanitizeDecimalInput,
 } from '../../../utils/metadata-calculation-utils';
 import { MetadataDefaultInput } from './metadata-default-input';
 import { NutritionUrlImport } from './nutrition-url-import';
@@ -21,6 +24,9 @@ interface BehaviorMetadataEditorProps {
   categories: Category[];
   defaults: Record<string, string>;
   amountFieldKey: string | undefined;
+  /** Text of the "Rates per" amount input; empty or invalid falls back to 100. */
+  rateBasis: string;
+  onRateBasisChange: (value: string) => void;
   onChange: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   onAmountFieldChange: (fieldKey: string) => void;
 }
@@ -30,6 +36,8 @@ export function BehaviorMetadataEditor({
   categories,
   defaults,
   amountFieldKey,
+  rateBasis,
+  onRateBasisChange,
   onChange,
   onAmountFieldChange,
 }: BehaviorMetadataEditorProps) {
@@ -99,10 +107,32 @@ export function BehaviorMetadataEditor({
 
       {calculatedFields.length > 0 && (amountFields.length === 0 || selectedAmountField) && (
         <>
-          <Text style={styles.label}>Rates per {formatMetadataAmountBasis(selectedAmountField)}</Text>
+          <Text style={styles.label}>Rates</Text>
+          {selectedAmountField && (
+            <View style={styles.rateBasisRow}>
+              <Text style={styles.rateBasisLabel}>Per</Text>
+              <TextInput
+                style={styles.rateBasisInput}
+                value={rateBasis}
+                onChangeText={value => onRateBasisChange(sanitizeDecimalInput(value))}
+                onBlur={() => {
+                  const parsed = parseDecimalInput(evaluateDecimalInput(rateBasis));
+                  onRateBasisChange(String(resolveMetadataRateBasis(parsed)));
+                }}
+                placeholder="100"
+                placeholderTextColor={Colors.text.dim}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+                selectTextOnFocus
+                maxLength={8}
+              />
+              <Text style={styles.rateBasisUnit}>{selectedAmountField.unit ?? selectedAmountField.label}</Text>
+            </View>
+          )}
           <NutritionUrlImport
             fields={fields}
             amountField={selectedAmountField}
+            rateBasis={resolveMetadataRateBasis(parseDecimalInput(rateBasis))}
             onChange={onChange}
           />
           {calculatedFields.map((field: MetadataField) => (
@@ -133,6 +163,31 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginTop: 8,
+  },
+  rateBasisRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  rateBasisLabel: {
+    color: Colors.text.muted,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  rateBasisInput: {
+    backgroundColor: Colors.bg.input,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    color: Colors.text.primary,
+    fontSize: 14,
+    width: 80,
+    textAlign: 'right',
+  },
+  rateBasisUnit: {
+    color: Colors.text.faint,
+    fontSize: 12,
+    fontWeight: '600',
   },
   quantityUnitRow: {
     flexDirection: 'row',
