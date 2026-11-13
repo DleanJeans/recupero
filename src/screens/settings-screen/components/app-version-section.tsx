@@ -8,6 +8,7 @@ import { Text } from '../../../components/text';
 import { useSettingsStore } from '../../../store/settings-store';
 import { buildAppVersionRows } from '../../../utils/app-version-utils';
 import { Colors } from '../../../utils/colors';
+import { CheckUpdateButton } from './check-update-button';
 
 export function AppVersionSection() {
   const hour12 = useSettingsStore(state => state.timeFormat === '12h');
@@ -39,6 +40,7 @@ export function AppVersionSection() {
 
   return (
     <View style={styles.section}>
+      <CheckUpdateButton />
       {rows.map(row => (
         <Text
           key={row.label}
