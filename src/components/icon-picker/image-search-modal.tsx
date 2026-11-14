@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Image, Modal, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WebView } from 'react-native-webview';
+import { WebView, type WebViewNavigation } from 'react-native-webview';
 import { Colors } from '../../utils/colors';
 import {
   getImageSearchUrl,
@@ -26,6 +26,17 @@ export function ImageSearchModal({ initialQuery, onPick, onClose }: Props) {
   const [url, setUrl] = useState(() => getImageSearchUrl(initialQuery));
   const [candidate, setCandidate] = useState<ImageCandidate | null>(null);
   const [loading, setLoading] = useState(true);
+  const webRef = useRef<WebView>(null);
+  const canGoBack = useRef(false);
+
+  // System Back steps back through the browser history; it closes only when there is none left.
+  const handleBack = () => {
+    if (canGoBack.current) webRef.current?.goBack();
+    else onClose();
+  };
+  const onNavigation = (nav: WebViewNavigation) => {
+    canGoBack.current = nav.canGoBack;
+  };
 
   const search = () => {
     if (query.trim()) setUrl(getImageSearchUrl(query));
@@ -35,7 +46,7 @@ export function ImageSearchModal({ initialQuery, onPick, onClose }: Props) {
     <Modal
       visible
       animationType="slide"
-      onRequestClose={onClose}
+      onRequestClose={handleBack}
       statusBarTranslucent
     >
       <View style={[styles.screen, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 12 }]}>
@@ -64,6 +75,8 @@ export function ImageSearchModal({ initialQuery, onPick, onClose }: Props) {
         </View>
         <View style={styles.web}>
           <WebView
+            ref={webRef}
+            onNavigationStateChange={onNavigation}
             source={{ uri: url }}
             injectedJavaScript={IMAGE_SEARCH_SCRIPT}
             onMessage={event => setCandidate(parseImageCandidate(event.nativeEvent.data))}
