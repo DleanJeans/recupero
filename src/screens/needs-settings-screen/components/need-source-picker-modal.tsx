@@ -1,5 +1,7 @@
 import React from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FullScreenModal } from '../../../components/full-screen-modal';
 import { Text } from '../../../components/text';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useNeedsStore } from '../../../store/needs-store';
@@ -22,6 +24,7 @@ export function NeedSourcePickerModal({ needId, onClose }: NeedSourcePickerModal
   const categories = useBehaviorStore(state => state.categories);
   const config = useNeedsStore(state => (needId ? state.needs[needId] : undefined));
   const setMetadataSource = useNeedsStore(state => state.setMetadataSource);
+  const insets = useSafeAreaInsets();
   const choices = getMetadataFieldChoices(categories);
   if (!needId || !config) return null;
   const current = getNeedMetadataSource(needId, config, categories);
@@ -39,53 +42,40 @@ export function NeedSourcePickerModal({ needId, onClose }: NeedSourcePickerModal
   };
 
   return (
-    <Modal
-      visible
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
+    <FullScreenModal
+      title={`${NEED_INFO[needId].label} fills from`}
+      onClose={onClose}
     >
-      <View style={styles.overlay}>
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={onClose}
-        />
-        <View style={styles.sheet}>
-          <Text style={styles.sheetTitle}>{NEED_INFO[needId].label} fills from</Text>
-          <ScrollView>
+      <View style={styles.sheet}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 16 + insets.bottom }}>
+          <Pressable
+            style={({ pressed }) => [styles.choice, pressed && styles.pressed]}
+            onPress={() => choose(null)}
+          >
+            <Text style={[styles.choiceText, !current && styles.choiceSelected]}>None (only behaviours you pick)</Text>
+          </Pressable>
+          {choices.map(({ field, categoryName }) => (
             <Pressable
+              key={field.key}
               style={({ pressed }) => [styles.choice, pressed && styles.pressed]}
-              onPress={() => choose(null)}
+              onPress={() => choose(field.key)}
             >
-              <Text style={[styles.choiceText, !current && styles.choiceSelected]}>
-                None (only behaviours you pick)
+              <Text style={[styles.choiceText, current?.fieldKey === field.key && styles.choiceSelected]}>
+                {field.label}
+                {field.unit ? ` (${field.unit})` : ''}
               </Text>
+              <Text style={styles.choiceDetail}>{categoryName}</Text>
             </Pressable>
-            {choices.map(({ field, categoryName }) => (
-              <Pressable
-                key={field.key}
-                style={({ pressed }) => [styles.choice, pressed && styles.pressed]}
-                onPress={() => choose(field.key)}
-              >
-                <Text style={[styles.choiceText, current?.fieldKey === field.key && styles.choiceSelected]}>
-                  {field.label}
-                  {field.unit ? ` (${field.unit})` : ''}
-                </Text>
-                <Text style={styles.choiceDetail}>{categoryName}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
+          ))}
+        </ScrollView>
       </View>
-    </Modal>
+    </FullScreenModal>
   );
 }
 
 const styles = StyleSheet.create({
   pressed: { opacity: 0.7 },
-  overlay: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: 'rgba(0,0,0,0.6)' },
-  sheet: { maxHeight: '70%', backgroundColor: Colors.bg.card, borderRadius: 14, padding: 16, gap: 10 },
-  sheetTitle: { color: Colors.text.primary, fontSize: 17, fontWeight: '700' },
+  sheet: { flex: 1, paddingHorizontal: 16 },
   choice: {
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SunlightNotification } from '../../../modules/sunlight-notification';
 import { resyncReminders } from '../../hooks/use-reminder-engine';
@@ -21,6 +21,7 @@ import {
 import { formatTime } from '../../utils/time-utils';
 import { AppIcon } from '../app-icon';
 import { CueSectionLabel } from '../cues/cue-section-label';
+import { FullScreenModal } from '../full-screen-modal';
 import { RadiusSlider } from '../radius-slider';
 import { Text } from '../text';
 import { SUNLIGHT_COLOR } from './sunlight-bar-row';
@@ -98,229 +99,200 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
   };
 
   return (
-    <Modal
-      visible
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={styles.overlay}>
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={onClose}
-        />
-        <View style={styles.sheet}>
-          <View style={styles.grab} />
-          <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 32 + insets.bottom }]}>
-            <View style={styles.header}>
-              <Text style={styles.headerEmoji}>☀️</Text>
-              <View style={styles.headerText}>
-                <Text style={styles.title}>
-                  Sunlight
-                  <Text style={{ color: done ? Colors.type.desirable : SUNLIGHT_COLOR }}>
-                    {` · ${formatSunlightMinutes(today.minutes)}`}
-                  </Text>
+    <FullScreenModal onClose={onClose}>
+      <View style={styles.sheet}>
+        <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 32 + insets.bottom }]}>
+          <View style={styles.header}>
+            <Text style={styles.headerEmoji}>☀️</Text>
+            <View style={styles.headerText}>
+              <Text style={styles.title}>
+                Sunlight
+                <Text style={{ color: done ? Colors.type.desirable : SUNLIGHT_COLOR }}>
+                  {` · ${formatSunlightMinutes(today.minutes)}`}
                 </Text>
-                <Text style={styles.subtitle}>
-                  {`Goal ${goalMinutes} min · ${sunWindow}`}
-                  {sunlight.luxNow != null ? ` · ${formatLux(sunlight.luxNow)} now` : ''}
-                  {today.lux != null ? ` · ${formatLux(today.lux)} avg while out` : ''}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.status}>
-              <SunlightStatusDot
-                kind={sunlight.status.kind}
-                size={10}
-              />
-              <Text style={[styles.statusText, { color: SUNLIGHT_STATUS_COLORS[sunlight.status.kind] }]}>
-                {sunlight.status.label}
+              </Text>
+              <Text style={styles.subtitle}>
+                {`Goal ${goalMinutes} min · ${sunWindow}`}
+                {sunlight.luxNow != null ? ` · ${formatLux(sunlight.luxNow)} now` : ''}
+                {today.lux != null ? ` · ${formatLux(today.lux)} avg while out` : ''}
               </Text>
             </View>
-            {SunlightNotification && (
-              <View style={styles.liveRow}>
-                <Text style={styles.liveLabel}>Live notification while outside</Text>
-                <Switch
-                  value={liveNotification}
-                  onValueChange={setLiveNotification}
-                  trackColor={{ true: SUNLIGHT_COLOR }}
-                  thumbColor={Colors.text.primary}
-                />
-              </View>
-            )}
+          </View>
 
-            <SunlightPreciseRow />
-
-            {!locationAllowed && (
-              <View style={styles.warning}>
-                <Text style={styles.warningText}>
-                  Location isn't set to "Allow all the time", so leaving and arriving at places isn't tracked.
-                </Text>
-                <Pressable
-                  onPress={allowLocation}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.warningAction}>Allow</Text>
-                </Pressable>
-              </View>
-            )}
-            {!sunlight.hasPlaces && (
-              <Text style={styles.hint}>
-                Save the places where you spend time indoors (Home, work) under Places, so time away from them counts.
-              </Text>
-            )}
-
-            <SunlightLightDose
-              luxMinutes={today.luxMinutes}
-              ratePerMinute={getLightDoseRate(
-                sunlight.status.kind === 'counting',
-                sunlight.luxNow,
-                sunlight.eyeLevelFactor,
-              )}
-              snapshotAt={sunlight.now}
-              goalMinutes={goalMinutes}
-              hasWeather={hasWeather}
-              eyeLevelFactor={sunlight.eyeLevelFactor}
+          <View style={styles.status}>
+            <SunlightStatusDot
+              kind={sunlight.status.kind}
+              size={10}
             />
-            <SunlightEyeLevel factor={sunlight.eyeLevelFactor} />
-            <SunlightCalibration
-              factor={sunlight.luxCalibration}
-              luxNow={sunlight.luxNow}
-              rawLuxNow={sunlight.rawLuxNow}
-            />
-
-            <CueSectionLabel>Today</CueSectionLabel>
-            {today.stretches.length === 0 ? (
-              <Text style={styles.hint}>No time outside in daylight yet.</Text>
-            ) : (
-              today.stretches.map(stretch => (
-                <View
-                  key={stretch.start}
-                  style={styles.stretch}
-                >
-                  <Text style={styles.stretchTime}>
-                    {formatTime(stretch.start)} – {stretch.ongoing ? 'now' : formatTime(stretch.end)}
-                  </Text>
-                  <Text style={styles.stretchLux}>
-                    {stretch.lux != null
-                      ? `${formatLux(stretch.lux)} · ${BRIGHTNESS_LABELS[getSunlightBrightness(stretch.lux)]}`
-                      : ''}
-                  </Text>
-                  <Text style={styles.stretchMinutes}>
-                    {formatSunlightMinutes(Math.floor((stretch.end - stretch.start) / 60_000))}
-                  </Text>
-                  {!stretch.ongoing && (
-                    <Pressable
-                      onPress={() => confirmDelete(stretch)}
-                      hitSlop={10}
-                      accessibilityRole="button"
-                      accessibilityLabel="Delete session"
-                    >
-                      <Text style={styles.stretchDelete}>✕</Text>
-                    </Pressable>
-                  )}
-                </View>
-              ))
-            )}
-
-            <CueSectionLabel>Past week</CueSectionLabel>
-            <SunlightWeekChart
-              days={days}
-              goalMinutes={goalMinutes}
-            />
-
-            <CueSectionLabel>Daily goal</CueSectionLabel>
-            <View style={styles.stepper}>
-              <Pressable
-                style={({ pressed }) => [styles.stepButton, pressed && styles.pressed]}
-                onPress={() => setGoalMinutes(goalMinutes - SUNLIGHT_GOAL_STEP_MINUTES)}
-                accessibilityRole="button"
-                accessibilityLabel="Lower goal"
-              >
-                <Text style={styles.stepText}>−</Text>
-              </Pressable>
-              <Text style={styles.goal}>{formatSunlightMinutes(goalMinutes)}</Text>
-              <Pressable
-                style={({ pressed }) => [styles.stepButton, pressed && styles.pressed]}
-                onPress={() => setGoalMinutes(goalMinutes + SUNLIGHT_GOAL_STEP_MINUTES)}
-                accessibilityRole="button"
-                accessibilityLabel="Raise goal"
-              >
-                <Text style={styles.stepText}>+</Text>
-              </Pressable>
-            </View>
-
-            <CueSectionLabel>Where it pauses</CueSectionLabel>
-            <RadiusSlider
-              label="Pause within"
-              value={radiusM}
-              onChange={setRadiusM}
-              color={SUNLIGHT_COLOR}
-              revealOnTap
-            />
-            <SunlightPlacesMap />
-
-            {places.length > 0 && (
-              <>
-                <CueSectionLabel>Places that count as outside</CueSectionLabel>
-                <View style={styles.chips}>
-                  {places.map(place => {
-                    const outdoor = outdoorPlaceIds.includes(place.id);
-                    return (
-                      <Pressable
-                        key={place.id}
-                        style={({ pressed }) => [styles.chip, outdoor && styles.chipOn, pressed && styles.pressed]}
-                        onPress={() => toggleOutdoorPlace(place.id)}
-                        accessibilityRole="checkbox"
-                        accessibilityState={{ checked: outdoor }}
-                      >
-                        <AppIcon
-                          value={place.emoji}
-                          fallback={place.isHome ? '🏠' : '📍'}
-                          size={15}
-                        />
-                        <Text style={[styles.chipText, outdoor && styles.chipTextOn]}>{place.name}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              </>
-            )}
-
-            <Text style={styles.hint}>
-              Counts time more than {radiusM} m from your saved places, only between sunrise and sunset where you are.
-              Below about 50 m, phone GPS can wobble across the line, so very short trips (under 2 min) are ignored.
-              Light levels are estimated from hourly weather (Open-Meteo).
+            <Text style={[styles.statusText, { color: SUNLIGHT_STATUS_COLORS[sunlight.status.kind] }]}>
+              {sunlight.status.label}
             </Text>
-          </ScrollView>
-        </View>
+          </View>
+          {SunlightNotification && (
+            <View style={styles.liveRow}>
+              <Text style={styles.liveLabel}>Live notification while outside</Text>
+              <Switch
+                value={liveNotification}
+                onValueChange={setLiveNotification}
+                trackColor={{ true: SUNLIGHT_COLOR }}
+                thumbColor={Colors.text.primary}
+              />
+            </View>
+          )}
+
+          <SunlightPreciseRow />
+
+          {!locationAllowed && (
+            <View style={styles.warning}>
+              <Text style={styles.warningText}>
+                Location isn't set to "Allow all the time", so leaving and arriving at places isn't tracked.
+              </Text>
+              <Pressable
+                onPress={allowLocation}
+                hitSlop={8}
+                accessibilityRole="button"
+              >
+                <Text style={styles.warningAction}>Allow</Text>
+              </Pressable>
+            </View>
+          )}
+          {!sunlight.hasPlaces && (
+            <Text style={styles.hint}>
+              Save the places where you spend time indoors (Home, work) under Places, so time away from them counts.
+            </Text>
+          )}
+
+          <SunlightLightDose
+            luxMinutes={today.luxMinutes}
+            ratePerMinute={getLightDoseRate(
+              sunlight.status.kind === 'counting',
+              sunlight.luxNow,
+              sunlight.eyeLevelFactor,
+            )}
+            snapshotAt={sunlight.now}
+            goalMinutes={goalMinutes}
+            hasWeather={hasWeather}
+            eyeLevelFactor={sunlight.eyeLevelFactor}
+          />
+          <SunlightEyeLevel factor={sunlight.eyeLevelFactor} />
+          <SunlightCalibration
+            factor={sunlight.luxCalibration}
+            luxNow={sunlight.luxNow}
+            rawLuxNow={sunlight.rawLuxNow}
+          />
+
+          <CueSectionLabel>Today</CueSectionLabel>
+          {today.stretches.length === 0 ? (
+            <Text style={styles.hint}>No time outside in daylight yet.</Text>
+          ) : (
+            today.stretches.map(stretch => (
+              <View
+                key={stretch.start}
+                style={styles.stretch}
+              >
+                <Text style={styles.stretchTime}>
+                  {formatTime(stretch.start)} – {stretch.ongoing ? 'now' : formatTime(stretch.end)}
+                </Text>
+                <Text style={styles.stretchLux}>
+                  {stretch.lux != null
+                    ? `${formatLux(stretch.lux)} · ${BRIGHTNESS_LABELS[getSunlightBrightness(stretch.lux)]}`
+                    : ''}
+                </Text>
+                <Text style={styles.stretchMinutes}>
+                  {formatSunlightMinutes(Math.floor((stretch.end - stretch.start) / 60_000))}
+                </Text>
+                {!stretch.ongoing && (
+                  <Pressable
+                    onPress={() => confirmDelete(stretch)}
+                    hitSlop={10}
+                    accessibilityRole="button"
+                    accessibilityLabel="Delete session"
+                  >
+                    <Text style={styles.stretchDelete}>✕</Text>
+                  </Pressable>
+                )}
+              </View>
+            ))
+          )}
+
+          <CueSectionLabel>Past week</CueSectionLabel>
+          <SunlightWeekChart
+            days={days}
+            goalMinutes={goalMinutes}
+          />
+
+          <CueSectionLabel>Daily goal</CueSectionLabel>
+          <View style={styles.stepper}>
+            <Pressable
+              style={({ pressed }) => [styles.stepButton, pressed && styles.pressed]}
+              onPress={() => setGoalMinutes(goalMinutes - SUNLIGHT_GOAL_STEP_MINUTES)}
+              accessibilityRole="button"
+              accessibilityLabel="Lower goal"
+            >
+              <Text style={styles.stepText}>−</Text>
+            </Pressable>
+            <Text style={styles.goal}>{formatSunlightMinutes(goalMinutes)}</Text>
+            <Pressable
+              style={({ pressed }) => [styles.stepButton, pressed && styles.pressed]}
+              onPress={() => setGoalMinutes(goalMinutes + SUNLIGHT_GOAL_STEP_MINUTES)}
+              accessibilityRole="button"
+              accessibilityLabel="Raise goal"
+            >
+              <Text style={styles.stepText}>+</Text>
+            </Pressable>
+          </View>
+
+          <CueSectionLabel>Where it pauses</CueSectionLabel>
+          <RadiusSlider
+            label="Pause within"
+            value={radiusM}
+            onChange={setRadiusM}
+            color={SUNLIGHT_COLOR}
+            revealOnTap
+          />
+          <SunlightPlacesMap />
+
+          {places.length > 0 && (
+            <>
+              <CueSectionLabel>Places that count as outside</CueSectionLabel>
+              <View style={styles.chips}>
+                {places.map(place => {
+                  const outdoor = outdoorPlaceIds.includes(place.id);
+                  return (
+                    <Pressable
+                      key={place.id}
+                      style={({ pressed }) => [styles.chip, outdoor && styles.chipOn, pressed && styles.pressed]}
+                      onPress={() => toggleOutdoorPlace(place.id)}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: outdoor }}
+                    >
+                      <AppIcon
+                        value={place.emoji}
+                        fallback={place.isHome ? '🏠' : '📍'}
+                        size={15}
+                      />
+                      <Text style={[styles.chipText, outdoor && styles.chipTextOn]}>{place.name}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
+          )}
+
+          <Text style={styles.hint}>
+            Counts time more than {radiusM} m from your saved places, only between sunrise and sunset where you are.
+            Below about 50 m, phone GPS can wobble across the line, so very short trips (under 2 min) are ignored. Light
+            levels are estimated from hourly weather (Open-Meteo).
+          </Text>
+        </ScrollView>
       </View>
-    </Modal>
+    </FullScreenModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
   sheet: {
-    maxHeight: '85%',
-    backgroundColor: Colors.bg.card,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    paddingTop: 8,
-  },
-  grab: {
-    alignSelf: 'center',
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.border.light,
-    marginBottom: 8,
+    flex: 1,
   },
   content: {
     gap: 8,

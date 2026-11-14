@@ -2,9 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useKeyboardVisible } from '../../hooks/use-keyboard-visible';
 import { useNeedLevels } from '../../hooks/use-need-levels';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useNeedsStore } from '../../store/needs-store';
@@ -34,6 +33,7 @@ import { formatCompactDate, formatElapsedNumeric, formatTime } from '../../utils
 import { AppIcon } from '../app-icon';
 import { BehaviorIcon } from '../behavior-icon';
 import { CueSectionLabel } from '../cues/cue-section-label';
+import { FullScreenModal } from '../full-screen-modal';
 import { Text, TextInput } from '../text';
 import { NEED_TONE_COLORS } from './need-bar-row';
 import { NeedHistorySection } from './need-history-section';
@@ -49,7 +49,6 @@ const MAX_SEARCH_RESULTS = 6;
 
 /** Bottom sheet for one need: what refills it, a one-tap check-in, and how fast it empties. */
 export function NeedSheet({ needId, onClose }: NeedSheetProps) {
-  const keyboardUp = useKeyboardVisible();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { needs, now } = useNeedLevels();
   const behaviors = useBehaviorStore(state => state.behaviors);
@@ -162,266 +161,252 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
   };
 
   return (
-    <Modal
-      visible
-      transparent
-      animationType="slide"
-      onRequestClose={close}
-    >
-      <View style={[styles.overlay, keyboardUp && styles.overlayTop]}>
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={close}
-        />
-        <View style={[styles.sheet, keyboardUp && styles.sheetTop]}>
-          <View style={styles.grab} />
-          <ScrollView
-            contentContainerStyle={[styles.content, { paddingBottom: styles.content.paddingBottom + insets.bottom }]}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View style={styles.header}>
-              <Text style={styles.headerEmoji}>{info.emoji}</Text>
-              <View style={styles.headerText}>
-                <Text style={styles.title}>
-                  {info.label}
-                  <Text style={{ color }}>{need.level == null ? '' : ` · ${Math.round(need.level)}%`}</Text>
-                </Text>
-                <Text style={styles.subtitle}>
-                  {emptyIn}
-                  {`Full to empty in ~${formatEmptyHours(need.config.emptyHours)}`}
-                  {need.config.learnedFrom > 0
-                    ? ` · learned from ${need.config.learnedFrom} check-in${need.config.learnedFrom === 1 ? '' : 's'}`
-                    : ' · default'}
-                </Text>
-              </View>
+    <FullScreenModal onClose={close}>
+      <View style={styles.sheet}>
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingBottom: styles.content.paddingBottom + insets.bottom }]}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.header}>
+            <Text style={styles.headerEmoji}>{info.emoji}</Text>
+            <View style={styles.headerText}>
+              <Text style={styles.title}>
+                {info.label}
+                <Text style={{ color }}>{need.level == null ? '' : ` · ${Math.round(need.level)}%`}</Text>
+              </Text>
+              <Text style={styles.subtitle}>
+                {emptyIn}
+                {`Full to empty in ~${formatEmptyHours(need.config.emptyHours)}`}
+                {need.config.learnedFrom > 0
+                  ? ` · learned from ${need.config.learnedFrom} check-in${need.config.learnedFrom === 1 ? '' : 's'}`
+                  : ' · default'}
+              </Text>
             </View>
+          </View>
 
-            <NeedHistorySection
-              needId={need.id}
-              onEditLog={editLog}
-            />
+          <NeedHistorySection
+            needId={need.id}
+            onEditLog={editLog}
+          />
 
-            <CueSectionLabel>{info.question}</CueSectionLabel>
-            <View style={styles.checkIns}>
-              {info.checkIns.map(choice => (
-                <Pressable
-                  key={choice.label}
-                  style={({ pressed }) => [styles.checkIn, pressed && styles.pressed]}
-                  onPress={() => {
-                    checkIn(need.id, choice.level, 'tap');
-                    close();
-                  }}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.checkInLabel}>{choice.label}</Text>
-                  <Text style={styles.checkInLevel}>{choice.level}%</Text>
-                </Pressable>
-              ))}
-            </View>
+          <CueSectionLabel>{info.question}</CueSectionLabel>
+          <View style={styles.checkIns}>
+            {info.checkIns.map(choice => (
+              <Pressable
+                key={choice.label}
+                style={({ pressed }) => [styles.checkIn, pressed && styles.pressed]}
+                onPress={() => {
+                  checkIn(need.id, choice.level, 'tap');
+                  close();
+                }}
+                accessibilityRole="button"
+              >
+                <Text style={styles.checkInLabel}>{choice.label}</Text>
+                <Text style={styles.checkInLevel}>{choice.level}%</Text>
+              </Pressable>
+            ))}
+          </View>
 
-            <CueSectionLabel>{NEED_UPDATE_QUESTIONS[need.id]}</CueSectionLabel>
-            <View style={styles.checkIns}>
-              {NEED_UPDATE_AMOUNTS.map(amount => (
-                <Pressable
-                  key={amount}
-                  style={({ pressed }) => [styles.checkIn, pressed && styles.pressed]}
-                  onPress={() => updateLevel(need.id, amount)}
-                  accessibilityRole="button"
-                  accessibilityLabel={amount >= 100 ? `Fill ${info.label}` : `Add ${amount}% to ${info.label}`}
-                >
-                  <Text style={styles.updateAmount}>{amount >= 100 ? 'Full' : `+${amount}%`}</Text>
-                </Pressable>
-              ))}
-            </View>
+          <CueSectionLabel>{NEED_UPDATE_QUESTIONS[need.id]}</CueSectionLabel>
+          <View style={styles.checkIns}>
+            {NEED_UPDATE_AMOUNTS.map(amount => (
+              <Pressable
+                key={amount}
+                style={({ pressed }) => [styles.checkIn, pressed && styles.pressed]}
+                onPress={() => updateLevel(need.id, amount)}
+                accessibilityRole="button"
+                accessibilityLabel={amount >= 100 ? `Fill ${info.label}` : `Add ${amount}% to ${info.label}`}
+              >
+                <Text style={styles.updateAmount}>{amount >= 100 ? 'Full' : `+${amount}%`}</Text>
+              </Pressable>
+            ))}
+          </View>
 
-            {history && history.entries.length > 0 ? (
-              <>
-                <CueSectionLabel>{history.today ? 'Refilled today' : 'Last refill'}</CueSectionLabel>
-                <View style={styles.history}>
-                  {history.entries.map(entry => {
-                    const time = history.today
-                      ? formatTime(entry.ts)
-                      : `${formatCompactDate(entry.ts)} ${formatTime(entry.ts)} · ${formatElapsedNumeric(entry.ts, now)}`;
-                    if (entry.update) {
-                      return (
-                        <View
-                          key={entry.logId}
-                          style={styles.historyRow}
-                        >
-                          <Text style={styles.historyEmoji}>{info.emoji}</Text>
-                          <Text
-                            style={styles.historyName}
-                            numberOfLines={1}
-                          >
-                            Updated without a log
-                          </Text>
-                          <Text style={styles.historyAmount}>{entry.amountLabel}</Text>
-                          <Text style={styles.historyTime}>{time}</Text>
-                          <Pressable
-                            onPress={() => removeCheckIn(entry.logId)}
-                            hitSlop={8}
-                            accessibilityRole="button"
-                            accessibilityLabel="Undo update"
-                          >
-                            <Ionicons
-                              name="close"
-                              size={16}
-                              color={Colors.text.faint}
-                            />
-                          </Pressable>
-                        </View>
-                      );
-                    }
-                    const behavior = entry.behaviorId ? behaviorById.get(entry.behaviorId) : undefined;
-                    if (!behavior) return null;
+          {history && history.entries.length > 0 ? (
+            <>
+              <CueSectionLabel>{history.today ? 'Refilled today' : 'Last refill'}</CueSectionLabel>
+              <View style={styles.history}>
+                {history.entries.map(entry => {
+                  const time = history.today
+                    ? formatTime(entry.ts)
+                    : `${formatCompactDate(entry.ts)} ${formatTime(entry.ts)} · ${formatElapsedNumeric(entry.ts, now)}`;
+                  if (entry.update) {
                     return (
-                      <Pressable
+                      <View
                         key={entry.logId}
-                        style={({ pressed }) => [styles.historyRow, pressed && styles.pressed]}
-                        onPress={() => editLog(behavior.id, entry.logId)}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Edit ${behavior.name} log`}
+                        style={styles.historyRow}
                       >
-                        <BehaviorIcon
-                          behavior={behavior}
-                          size={20}
-                        />
+                        <Text style={styles.historyEmoji}>{info.emoji}</Text>
                         <Text
                           style={styles.historyName}
                           numberOfLines={1}
                         >
-                          {behavior.name}
+                          Updated without a log
                         </Text>
                         <Text style={styles.historyAmount}>{entry.amountLabel}</Text>
                         <Text style={styles.historyTime}>{time}</Text>
-                      </Pressable>
+                        <Pressable
+                          onPress={() => removeCheckIn(entry.logId)}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel="Undo update"
+                        >
+                          <Ionicons
+                            name="close"
+                            size={16}
+                            color={Colors.text.faint}
+                          />
+                        </Pressable>
+                      </View>
                     );
-                  })}
-                </View>
-              </>
-            ) : null}
+                  }
+                  const behavior = entry.behaviorId ? behaviorById.get(entry.behaviorId) : undefined;
+                  if (!behavior) return null;
+                  return (
+                    <Pressable
+                      key={entry.logId}
+                      style={({ pressed }) => [styles.historyRow, pressed && styles.pressed]}
+                      onPress={() => editLog(behavior.id, entry.logId)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Edit ${behavior.name} log`}
+                    >
+                      <BehaviorIcon
+                        behavior={behavior}
+                        size={20}
+                      />
+                      <Text
+                        style={styles.historyName}
+                        numberOfLines={1}
+                      >
+                        {behavior.name}
+                      </Text>
+                      <Text style={styles.historyAmount}>{entry.amountLabel}</Text>
+                      <Text style={styles.historyTime}>{time}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
+          ) : null}
 
-            <CueSectionLabel>Refill</CueSectionLabel>
-            {sourceField && need.source ? (
-              <Text style={styles.hint}>
-                Any log with {sourceField.label} counts: {need.source.fullAmount}
-                {sourceField.unit ? ` ${sourceField.unit}` : ''} = full. Change it in Settings.
-              </Text>
-            ) : null}
-            {selectedCategories.map(category => {
-              const refill = need.config.categoryRefills?.[category.id];
-              if (!refill) return null;
-              return (
+          <CueSectionLabel>Refill</CueSectionLabel>
+          {sourceField && need.source ? (
+            <Text style={styles.hint}>
+              Any log with {sourceField.label} counts: {need.source.fullAmount}
+              {sourceField.unit ? ` ${sourceField.unit}` : ''} = full. Change it in Settings.
+            </Text>
+          ) : null}
+          {selectedCategories.map(category => {
+            const refill = need.config.categoryRefills?.[category.id];
+            if (!refill) return null;
+            return (
+              <CategoryRefillRow
+                key={category.id}
+                emoji={category.emoji}
+                name={category.name}
+                count={behaviors.filter(b => b.categoryId === category.id && b.archivedAt == null).length}
+                amount={
+                  need.source?.categoryIds?.includes(category.id)
+                    ? `By ${sourceField?.label.toLowerCase() ?? 'metadata'}`
+                    : formatRefill(refill)
+                }
+                onAmountPress={
+                  need.source?.categoryIds?.includes(category.id)
+                    ? undefined
+                    : () => setCategoryRefill(need.id, category.id, getNextRefill(refill))
+                }
+                onRemove={() => setCategoryRefill(need.id, category.id, undefined)}
+              />
+            );
+          })}
+          {refillIds.map(id => {
+            const behavior = behaviorById.get(id);
+            if (!behavior) return null;
+            const refill = need.config.refills[id];
+            return (
+              <RefillRow
+                key={id}
+                behavior={behavior}
+                detail={refillDetail(behavior)}
+                amount={refill ? formatRefill(refill) : undefined}
+                onAmountPress={refill ? () => setRefill(need.id, id, getNextRefill(refill)) : undefined}
+                onRemove={refill ? () => setRefill(need.id, id, undefined) : undefined}
+                onPress={() => logBehavior(id)}
+              />
+            );
+          })}
+          {suggestedIds.map(id => {
+            const behavior = behaviorById.get(id);
+            if (!behavior) return null;
+            return (
+              <RefillRow
+                key={id}
+                behavior={behavior}
+                detail="Suggested"
+                actionLabel="Add"
+                onPress={() => addRefill(id)}
+              />
+            );
+          })}
+          {refillIds.length === 0 && suggestedIds.length === 0 && selectedCategories.length === 0 && !adding ? (
+            <Text style={styles.hint}>Nothing refills {info.label} yet. Add a category or the behaviours that do.</Text>
+          ) : null}
+
+          {adding ? (
+            <>
+              <View style={styles.search}>
+                <Ionicons
+                  name="search"
+                  size={16}
+                  color={Colors.text.faint}
+                />
+                <TextInput
+                  style={styles.searchInput}
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="Find a category or behaviour"
+                  placeholderTextColor={Colors.text.faint}
+                  autoCorrect={false}
+                  autoFocus
+                />
+              </View>
+              {categoryResults.map(category => (
                 <CategoryRefillRow
                   key={category.id}
                   emoji={category.emoji}
                   name={category.name}
                   count={behaviors.filter(b => b.categoryId === category.id && b.archivedAt == null).length}
-                  amount={
-                    need.source?.categoryIds?.includes(category.id)
-                      ? `By ${sourceField?.label.toLowerCase() ?? 'metadata'}`
-                      : formatRefill(refill)
-                  }
-                  onAmountPress={
-                    need.source?.categoryIds?.includes(category.id)
-                      ? undefined
-                      : () => setCategoryRefill(need.id, category.id, getNextRefill(refill))
-                  }
-                  onRemove={() => setCategoryRefill(need.id, category.id, undefined)}
+                  onPress={() => addCategoryRefill(category.id)}
                 />
-              );
-            })}
-            {refillIds.map(id => {
-              const behavior = behaviorById.get(id);
-              if (!behavior) return null;
-              const refill = need.config.refills[id];
-              return (
+              ))}
+              {results.map(behavior => (
                 <RefillRow
-                  key={id}
+                  key={behavior.id}
                   behavior={behavior}
-                  detail={refillDetail(behavior)}
-                  amount={refill ? formatRefill(refill) : undefined}
-                  onAmountPress={refill ? () => setRefill(need.id, id, getNextRefill(refill)) : undefined}
-                  onRemove={refill ? () => setRefill(need.id, id, undefined) : undefined}
-                  onPress={() => logBehavior(id)}
-                />
-              );
-            })}
-            {suggestedIds.map(id => {
-              const behavior = behaviorById.get(id);
-              if (!behavior) return null;
-              return (
-                <RefillRow
-                  key={id}
-                  behavior={behavior}
-                  detail="Suggested"
                   actionLabel="Add"
-                  onPress={() => addRefill(id)}
+                  onPress={() => addRefill(behavior.id)}
                 />
-              );
-            })}
-            {refillIds.length === 0 && suggestedIds.length === 0 && selectedCategories.length === 0 && !adding ? (
-              <Text style={styles.hint}>
-                Nothing refills {info.label} yet. Add a category or the behaviours that do.
-              </Text>
-            ) : null}
+              ))}
+            </>
+          ) : (
+            <Pressable
+              style={({ pressed }) => [styles.addRow, pressed && styles.pressed]}
+              onPress={() => setAdding(true)}
+              accessibilityRole="button"
+            >
+              <Ionicons
+                name="add"
+                size={16}
+                color={Colors.text.muted}
+              />
+              <Text style={styles.addText}>Add a category or behaviour that refills {info.label}</Text>
+            </Pressable>
+          )}
 
-            {adding ? (
-              <>
-                <View style={styles.search}>
-                  <Ionicons
-                    name="search"
-                    size={16}
-                    color={Colors.text.faint}
-                  />
-                  <TextInput
-                    style={styles.searchInput}
-                    value={query}
-                    onChangeText={setQuery}
-                    placeholder="Find a category or behaviour"
-                    placeholderTextColor={Colors.text.faint}
-                    autoCorrect={false}
-                    autoFocus
-                  />
-                </View>
-                {categoryResults.map(category => (
-                  <CategoryRefillRow
-                    key={category.id}
-                    emoji={category.emoji}
-                    name={category.name}
-                    count={behaviors.filter(b => b.categoryId === category.id && b.archivedAt == null).length}
-                    onPress={() => addCategoryRefill(category.id)}
-                  />
-                ))}
-                {results.map(behavior => (
-                  <RefillRow
-                    key={behavior.id}
-                    behavior={behavior}
-                    actionLabel="Add"
-                    onPress={() => addRefill(behavior.id)}
-                  />
-                ))}
-              </>
-            ) : (
-              <Pressable
-                style={({ pressed }) => [styles.addRow, pressed && styles.pressed]}
-                onPress={() => setAdding(true)}
-                accessibilityRole="button"
-              >
-                <Ionicons
-                  name="add"
-                  size={16}
-                  color={Colors.text.muted}
-                />
-                <Text style={styles.addText}>Add a category or behaviour that refills {info.label}</Text>
-              </Pressable>
-            )}
-
-            <NeedRateLearning needId={need.id} />
-          </ScrollView>
-        </View>
+          <NeedRateLearning needId={need.id} />
+        </ScrollView>
       </View>
-    </Modal>
+    </FullScreenModal>
   );
 }
 
@@ -559,33 +544,8 @@ function RefillRow({
 }
 
 const styles = StyleSheet.create({
-  overlayTop: { justifyContent: 'flex-start' },
-  sheetTop: {
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
-    maxHeight: '60%',
-  },
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
   sheet: {
-    maxHeight: '85%',
-    backgroundColor: Colors.bg.card,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    paddingTop: 8,
-  },
-  grab: {
-    alignSelf: 'center',
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.border.light,
-    marginBottom: 8,
+    flex: 1,
   },
   content: {
     gap: 8,

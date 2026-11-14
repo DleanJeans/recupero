@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FullScreenModal } from '../../../components/full-screen-modal';
 import { Text, TextInput } from '../../../components/text';
-import { useKeyboardVisible } from '../../../hooks/use-keyboard-visible';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useHealthStore } from '../../../store/health-store';
 import { Colors } from '../../../utils/colors';
@@ -15,7 +16,7 @@ interface SleepBehaviorPickerModalProps {
 
 /** Picks the behaviour that synced sleep is logged to, creates a "Sleep" behaviour, or turns sleep sync off. */
 export function SleepBehaviorPickerModal({ visible, onClose }: SleepBehaviorPickerModalProps) {
-  const keyboardUp = useKeyboardVisible();
+  const insets = useSafeAreaInsets();
   const behaviors = useBehaviorStore(state => state.behaviors);
   const addBehavior = useBehaviorStore(state => state.addBehavior);
   const sleepBehaviorId = useHealthStore(state => state.sleepBehaviorId);
@@ -42,69 +43,60 @@ export function SleepBehaviorPickerModal({ visible, onClose }: SleepBehaviorPick
   };
 
   return (
-    <Modal
-      visible
-      transparent
-      animationType="fade"
-      onRequestClose={close}
+    <FullScreenModal
+      title="Log Fitbit sleep to"
+      onClose={close}
     >
-      <View style={[styles.overlay, keyboardUp && styles.overlayTop]}>
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={close}
+      <View style={styles.sheet}>
+        <TextInput
+          style={styles.search}
+          placeholder="Search behaviours"
+          placeholderTextColor={Colors.text.faint}
+          value={query}
+          onChangeText={setQuery}
         />
-        <View style={styles.sheet}>
-          <Text style={styles.sheetTitle}>Log Fitbit sleep to</Text>
-          <TextInput
-            style={styles.search}
-            placeholder="Search behaviours"
-            placeholderTextColor={Colors.text.faint}
-            value={query}
-            onChangeText={setQuery}
-          />
-          <ScrollView keyboardShouldPersistTaps="handled">
-            {!searching && (
-              <>
-                <Pressable
-                  style={({ pressed }) => [styles.choice, pressed && styles.pressed]}
-                  onPress={() => choose(undefined)}
-                >
-                  <Text style={[styles.choiceText, !sleepBehaviorId && styles.choiceSelected]}>Don’t sync sleep</Text>
-                </Pressable>
-                <Pressable
-                  style={({ pressed }) => [styles.choice, pressed && styles.pressed]}
-                  onPress={createSleep}
-                >
-                  <Text style={styles.choiceText}>＋ New “Sleep” behaviour</Text>
-                </Pressable>
-              </>
-            )}
-            {choices.map(behavior => (
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 16 + insets.bottom }}
+        >
+          {!searching && (
+            <>
               <Pressable
-                key={behavior.id}
                 style={({ pressed }) => [styles.choice, pressed && styles.pressed]}
-                onPress={() => choose(behavior.id)}
+                onPress={() => choose(undefined)}
               >
-                <Text style={[styles.choiceText, sleepBehaviorId === behavior.id && styles.choiceSelected]}>
-                  {iconText(behavior.icon) ? `${iconText(behavior.icon)} ` : ''}
-                  {behavior.name}
-                </Text>
+                <Text style={[styles.choiceText, !sleepBehaviorId && styles.choiceSelected]}>Don’t sync sleep</Text>
               </Pressable>
-            ))}
-            {searching && choices.length === 0 && <Text style={styles.empty}>No behaviours match.</Text>}
-          </ScrollView>
-        </View>
+              <Pressable
+                style={({ pressed }) => [styles.choice, pressed && styles.pressed]}
+                onPress={createSleep}
+              >
+                <Text style={styles.choiceText}>＋ New “Sleep” behaviour</Text>
+              </Pressable>
+            </>
+          )}
+          {choices.map(behavior => (
+            <Pressable
+              key={behavior.id}
+              style={({ pressed }) => [styles.choice, pressed && styles.pressed]}
+              onPress={() => choose(behavior.id)}
+            >
+              <Text style={[styles.choiceText, sleepBehaviorId === behavior.id && styles.choiceSelected]}>
+                {iconText(behavior.icon) ? `${iconText(behavior.icon)} ` : ''}
+                {behavior.name}
+              </Text>
+            </Pressable>
+          ))}
+          {searching && choices.length === 0 && <Text style={styles.empty}>No behaviours match.</Text>}
+        </ScrollView>
       </View>
-    </Modal>
+    </FullScreenModal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlayTop: { justifyContent: 'flex-start' },
   pressed: { opacity: 0.7 },
-  overlay: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: 'rgba(0,0,0,0.6)' },
-  sheet: { maxHeight: '70%', backgroundColor: Colors.bg.card, borderRadius: 14, padding: 16, gap: 10 },
-  sheetTitle: { color: Colors.text.primary, fontSize: 17, fontWeight: '700' },
+  sheet: { flex: 1, paddingHorizontal: 16, gap: 10 },
   search: {
     backgroundColor: Colors.bg.input,
     color: Colors.text.primary,
