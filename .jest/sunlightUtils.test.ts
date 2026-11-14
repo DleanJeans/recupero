@@ -355,8 +355,24 @@ describe('blended lux and calibration', () => {
     expect(getLuxCalibration(0, 11_000)).toBeUndefined();
     expect(getLuxCalibration(1_000_000, 100)).toBe(5);
     const weather = { fetchedAt: 0, lat: 0, lng: 0, hours };
-    expect(calibrateWeather(weather, 0.5).hours[1].wm2).toBe(300);
-    expect(calibrateWeather(weather, 1)).toBe(weather);
+    expect(calibrateWeather(weather, [])).toBe(weather);
+    expect(calibrateWeather(weather, [{ from: 0, factor: 0.5 }])?.calibration).toEqual([{ from: 0, factor: 0.5 }]);
+  });
+
+  it('applies a calibration only from when it was made, so earlier time keeps its factor', () => {
+    const { getCalibrationFactorAt, addCalibrationStep } = jest.requireActual('../src/utils/sunlight-utils');
+    const steps = addCalibrationStep(addCalibrationStep([], 10 * HOUR, 0.5), 20 * HOUR, 1);
+    expect(getCalibrationFactorAt(steps, 5 * HOUR)).toBe(1);
+    expect(getCalibrationFactorAt(steps, 10 * HOUR)).toBe(0.5);
+    expect(getCalibrationFactorAt(steps, 15 * HOUR)).toBe(0.5);
+    expect(getCalibrationFactorAt(steps, 25 * HOUR)).toBe(1);
+    expect(addCalibrationStep(steps, 10 * HOUR, 0.7)).toHaveLength(2);
+    // Before the calibration the estimate is plain; after it, scaled.
+    const wide = [{ ts: 24 * HOUR, wm2: 600 }];
+    expect(luxAt(9 * HOUR, wide, steps)).toBeUndefined();
+    const flat = Array.from({ length: 24 }, (_, i) => ({ ts: (i + 1) * HOUR, wm2: 600 }));
+    expect(luxAt(5 * HOUR, flat, steps)).toBeCloseTo(estimateLux(600));
+    expect(luxAt(15 * HOUR, flat, steps)).toBeCloseTo(estimateLux(600) * 0.5);
   });
 });
 

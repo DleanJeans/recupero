@@ -1,9 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { SunlightGeofenceEvent, SunlightPresenceSample, SunlightRange, SunlightWeather } from '../types/sunlight';
+import type {
+  SunlightCalibrationStep,
+  SunlightGeofenceEvent,
+  SunlightPresenceSample,
+  SunlightRange,
+  SunlightWeather,
+} from '../types/sunlight';
 import { clampGeofenceRadius } from '../utils/geofence-utils';
 import {
+  addCalibrationStep,
   DEFAULT_SUNLIGHT_GOAL_MINUTES,
   DEFAULT_SUNLIGHT_RADIUS_M,
   MAX_SUNLIGHT_GOAL_MINUTES,
@@ -24,8 +31,9 @@ export interface SunlightStore {
   radiusM: number;
   /** Ongoing notification counting up while you're outside in daylight (Android). */
   liveNotification: boolean;
-  /** Scales the weather estimate to match your lux meter (1 = as estimated). */
-  luxCalibration: number;
+  /** Lux-meter calibrations, each applying from when it was made onwards (earlier days keep their old factor). */
+  luxCalibrations: SunlightCalibrationStep[];
+  /** Calibrate from now on; 1 resets to the plain estimate. */
   setLuxCalibration: (factor: number) => void;
   setLiveNotification: (on: boolean) => void;
   events: SunlightGeofenceEvent[];
@@ -52,8 +60,9 @@ export const useSunlightStore = create<SunlightStore>()(
       outdoorPlaceIds: [],
       radiusM: DEFAULT_SUNLIGHT_RADIUS_M,
       liveNotification: true,
-      luxCalibration: 1,
-      setLuxCalibration: luxCalibration => set({ luxCalibration }),
+      luxCalibrations: [],
+      setLuxCalibration: factor =>
+        set(state => ({ luxCalibrations: addCalibrationStep(state.luxCalibrations, Date.now(), factor) })),
       setLiveNotification: liveNotification => set({ liveNotification }),
       events: [],
       deletedRanges: [],
@@ -82,7 +91,16 @@ export const useSunlightStore = create<SunlightStore>()(
     {
       name: 'recupero-sunlight',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 1,
+      version: 2,
+      migrate: persisted => {
+        const state = (persisted ?? {}) as Partial<SunlightStore> & { luxCalibration?: number };
+        const { luxCalibration, ...rest } = state;
+        // v1 had one factor that applied to everything; keep it applying to all existing time.
+        const luxCalibrations =
+          rest.luxCalibrations ??
+          (luxCalibration != null && luxCalibration !== 1 ? [{ from: 0, factor: luxCalibration }] : []);
+        return { ...rest, luxCalibrations } as SunlightStore;
+      },
     },
   ),
 );

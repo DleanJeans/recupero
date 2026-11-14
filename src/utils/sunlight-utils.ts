@@ -1,5 +1,6 @@
 import type { SavedPlace } from '../types/cue';
 import type {
+  SunlightCalibrationStep,
   SunlightDay,
   SunlightGeofenceEvent,
   SunlightPresenceSample,
@@ -209,7 +210,11 @@ export function estimateLux(wm2: number): number {
 const LUX_SAMPLE_MS = 5 * MS_PER_MINUTE;
 
 /** Average estimated lux over a range, from the blended hourly curve (undefined if the weather doesn't cover it). */
-export function getAverageLux(range: SunlightRange, hours: SunlightWeatherHour[]): number | undefined {
+export function getAverageLux(
+  range: SunlightRange,
+  hours: SunlightWeatherHour[],
+  calibration?: SunlightCalibrationStep[],
+): number | undefined {
   const length = range.end - range.start;
   if (length <= 0) return undefined;
   const count = Math.max(1, Math.ceil(length / LUX_SAMPLE_MS));
@@ -217,7 +222,7 @@ export function getAverageLux(range: SunlightRange, hours: SunlightWeatherHour[]
   let total = 0;
   let covered = 0;
   for (let index = 0; index < count; index++) {
-    const lux = getLuxAt(range.start + step * (index + 0.5), hours);
+    const lux = getLuxAt(range.start + step * (index + 0.5), hours, calibration);
     if (lux == null) continue;
     total += lux;
     covered++;
@@ -242,7 +247,7 @@ export function getSunlightDay(
       if (!overlap) continue;
       stretches.push({
         ...overlap,
-        lux: weather ? getAverageLux(overlap, weather.hours) : undefined,
+        lux: weather ? getAverageLux(overlap, weather.hours, weather.calibration) : undefined,
         ongoing: overlap.end >= now && range.end >= now,
       });
     }
@@ -417,7 +422,16 @@ export function getSunlightMapRegion(point: GeoPoint) {
  * of its hour and the curve is blended linearly between hours (a flat hour overshoots early on a sunny morning).
  * Undefined outside the hours the weather covers.
  */
-export function getLuxAt(ts: number, hours: SunlightWeatherHour[]): number | undefined {
+export function getLuxAt(
+  ts: number,
+  hours: SunlightWeatherHour[],
+  calibration?: SunlightCalibrationStep[],
+): number | undefined {
+  const lux = getUncalibratedLuxAt(ts, hours);
+  return lux == null ? undefined : lux * getCalibrationFactorAt(calibration, ts);
+}
+
+function getUncalibratedLuxAt(ts: number, hours: SunlightWeatherHour[]): number | undefined {
   if (hours.length === 0) return undefined;
   const sorted =
     hours.length > 1 && hours.some((hour, i) => i > 0 && hour.ts < hours[i - 1].ts)
@@ -446,10 +460,39 @@ export function getLuxAt(ts: number, hours: SunlightWeatherHour[]): number | und
 export const MIN_LUX_CALIBRATION = 0.05;
 export const MAX_LUX_CALIBRATION = 5;
 
-/** The weather with every hour scaled by your meter calibration (1 = as estimated). */
-export function calibrateWeather(weather: SunlightWeather | undefined, factor: number): SunlightWeather | undefined {
-  if (!weather || factor === 1) return weather;
-  return { ...weather, hours: weather.hours.map(hour => ({ ...hour, wm2: hour.wm2 * factor })) };
+const MAX_CALIBRATION_STEPS = 100;
+
+/** The calibration in effect at a moment: the latest step that started by then (1 before the first). */
+export function getCalibrationFactorAt(steps: SunlightCalibrationStep[] | undefined, ts: number): number {
+  let factor = 1;
+  let latest = -Infinity;
+  for (const step of steps ?? []) {
+    if (step.from <= ts && step.from >= latest) {
+      factor = step.factor;
+      latest = step.from;
+    }
+  }
+  return factor;
+}
+
+/** The weather carrying your calibration history, so estimates use the factor in effect at each moment. */
+export function calibrateWeather(
+  weather: SunlightWeather | undefined,
+  steps: SunlightCalibrationStep[],
+): SunlightWeather | undefined {
+  if (!weather || steps.length === 0) return weather;
+  return { ...weather, calibration: steps };
+}
+
+/** Adds a calibration from `from` onwards, replacing a step at the same moment and dropping the oldest past 100. */
+export function addCalibrationStep(
+  steps: SunlightCalibrationStep[],
+  from: number,
+  factor: number,
+): SunlightCalibrationStep[] {
+  return [...steps.filter(step => step.from !== from), { from, factor }]
+    .sort((a, b) => a.from - b.from)
+    .slice(-MAX_CALIBRATION_STEPS);
 }
 
 /** Calibration factor so the estimate now matches what a lux meter reads. */
@@ -513,7 +556,7 @@ export function getSunlightNotificationPlan(
   const rates: SunlightNotificationPlan['rates'] = [];
   for (let from = now; from < stopAt; from += RATE_STEP_MS) {
     const until = Math.min(stopAt, from + RATE_STEP_MS);
-    const lux = weather ? getLuxAt((from + until) / 2, weather.hours) : undefined;
+    const lux = weather ? getLuxAt((from + until) / 2, weather.hours, weather.calibration) : undefined;
     if (lux == null) break;
     rates.push({ until, perMinute: lux * EYE_LEVEL_LUX_FACTOR });
   }

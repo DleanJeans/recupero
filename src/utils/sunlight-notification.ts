@@ -30,11 +30,11 @@ export function syncSunlightNotification(): void {
     deletedRanges,
     samples,
     weather: rawWeather,
-    luxCalibration,
+    luxCalibrations,
     trackingSince,
     goalMinutes,
   } = useSunlightStore.getState();
-  const weather = calibrateWeather(rawWeather, luxCalibration);
+  const weather = calibrateWeather(rawWeather, luxCalibrations);
   const now = Date.now();
   let plan = null;
   if (enabled && liveNotification) {

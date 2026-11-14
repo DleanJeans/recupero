@@ -8,6 +8,7 @@ import { hasBackgroundLocationPermission } from '../utils/reminder-geofencing';
 import { addLocalDays, getSunTimes, startOfLocalDay } from '../utils/sun-utils';
 import {
   calibrateWeather,
+  getCalibrationFactorAt,
   getIndoorPlaces,
   getLuxAt,
   getSunlightDays,
@@ -77,7 +78,7 @@ export function useSunlight(): SunlightSnapshot {
   const samples = useSunlightStore(state => state.samples);
   const deletedRanges = useSunlightStore(state => state.deletedRanges);
   const rawWeather = useSunlightStore(state => state.weather);
-  const luxCalibration = useSunlightStore(state => state.luxCalibration);
+  const luxCalibrations = useSunlightStore(state => state.luxCalibrations);
   const trackingSince = useSunlightStore(state => state.trackingSince);
   const locationAllowed = useBackgroundLocationAllowed();
   const [tick, setTick] = useState(0);
@@ -90,7 +91,7 @@ export function useSunlight(): SunlightSnapshot {
 
   return useMemo(() => {
     const now = Date.now();
-    const weather = calibrateWeather(rawWeather, luxCalibration);
+    const weather = calibrateWeather(rawWeather, luxCalibrations);
     const indoor = getIndoorPlaces(places, outdoorPlaceIds);
     const presence = getSunlightPresence(events, samples, indoor, trackingSince, now);
     const point = getSunReferencePoint(samples, places);
@@ -105,14 +106,14 @@ export function useSunlight(): SunlightSnapshot {
       id => places.find(place => place.id === id)?.name,
     );
     const sunUp = isSunUp(days[0], now);
-    const luxNow = weather && sunUp ? getLuxAt(now, weather.hours) : undefined;
+    const luxNow = weather && sunUp ? getLuxAt(now, weather.hours, weather.calibration) : undefined;
     const rawLuxNow = rawWeather && sunUp ? getLuxAt(now, rawWeather.hours) : undefined;
     return {
       enabled,
       goalMinutes,
       luxNow,
       rawLuxNow,
-      luxCalibration,
+      luxCalibration: getCalibrationFactorAt(luxCalibrations, now),
       days,
       today: days[0],
       outNow: isOutNow(ranges, now),
@@ -137,7 +138,7 @@ export function useSunlight(): SunlightSnapshot {
     samples,
     trackingSince,
     rawWeather,
-    luxCalibration,
+    luxCalibrations,
     tick,
   ]);
 }

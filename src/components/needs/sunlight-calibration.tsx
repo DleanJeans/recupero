@@ -8,6 +8,8 @@ import { Text, TextInput } from '../text';
 import { SUNLIGHT_COLOR } from './sunlight-bar-row';
 
 interface SunlightCalibrationProps {
+  /** Calibration in effect now (1 = plain estimate). */
+  factor: number;
   /** Calibrated estimate now, if the sun is up and the weather covers this hour. */
   luxNow?: number;
   /** Uncalibrated estimate now, used to work out the factor from a meter reading. */
@@ -15,8 +17,7 @@ interface SunlightCalibrationProps {
 }
 
 /** Shows the lux estimate now and lets you match it to a lux meter (held facing up, in the open). */
-export function SunlightCalibration({ luxNow, rawLuxNow }: SunlightCalibrationProps) {
-  const factor = useSunlightStore(state => state.luxCalibration);
+export function SunlightCalibration({ factor, luxNow, rawLuxNow }: SunlightCalibrationProps) {
   const setFactor = useSunlightStore(state => state.setLuxCalibration);
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState('');
@@ -82,7 +83,7 @@ export function SunlightCalibration({ luxNow, rawLuxNow }: SunlightCalibrationPr
       {editing && rawLuxNow != null && (
         <Text style={styles.hint}>
           {next != null
-            ? `Scales every estimate by ×${next.toFixed(2)} (weather says ${formatLux(rawLuxNow)} right now).`
+            ? `Scales estimates by ×${next.toFixed(2)} from now on; earlier time keeps its old calibration (weather says ${formatLux(rawLuxNow)} right now).`
             : `The weather says ${formatLux(rawLuxNow)} right now. Hold the meter flat, facing the sky, away from shade.`}
         </Text>
       )}

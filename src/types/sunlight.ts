@@ -21,11 +21,20 @@ export interface SunlightWeatherHour {
   wm2: number;
 }
 
+/** A lux-meter calibration that applies from `from` onwards (until the next step). */
+export interface SunlightCalibrationStep {
+  from: number;
+  /** Multiplier on the weather estimate; 1 = as estimated. */
+  factor: number;
+}
+
 export interface SunlightWeather {
   fetchedAt: number;
   lat: number;
   lng: number;
   hours: SunlightWeatherHour[];
+  /** Calibration history attached in memory (never stored with the fetched weather). */
+  calibration?: SunlightCalibrationStep[];
 }
 
 export interface SunlightRange {

@@ -175,6 +175,7 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
               hasWeather={hasWeather}
             />
             <SunlightCalibration
+              factor={sunlight.luxCalibration}
               luxNow={sunlight.luxNow}
               rawLuxNow={sunlight.rawLuxNow}
             />
