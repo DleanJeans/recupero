@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { AppUsage, type LaunchableApp } from '../../../../modules/app-usage';
 import { Text, TextInput } from '../../../components/text';
+import { useKeyboardVisible } from '../../../hooks/use-keyboard-visible';
 import { Colors } from '../../../utils/colors';
 
 interface AppPickerModalProps {
@@ -11,6 +12,7 @@ interface AppPickerModalProps {
 }
 
 export function AppPickerModal({ visible, onClose, onPick }: AppPickerModalProps) {
+  const keyboardUp = useKeyboardVisible();
   const [apps, setApps] = useState<LaunchableApp[] | null>(null);
   const [query, setQuery] = useState('');
 
@@ -34,7 +36,7 @@ export function AppPickerModal({ visible, onClose, onPick }: AppPickerModalProps
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, keyboardUp && styles.overlayTop]}>
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={onClose}
@@ -77,14 +79,15 @@ export function AppPickerModal({ visible, onClose, onPick }: AppPickerModalProps
 }
 
 const styles = StyleSheet.create({
+  overlayTop: { justifyContent: 'flex-start' },
   overlay: {
     flex: 1,
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     padding: 24,
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
   sheet: {
-    maxHeight: '55%',
+    maxHeight: '80%',
     backgroundColor: Colors.bg.card,
     borderRadius: 12,
     padding: 12,

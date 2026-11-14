@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useKeyboardVisible } from '../../hooks/use-keyboard-visible';
 import { Colors } from '../../utils/colors';
 import { parseIcon } from '../../utils/icon-utils';
 import { CueSegmentedControl } from '../cues/cue-segmented-control';
@@ -44,6 +45,7 @@ function initialTabs(value: string): { tab: Tab; mixMode: MixMode } {
 export function IconPickerSheet({ value, nameHint, onChange, onClose }: Props) {
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const keyboardUp = useKeyboardVisible();
   const [{ tab, mixMode }, setTabs] = useState(() => initialTabs(value));
 
   const use = (next: string) => {
@@ -55,19 +57,25 @@ export function IconPickerSheet({ value, nameHint, onChange, onClose }: Props) {
     <Modal
       visible
       transparent
-      animationType="fade"
+      animationType="slide"
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, keyboardUp && styles.overlayTop]}>
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={onClose}
           accessibilityLabel="Close icon picker"
         />
         <View
-          style={[styles.sheet, { height: Math.round(height * 0.55), paddingTop: 8 + insets.top, paddingBottom: 12 }]}
+          style={[
+            styles.sheet,
+            keyboardUp
+              ? [styles.sheetTop, { height: Math.round(height * 0.55), paddingTop: 8 + insets.top }]
+              : { height: Math.round(height * 0.82), paddingBottom: 16 + insets.bottom },
+          ]}
         >
+          <View style={styles.knob} />
           <View style={styles.header}>
             <View style={styles.flex}>
               <CueSegmentedControl
@@ -124,7 +132,6 @@ export function IconPickerSheet({ value, nameHint, onChange, onClose }: Props) {
               />
             )}
           </View>
-          <View style={styles.knob} />
         </View>
       </View>
     </Modal>
@@ -132,13 +139,21 @@ export function IconPickerSheet({ value, nameHint, onChange, onClose }: Props) {
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-start', backgroundColor: 'rgba(0,0,0,0.5)' },
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
   sheet: {
     backgroundColor: Colors.bg.card,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    gap: 10,
+  },
+  overlayTop: { justifyContent: 'flex-start' },
+  sheetTop: {
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
     borderBottomLeftRadius: 18,
     borderBottomRightRadius: 18,
-    paddingHorizontal: 12,
-    gap: 10,
   },
   knob: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border.dim },
   header: { flexDirection: 'row', alignItems: 'center', gap: 8 },

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useCustomCueOptions } from '../../hooks/use-custom-cue-options';
+import { useKeyboardVisible } from '../../hooks/use-keyboard-visible';
 import { useCuesStore } from '../../store/cues-store';
 import { Colors } from '../../utils/colors';
 import {
@@ -31,6 +32,7 @@ interface AddCueOptionModalProps {
 
 /** Small form for adding a mood or body sensation without leaving the current screen. */
 export function AddCueOptionModal({ kind, onClose, onAdded }: AddCueOptionModalProps) {
+  const keyboardUp = useKeyboardVisible();
   const custom = useCustomCueOptions();
   const addCustomMood = useCuesStore(state => state.addCustomMood);
   const addCustomSensation = useCuesStore(state => state.addCustomSensation);
@@ -66,7 +68,7 @@ export function AddCueOptionModal({ kind, onClose, onAdded }: AddCueOptionModalP
       animationType="fade"
       onRequestClose={close}
     >
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, keyboardUp && styles.overlayTop]}>
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={close}
@@ -115,9 +117,10 @@ export function AddCueOptionModal({ kind, onClose, onAdded }: AddCueOptionModalP
 }
 
 const styles = StyleSheet.create({
+  overlayTop: { justifyContent: 'flex-start' },
   overlay: {
     flex: 1,
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     padding: 24,
     backgroundColor: 'rgba(0,0,0,0.6)',
   },

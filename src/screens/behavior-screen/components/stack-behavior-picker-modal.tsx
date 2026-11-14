@@ -5,6 +5,7 @@ import { BehaviorIcon } from '../../../components/behavior-icon';
 import { Button } from '../../../components/button';
 import { Text, TextInput } from '../../../components/text';
 import { useActiveBehaviors } from '../../../hooks/use-active-behaviors';
+import { useKeyboardVisible } from '../../../hooks/use-keyboard-visible';
 import type { BehaviorEntry } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 import { rankStackSuggestions, type StackSuggestionGroup } from '../../../utils/stack-suggestion-utils';
@@ -38,6 +39,7 @@ export function StackBehaviorPickerModal({
   onPick,
   onPickMany,
 }: StackBehaviorPickerModalProps) {
+  const keyboardUp = useKeyboardVisible();
   const behaviors = useActiveBehaviors();
   const [query, setQuery] = useState('');
   const [picked, setPicked] = useState<string[]>([]);
@@ -92,7 +94,7 @@ export function StackBehaviorPickerModal({
       animationType="fade"
       onRequestClose={close}
     >
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, keyboardUp && styles.overlayTop]}>
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={close}
@@ -161,14 +163,15 @@ export function StackBehaviorPickerModal({
 }
 
 const styles = StyleSheet.create({
+  overlayTop: { justifyContent: 'flex-start' },
   overlay: {
     flex: 1,
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     padding: 24,
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
   sheet: {
-    maxHeight: '55%',
+    maxHeight: '80%',
     backgroundColor: Colors.bg.card,
     borderRadius: 12,
     padding: 12,

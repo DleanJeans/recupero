@@ -4,6 +4,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useKeyboardVisible } from '../../hooks/use-keyboard-visible';
 import { useNeedLevels } from '../../hooks/use-need-levels';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useNeedsStore } from '../../store/needs-store';
@@ -48,6 +49,7 @@ const MAX_SEARCH_RESULTS = 6;
 
 /** Bottom sheet for one need: what refills it, a one-tap check-in, and how fast it empties. */
 export function NeedSheet({ needId, onClose }: NeedSheetProps) {
+  const keyboardUp = useKeyboardVisible();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { needs, now } = useNeedLevels();
   const behaviors = useBehaviorStore(state => state.behaviors);
@@ -166,12 +168,13 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
       animationType="slide"
       onRequestClose={close}
     >
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, keyboardUp && styles.overlayTop]}>
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={close}
         />
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, keyboardUp && styles.sheetTop]}>
+          <View style={styles.grab} />
           <ScrollView
             contentContainerStyle={[styles.content, { paddingBottom: styles.content.paddingBottom + insets.bottom }]}
             keyboardShouldPersistTaps="handled"
@@ -416,7 +419,6 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
 
             <NeedRateLearning needId={need.id} />
           </ScrollView>
-          <View style={styles.grab} />
         </View>
       </View>
     </Modal>
@@ -557,17 +559,25 @@ function RefillRow({
 }
 
 const styles = StyleSheet.create({
+  overlayTop: { justifyContent: 'flex-start' },
+  sheetTop: {
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    maxHeight: '60%',
+  },
   overlay: {
     flex: 1,
-    justifyContent: 'flex-start',
+    justifyContent: 'flex-end',
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
   sheet: {
-    maxHeight: '60%',
+    maxHeight: '85%',
     backgroundColor: Colors.bg.card,
-    borderBottomLeftRadius: 18,
-    borderBottomRightRadius: 18,
-    paddingBottom: 8,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingTop: 8,
   },
   grab: {
     alignSelf: 'center',
@@ -575,7 +585,7 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     backgroundColor: Colors.border.light,
-    marginTop: 8,
+    marginBottom: 8,
   },
   content: {
     gap: 8,

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../../../components/text';
+import { useKeyboardVisible } from '../../../hooks/use-keyboard-visible';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useHealthStore } from '../../../store/health-store';
 import { Colors } from '../../../utils/colors';
@@ -14,6 +15,7 @@ interface SleepBehaviorPickerModalProps {
 
 /** Picks the behaviour that synced sleep is logged to, creates a "Sleep" behaviour, or turns sleep sync off. */
 export function SleepBehaviorPickerModal({ visible, onClose }: SleepBehaviorPickerModalProps) {
+  const keyboardUp = useKeyboardVisible();
   const behaviors = useBehaviorStore(state => state.behaviors);
   const addBehavior = useBehaviorStore(state => state.addBehavior);
   const sleepBehaviorId = useHealthStore(state => state.sleepBehaviorId);
@@ -46,7 +48,7 @@ export function SleepBehaviorPickerModal({ visible, onClose }: SleepBehaviorPick
       animationType="fade"
       onRequestClose={close}
     >
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, keyboardUp && styles.overlayTop]}>
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={close}
@@ -98,9 +100,10 @@ export function SleepBehaviorPickerModal({ visible, onClose }: SleepBehaviorPick
 }
 
 const styles = StyleSheet.create({
+  overlayTop: { justifyContent: 'flex-start' },
   pressed: { opacity: 0.7 },
-  overlay: { flex: 1, justifyContent: 'flex-start', padding: 24, backgroundColor: 'rgba(0,0,0,0.6)' },
-  sheet: { maxHeight: '55%', backgroundColor: Colors.bg.card, borderRadius: 14, padding: 16, gap: 10 },
+  overlay: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: 'rgba(0,0,0,0.6)' },
+  sheet: { maxHeight: '70%', backgroundColor: Colors.bg.card, borderRadius: 14, padding: 16, gap: 10 },
   sheetTitle: { color: Colors.text.primary, fontSize: 17, fontWeight: '700' },
   search: {
     backgroundColor: Colors.bg.input,
