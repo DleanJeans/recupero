@@ -117,7 +117,7 @@ export function AddCueOptionModal({ kind, onClose, onAdded }: AddCueOptionModalP
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     padding: 24,
     backgroundColor: 'rgba(0,0,0,0.6)',
   },

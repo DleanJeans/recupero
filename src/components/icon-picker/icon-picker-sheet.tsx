@@ -55,7 +55,7 @@ export function IconPickerSheet({ value, nameHint, onChange, onClose }: Props) {
     <Modal
       visible
       transparent
-      animationType="slide"
+      animationType="fade"
       onRequestClose={onClose}
       statusBarTranslucent
     >
@@ -65,8 +65,9 @@ export function IconPickerSheet({ value, nameHint, onChange, onClose }: Props) {
           onPress={onClose}
           accessibilityLabel="Close icon picker"
         />
-        <View style={[styles.sheet, { height: Math.round(height * 0.82), paddingBottom: 16 + insets.bottom }]}>
-          <View style={styles.knob} />
+        <View
+          style={[styles.sheet, { height: Math.round(height * 0.55), paddingTop: 8 + insets.top, paddingBottom: 12 }]}
+        >
           <View style={styles.header}>
             <View style={styles.flex}>
               <CueSegmentedControl
@@ -123,6 +124,7 @@ export function IconPickerSheet({ value, nameHint, onChange, onClose }: Props) {
               />
             )}
           </View>
+          <View style={styles.knob} />
         </View>
       </View>
     </Modal>
@@ -130,13 +132,12 @@ export function IconPickerSheet({ value, nameHint, onChange, onClose }: Props) {
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
+  overlay: { flex: 1, justifyContent: 'flex-start', backgroundColor: 'rgba(0,0,0,0.5)' },
   sheet: {
     backgroundColor: Colors.bg.card,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
     paddingHorizontal: 12,
-    paddingTop: 8,
     gap: 10,
   },
   knob: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border.dim },

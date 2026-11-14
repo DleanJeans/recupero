@@ -5,17 +5,19 @@ import { Colors } from '../../utils/colors';
 import { emojiData } from '../../utils/emoji-data';
 import { emojiPickerTheme } from '../../utils/emoji-picker-theme';
 import { searchEmojiCategories } from '../../utils/emoji-search-utils';
-import { TextInput } from '../text';
+import { Text, TextInput } from '../text';
 
 interface Props {
   onPick: (emoji: string) => void;
   /** Limits the grid, e.g. to emoji that mix with the other slot. Defaults to every emoji. */
   categories?: EmojisByCategory[];
   selected?: string[];
+  /** Shown when the search matches nothing in `categories`. */
+  emptyLabel?: string;
 }
 
 /** The searchable emoji keyboard, drawn inline inside the icon picker sheet. Search takes words or an actual emoji. */
-export function EmojiGrid({ onPick, categories = emojiData, selected }: Props) {
+export function EmojiGrid({ onPick, categories = emojiData, selected, emptyLabel = 'No emoji found' }: Props) {
   const [query, setQuery] = useState('');
   const shown = useMemo(() => searchEmojiCategories(categories, query), [categories, query]);
   const searching = query.trim().length > 0;
@@ -33,16 +35,20 @@ export function EmojiGrid({ onPick, categories = emojiData, selected }: Props) {
         clearButtonMode="while-editing"
         accessibilityLabel="Search emoji"
       />
-      <EmojiKeyboard
-        // The keyboard keeps its category list in state, so remount when the results change.
-        key={searching ? `q:${query}` : 'all'}
-        onEmojiSelected={emoji => onPick(emoji.emoji)}
-        hideHeader
-        theme={emojiPickerTheme}
-        styles={{ container: styles.container }}
-        emojisByCategory={shown}
-        selectedEmojis={selected ?? false}
-      />
+      {shown.length === 0 ? (
+        <Text style={styles.empty}>{emptyLabel}</Text>
+      ) : (
+        <EmojiKeyboard
+          // The keyboard keeps its category list in state, so remount when the results change.
+          key={searching ? `q:${query}` : 'all'}
+          onEmojiSelected={emoji => onPick(emoji.emoji)}
+          hideHeader
+          theme={emojiPickerTheme}
+          styles={{ container: styles.container }}
+          emojisByCategory={shown}
+          selectedEmojis={selected ?? false}
+        />
+      )}
     </View>
   );
 }
@@ -58,6 +64,7 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     fontSize: 15,
   },
+  empty: { color: Colors.text.muted, fontSize: 14, textAlign: 'center', padding: 24 },
   container: {
     flex: 1,
     borderRadius: 12,

@@ -99,8 +99,8 @@ export function SleepBehaviorPickerModal({ visible, onClose }: SleepBehaviorPick
 
 const styles = StyleSheet.create({
   pressed: { opacity: 0.7 },
-  overlay: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: 'rgba(0,0,0,0.6)' },
-  sheet: { maxHeight: '70%', backgroundColor: Colors.bg.card, borderRadius: 14, padding: 16, gap: 10 },
+  overlay: { flex: 1, justifyContent: 'flex-start', padding: 24, backgroundColor: 'rgba(0,0,0,0.6)' },
+  sheet: { maxHeight: '55%', backgroundColor: Colors.bg.card, borderRadius: 14, padding: 16, gap: 10 },
   sheetTitle: { color: Colors.text.primary, fontSize: 17, fontWeight: '700' },
   search: {
     backgroundColor: Colors.bg.input,

@@ -121,6 +121,11 @@ export function KitchenPanel({ value, onUse }: Props) {
       <EmojiGrid
         key={`${slot}:${slot === 'right' ? left : ''}`}
         categories={categories}
+        emptyLabel={
+          slot === 'right' && left
+            ? `No match: that emoji doesn't mix with ${left}`
+            : 'No match: that emoji has no Kitchen mixes'
+        }
         onPick={pick}
         selected={[slot === 'left' ? left : right].filter(Boolean)}
       />

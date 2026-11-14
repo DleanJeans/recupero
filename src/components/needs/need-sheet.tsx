@@ -172,7 +172,6 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
           onPress={close}
         />
         <View style={styles.sheet}>
-          <View style={styles.grab} />
           <ScrollView
             contentContainerStyle={[styles.content, { paddingBottom: styles.content.paddingBottom + insets.bottom }]}
             keyboardShouldPersistTaps="handled"
@@ -417,6 +416,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
 
             <NeedRateLearning needId={need.id} />
           </ScrollView>
+          <View style={styles.grab} />
         </View>
       </View>
     </Modal>
@@ -559,15 +559,15 @@ function RefillRow({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
   sheet: {
-    maxHeight: '85%',
+    maxHeight: '60%',
     backgroundColor: Colors.bg.card,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    paddingTop: 8,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+    paddingBottom: 8,
   },
   grab: {
     alignSelf: 'center',
@@ -575,7 +575,7 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     backgroundColor: Colors.border.light,
-    marginBottom: 8,
+    marginTop: 8,
   },
   content: {
     gap: 8,

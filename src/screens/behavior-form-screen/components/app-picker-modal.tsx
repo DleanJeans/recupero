@@ -79,12 +79,12 @@ export function AppPickerModal({ visible, onClose, onPick }: AppPickerModalProps
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     padding: 24,
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
   sheet: {
-    maxHeight: '80%',
+    maxHeight: '55%',
     backgroundColor: Colors.bg.card,
     borderRadius: 12,
     padding: 12,
