@@ -1,12 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Colors } from '../../utils/colors';
-import {
-  EYE_LEVEL_LUX_FACTOR,
-  getLightDoseTarget,
-  getLiveLuxMinutes,
-  LIGHT_DOSE_TARGET_LUX,
-} from '../../utils/sunlight-utils';
+import { getLightDoseTarget, getLiveLuxMinutes, LIGHT_DOSE_TARGET_LUX } from '../../utils/sunlight-utils';
 import { Text } from '../text';
 import { SUNLIGHT_COLOR } from './sunlight-bar-row';
 
@@ -18,6 +13,8 @@ interface SunlightLightDoseProps {
   snapshotAt: number;
   goalMinutes: number;
   hasWeather: boolean;
+  /** Share of the light that reaches your eyes right now. */
+  eyeLevelFactor: number;
 }
 
 /** Re-renders every frame while `running`, returning the current time. */
@@ -41,6 +38,7 @@ export function SunlightLightDose({
   snapshotAt,
   goalMinutes,
   hasWeather,
+  eyeLevelFactor,
 }: SunlightLightDoseProps) {
   const now = useFrameClock(ratePerMinute > 0);
   const live = ratePerMinute > 0 ? getLiveLuxMinutes(luxMinutes, ratePerMinute, snapshotAt, now) : luxMinutes;
@@ -65,7 +63,7 @@ export function SunlightLightDose({
       </View>
       <Text style={styles.hint}>
         {hasWeather
-          ? `Estimated lux × ${Math.round(EYE_LEVEL_LUX_FACTOR * 100)}% (you're not looking at the sky) × minutes outside. Goal: ${LIGHT_DOSE_TARGET_LUX.toLocaleString('en-US')} lux × ${goalMinutes} min.`
+          ? `Estimated lux × ${Math.round(eyeLevelFactor * 100)}% (you're not looking at the sky, set below) × minutes outside. Goal: ${LIGHT_DOSE_TARGET_LUX.toLocaleString('en-US')} lux × ${goalMinutes} min.`
           : 'Waiting for the hourly weather to estimate light. It loads when the app opens with internet.'}
       </Text>
     </View>

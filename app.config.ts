@@ -26,6 +26,8 @@ const plugins: NonNullable<ExpoConfig['plugins']> = [
       locationAlwaysAndWhenInUsePermission:
         'Recupero uses your location in the background to send place reminders when you arrive at or leave a saved place.',
       isAndroidBackgroundLocationEnabled: true,
+      // Sunlight's precise tracking follows your position every second from a foreground service.
+      isAndroidForegroundServiceEnabled: true,
     },
   ],
   'expo-notifications',

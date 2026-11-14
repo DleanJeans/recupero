@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
 import { syncSunlightNotification } from '../utils/sunlight-notification';
+import { syncPreciseTracking } from '../utils/sunlight-precise-tracking';
 import { syncSunlight } from '../utils/sunlight-sync';
 
 /**
@@ -20,6 +21,11 @@ export function useSunlightTracking(ready: boolean) {
     });
     return () => subscription.remove();
   }, [ready, enabled]);
+
+  const preciseTracking = useSunlightStore(state => state.preciseTracking);
+  useEffect(() => {
+    if (ready) void syncPreciseTracking();
+  }, [ready, enabled, preciseTracking]);
 
   useEffect(() => {
     if (!ready) return;

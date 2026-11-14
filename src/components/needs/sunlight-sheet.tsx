@@ -25,8 +25,10 @@ import { RadiusSlider } from '../radius-slider';
 import { Text } from '../text';
 import { SUNLIGHT_COLOR } from './sunlight-bar-row';
 import { SunlightCalibration } from './sunlight-calibration';
+import { SunlightEyeLevel } from './sunlight-eye-level';
 import { SunlightLightDose } from './sunlight-light-dose';
 import { SunlightPlacesMap } from './sunlight-places-map';
+import { SunlightPreciseRow } from './sunlight-precise-row';
 import { SUNLIGHT_STATUS_COLORS, SunlightStatusDot } from './sunlight-status-dot';
 import { SunlightWeekChart } from './sunlight-week-chart';
 
@@ -143,9 +145,12 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
                   value={liveNotification}
                   onValueChange={setLiveNotification}
                   trackColor={{ true: SUNLIGHT_COLOR }}
+                  thumbColor={Colors.text.primary}
                 />
               </View>
             )}
+
+            <SunlightPreciseRow />
 
             {!locationAllowed && (
               <View style={styles.warning}>
@@ -169,11 +174,17 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
 
             <SunlightLightDose
               luxMinutes={today.luxMinutes}
-              ratePerMinute={getLightDoseRate(sunlight.status.kind === 'counting', sunlight.luxNow)}
+              ratePerMinute={getLightDoseRate(
+                sunlight.status.kind === 'counting',
+                sunlight.luxNow,
+                sunlight.eyeLevelFactor,
+              )}
               snapshotAt={sunlight.now}
               goalMinutes={goalMinutes}
               hasWeather={hasWeather}
+              eyeLevelFactor={sunlight.eyeLevelFactor}
             />
+            <SunlightEyeLevel factor={sunlight.eyeLevelFactor} />
             <SunlightCalibration
               factor={sunlight.luxCalibration}
               luxNow={sunlight.luxNow}

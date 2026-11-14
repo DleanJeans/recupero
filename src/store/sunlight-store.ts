@@ -36,6 +36,13 @@ export interface SunlightStore {
   /** Calibrate from now on; 1 resets to the plain estimate. */
   setLuxCalibration: (factor: number) => void;
   setLiveNotification: (on: boolean) => void;
+  /** Share of the light that reaches your eyes (not looking at the sky), each applying from when it was set. */
+  eyeLevelFactors: SunlightCalibrationStep[];
+  /** Set the eye-level share from now on; earlier time keeps its old share. */
+  setEyeLevelFactor: (factor: number) => void;
+  /** Follow your position about every second in the background (GPS + foreground service); costs battery. */
+  preciseTracking: boolean;
+  setPreciseTracking: (on: boolean) => void;
   events: SunlightGeofenceEvent[];
   /** Stretches outside the user deleted (e.g. misfires from a small radius); cut out of the counted time. */
   deletedRanges: SunlightRange[];
@@ -64,6 +71,11 @@ export const useSunlightStore = create<SunlightStore>()(
       setLuxCalibration: factor =>
         set(state => ({ luxCalibrations: addCalibrationStep(state.luxCalibrations, Date.now(), factor) })),
       setLiveNotification: liveNotification => set({ liveNotification }),
+      eyeLevelFactors: [],
+      setEyeLevelFactor: factor =>
+        set(state => ({ eyeLevelFactors: addCalibrationStep(state.eyeLevelFactors, Date.now(), factor) })),
+      preciseTracking: false,
+      setPreciseTracking: preciseTracking => set({ preciseTracking }),
       events: [],
       deletedRanges: [],
       deleteRange: range => set(state => ({ deletedRanges: [...state.deletedRanges, range] })),

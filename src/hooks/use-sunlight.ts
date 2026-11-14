@@ -9,6 +9,7 @@ import { addLocalDays, getSunTimes, startOfLocalDay } from '../utils/sun-utils';
 import {
   calibrateWeather,
   getCalibrationFactorAt,
+  getEyeLevelFactorAt,
   getIndoorPlaces,
   getLuxAt,
   getSunlightDays,
@@ -43,6 +44,8 @@ export interface SunlightSnapshot {
   /** The same before calibration, to work out a new calibration from a meter reading. */
   rawLuxNow?: number;
   luxCalibration: number;
+  /** Share of the light reaching your eyes right now. */
+  eyeLevelFactor: number;
   hasPlaces: boolean;
   now: number;
 }
@@ -79,6 +82,7 @@ export function useSunlight(): SunlightSnapshot {
   const deletedRanges = useSunlightStore(state => state.deletedRanges);
   const rawWeather = useSunlightStore(state => state.weather);
   const luxCalibrations = useSunlightStore(state => state.luxCalibrations);
+  const eyeLevelFactors = useSunlightStore(state => state.eyeLevelFactors);
   const trackingSince = useSunlightStore(state => state.trackingSince);
   const locationAllowed = useBackgroundLocationAllowed();
   const [tick, setTick] = useState(0);
@@ -91,7 +95,7 @@ export function useSunlight(): SunlightSnapshot {
 
   return useMemo(() => {
     const now = Date.now();
-    const weather = calibrateWeather(rawWeather, luxCalibrations);
+    const weather = calibrateWeather(rawWeather, luxCalibrations, eyeLevelFactors);
     const indoor = getIndoorPlaces(places, outdoorPlaceIds);
     const presence = getSunlightPresence(events, samples, indoor, trackingSince, now);
     const point = getSunReferencePoint(samples, places);
@@ -114,6 +118,7 @@ export function useSunlight(): SunlightSnapshot {
       luxNow,
       rawLuxNow,
       luxCalibration: getCalibrationFactorAt(luxCalibrations, now),
+      eyeLevelFactor: getEyeLevelFactorAt(eyeLevelFactors, now),
       days,
       today: days[0],
       outNow: isOutNow(ranges, now),
@@ -139,6 +144,7 @@ export function useSunlight(): SunlightSnapshot {
     trackingSince,
     rawWeather,
     luxCalibrations,
+    eyeLevelFactors,
     tick,
   ]);
 }

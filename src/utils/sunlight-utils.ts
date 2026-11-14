@@ -32,6 +32,8 @@ export const LUX_PER_WM2 = 120;
 export const BRIGHT_LUX = 10_000;
 /** You mostly look ahead or down, not at the sky, so your eyes get about half the light on open ground. */
 export const EYE_LEVEL_LUX_FACTOR = 0.5;
+export const MIN_EYE_LEVEL_FACTOR = 0.05;
+export const MAX_EYE_LEVEL_FACTOR = 1;
 /** The light dose goal is this lux at your eyes for every minute of the daily goal. */
 export const LIGHT_DOSE_TARGET_LUX = 10_000;
 export const DIM_LUX = 1_000;
@@ -230,6 +232,43 @@ export function getAverageLux(
   return covered > 0 ? total / covered : undefined;
 }
 
+/** The eye-level share of the light in effect at a moment: the latest step that started by then (50% before the first). */
+export function getEyeLevelFactorAt(steps: SunlightCalibrationStep[] | undefined, ts: number): number {
+  let factor = EYE_LEVEL_LUX_FACTOR;
+  let latest = -Infinity;
+  for (const step of steps ?? []) {
+    if (step.from <= ts && step.from >= latest) {
+      factor = step.factor;
+      latest = step.from;
+    }
+  }
+  return factor;
+}
+
+/** Light dose (lux·min at your eyes) over a range: the blended curve times the eye-level share in effect at each moment. */
+export function getEyeLuxMinutes(
+  range: SunlightRange,
+  hours: SunlightWeatherHour[],
+  calibration?: SunlightCalibrationStep[],
+  eyeLevel?: SunlightCalibrationStep[],
+): number {
+  const length = range.end - range.start;
+  if (length <= 0) return 0;
+  const count = Math.max(1, Math.ceil(length / LUX_SAMPLE_MS));
+  const step = length / count;
+  let total = 0;
+  let covered = 0;
+  for (let index = 0; index < count; index++) {
+    const ts = range.start + step * (index + 0.5);
+    const lux = getLuxAt(ts, hours, calibration);
+    if (lux == null) continue;
+    total += lux * getEyeLevelFactorAt(eyeLevel, ts);
+    covered++;
+  }
+  // Like the average lux, uncovered samples take the mean of the covered ones.
+  return covered > 0 ? (total / covered) * (length / MS_PER_MINUTE) : 0;
+}
+
 /** Outdoor time on one local day, counted only between sunrise and sunset there. */
 export function getSunlightDay(
   dayStart: number,
@@ -260,7 +299,7 @@ export function getSunlightDay(
       ? luxStretches.reduce((sum, stretch) => sum + (stretch.lux ?? 0) * (stretch.end - stretch.start), 0) / luxMs
       : undefined;
   const luxMinutes = luxStretches.reduce(
-    (sum, stretch) => sum + (stretch.lux ?? 0) * EYE_LEVEL_LUX_FACTOR * ((stretch.end - stretch.start) / MS_PER_MINUTE),
+    (sum, stretch) => sum + getEyeLuxMinutes(stretch, weather?.hours ?? [], weather?.calibration, weather?.eyeLevel),
     0,
   );
   return {
@@ -479,9 +518,10 @@ export function getCalibrationFactorAt(steps: SunlightCalibrationStep[] | undefi
 export function calibrateWeather(
   weather: SunlightWeather | undefined,
   steps: SunlightCalibrationStep[],
+  eyeLevel: SunlightCalibrationStep[] = [],
 ): SunlightWeather | undefined {
-  if (!weather || steps.length === 0) return weather;
-  return { ...weather, calibration: steps };
+  if (!weather || (steps.length === 0 && eyeLevel.length === 0)) return weather;
+  return { ...weather, calibration: steps, eyeLevel };
 }
 
 /** Adds a calibration from `from` onwards, replacing a step at the same moment and dropping the oldest past 100. */
@@ -513,8 +553,12 @@ export function formatLuxMinutes(value: number): string {
 }
 
 /** Light dose gained per minute right now: eye-level lux while counting, else nothing. */
-export function getLightDoseRate(counting: boolean, luxNow: number | undefined): number {
-  return counting && luxNow != null ? luxNow * EYE_LEVEL_LUX_FACTOR : 0;
+export function getLightDoseRate(
+  counting: boolean,
+  luxNow: number | undefined,
+  eyeFactor: number = EYE_LEVEL_LUX_FACTOR,
+): number {
+  return counting && luxNow != null ? luxNow * eyeFactor : 0;
 }
 
 /** The dose `at` a moment after the snapshot, growing at `ratePerMinute` (for the per-frame counter). */
@@ -558,7 +602,7 @@ export function getSunlightNotificationPlan(
     const until = Math.min(stopAt, from + RATE_STEP_MS);
     const lux = weather ? getLuxAt((from + until) / 2, weather.hours, weather.calibration) : undefined;
     if (lux == null) break;
-    rates.push({ until, perMinute: lux * EYE_LEVEL_LUX_FACTOR });
+    rates.push({ until, perMinute: lux * getEyeLevelFactorAt(weather?.eyeLevel, from) });
   }
   return {
     snapshotAt: now,
@@ -570,4 +614,16 @@ export function getSunlightNotificationPlan(
     stopAt,
     rates,
   };
+}
+
+/** A fix every second would flood the sample history, so keep one when the place changes or every few minutes. */
+const PRECISE_SAMPLE_GAP_MS = 5 * 60_000;
+
+export function shouldRecordPreciseSample(
+  last: Pick<SunlightPresenceSample, 'ts' | 'placeId'> | undefined,
+  placeId: string | null,
+  ts: number,
+): boolean {
+  if (!last) return true;
+  return placeId !== last.placeId || ts - last.ts >= PRECISE_SAMPLE_GAP_MS;
 }

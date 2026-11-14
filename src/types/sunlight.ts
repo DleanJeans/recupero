@@ -35,6 +35,8 @@ export interface SunlightWeather {
   hours: SunlightWeatherHour[];
   /** Calibration history attached in memory (never stored with the fetched weather). */
   calibration?: SunlightCalibrationStep[];
+  /** Eye-level share history (how much of the light reaches your eyes), attached in memory like `calibration`. */
+  eyeLevel?: SunlightCalibrationStep[];
 }
 
 export interface SunlightRange {

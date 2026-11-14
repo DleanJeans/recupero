@@ -31,10 +31,11 @@ export function syncSunlightNotification(): void {
     samples,
     weather: rawWeather,
     luxCalibrations,
+    eyeLevelFactors,
     trackingSince,
     goalMinutes,
   } = useSunlightStore.getState();
-  const weather = calibrateWeather(rawWeather, luxCalibrations);
+  const weather = calibrateWeather(rawWeather, luxCalibrations, eyeLevelFactors);
   const now = Date.now();
   let plan = null;
   if (enabled && liveNotification) {
