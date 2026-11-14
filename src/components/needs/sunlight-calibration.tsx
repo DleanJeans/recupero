@@ -34,10 +34,15 @@ export function SunlightCalibration({ factor, luxNow, rawLuxNow }: SunlightCalib
   return (
     <View style={styles.container}>
       <View style={styles.row}>
-        <Text style={styles.label}>
-          {luxNow != null ? `Estimate ${formatLux(luxNow)} now` : 'No estimate right now'}
-          {factor !== 1 ? <Text style={styles.factor}>{` · calibrated ×${factor.toFixed(2)}`}</Text> : null}
-        </Text>
+        <View style={styles.labelBox}>
+          <Text
+            style={styles.label}
+            numberOfLines={1}
+          >
+            {luxNow != null ? `Estimate ${formatLux(luxNow)} now` : 'No estimate right now'}
+          </Text>
+          {factor !== 1 && <Text style={styles.factor}>{`×${factor.toFixed(2)}`}</Text>}
+        </View>
         {factor !== 1 && !editing && (
           <Pressable
             onPress={() => setFactor(1)}
@@ -99,15 +104,27 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
+  },
+  labelBox: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   label: {
-    flex: 1,
+    flexShrink: 1,
     color: Colors.text.secondary,
     fontSize: 13,
   },
   factor: {
-    color: Colors.text.muted,
+    color: SUNLIGHT_COLOR,
+    fontSize: 12,
+    fontWeight: '700',
+    backgroundColor: Colors.bg.input,
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
   },
   action: {
     color: SUNLIGHT_COLOR,

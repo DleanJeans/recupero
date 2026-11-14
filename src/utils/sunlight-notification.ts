@@ -5,6 +5,7 @@ import { startOfLocalDay } from './sun-utils';
 import {
   calibrateWeather,
   getIndoorPlaces,
+  getRunningManualSession,
   getSunlightDay,
   getSunlightNotificationPlan,
   getSunlightPresence,
@@ -32,13 +33,15 @@ export function syncSunlightNotification(): void {
     weather: rawWeather,
     luxCalibrations,
     eyeLevelFactors,
+    manualSessions,
     trackingSince,
     goalMinutes,
   } = useSunlightStore.getState();
   const weather = calibrateWeather(rawWeather, luxCalibrations, eyeLevelFactors);
   const now = Date.now();
   let plan = null;
-  if (enabled && liveNotification) {
+  // A manual session has its own light level, which the notification's weather curve doesn't know about.
+  if (enabled && liveNotification && !getRunningManualSession(manualSessions, now)) {
     const presence = getSunlightPresence(events, samples, getIndoorPlaces(places, outdoorPlaceIds), trackingSince, now);
     const point = getSunReferencePoint(samples, places);
     const today = getSunlightDay(
@@ -47,6 +50,7 @@ export function syncSunlightNotification(): void {
       point,
       weather,
       now,
+      manualSessions,
     );
     plan = getSunlightNotificationPlan(presence, today, goalMinutes, weather, now);
   }

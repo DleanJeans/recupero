@@ -50,6 +50,17 @@ export interface SunlightStretch extends SunlightRange {
   lux?: number;
   /** Still going (you're out now and the sun is up). */
   ongoing: boolean;
+  /** Started by hand (e.g. on a balcony) with a lux level you chose, not detected from your position. */
+  manual?: boolean;
+}
+
+/** A session you start and stop yourself, counted even while you're at a place that counts as indoors. */
+export interface SunlightManualSession {
+  start: number;
+  /** Unset while it's running. */
+  end?: number;
+  /** Light where you sit (lux at your eyes), chosen when it started. */
+  lux: number;
 }
 
 export interface SunlightDay {

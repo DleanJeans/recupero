@@ -390,3 +390,34 @@ describe('subtractSunlightRanges', () => {
     ]);
   });
 });
+
+describe('manual sessions', () => {
+  const { getSunlightDay: day, getRunningManualSession } = jest.requireActual('../src/utils/sunlight-utils');
+  const london = { lat: 51.5, lng: -0.12 };
+  const dayStart = new Date(2026, 5, 21).getTime();
+  const noon = dayStart + 12 * HOUR;
+
+  it('counts a manual session inside daylight with its own lux and dose', () => {
+    const result = day(dayStart, [], london, undefined, noon + HOUR, [
+      { start: noon, end: noon + 30 * 60_000, lux: 8000 },
+    ]);
+    expect(result.minutes).toBe(30);
+    expect(result.stretches[0]).toMatchObject({ manual: true, lux: 8000, ongoing: false });
+    expect(result.luxMinutes).toBe(8000 * 30);
+  });
+
+  it('keeps a running session ongoing and replaces overlapping auto time', () => {
+    const result = day(
+      dayStart,
+      [{ start: noon - HOUR, end: noon + 20 * 60_000 }],
+      london,
+      undefined,
+      noon + 20 * 60_000,
+      [{ start: noon, lux: 5000 }],
+    );
+    // 60 min auto before the session + 20 min manual, nothing counted twice.
+    expect(result.minutes).toBe(80);
+    expect(result.stretches.at(-1)).toMatchObject({ manual: true, ongoing: true });
+    expect(getRunningManualSession([{ start: noon, lux: 5000 }], noon + 1000)).toBeDefined();
+  });
+});

@@ -4,6 +4,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import type {
   SunlightCalibrationStep,
   SunlightGeofenceEvent,
+  SunlightManualSession,
   SunlightPresenceSample,
   SunlightRange,
   SunlightWeather,
@@ -19,6 +20,7 @@ import {
 
 const MAX_SAMPLES = 500;
 const MAX_EVENTS = 2000;
+const MAX_MANUAL_SESSIONS = 200;
 
 export interface SunlightStore {
   enabled: boolean;
@@ -47,6 +49,12 @@ export interface SunlightStore {
   /** Stretches outside the user deleted (e.g. misfires from a small radius); cut out of the counted time. */
   deletedRanges: SunlightRange[];
   deleteRange: (range: SunlightRange) => void;
+  /** Sessions started by hand, e.g. sitting on a balcony while the phone says you're at home. */
+  manualSessions: SunlightManualSession[];
+  /** Starts a session at this lux (ending one that's still running). */
+  startManualSession: (lux: number) => void;
+  stopManualSession: () => void;
+  deleteManualSession: (start: number) => void;
   samples: SunlightPresenceSample[];
   weather?: SunlightWeather;
   setEnabled: (enabled: boolean) => void;
@@ -79,6 +87,26 @@ export const useSunlightStore = create<SunlightStore>()(
       events: [],
       deletedRanges: [],
       deleteRange: range => set(state => ({ deletedRanges: [...state.deletedRanges, range] })),
+      manualSessions: [],
+      startManualSession: lux =>
+        set(state => {
+          const now = Date.now();
+          const closed = state.manualSessions.map(session =>
+            session.end == null ? { ...session, end: now } : session,
+          );
+          return { manualSessions: [...closed, { start: now, lux }].slice(-MAX_MANUAL_SESSIONS) };
+        }),
+      stopManualSession: () =>
+        set(state => {
+          const now = Date.now();
+          return {
+            manualSessions: state.manualSessions.map(session =>
+              session.end == null ? { ...session, end: now } : session,
+            ),
+          };
+        }),
+      deleteManualSession: start =>
+        set(state => ({ manualSessions: state.manualSessions.filter(session => session.start !== start) })),
       samples: [],
       weather: undefined,
       setEnabled: enabled =>

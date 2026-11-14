@@ -4,7 +4,7 @@ import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
 import { syncSunlightNotification } from '../utils/sunlight-notification';
 import { syncPreciseTracking } from '../utils/sunlight-precise-tracking';
-import { syncSunlight } from '../utils/sunlight-sync';
+import { closeOutdoorStretchAtNewPlace, syncSunlight } from '../utils/sunlight-sync';
 
 /**
  * Checks where you are and refreshes the sunshine forecast on launch and when Recupero comes to the foreground,
@@ -32,7 +32,17 @@ export function useSunlightTracking(ready: boolean) {
     syncSunlightNotification();
     const unsubscribeSunlight = useSunlightStore.subscribe(syncSunlightNotification);
     const unsubscribePlaces = useCuesStore.subscribe((state, previous) => {
-      if (state.places !== previous.places) syncSunlightNotification();
+      if (state.places === previous.places) return;
+      syncSunlightNotification();
+      const known = new Set(previous.places.map(place => place.id));
+      const addedAt = Date.now();
+      for (const place of state.places) {
+        if (!known.has(place.id)) {
+          closeOutdoorStretchAtNewPlace(place, addedAt).catch(error =>
+            console.warn('Sunlight new place check failed', error),
+          );
+        }
+      }
     });
     return () => {
       unsubscribeSunlight();

@@ -28,6 +28,7 @@ import { SUNLIGHT_COLOR } from './sunlight-bar-row';
 import { SunlightCalibration } from './sunlight-calibration';
 import { SunlightEyeLevel } from './sunlight-eye-level';
 import { SunlightLightDose } from './sunlight-light-dose';
+import { SunlightManualSession } from './sunlight-manual-session';
 import { SunlightPlacesMap } from './sunlight-places-map';
 import { SunlightPreciseRow } from './sunlight-precise-row';
 import { SUNLIGHT_STATUS_COLORS, SunlightStatusDot } from './sunlight-status-dot';
@@ -57,6 +58,7 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
   const liveNotification = useSunlightStore(state => state.liveNotification);
   const setLiveNotification = useSunlightStore(state => state.setLiveNotification);
   const deleteRange = useSunlightStore(state => state.deleteRange);
+  const deleteManualSession = useSunlightStore(state => state.deleteManualSession);
   const setRadiusM = useSunlightStore(state => state.setRadiusM);
   const [justAllowed, setJustAllowed] = useState(false);
   const locationAllowed = sunlight.locationAllowed || justAllowed;
@@ -69,6 +71,14 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
 
   const { today, goalMinutes, days } = sunlight;
   const hasWeather = weather != null;
+  // A stretch out that's too short to count yet still shows, so it never looks like nothing is running.
+  const pendingSince =
+    sunlight.status.kind === 'counting' &&
+    !sunlight.manualSession &&
+    sunlight.outSince != null &&
+    !today.stretches.some(stretch => stretch.ongoing)
+      ? sunlight.outSince
+      : undefined;
   const done = today.minutes >= goalMinutes;
   const sunWindow =
     today.sunrise != null && today.sunset != null
@@ -92,7 +102,10 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => deleteRange({ start: stretch.start, end: stretch.end }),
+          onPress: () =>
+            stretch.manual
+              ? deleteManualSession(stretch.start)
+              : deleteRange({ start: stretch.start, end: stretch.end }),
         },
       ],
     );
@@ -140,6 +153,7 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
             </View>
           )}
 
+          <SunlightManualSession session={sunlight.manualSession} />
           <SunlightPreciseRow />
 
           {!locationAllowed && (
@@ -164,11 +178,13 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
 
           <SunlightLightDose
             luxMinutes={today.luxMinutes}
-            ratePerMinute={getLightDoseRate(
-              sunlight.status.kind === 'counting',
-              sunlight.luxNow,
-              sunlight.eyeLevelFactor,
-            )}
+            ratePerMinute={
+              sunlight.manualSession
+                ? sunlight.status.kind === 'counting'
+                  ? sunlight.manualSession.lux
+                  : 0
+                : getLightDoseRate(sunlight.status.kind === 'counting', sunlight.luxNow, sunlight.eyeLevelFactor)
+            }
             snapshotAt={sunlight.now}
             goalMinutes={goalMinutes}
             hasWeather={hasWeather}
@@ -182,16 +198,24 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
           />
 
           <CueSectionLabel>Today</CueSectionLabel>
-          {today.stretches.length === 0 ? (
+          {pendingSince != null && (
+            <View style={[styles.stretch, styles.stretchLive]}>
+              <Text style={styles.stretchTime}>{formatTime(pendingSince)} – now</Text>
+              <Text style={styles.stretchLux}>Just started · counts after 2 min</Text>
+              <Text style={styles.stretchMinutes}>0 min</Text>
+            </View>
+          )}
+          {today.stretches.length === 0 && pendingSince == null ? (
             <Text style={styles.hint}>No time outside in daylight yet.</Text>
           ) : (
-            today.stretches.map(stretch => (
+            [...today.stretches].reverse().map(stretch => (
               <View
-                key={stretch.start}
-                style={styles.stretch}
+                key={`${stretch.manual ? 'm' : 'a'}${stretch.start}`}
+                style={[styles.stretch, stretch.ongoing && styles.stretchLive]}
               >
                 <Text style={styles.stretchTime}>
                   {formatTime(stretch.start)} – {stretch.ongoing ? 'now' : formatTime(stretch.end)}
+                  {stretch.manual ? ' ✋' : ''}
                 </Text>
                 <Text style={styles.stretchLux}>
                   {stretch.lux != null
@@ -377,6 +401,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
+  },
+  stretchLive: {
+    borderWidth: 1,
+    borderColor: SUNLIGHT_COLOR,
   },
   stretchTime: {
     color: Colors.text.secondary,

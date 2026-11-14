@@ -3,6 +3,7 @@ import type {
   SunlightCalibrationStep,
   SunlightDay,
   SunlightGeofenceEvent,
+  SunlightManualSession,
   SunlightPresenceSample,
   SunlightRange,
   SunlightStretch,
@@ -269,6 +270,41 @@ export function getEyeLuxMinutes(
   return covered > 0 ? (total / covered) * (length / MS_PER_MINUTE) : 0;
 }
 
+/** Manual sessions as time ranges; a running one ends now, and none lasts longer than a forgotten stretch outside would. */
+export function getManualRanges(
+  sessions: SunlightManualSession[],
+  now: number,
+): Array<SunlightRange & { lux: number }> {
+  return sessions
+    .filter(session => session.start <= now)
+    .map(session => ({
+      start: session.start,
+      end: Math.min(session.end ?? now, now, session.start + MAX_OUTDOOR_STRETCH_MS),
+      lux: session.lux,
+    }))
+    .filter(range => range.end > range.start);
+}
+
+/** The manual session running now, if any (not one that ran past the cap). */
+export function getRunningManualSession(
+  sessions: SunlightManualSession[],
+  now: number,
+): SunlightManualSession | undefined {
+  return sessions.find(
+    session => session.end == null && session.start <= now && now < session.start + MAX_OUTDOOR_STRETCH_MS,
+  );
+}
+
+export const MANUAL_LUX_PRESETS = [1_000, 3_000, 5_000, 10_000, 20_000, 40_000];
+export const DEFAULT_MANUAL_LUX = 5_000;
+export const MAX_MANUAL_LUX = 150_000;
+
+/** A typed lux level for a manual session, if it's a sensible number. */
+export function getManualLuxFromText(value: number | null | undefined): number | undefined {
+  if (value == null || !Number.isFinite(value) || value <= 0) return undefined;
+  return Math.min(MAX_MANUAL_LUX, Math.round(value));
+}
+
 /** Outdoor time on one local day, counted only between sunrise and sunset there. */
 export function getSunlightDay(
   dayStart: number,
@@ -276,20 +312,36 @@ export function getSunlightDay(
   point: GeoPoint | undefined,
   weather: SunlightWeather | undefined,
   now: number,
+  manualSessions: SunlightManualSession[] = [],
 ): SunlightDay {
   const sun = point ? getSunTimes(dayStart, point.lat, point.lng) : undefined;
   const daylight = point ? getDaylightRange(dayStart, point.lat, point.lng) : undefined;
   const stretches: SunlightStretch[] = [];
+  const manualRanges = getManualRanges(manualSessions, now);
+  let luxMinutes = 0;
   if (daylight) {
-    for (const range of outdoorRanges) {
+    // A manual session replaces whatever the position check would have counted over the same time.
+    for (const range of subtractSunlightRanges(outdoorRanges, manualRanges)) {
       const overlap = intersect(range, daylight);
       if (!overlap) continue;
-      stretches.push({
+      const stretch: SunlightStretch = {
         ...overlap,
         lux: weather ? getAverageLux(overlap, weather.hours, weather.calibration) : undefined,
         ongoing: overlap.end >= now && range.end >= now,
-      });
+      };
+      stretches.push(stretch);
+      if (stretch.lux != null) {
+        luxMinutes += getEyeLuxMinutes(stretch, weather?.hours ?? [], weather?.calibration, weather?.eyeLevel);
+      }
     }
+    for (const range of manualRanges) {
+      const overlap = intersect(range, daylight);
+      if (!overlap) continue;
+      const session = manualSessions.find(candidate => candidate.start === range.start);
+      stretches.push({ ...overlap, lux: range.lux, ongoing: session?.end == null && overlap.end >= now, manual: true });
+      luxMinutes += (range.lux * (overlap.end - overlap.start)) / MS_PER_MINUTE;
+    }
+    stretches.sort((a, b) => a.start - b.start);
   }
   const totalMs = stretches.reduce((sum, stretch) => sum + stretch.end - stretch.start, 0);
   const luxStretches = stretches.filter(stretch => stretch.lux != null);
@@ -298,10 +350,6 @@ export function getSunlightDay(
     luxMs > 0
       ? luxStretches.reduce((sum, stretch) => sum + (stretch.lux ?? 0) * (stretch.end - stretch.start), 0) / luxMs
       : undefined;
-  const luxMinutes = luxStretches.reduce(
-    (sum, stretch) => sum + getEyeLuxMinutes(stretch, weather?.hours ?? [], weather?.calibration, weather?.eyeLevel),
-    0,
-  );
   return {
     dayStart,
     located: point != null,
@@ -322,10 +370,11 @@ export function getSunlightDays(
   weather: SunlightWeather | undefined,
   now: number,
   count = SUNLIGHT_HISTORY_DAYS,
+  manualSessions: SunlightManualSession[] = [],
 ): SunlightDay[] {
   const today = startOfLocalDay(now);
   return Array.from({ length: count }, (_, index) =>
-    getSunlightDay(addLocalDays(today, -index), outdoorRanges, point, weather, now),
+    getSunlightDay(addLocalDays(today, -index), outdoorRanges, point, weather, now, manualSessions),
   );
 }
 

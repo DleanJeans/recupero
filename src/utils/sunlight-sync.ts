@@ -1,7 +1,8 @@
 import * as Location from 'expo-location';
 import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
-import { findPlaceAtPoint } from './geofence-utils';
+import type { SavedPlace } from '../types/cue';
+import { distanceMeters, findPlaceAtPoint } from './geofence-utils';
 import { syncSunlightNotification } from './sunlight-notification';
 import {
   getIndoorPlaces,
@@ -60,5 +61,36 @@ export async function syncSunlight(force = false): Promise<void> {
   const now = Date.now();
   await samplePresence(now, force).catch(error => console.warn('Sunlight position check failed', error));
   await refreshWeather(now).catch(error => console.warn('Sunlight weather failed', error));
+  syncSunlightNotification();
+}
+
+/** Beyond this, a fix is too vague to say where the phone really is. */
+const MAX_NEW_PLACE_ACCURACY_M = 150;
+
+/**
+ * You just saved a place. If you're standing in it (the usual reason to add one), the stretch outside ends
+ * now, not whenever the next geofence event or position check happens to notice, so time already counted stays.
+ */
+export async function closeOutdoorStretchAtNewPlace(place: SavedPlace, addedAt: number): Promise<void> {
+  const { enabled, radiusM, outdoorPlaceIds, addSample } = useSunlightStore.getState();
+  if (!enabled || outdoorPlaceIds.includes(place.id)) return;
+  const { status } = await Location.getForegroundPermissionsAsync();
+  if (status !== 'granted') return;
+  const position =
+    (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }).catch(() => null)) ??
+    (await Location.getLastKnownPositionAsync().catch(() => null));
+  if (!position) return;
+  const { latitude, longitude, accuracy } = position.coords;
+  // Judged leniently on purpose: indoors the fix is often vague, and you're adding the place where you stand.
+  const slack = Math.min(accuracy ?? 0, MAX_NEW_PLACE_ACCURACY_M);
+  const inside =
+    distanceMeters({ lat: latitude, lng: longitude }, { lat: place.lat, lng: place.lng }) <= radiusM + slack;
+  if (!inside) return;
+  addSample({
+    ts: addedAt,
+    placeId: place.id,
+    lat: roundCoordinate(latitude, SAMPLE_COORD_DECIMALS),
+    lng: roundCoordinate(longitude, SAMPLE_COORD_DECIMALS),
+  });
   syncSunlightNotification();
 }

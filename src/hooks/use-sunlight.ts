@@ -2,16 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { AppState } from 'react-native';
 import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
-import type { SunlightDay, SunlightRange, SunlightWeather } from '../types/sunlight';
+import type { SunlightDay, SunlightManualSession, SunlightRange, SunlightWeather } from '../types/sunlight';
 import type { GeoPoint } from '../utils/geofence-utils';
 import { hasBackgroundLocationPermission } from '../utils/reminder-geofencing';
 import { addLocalDays, getSunTimes, startOfLocalDay } from '../utils/sun-utils';
 import {
   calibrateWeather,
+  formatLux,
   getCalibrationFactorAt,
   getEyeLevelFactorAt,
   getIndoorPlaces,
   getLuxAt,
+  getRunningManualSession,
   getSunlightDays,
   getSunlightPresence,
   getSunlightStatus,
@@ -46,6 +48,10 @@ export interface SunlightSnapshot {
   luxCalibration: number;
   /** Share of the light reaching your eyes right now. */
   eyeLevelFactor: number;
+  /** When the current stretch outside began, even before it's long enough to count. */
+  outSince?: number;
+  /** The manual session running now, if any. */
+  manualSession?: SunlightManualSession;
   hasPlaces: boolean;
   now: number;
 }
@@ -79,6 +85,7 @@ export function useSunlight(): SunlightSnapshot {
   const outdoorPlaceIds = useSunlightStore(state => state.outdoorPlaceIds);
   const events = useSunlightStore(state => state.events);
   const samples = useSunlightStore(state => state.samples);
+  const manualSessions = useSunlightStore(state => state.manualSessions);
   const deletedRanges = useSunlightStore(state => state.deletedRanges);
   const rawWeather = useSunlightStore(state => state.weather);
   const luxCalibrations = useSunlightStore(state => state.luxCalibrations);
@@ -100,9 +107,10 @@ export function useSunlight(): SunlightSnapshot {
     const presence = getSunlightPresence(events, samples, indoor, trackingSince, now);
     const point = getSunReferencePoint(samples, places);
     const ranges = subtractSunlightRanges(presence.ranges, deletedRanges);
-    const days = getSunlightDays(ranges, point, weather, now);
+    const days = getSunlightDays(ranges, point, weather, now, undefined, manualSessions);
     const tomorrow = point ? getSunTimes(addLocalDays(startOfLocalDay(now), 1), point.lat, point.lng) : undefined;
-    const status = getSunlightStatus(
+    const manualSession = getRunningManualSession(manualSessions, now);
+    const autoStatus = getSunlightStatus(
       presence.insidePlaceIds,
       days[0],
       now,
@@ -110,6 +118,10 @@ export function useSunlight(): SunlightSnapshot {
       id => places.find(place => place.id === id)?.name,
     );
     const sunUp = isSunUp(days[0], now);
+    const status: SunlightStatus =
+      manualSession && sunUp
+        ? { kind: 'counting', label: `Counting · manual session at ${formatLux(manualSession.lux)}` }
+        : autoStatus;
     const luxNow = weather && sunUp ? getLuxAt(now, weather.hours, weather.calibration) : undefined;
     const rawLuxNow = rawWeather && sunUp ? getLuxAt(now, rawWeather.hours) : undefined;
     return {
@@ -121,7 +133,9 @@ export function useSunlight(): SunlightSnapshot {
       eyeLevelFactor: getEyeLevelFactorAt(eyeLevelFactors, now),
       days,
       today: days[0],
-      outNow: isOutNow(ranges, now),
+      outNow: isOutNow(ranges, now) || manualSession != null,
+      manualSession,
+      outSince: presence.outSince,
       status,
       locationAllowed,
       tomorrowSunrise: tomorrow?.sunrise,
@@ -141,6 +155,7 @@ export function useSunlight(): SunlightSnapshot {
     outdoorPlaceIds,
     places,
     samples,
+    manualSessions,
     trackingSince,
     rawWeather,
     luxCalibrations,
