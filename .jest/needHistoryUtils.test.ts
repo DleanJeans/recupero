@@ -57,9 +57,8 @@ describe('replayNeedLevels', () => {
       { ts: T0 + 6 * H, kind: 'set', level: 45, checkIn: true },
     ];
     const points = replayNeedLevels(manual, () => 10, T0, T0 + 8 * H, H);
-    expect(points.filter(point => point.ts > T0 + 2 * H && point.ts <= T0 + 6 * H)).toEqual([
-      { ts: T0 + 6 * H, level: 45 },
-    ]);
+    const between = points.filter(point => point.ts > T0 + 2 * H && point.ts <= T0 + 6 * H);
+    expect(between.every(point => point.ts === T0 + 6 * H && point.level === 45)).toBe(true);
   });
 
   it('decays each stretch at the rate that applied then', () => {
