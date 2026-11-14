@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Linking, Modal, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SunlightNotification } from '../../../modules/sunlight-notification';
 import { resyncReminders } from '../../hooks/use-reminder-engine';
 import { useSunlight } from '../../hooks/use-sunlight';
 import { useCuesStore } from '../../store/cues-store';
 import { useSunlightStore } from '../../store/sunlight-store';
+import type { SunlightStretch } from '../../types/sunlight';
 import { Colors } from '../../utils/colors';
 import { requestBackgroundLocationPermission } from '../../utils/reminder-geofencing';
 import { syncSunlight } from '../../utils/sunlight-sync';
@@ -52,6 +53,7 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
   const weather = useSunlightStore(state => state.weather);
   const liveNotification = useSunlightStore(state => state.liveNotification);
   const setLiveNotification = useSunlightStore(state => state.setLiveNotification);
+  const deleteRange = useSunlightStore(state => state.deleteRange);
   const setRadiusM = useSunlightStore(state => state.setRadiusM);
   const [justAllowed, setJustAllowed] = useState(false);
   const locationAllowed = sunlight.locationAllowed || justAllowed;
@@ -75,6 +77,22 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
     setJustAllowed(granted);
     if (granted) await resyncReminders();
     else await Linking.openSettings();
+  };
+
+  const confirmDelete = (stretch: SunlightStretch) => {
+    const minutes = formatSunlightMinutes(Math.floor((stretch.end - stretch.start) / 60_000));
+    Alert.alert(
+      'Delete session',
+      `Remove ${formatTime(stretch.start)} – ${formatTime(stretch.end)} (${minutes}) from your sunlight time?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteRange({ start: stretch.start, end: stretch.end }),
+        },
+      ],
+    );
   };
 
   return (
@@ -181,6 +199,16 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
                   <Text style={styles.stretchMinutes}>
                     {formatSunlightMinutes(Math.floor((stretch.end - stretch.start) / 60_000))}
                   </Text>
+                  {!stretch.ongoing && (
+                    <Pressable
+                      onPress={() => confirmDelete(stretch)}
+                      hitSlop={10}
+                      accessibilityRole="button"
+                      accessibilityLabel="Delete session"
+                    >
+                      <Text style={styles.stretchDelete}>✕</Text>
+                    </Pressable>
+                  )}
                 </View>
               ))
             )}
@@ -380,6 +408,11 @@ const styles = StyleSheet.create({
     color: SUNLIGHT_COLOR,
     fontSize: 13,
     fontWeight: '700',
+  },
+  stretchDelete: {
+    color: Colors.text.faint,
+    fontSize: 15,
+    paddingLeft: 4,
   },
   stepper: {
     flexDirection: 'row',

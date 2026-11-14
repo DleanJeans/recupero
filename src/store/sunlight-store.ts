@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { SunlightGeofenceEvent, SunlightPresenceSample, SunlightWeather } from '../types/sunlight';
+import type { SunlightGeofenceEvent, SunlightPresenceSample, SunlightRange, SunlightWeather } from '../types/sunlight';
 import { clampGeofenceRadius } from '../utils/geofence-utils';
 import {
   DEFAULT_SUNLIGHT_GOAL_MINUTES,
@@ -29,6 +29,9 @@ export interface SunlightStore {
   setLuxCalibration: (factor: number) => void;
   setLiveNotification: (on: boolean) => void;
   events: SunlightGeofenceEvent[];
+  /** Stretches outside the user deleted (e.g. misfires from a small radius); cut out of the counted time. */
+  deletedRanges: SunlightRange[];
+  deleteRange: (range: SunlightRange) => void;
   samples: SunlightPresenceSample[];
   weather?: SunlightWeather;
   setEnabled: (enabled: boolean) => void;
@@ -53,6 +56,8 @@ export const useSunlightStore = create<SunlightStore>()(
       setLuxCalibration: luxCalibration => set({ luxCalibration }),
       setLiveNotification: liveNotification => set({ liveNotification }),
       events: [],
+      deletedRanges: [],
+      deleteRange: range => set(state => ({ deletedRanges: [...state.deletedRanges, range] })),
       samples: [],
       weather: undefined,
       setEnabled: enabled =>

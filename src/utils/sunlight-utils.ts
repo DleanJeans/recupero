@@ -175,6 +175,22 @@ export function getSunlightPresence(
   };
 }
 
+/** The ranges with the deleted ones cut out (a misfire the user removed). */
+export function subtractSunlightRanges(ranges: SunlightRange[], deleted: SunlightRange[]): SunlightRange[] {
+  if (deleted.length === 0) return ranges;
+  let result = ranges;
+  for (const cut of deleted) {
+    result = result.flatMap(range => {
+      if (cut.end <= range.start || cut.start >= range.end) return [range];
+      const pieces: SunlightRange[] = [];
+      if (cut.start > range.start) pieces.push({ start: range.start, end: cut.start });
+      if (cut.end < range.end) pieces.push({ start: cut.end, end: range.end });
+      return pieces;
+    });
+  }
+  return result;
+}
+
 export function isOutNow(ranges: SunlightRange[], now: number): boolean {
   const last = ranges[ranges.length - 1];
   return last != null && last.end >= now;

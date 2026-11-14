@@ -19,6 +19,7 @@ import {
   MAX_OUTDOOR_STRETCH_MS,
   parseWeatherHours,
   shouldRefreshWeather,
+  subtractSunlightRanges,
 } from '../src/utils/sunlight-utils';
 
 const MIN = 60_000;
@@ -356,5 +357,20 @@ describe('blended lux and calibration', () => {
     const weather = { fetchedAt: 0, lat: 0, lng: 0, hours };
     expect(calibrateWeather(weather, 0.5).hours[1].wm2).toBe(300);
     expect(calibrateWeather(weather, 1)).toBe(weather);
+  });
+});
+
+describe('subtractSunlightRanges', () => {
+  it('cuts a deleted stretch out of the ranges', () => {
+    const ranges = [
+      { start: 0, end: 100 },
+      { start: 200, end: 300 },
+    ];
+    expect(subtractSunlightRanges(ranges, [{ start: 200, end: 300 }])).toEqual([{ start: 0, end: 100 }]);
+    expect(subtractSunlightRanges(ranges, [{ start: 40, end: 60 }])).toEqual([
+      { start: 0, end: 40 },
+      { start: 60, end: 100 },
+      { start: 200, end: 300 },
+    ]);
   });
 });

@@ -17,6 +17,7 @@ import {
   isOutNow,
   isSunUp,
   type SunlightStatus,
+  subtractSunlightRanges,
 } from '../utils/sunlight-utils';
 
 const TICK_MS = 60_000;
@@ -74,6 +75,7 @@ export function useSunlight(): SunlightSnapshot {
   const outdoorPlaceIds = useSunlightStore(state => state.outdoorPlaceIds);
   const events = useSunlightStore(state => state.events);
   const samples = useSunlightStore(state => state.samples);
+  const deletedRanges = useSunlightStore(state => state.deletedRanges);
   const rawWeather = useSunlightStore(state => state.weather);
   const luxCalibration = useSunlightStore(state => state.luxCalibration);
   const trackingSince = useSunlightStore(state => state.trackingSince);
@@ -92,7 +94,8 @@ export function useSunlight(): SunlightSnapshot {
     const indoor = getIndoorPlaces(places, outdoorPlaceIds);
     const presence = getSunlightPresence(events, samples, indoor, trackingSince, now);
     const point = getSunReferencePoint(samples, places);
-    const days = getSunlightDays(presence.ranges, point, weather, now);
+    const ranges = subtractSunlightRanges(presence.ranges, deletedRanges);
+    const days = getSunlightDays(ranges, point, weather, now);
     const tomorrow = point ? getSunTimes(addLocalDays(startOfLocalDay(now), 1), point.lat, point.lng) : undefined;
     const status = getSunlightStatus(
       presence.insidePlaceIds,
@@ -112,11 +115,11 @@ export function useSunlight(): SunlightSnapshot {
       luxCalibration,
       days,
       today: days[0],
-      outNow: isOutNow(presence.ranges, now),
+      outNow: isOutNow(ranges, now),
       status,
       locationAllowed,
       tomorrowSunrise: tomorrow?.sunrise,
-      ranges: presence.ranges,
+      ranges,
       point,
       weather,
       hasPlaces: indoor.length > 0,
@@ -126,6 +129,7 @@ export function useSunlight(): SunlightSnapshot {
   }, [
     enabled,
     events,
+    deletedRanges,
     goalMinutes,
     locationAllowed,
     outdoorPlaceIds,

@@ -9,6 +9,7 @@ import {
   getSunlightNotificationPlan,
   getSunlightPresence,
   getSunReferencePoint,
+  subtractSunlightRanges,
 } from './sunlight-utils';
 
 let lastPlanKey: string | null = null;
@@ -26,6 +27,7 @@ export function syncSunlightNotification(): void {
     liveNotification,
     outdoorPlaceIds,
     events,
+    deletedRanges,
     samples,
     weather: rawWeather,
     luxCalibration,
@@ -38,7 +40,13 @@ export function syncSunlightNotification(): void {
   if (enabled && liveNotification) {
     const presence = getSunlightPresence(events, samples, getIndoorPlaces(places, outdoorPlaceIds), trackingSince, now);
     const point = getSunReferencePoint(samples, places);
-    const today = getSunlightDay(startOfLocalDay(now), presence.ranges, point, weather, now);
+    const today = getSunlightDay(
+      startOfLocalDay(now),
+      subtractSunlightRanges(presence.ranges, deletedRanges),
+      point,
+      weather,
+      now,
+    );
     plan = getSunlightNotificationPlan(presence, today, goalMinutes, weather, now);
   }
   try {
