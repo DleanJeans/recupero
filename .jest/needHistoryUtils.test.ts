@@ -51,6 +51,17 @@ describe('replayNeedLevels', () => {
     expect(points[points.length - 1]).toEqual({ ts: T0 + 8 * H, level: 70 });
   });
 
+  it('slopes straight to a manual check-in instead of dropping', () => {
+    const manual: NeedEvent[] = [
+      { ts: T0 + 2 * H, kind: 'set', level: 100, behaviorId: 'shower' },
+      { ts: T0 + 6 * H, kind: 'set', level: 45, checkIn: true },
+    ];
+    const points = replayNeedLevels(manual, () => 10, T0, T0 + 8 * H, H);
+    expect(points.filter(point => point.ts > T0 + 2 * H && point.ts <= T0 + 6 * H)).toEqual([
+      { ts: T0 + 6 * H, level: 45 },
+    ]);
+  });
+
   it('decays each stretch at the rate that applied then', () => {
     const rateAt = (ts: number) => (ts < T0 + 4 * H ? 10 : 5);
     const points = replayNeedLevels([events[0]], rateAt, T0, T0 + 6 * H, H);

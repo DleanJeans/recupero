@@ -101,12 +101,26 @@ export function replayNeedLevels(
     }
   };
 
+  // Index of the last point at an event's own level, so a manual update can draw from there.
+  let lastEventIdx = -1;
   for (const event of sorted) {
     sampleUntil(event.ts);
     decayTo(event.ts);
-    if (event.ts >= drawFrom) points.push({ ts: event.ts, level });
+    let manualSlope = false;
+    const manual = event.kind === 'set' ? event.checkIn === true : event.update === true;
+    if (manual && lastEventIdx >= 0) {
+      manualSlope = true;
+      // Manual updates (check-ins, "ate something you didn't log") slope straight from the previous
+      // event to the new level instead of decaying then dropping vertically.
+      points.length = lastEventIdx + 1;
+    } else if (event.ts >= drawFrom) {
+      points.push({ ts: event.ts, level });
+    }
     level = event.kind === 'add' ? clampLevel(level + event.amount) : clampLevel(event.level);
-    if (event.ts >= drawFrom) points.push({ ts: event.ts, level });
+    if (event.ts >= drawFrom) {
+      if (!manualSlope || points[points.length - 1]?.ts !== event.ts) points.push({ ts: event.ts, level });
+      lastEventIdx = points.length - 1;
+    }
   }
   sampleUntil(to + 1);
   decayTo(to);
