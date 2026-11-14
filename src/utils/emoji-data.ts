@@ -18,6 +18,7 @@ interface EmojiItem {
   name: string;
   v: string;
   toneEnabled: boolean;
+  keywords?: string[];
 }
 
 /**
@@ -60,6 +61,7 @@ function buildEmojiData(): EmojisByCategory[] {
     groups.get(category)!.push({
       emoji: entry.emoji,
       name: entry.label,
+      keywords: entry.tags,
       v: String(entry.version),
       // Skin-tone modifier support is implied for people/body entries that
       // have a `skins` field in data.json. rn-emoji-keyboard uses toneEnabled
