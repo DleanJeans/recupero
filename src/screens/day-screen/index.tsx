@@ -167,7 +167,6 @@ export function DayScreen() {
         onNext={goToNextDay}
       />
 
-
       <DayTabSelector
         selectedTab={selectedTab}
         onSelect={setSelectedTab}
