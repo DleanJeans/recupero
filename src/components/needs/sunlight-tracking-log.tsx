@@ -11,7 +11,9 @@ import { Text } from '../text';
 function describe(entry: SunlightLogEntry, placeName: (id: string) => string): string {
   if (entry.kind === 'enter') return `Arrived at ${placeName(entry.placeId ?? '')}`;
   if (entry.kind === 'exit') return `Left ${placeName(entry.placeId ?? '')}`;
-  return entry.placeId ? `GPS: at ${placeName(entry.placeId)}` : 'GPS: away from places';
+  if (entry.placeId) return `GPS: at ${placeName(entry.placeId)}`;
+  const detail = entry.edgeM != null ? ` (${entry.edgeM} m out, ±${entry.accuracyM ?? '?'} m)` : '';
+  return `GPS: away from places${detail}`;
 }
 
 /** What tracking saw recently (geofence arrivals/departures and GPS checks), to see why a session did or didn't count. */
@@ -58,10 +60,10 @@ export function SunlightTrackingLog() {
             >
               <Text style={styles.time}>{`${day(entry.ts)} ${formatTime(entry.ts, undefined, true)}`}</Text>
               <Text
-                style={[styles.text, entry.kind !== 'sample' && styles.geofence]}
+                style={[styles.text, entry.kind !== 'sample' && styles.geofence, entry.ignored && styles.ignored]}
                 numberOfLines={1}
               >
-                {describe(entry, placeName)}
+                {`${describe(entry, placeName)}${entry.ignored ? ' · ignored' : ''}`}
               </Text>
             </View>
           ))}
@@ -103,5 +105,9 @@ const styles = StyleSheet.create({
   },
   geofence: {
     color: Colors.text.secondary,
+  },
+  ignored: {
+    color: Colors.text.dim,
+    textDecorationLine: 'line-through',
   },
 });

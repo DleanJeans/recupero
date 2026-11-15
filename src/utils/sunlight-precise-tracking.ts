@@ -9,7 +9,7 @@ import { waitForHydration } from './store-hydration';
 import { syncSunlightNotification } from './sunlight-notification';
 import { noteSunlightTaskRun } from './sunlight-persist';
 import { rehydrateSunlight } from './sunlight-sync';
-import { getIndoorPlaces, roundCoordinate, shouldRecordPreciseSample } from './sunlight-utils';
+import { describeSunlightFix, getIndoorPlaces, roundCoordinate, shouldRecordPreciseSample } from './sunlight-utils';
 
 export const SUNLIGHT_PRECISE_TASK = 'recupero-sunlight-precise';
 
@@ -36,13 +36,12 @@ async function handleLocations(locations: Location.LocationObject[]): Promise<vo
   let recorded = false;
   for (const { coords, timestamp } of locations) {
     if (coords.accuracy != null && coords.accuracy > MAX_ACCURACY_M) continue;
-    const place = findPlaceAtPoint(indoor, { lat: coords.latitude, lng: coords.longitude });
-    const placeId = place?.id ?? null;
+    const fix = describeSunlightFix(indoor, { lat: coords.latitude, lng: coords.longitude }, coords.accuracy);
     const last = useSunlightStore.getState().samples.at(-1) ?? samples.at(-1);
-    if (!shouldRecordPreciseSample(last, placeId, timestamp)) continue;
+    if (!shouldRecordPreciseSample(last, fix.placeId, timestamp)) continue;
     addSample({
       ts: timestamp,
-      placeId,
+      ...fix,
       lat: roundCoordinate(coords.latitude, SAMPLE_COORD_DECIMALS),
       lng: roundCoordinate(coords.longitude, SAMPLE_COORD_DECIMALS),
     });

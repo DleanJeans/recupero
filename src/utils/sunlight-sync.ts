@@ -5,6 +5,7 @@ import type { SavedPlace } from '../types/cue';
 import { distanceMeters, findPlaceAtPoint } from './geofence-utils';
 import { syncSunlightNotification } from './sunlight-notification';
 import {
+  describeSunlightFix,
   getIndoorPlaces,
   getSunReferencePoint,
   getWeatherUrl,
@@ -31,10 +32,9 @@ async function samplePresence(now: number, force: boolean): Promise<void> {
   if (accuracy != null && accuracy > MAX_SAMPLE_ACCURACY_M) return;
   // Judge by the fix's centre (the blue dot), not its accuracy circle, so being down the street counts as out.
   const indoor = getIndoorPlaces(useCuesStore.getState().places, outdoorPlaceIds).map(place => ({ ...place, radiusM }));
-  const place = findPlaceAtPoint(indoor, { lat: latitude, lng: longitude });
   addSample({
     ts: position.timestamp || now,
-    placeId: place?.id ?? null,
+    ...describeSunlightFix(indoor, { lat: latitude, lng: longitude }, accuracy),
     lat: roundCoordinate(latitude, SAMPLE_COORD_DECIMALS),
     lng: roundCoordinate(longitude, SAMPLE_COORD_DECIMALS),
   });

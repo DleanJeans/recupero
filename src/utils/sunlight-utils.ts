@@ -88,24 +88,80 @@ export function getSunlightRegionPlaceId(identifier: string): string | undefined
 
 type PlaceEvent = Pick<SunlightGeofenceEvent, 'ts'> & { kind: string; placeId?: string };
 
+/** Geofence events this close together form one burst when they span this many places. */
+const BURST_GAP_MS = 3_000;
+const BURST_MIN_PLACES = 3;
+/** A GPS fix this close past a place's edge could be indoor wobble, however accurate it claims to be. */
+const MIN_WOBBLE_M = 15;
+const MAX_WOBBLE_M = 50;
+
+/**
+ * Drops Android's "here's where you are" report for every region at once (sent whenever the geofences are
+ * registered, e.g. each time the app starts): several places reported within a few seconds isn't movement.
+ */
+export function dropGeofenceBursts<T extends { ts: number; placeId?: string }>(events: T[]): T[] {
+  const sorted = [...events].sort((a, b) => a.ts - b.ts);
+  const kept: T[] = [];
+  let group: T[] = [];
+  const flush = () => {
+    if (new Set(group.map(event => event.placeId)).size < BURST_MIN_PLACES) kept.push(...group);
+    group = [];
+  };
+  for (const event of sorted) {
+    if (group.length > 0 && event.ts - group[group.length - 1].ts > BURST_GAP_MS) flush();
+    group.push(event);
+  }
+  flush();
+  return kept;
+}
+
+/** An "away" fix just past a place's edge, within its own accuracy: likely GPS wobble indoors. */
+export function isWobbleSample(sample: SunlightPresenceSample): boolean {
+  if (sample.placeId != null || sample.edgeM == null) return false;
+  const wobble = Math.min(MAX_WOBBLE_M, Math.max(MIN_WOBBLE_M, sample.accuracyM ?? 0));
+  return sample.edgeM <= wobble;
+}
+
 function getPresenceEvents(
   activity: PlaceEvent[],
   samples: SunlightPresenceSample[],
   indoorIds: Set<string>,
 ): PresenceEvent[] {
   const events: PresenceEvent[] = [];
-  for (const event of activity) {
-    if ((event.kind !== 'enter' && event.kind !== 'exit') || !event.placeId || !indoorIds.has(event.placeId)) continue;
-    events.push({ ts: event.ts, kind: event.kind, placeId: event.placeId });
+  const placeEvents = activity.filter(
+    event => (event.kind === 'enter' || event.kind === 'exit') && event.placeId && indoorIds.has(event.placeId),
+  );
+  for (const event of dropGeofenceBursts(placeEvents)) {
+    events.push({ ts: event.ts, kind: event.kind as 'enter' | 'exit', placeId: event.placeId as string });
   }
-  for (const sample of samples) {
-    events.push({
-      ts: sample.ts,
-      kind: 'sample',
-      placeId: sample.placeId && indoorIds.has(sample.placeId) ? sample.placeId : null,
-    });
-  }
+  const sortedSamples = [...samples].sort((a, b) => a.ts - b.ts);
+  sortedSamples.forEach((sample, index) => {
+    const placeId = sample.placeId && indoorIds.has(sample.placeId) ? sample.placeId : null;
+    // A borderline "away" fix the next check contradicts (back inside) was the GPS wobbling, not a trip out.
+    const next = sortedSamples[index + 1];
+    if (isWobbleSample(sample) && next?.placeId != null && indoorIds.has(next.placeId)) return;
+    events.push({ ts: sample.ts, kind: 'sample', placeId });
+  });
   return events.sort((a, b) => a.ts - b.ts);
+}
+
+/** Where a GPS fix is relative to the indoor places: inside one, or how far past the nearest one's edge. */
+export function describeSunlightFix(
+  indoor: Array<GeoPoint & { id: string; radiusM: number }>,
+  point: GeoPoint,
+  accuracyM: number | null | undefined,
+): Pick<SunlightPresenceSample, 'placeId' | 'edgeM' | 'accuracyM'> {
+  let inside: { id: string; distance: number } | undefined;
+  let edge = Infinity;
+  for (const place of indoor) {
+    const distance = distanceMeters(place, point);
+    if (distance <= place.radiusM) {
+      if (!inside || distance < inside.distance) inside = { id: place.id, distance };
+    } else edge = Math.min(edge, distance - place.radiusM);
+  }
+  const accuracy = accuracyM != null ? Math.round(accuracyM) : undefined;
+  if (inside) return { placeId: inside.id, accuracyM: accuracy };
+  return { placeId: null, edgeM: Number.isFinite(edge) ? Math.round(edge) : undefined, accuracyM: accuracy };
 }
 
 /**
@@ -859,6 +915,11 @@ export interface SunlightLogEntry {
   /** Place id for an arrival/departure or a GPS fix inside a place; null = GPS fix away from every place. */
   placeId: string | null;
   kind: 'enter' | 'exit' | 'sample';
+  /** Left out of the count: part of a re-registration burst, or GPS wobble at a place's edge. */
+  ignored?: boolean;
+  /** For a GPS fix away from places: metres past the nearest place's edge and the fix's accuracy. */
+  edgeM?: number;
+  accuracyM?: number;
 }
 
 /** Recent arrivals, departures and GPS checks, newest first (the Tracking log in the sheet). */

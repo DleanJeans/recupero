@@ -579,3 +579,43 @@ describe('trip between far places with no departure seen', () => {
     expect(result.ranges).toEqual([]);
   });
 });
+
+describe('bursts and wobble', () => {
+  const { dropGeofenceBursts, getSunlightPresence: presence } = jest.requireActual('../src/utils/sunlight-utils');
+  const t0 = Date.UTC(2024, 5, 21, 2);
+  it('drops a re-registration burst across many places but keeps a lone exit', () => {
+    const burst = ['a', 'b', 'c', 'd'].map((id, i) => ({ ts: t0 + i * 200, kind: 'exit', placeId: id }));
+    const lone = { ts: t0 + HOUR, kind: 'exit', placeId: 'a' };
+    expect(dropGeofenceBursts([...burst, lone])).toEqual([lone]);
+  });
+  it('ignores a borderline away fix that the next check contradicts', () => {
+    const home = place('home', { isHome: true });
+    const result = presence(
+      [],
+      [
+        { ts: t0, placeId: 'home' },
+        { ts: t0 + 10 * MIN, placeId: null, edgeM: 8, accuracyM: 12 },
+        { ts: t0 + 13 * MIN, placeId: 'home' },
+      ],
+      [home],
+      0,
+      t0 + HOUR,
+    );
+    expect(result.ranges).toEqual([]);
+  });
+  it('still counts a clear trip out', () => {
+    const home = place('home', { isHome: true });
+    const result = presence(
+      [],
+      [
+        { ts: t0, placeId: 'home' },
+        { ts: t0 + 10 * MIN, placeId: null, edgeM: 120, accuracyM: 8 },
+        { ts: t0 + 30 * MIN, placeId: 'home' },
+      ],
+      [home],
+      0,
+      t0 + HOUR,
+    );
+    expect(result.ranges).toHaveLength(1);
+  });
+});

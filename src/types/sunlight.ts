@@ -6,6 +6,10 @@ export interface SunlightPresenceSample {
   /** Rounded position, used to work out sunrise and sunset where you are. */
   lat?: number;
   lng?: number;
+  /** For a fix away from every place: how far past the nearest place's edge it was, in metres. */
+  edgeM?: number;
+  /** The fix's accuracy radius, in metres. */
+  accuracyM?: number;
 }
 
 /** Arriving at or leaving an indoor place, from sunlight's own geofences. */
