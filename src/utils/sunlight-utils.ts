@@ -309,13 +309,14 @@ export function getEyeLuxMinutes(
 export function getManualRanges(
   sessions: SunlightManualSession[],
   now: number,
-): Array<SunlightRange & { lux: number }> {
+): Array<SunlightRange & { lux?: number; edited?: boolean }> {
   return sessions
     .filter(session => session.start <= now)
     .map(session => ({
       start: session.start,
       end: Math.min(session.end ?? now, now, session.start + MAX_OUTDOOR_STRETCH_MS),
       lux: session.lux,
+      edited: session.edited,
     }))
     .filter(range => range.end > range.start);
 }
@@ -373,8 +374,19 @@ export function getSunlightDay(
       const overlap = intersect(range, daylight);
       if (!overlap) continue;
       const session = manualSessions.find(candidate => candidate.start === range.start);
-      stretches.push({ ...overlap, lux: range.lux, ongoing: session?.end == null && overlap.end >= now, manual: true });
-      luxMinutes += (range.lux * (overlap.end - overlap.start)) / MS_PER_MINUTE;
+      const ongoing = session?.end == null && overlap.end >= now;
+      const kind = range.edited ? { edited: true } : { manual: true };
+      if (range.lux != null) {
+        stretches.push({ ...overlap, lux: range.lux, ongoing, ...kind });
+        luxMinutes += (range.lux * (overlap.end - overlap.start)) / MS_PER_MINUTE;
+      } else {
+        // Edited times but not the light: estimate it from the weather like any detected session.
+        const lux = weather ? getAverageLux(overlap, weather.hours, weather.calibration) : undefined;
+        stretches.push({ ...overlap, lux, ongoing, ...kind });
+        if (lux != null) {
+          luxMinutes += getEyeLuxMinutes(overlap, weather?.hours ?? [], weather?.calibration, weather?.eyeLevel);
+        }
+      }
     }
     stretches.sort((a, b) => a.start - b.start);
   }
@@ -769,6 +781,7 @@ export function mergeSunlightHistory(a: Partial<SunlightHistory>, b: Partial<Sun
       .sort(byTs)
       .slice(-MAX_SUNLIGHT_SAMPLES),
     deletedRanges: unionBy(a.deletedRanges, b.deletedRanges, range => `${range.start}|${range.end}`),
+    pauses: unionBy(a.pauses, b.pauses, range => `${range.start}|${range.end}`).sort((x, y) => x.start - y.start),
     pauses: unionBy(a.pauses, b.pauses, range => `${range.start}|${range.end}`)
       .sort((x, y) => x.start - y.start)
       .slice(-MAX_SUNLIGHT_PAUSES),
@@ -786,4 +799,27 @@ export function mergeSunlightHistory(a: Partial<SunlightHistory>, b: Partial<Sun
     luxCalibrations: unionBy(a.luxCalibrations, b.luxCalibrations, step => `${step.from}`).sort(byFrom),
     eyeLevelFactors: unionBy(a.eyeLevelFactors, b.eyeLevelFactors, step => `${step.from}`).sort(byFrom),
   };
+}
+
+/** Why an edited session can't be saved, or undefined when it can. */
+export function getSessionEditError(start: number, end: number, now: number): string | undefined {
+  if (end <= start) return 'End must be after start.';
+  if (end > now) return 'End can’t be in the future.';
+  if (end - start > MAX_OUTDOOR_STRETCH_MS) return 'A session can be at most 8 h.';
+  return undefined;
+}
+
+/** A start time no deleted session used, so another saved copy can't delete the edited one by mistake. */
+export function getFreeSessionStart(start: number, deletedStarts: number[]): number {
+  let next = start;
+  const taken = new Set(deletedStarts);
+  while (taken.has(next)) next++;
+  return next;
+}
+
+/** The same day at another clock time (minutes after midnight), for the session time pickers. */
+export function setTimeOfDay(ts: number, hours: number, minutes: number): number {
+  const date = new Date(ts);
+  date.setHours(hours, minutes, 0, 0);
+  return date.getTime();
 }

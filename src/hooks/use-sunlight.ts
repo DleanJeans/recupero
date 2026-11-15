@@ -136,7 +136,10 @@ export function useSunlight(): SunlightSnapshot {
     // A session you started by hand outranks a pause; a pause outranks what the position says.
     const status: SunlightStatus =
       manualSession && sunUp
-        ? { kind: 'counting', label: `Counting · manual session at ${formatLux(manualSession.lux)}` }
+        ? {
+            kind: 'counting',
+            label: `Counting · manual session${manualSession.lux != null ? ` at ${formatLux(manualSession.lux)}` : ''}`,
+          }
         : activePause
           ? { kind: 'paused', label: `Paused by you · ${formatPauseUntil(activePause.until, now, formatTime)}` }
           : autoStatus;

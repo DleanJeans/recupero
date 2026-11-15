@@ -37,7 +37,9 @@ export function SunlightManualSession({ session }: SunlightManualSessionProps) {
         <View style={styles.row}>
           <View style={styles.info}>
             <Text style={styles.title}>Manual session running</Text>
-            <Text style={styles.detail}>{`Since ${formatTime(session.start)} · ${formatLux(session.lux)}`}</Text>
+            <Text
+              style={styles.detail}
+            >{`Since ${formatTime(session.start)} · ${formatLux(session.lux ?? DEFAULT_MANUAL_LUX)}`}</Text>
           </View>
           <Pressable
             style={({ pressed }) => [styles.button, styles.stopButton, pressed && styles.pressed]}

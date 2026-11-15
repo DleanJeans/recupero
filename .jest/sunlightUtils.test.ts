@@ -520,3 +520,27 @@ describe('manual pause', () => {
     expect(getSunlightNotificationPlan(presence, today, 30, undefined, noon)).not.toHaveProperty('pausedUntil');
   });
 });
+
+describe('edited sessions', () => {
+  const {
+    getSunlightDay: day,
+    getSessionEditError,
+    getFreeSessionStart,
+  } = jest.requireActual('../src/utils/sunlight-utils');
+  const london = { lat: 51.5, lng: -0.12 };
+  const dayStart = new Date(2026, 5, 21).getTime();
+  const noon = dayStart + 12 * HOUR;
+  it('shows an edited session with no fixed lux as edited, without double counting', () => {
+    const result = day(dayStart, [{ start: noon, end: noon + HOUR }], london, undefined, noon + 2 * HOUR, [
+      { start: noon + 10 * 60_000, end: noon + 40 * 60_000, edited: true },
+    ]);
+    expect(result.stretches.find((stretch: { edited?: boolean }) => stretch.edited)).toMatchObject({ lux: undefined });
+    expect(result.minutes).toBe(60);
+  });
+  it('validates times and avoids deleted starts', () => {
+    expect(getSessionEditError(10, 5, 100)).toBeDefined();
+    expect(getSessionEditError(10, 200, 100)).toBeDefined();
+    expect(getSessionEditError(10, 50, 100)).toBeUndefined();
+    expect(getFreeSessionStart(5, [5, 6])).toBe(7);
+  });
+});

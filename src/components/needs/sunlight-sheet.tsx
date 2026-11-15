@@ -32,6 +32,7 @@ import { SunlightManualSession } from './sunlight-manual-session';
 import { SunlightPauseCard } from './sunlight-pause';
 import { SunlightPlacesMap } from './sunlight-places-map';
 import { SunlightPreciseRow } from './sunlight-precise-row';
+import { SunlightSessionEditor } from './sunlight-session-editor';
 import { SUNLIGHT_STATUS_COLORS, SunlightStatusDot } from './sunlight-status-dot';
 import { SunlightWeekChart } from './sunlight-week-chart';
 
@@ -62,6 +63,7 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
   const deleteManualSession = useSunlightStore(state => state.deleteManualSession);
   const setRadiusM = useSunlightStore(state => state.setRadiusM);
   const [justAllowed, setJustAllowed] = useState(false);
+  const [editing, setEditing] = useState<SunlightStretch | null>(null);
   const locationAllowed = sunlight.locationAllowed || justAllowed;
 
   useEffect(() => {
@@ -104,7 +106,7 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
           text: 'Delete',
           style: 'destructive',
           onPress: () =>
-            stretch.manual
+            stretch.manual || stretch.edited
               ? deleteManualSession(stretch.start)
               : deleteRange({ start: stretch.start, end: stretch.end }),
         },
@@ -186,7 +188,7 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
             ratePerMinute={
               sunlight.manualSession
                 ? sunlight.status.kind === 'counting'
-                  ? sunlight.manualSession.lux
+                  ? (sunlight.manualSession.lux ?? 0)
                   : 0
                 : getLightDoseRate(sunlight.status.kind === 'counting', sunlight.luxNow, sunlight.eyeLevelFactor)
             }
@@ -214,13 +216,21 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
             <Text style={styles.hint}>No time outside in daylight yet.</Text>
           ) : (
             [...today.stretches].reverse().map(stretch => (
-              <View
-                key={`${stretch.manual ? 'm' : 'a'}${stretch.start}`}
-                style={[styles.stretch, stretch.ongoing && styles.stretchLive]}
+              <Pressable
+                key={`${stretch.manual || stretch.edited ? 'm' : 'a'}${stretch.start}`}
+                style={({ pressed }) => [
+                  styles.stretch,
+                  stretch.ongoing && styles.stretchLive,
+                  pressed && styles.pressed,
+                ]}
+                onPress={() => setEditing(stretch)}
+                disabled={stretch.ongoing}
+                accessibilityRole="button"
+                accessibilityHint="Edit times and light"
               >
                 <Text style={styles.stretchTime}>
                   {formatTime(stretch.start)} – {stretch.ongoing ? 'now' : formatTime(stretch.end)}
-                  {stretch.manual ? ' ✋' : ''}
+                  {stretch.manual ? ' ✋' : stretch.edited ? ' ✎' : ''}
                 </Text>
                 <Text style={styles.stretchLux}>
                   {stretch.lux != null
@@ -240,7 +250,7 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
                     <Text style={styles.stretchDelete}>✕</Text>
                   </Pressable>
                 )}
-              </View>
+              </Pressable>
             ))
           )}
 
@@ -315,6 +325,17 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
           </Text>
         </ScrollView>
       </View>
+      {editing && (
+        <SunlightSessionEditor
+          stretch={editing}
+          onClose={() => setEditing(null)}
+          onDelete={() => {
+            const stretch = editing;
+            setEditing(null);
+            confirmDelete(stretch);
+          }}
+        />
+      )}
     </FullScreenModal>
   );
 }

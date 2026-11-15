@@ -16,6 +16,7 @@ import {
   DEFAULT_SUNLIGHT_GOAL_MINUTES,
   DEFAULT_SUNLIGHT_RADIUS_M,
   getActivePause,
+  getFreeSessionStart,
   MAX_MANUAL_SESSIONS,
   MAX_SUNLIGHT_EVENTS,
   MAX_SUNLIGHT_GOAL_MINUTES,
@@ -68,6 +69,14 @@ export interface SunlightStore {
   pauseUntil: (until: number) => void;
   /** Ends the pause now. */
   resumeSunlight: () => void;
+  /**
+   * Saves new times or light for a session in Today. A detected one becomes a fixed session (its original stretch is
+   * cut out); a manual one is replaced. `lux` unset keeps the weather estimate.
+   */
+  editSession: (
+    original: SunlightRange & { manual?: boolean; edited?: boolean },
+    next: { start: number; end: number; lux?: number },
+  ) => void;
   samples: SunlightPresenceSample[];
   weather?: SunlightWeather;
   setEnabled: (enabled: boolean) => void;
@@ -119,6 +128,30 @@ export const useSunlightStore = create<SunlightStore>()(
           };
         }),
       deletedManualStarts: [],
+      editSession: (original, next) =>
+        set(state => {
+          const isSession = original.manual || original.edited;
+          const old = isSession ? state.manualSessions.find(session => session.start === original.start) : undefined;
+          const sameStart = old != null && next.start === old.start;
+          const deletedManualStarts =
+            old && !sameStart ? [...state.deletedManualStarts, old.start] : state.deletedManualStarts;
+          const start = sameStart ? next.start : getFreeSessionStart(next.start, deletedManualStarts);
+          const session: SunlightManualSession = {
+            start,
+            end: next.end,
+            lux: next.lux,
+            edited: old ? old.edited : true,
+          };
+          return {
+            manualSessions: [...state.manualSessions.filter(item => item.start !== original.start), session]
+              .sort((a, b) => a.start - b.start)
+              .slice(-MAX_MANUAL_SESSIONS),
+            deletedManualStarts,
+            deletedRanges: isSession
+              ? state.deletedRanges
+              : [...state.deletedRanges, { start: original.start, end: original.end }],
+          };
+        }),
       deleteManualSession: start =>
         set(state => ({
           manualSessions: state.manualSessions.filter(session => session.start !== start),
