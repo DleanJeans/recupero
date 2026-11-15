@@ -19,15 +19,18 @@ const OUTDOOR_COLOR = Colors.type.desirable;
 const PATH_EDGE_PADDING = { top: 48, right: 36, bottom: 36, left: 36 };
 
 interface SunlightPlacesMapProps {
-  /** Today's route: solid where it counted as outside, dashed where it didn't. */
+  /** The day's route: solid where it counted as outside, dashed where it didn't. */
   path: SunlightPathSegment[];
+  /** The day shown; picking another one refits the map to its route. */
+  dayStart: number;
+  isToday: boolean;
 }
 
 /**
  * Your position, every saved place with the sunlight radius drawn (inside a blue circle = paused) and today's
  * route. Opens fitted to the route when there is one, else centred on you.
  */
-export function SunlightPlacesMap({ path }: SunlightPlacesMapProps) {
+export function SunlightPlacesMap({ path, dayStart, isToday }: SunlightPlacesMapProps) {
   const mapRef = useRef<MapView>(null);
   const places = useCuesStore(state => state.places);
   const outdoorPlaceIds = useSunlightStore(state => state.outdoorPlaceIds);
@@ -55,12 +58,22 @@ export function SunlightPlacesMap({ path }: SunlightPlacesMapProps) {
   };
   const fitPath = () => {
     if (!hasPath) return;
-    const coordinates = here ? [...pathCoordinates, { latitude: here.lat, longitude: here.lng }] : pathCoordinates;
+    const coordinates =
+      here && isToday ? [...pathCoordinates, { latitude: here.lat, longitude: here.lng }] : pathCoordinates;
     mapRef.current?.fitToCoordinates(coordinates, { edgePadding: PATH_EDGE_PADDING, animated: true });
   };
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: on open, find you once (centring only when there's no route).
   useEffect(() => locate(!hasPath), []);
+
+  const shownDay = useRef(dayStart);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: refit only when another day is picked.
+  useEffect(() => {
+    if (shownDay.current === dayStart) return;
+    shownDay.current = dayStart;
+    if (hasPath) fitPath();
+    else if (here && isToday) mapRef.current?.animateToRegion(getSunlightMapRegion(here), 350);
+  }, [dayStart]);
 
   return (
     <View style={styles.container}>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { resyncReminders } from '../../hooks/use-reminder-engine';
@@ -31,7 +31,12 @@ interface SunlightSheetProps {
 /** Sunlight in four sections: Now (status, minutes, light dose, actions), Today (route + timeline), week, Settings. */
 export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
   const sunlight = useSunlight();
-  const timeline = useSunlightTimeline(sunlight);
+  const [pickedDay, setPickedDay] = useState<number | undefined>(undefined);
+  const scrollRef = useRef<ScrollView>(null);
+  const todaySectionY = useRef(0);
+  const shownDay = sunlight.days.find(day => day.dayStart === pickedDay) ?? sunlight.today;
+  const isToday = shownDay.dayStart === sunlight.today.dayStart;
+  const timeline = useSunlightTimeline(sunlight, shownDay.dayStart);
   const insets = useSafeAreaInsets();
   const deleteRange = useSunlightStore(state => state.deleteRange);
   const deleteManualSession = useSunlightStore(state => state.deleteManualSession);
@@ -41,13 +46,20 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
 
   useEffect(() => {
     if (visible) void syncSunlight(true);
+    else setPickedDay(undefined);
   }, [visible]);
+
+  const pickDay = (dayStart: number) => {
+    setPickedDay(dayStart === sunlight.today.dayStart ? undefined : dayStart);
+    scrollRef.current?.scrollTo({ y: Math.max(0, todaySectionY.current - 8), animated: true });
+  };
 
   if (!visible) return null;
 
   const { today, goalMinutes, days } = sunlight;
   // A stretch out that's too short to count yet still shows, so it never looks like nothing is running.
   const pendingSince =
+    isToday &&
     sunlight.status.kind === 'counting' &&
     !sunlight.manualSession &&
     sunlight.outSince != null &&
@@ -89,7 +101,10 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
   return (
     <FullScreenModal onClose={onClose}>
       <View style={styles.sheet}>
-        <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 32 + insets.bottom }]}>
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={[styles.content, { paddingBottom: 32 + insets.bottom }]}
+        >
           <View style={styles.header}>
             <Text style={styles.headerEmoji}>☀️</Text>
             <View style={styles.headerText}>
@@ -130,8 +145,32 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
           )}
           <SunlightActions sunlight={sunlight} />
 
-          <CueSectionLabel>Today</CueSectionLabel>
-          <SunlightPlacesMap path={timeline.path} />
+          <View
+            style={styles.dayHeader}
+            onLayout={event => {
+              todaySectionY.current = event.nativeEvent.layout.y;
+            }}
+          >
+            <CueSectionLabel>
+              {isToday
+                ? 'Today'
+                : `${new Date(shownDay.dayStart).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · ${formatSunlightMinutes(shownDay.minutes)}`}
+            </CueSectionLabel>
+            {!isToday && (
+              <Pressable
+                onPress={() => setPickedDay(undefined)}
+                hitSlop={8}
+                accessibilityRole="button"
+              >
+                <Text style={styles.backToToday}>Back to today</Text>
+              </Pressable>
+            )}
+          </View>
+          <SunlightPlacesMap
+            path={timeline.path}
+            dayStart={shownDay.dayStart}
+            isToday={isToday}
+          />
           <SunlightTimeline
             items={timeline.items}
             pendingSince={pendingSince}
@@ -142,6 +181,8 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
           <SunlightWeekChart
             days={days}
             goalMinutes={goalMinutes}
+            selectedDayStart={shownDay.dayStart}
+            onSelect={pickDay}
           />
 
           <CueSectionLabel>Settings</CueSectionLabel>
@@ -211,6 +252,17 @@ const styles = StyleSheet.create({
     color: Colors.status.dangerLight,
     fontSize: 13,
     fontWeight: '700',
+  },
+  dayHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+  },
+  backToToday: {
+    color: SUNLIGHT_COLOR,
+    fontSize: 12,
+    fontWeight: '700',
+    paddingHorizontal: 4,
   },
   hint: {
     color: Colors.text.faint,

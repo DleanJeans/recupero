@@ -38,7 +38,7 @@ export function SunlightTimeline({ items, pendingSince, onEdit }: SunlightTimeli
   const places = useCuesStore(state => state.places);
 
   if (items.length === 0 && pendingSince == null) {
-    return <Text style={styles.empty}>Nothing tracked yet today.</Text>;
+    return <Text style={styles.empty}>Nothing tracked on this day yet.</Text>;
   }
 
   return (

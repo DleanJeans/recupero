@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
+import { addLocalDays } from '../utils/sun-utils';
 import {
   getPlaceStays,
   getSunlightPath,
@@ -18,8 +19,11 @@ export interface SunlightTimeline {
   path: SunlightPathSegment[];
 }
 
-/** Today's timeline and route, worked out from the same history as the outdoor time (refreshed with `sunlight`). */
-export function useSunlightTimeline(sunlight: SunlightSnapshot): SunlightTimeline {
+/**
+ * One day's timeline and route (today unless another day of the past week is picked), worked out from the same
+ * history as the outdoor time and refreshed with `sunlight`.
+ */
+export function useSunlightTimeline(sunlight: SunlightSnapshot, dayStart?: number): SunlightTimeline {
   const places = useCuesStore(state => state.places);
   const outdoorPlaceIds = useSunlightStore(state => state.outdoorPlaceIds);
   const events = useSunlightStore(state => state.events);
@@ -28,27 +32,31 @@ export function useSunlightTimeline(sunlight: SunlightSnapshot): SunlightTimelin
   const pause = useSunlightStore(state => state.pause);
   const pauses = useSunlightStore(state => state.pauses);
   const trackingSince = useSunlightStore(state => state.trackingSince);
-  const { today, now } = sunlight;
+  const { days, now } = sunlight;
+  const day = days.find(candidate => candidate.dayStart === dayStart) ?? sunlight.today;
 
   return useMemo(() => {
+    const isToday = day.dayStart === sunlight.today.dayStart;
+    // A past day ends at midnight; nothing on it is still going.
+    const end = isToday ? now : Math.min(now, addLocalDays(day.dayStart, 1));
     const indoor = getIndoorPlaces(places, outdoorPlaceIds);
-    const stays = getPlaceStays(events, samples, indoor, Math.max(trackingSince, today.dayStart), now);
+    const stays = getPlaceStays(events, samples, indoor, Math.max(trackingSince, day.dayStart), end);
     const items = getSunlightTimeline({
-      dayStart: today.dayStart,
-      now,
-      stretches: today.stretches,
+      dayStart: day.dayStart,
+      now: end,
+      stretches: day.stretches,
       stays,
       pauses: getPausedRanges(pauses, pause),
-    });
+    }).map(item => (isToday || item.kind === 'session' ? item : { ...item, ongoing: false }));
     const path = getSunlightPath({
-      dayStart: today.dayStart,
-      now,
+      dayStart: day.dayStart,
+      now: end,
       trail,
       samples,
       stays,
       places,
-      stretches: today.stretches,
+      stretches: day.stretches,
     });
     return { items, path };
-  }, [places, outdoorPlaceIds, events, samples, trail, pause, pauses, trackingSince, today, now]);
+  }, [places, outdoorPlaceIds, events, samples, trail, pause, pauses, trackingSince, day, sunlight.today, now]);
 }
