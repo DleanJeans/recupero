@@ -676,3 +676,66 @@ export function shouldRecordPreciseSample(
   if (!last) return true;
   return placeId !== last.placeId || ts - last.ts >= PRECISE_SAMPLE_GAP_MS;
 }
+
+export const MAX_SUNLIGHT_SAMPLES = 500;
+export const MAX_SUNLIGHT_EVENTS = 2000;
+export const MAX_MANUAL_SESSIONS = 200;
+
+/** The append-only history a background task and the app can both write to. */
+export interface SunlightHistory {
+  events: SunlightGeofenceEvent[];
+  samples: SunlightPresenceSample[];
+  deletedRanges: SunlightRange[];
+  manualSessions: SunlightManualSession[];
+  /** Start times of manual sessions you deleted, so another copy of the history can't bring them back. */
+  deletedManualStarts: number[];
+  luxCalibrations: SunlightCalibrationStep[];
+  eyeLevelFactors: SunlightCalibrationStep[];
+}
+
+function unionBy<T>(a: T[] | undefined, b: T[] | undefined, key: (item: T) => string, pick?: (x: T, y: T) => T): T[] {
+  const map = new Map<string, T>();
+  for (const item of a ?? []) map.set(key(item), item);
+  for (const item of b ?? []) {
+    const k = key(item);
+    const existing = map.get(k);
+    map.set(k, existing && pick ? pick(existing, item) : item);
+  }
+  return [...map.values()];
+}
+
+/**
+ * Combines two copies of the history. Android can run a geofence event in a separate, short-lived copy of the
+ * app while the main one is still alive; each saves its whole state, so without this the last one to save
+ * wiped the other's events (a drive out that counted live, then vanished on arrival).
+ */
+export function mergeSunlightHistory(a: Partial<SunlightHistory>, b: Partial<SunlightHistory>): SunlightHistory {
+  const deletedManualStarts = [...new Set([...(a.deletedManualStarts ?? []), ...(b.deletedManualStarts ?? [])])]
+    .sort((x, y) => x - y)
+    .slice(-MAX_MANUAL_SESSIONS);
+  const deletedManual = new Set(deletedManualStarts);
+  const byTs = <T extends { ts: number }>(x: T, y: T) => x.ts - y.ts;
+  const byFrom = (x: SunlightCalibrationStep, y: SunlightCalibrationStep) => x.from - y.from;
+  return {
+    events: unionBy(a.events, b.events, event => `${event.ts}|${event.kind}|${event.placeId}`)
+      .sort(byTs)
+      .slice(-MAX_SUNLIGHT_EVENTS),
+    samples: unionBy(a.samples, b.samples, sample => `${sample.ts}|${sample.placeId}`)
+      .sort(byTs)
+      .slice(-MAX_SUNLIGHT_SAMPLES),
+    deletedRanges: unionBy(a.deletedRanges, b.deletedRanges, range => `${range.start}|${range.end}`),
+    // A stopped or edited copy of a session wins over one still running.
+    manualSessions: unionBy(
+      a.manualSessions,
+      b.manualSessions,
+      session => `${session.start}`,
+      (x, y) => (y.end != null || x.end == null ? y : x),
+    )
+      .filter(session => !deletedManual.has(session.start))
+      .sort((x, y) => x.start - y.start)
+      .slice(-MAX_MANUAL_SESSIONS),
+    deletedManualStarts,
+    luxCalibrations: unionBy(a.luxCalibrations, b.luxCalibrations, step => `${step.from}`).sort(byFrom),
+    eyeLevelFactors: unionBy(a.eyeLevelFactors, b.eyeLevelFactors, step => `${step.from}`).sort(byFrom),
+  };
+}

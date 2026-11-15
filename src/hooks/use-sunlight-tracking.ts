@@ -4,7 +4,7 @@ import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
 import { syncSunlightNotification } from '../utils/sunlight-notification';
 import { syncPreciseTracking } from '../utils/sunlight-precise-tracking';
-import { closeOutdoorStretchAtNewPlace, syncSunlight } from '../utils/sunlight-sync';
+import { closeOutdoorStretchAtNewPlace, rehydrateSunlight, syncSunlight } from '../utils/sunlight-sync';
 
 /**
  * Checks where you are and refreshes the sunshine forecast on launch and when Recupero comes to the foreground,
@@ -17,7 +17,8 @@ export function useSunlightTracking(ready: boolean) {
     if (!ready || !enabled) return;
     void syncSunlight();
     const subscription = AppState.addEventListener('change', state => {
-      if (state === 'active') void syncSunlight();
+      // A background copy of the app may have saved arrivals or departures while this one sat in memory.
+      if (state === 'active') void rehydrateSunlight().then(() => syncSunlight());
     });
     return () => subscription.remove();
   }, [ready, enabled]);

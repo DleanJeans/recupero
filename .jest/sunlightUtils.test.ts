@@ -421,3 +421,35 @@ describe('manual sessions', () => {
     expect(getRunningManualSession([{ start: noon, lux: 5000 }], noon + 1000)).toBeDefined();
   });
 });
+
+describe('mergeSunlightHistory', () => {
+  const { mergeSunlightHistory } = jest.requireActual('../src/utils/sunlight-utils');
+  it('keeps events either copy saved, without duplicates', () => {
+    const exit = { ts: 1, kind: 'exit', placeId: 'home' };
+    const enter = { ts: 5, kind: 'enter', placeId: 'work' };
+    const merged = mergeSunlightHistory(
+      { events: [exit] },
+      { events: [exit, enter], samples: [{ ts: 3, placeId: null }] },
+    );
+    expect(merged.events).toEqual([exit, enter]);
+    expect(merged.samples).toHaveLength(1);
+  });
+  it('prefers a stopped manual session and drops deleted ones', () => {
+    const merged = mergeSunlightHistory(
+      {
+        manualSessions: [
+          { start: 1, end: 9, lux: 5 },
+          { start: 20, lux: 5 },
+        ],
+      },
+      {
+        manualSessions: [
+          { start: 1, lux: 5 },
+          { start: 20, lux: 5 },
+        ],
+        deletedManualStarts: [20],
+      },
+    );
+    expect(merged.manualSessions).toEqual([{ start: 1, end: 9, lux: 5 }]);
+  });
+});

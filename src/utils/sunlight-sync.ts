@@ -94,3 +94,12 @@ export async function closeOutdoorStretchAtNewPlace(place: SavedPlace, addedAt: 
   });
   syncSunlightNotification();
 }
+
+/** Reloads the sunlight store from storage, keeping anything only this copy of the app has (see the store's merge). */
+export async function rehydrateSunlight(): Promise<void> {
+  try {
+    await useSunlightStore.persist.rehydrate();
+  } catch (error) {
+    console.warn('Sunlight reload failed', error);
+  }
+}

@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type {
@@ -10,17 +9,19 @@ import type {
   SunlightWeather,
 } from '../types/sunlight';
 import { clampGeofenceRadius } from '../utils/geofence-utils';
+import { sunlightStorage } from '../utils/sunlight-persist';
 import {
   addCalibrationStep,
   DEFAULT_SUNLIGHT_GOAL_MINUTES,
   DEFAULT_SUNLIGHT_RADIUS_M,
+  MAX_MANUAL_SESSIONS,
+  MAX_SUNLIGHT_EVENTS,
   MAX_SUNLIGHT_GOAL_MINUTES,
+  MAX_SUNLIGHT_SAMPLES,
   MIN_SUNLIGHT_GOAL_MINUTES,
+  mergeSunlightHistory,
+  type SunlightHistory,
 } from '../utils/sunlight-utils';
-
-const MAX_SAMPLES = 500;
-const MAX_EVENTS = 2000;
-const MAX_MANUAL_SESSIONS = 200;
 
 export interface SunlightStore {
   enabled: boolean;
@@ -55,6 +56,7 @@ export interface SunlightStore {
   startManualSession: (lux: number) => void;
   stopManualSession: () => void;
   deleteManualSession: (start: number) => void;
+  deletedManualStarts: number[];
   samples: SunlightPresenceSample[];
   weather?: SunlightWeather;
   setEnabled: (enabled: boolean) => void;
@@ -105,8 +107,12 @@ export const useSunlightStore = create<SunlightStore>()(
             ),
           };
         }),
+      deletedManualStarts: [],
       deleteManualSession: start =>
-        set(state => ({ manualSessions: state.manualSessions.filter(session => session.start !== start) })),
+        set(state => ({
+          manualSessions: state.manualSessions.filter(session => session.start !== start),
+          deletedManualStarts: [...state.deletedManualStarts, start],
+        })),
       samples: [],
       weather: undefined,
       setEnabled: enabled =>
@@ -124,13 +130,18 @@ export const useSunlightStore = create<SunlightStore>()(
             : [...state.outdoorPlaceIds, placeId],
         })),
       setRadiusM: radiusM => set({ radiusM: clampGeofenceRadius(Math.round(radiusM)) }),
-      addEvent: event => set(state => ({ events: [...state.events, event].slice(-MAX_EVENTS) })),
-      addSample: sample => set(state => ({ samples: [...state.samples, sample].slice(-MAX_SAMPLES) })),
+      addEvent: event => set(state => ({ events: [...state.events, event].slice(-MAX_SUNLIGHT_EVENTS) })),
+      addSample: sample => set(state => ({ samples: [...state.samples, sample].slice(-MAX_SUNLIGHT_SAMPLES) })),
       setWeather: weather => set({ weather }),
     }),
     {
       name: 'recupero-sunlight',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => sunlightStorage),
+      // Rehydrating (app back in front, background task) folds in what another copy of the app saved meanwhile.
+      merge: (persisted, current) => {
+        const saved = (persisted ?? {}) as Partial<SunlightStore>;
+        return { ...current, ...saved, ...mergeSunlightHistory(current as SunlightHistory, saved) };
+      },
       version: 2,
       migrate: persisted => {
         const state = (persisted ?? {}) as Partial<SunlightStore> & { luxCalibration?: number };

@@ -6,6 +6,7 @@ import { findPlaceAtPoint } from './geofence-utils';
 import { hasBackgroundLocationPermission } from './reminder-geofencing';
 import { waitForHydration } from './store-hydration';
 import { syncSunlightNotification } from './sunlight-notification';
+import { rehydrateSunlight } from './sunlight-sync';
 import { getIndoorPlaces, roundCoordinate, shouldRecordPreciseSample } from './sunlight-utils';
 
 export const SUNLIGHT_PRECISE_TASK = 'recupero-sunlight-precise';
@@ -21,6 +22,14 @@ async function handleLocations(locations: Location.LocationObject[]): Promise<vo
   if (!enabled || !preciseTracking) return;
   const places = useCuesStore.getState().places;
   const indoor = getIndoorPlaces(places, outdoorPlaceIds).map(place => ({ ...place, radiusM }));
+  const isNew = ({ coords, timestamp }: Location.LocationObject) => {
+    if (coords.accuracy != null && coords.accuracy > MAX_ACCURACY_M) return false;
+    const placeId = findPlaceAtPoint(indoor, { lat: coords.latitude, lng: coords.longitude })?.id ?? null;
+    return shouldRecordPreciseSample(useSunlightStore.getState().samples.at(-1) ?? samples.at(-1), placeId, timestamp);
+  };
+  if (!locations.some(isNew)) return;
+  // Another copy of the app (a background geofence event) may have saved since; build on that.
+  await rehydrateSunlight();
   let recorded = false;
   for (const { coords, timestamp } of locations) {
     if (coords.accuracy != null && coords.accuracy > MAX_ACCURACY_M) continue;
