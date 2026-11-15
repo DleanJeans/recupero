@@ -27,8 +27,8 @@ jobs:
       profile: ${{ inputs.profile || '' }}
       # Build these APKs on push whenever the native fingerprint changes (no build-apk keyword needed).
       auto-build-profiles: development,preview
-      # Tapping the "OTA published" ntfy notification opens the preview app (its URL scheme) instead of the Expo page.
-      ota-click-url: exp+recupero-preview://
+      # Tapping the "OTA published" ntfy notification opens the app (its URL scheme) instead of the Expo page.
+      ota-click-url: exp+recupero://
     secrets:
       expo-token: ${{ secrets.EXPO_TOKEN }}
       ntfy-topic: ${{ secrets.NTFY_TOPIC }}

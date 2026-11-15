@@ -74,7 +74,7 @@ const PERSISTED_STORES = [
 ];
 
 const linking: LinkingOptions<RootStackParamList> = {
-  prefixes: ['exp+recupero://', 'exp+recupero-preview://'],
+  prefixes: ['exp+recupero://'],
   config: {
     screens: {
       Home: 'home',

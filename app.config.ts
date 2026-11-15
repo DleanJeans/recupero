@@ -12,8 +12,6 @@ const isDev = variant === 'development';
 const bundleSuffix = isDev ? '.dev' : variant === 'preview' ? '.preview' : '';
 const baseId = 'com.dleanjeans.recupero';
 const bundleId = `${baseId}${bundleSuffix}`;
-// Preview gets its own URL scheme so a link (e.g. the OTA ntfy notification) opens it, not the dev build.
-const appScheme = variant === 'preview' ? 'exp+recupero-preview' : 'exp+recupero';
 
 const plugins: NonNullable<ExpoConfig['plugins']> = [
   './plugins/with-loading-splash',
@@ -67,7 +65,7 @@ const config: ExpoConfig = {
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'dark',
-  scheme: appScheme,
+  scheme: 'exp+recupero',
   ios: {
     supportsTablet: true,
     bundleIdentifier: bundleId,
@@ -86,7 +84,7 @@ const config: ExpoConfig = {
       {
         action: 'VIEW',
         autoVerify: true,
-        data: [{ scheme: appScheme }],
+        data: [{ scheme: 'exp+recupero' }],
         category: ['BROWSABLE', 'DEFAULT'],
       },
       // Google Health sign-in redirect.
