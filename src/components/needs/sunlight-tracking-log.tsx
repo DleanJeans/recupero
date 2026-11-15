@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useCuesStore } from '../../store/cues-store';
 import { useSunlightStore } from '../../store/sunlight-store';
 import { Colors } from '../../utils/colors';
+import { getSunlightTaskRuns, type SunlightTaskRun } from '../../utils/sunlight-persist';
 import { getSunlightLogEntries, type SunlightLogEntry } from '../../utils/sunlight-utils';
 import { formatTime } from '../../utils/time-utils';
 import { Text } from '../text';
@@ -21,7 +22,15 @@ export function SunlightTrackingLog() {
   const trackingSince = useSunlightStore(state => state.trackingSince);
   const places = useCuesStore(state => state.places);
   const placeName = (id: string) => places.find(place => place.id === id)?.name ?? 'a removed place';
+  const [runs, setRuns] = useState<SunlightTaskRun[]>([]);
+  useEffect(() => {
+    if (open) void getSunlightTaskRuns().then(setRuns);
+  }, [open]);
   const entries = open ? getSunlightLogEntries(events, samples) : [];
+  const lastRun = (task: SunlightTaskRun['task']) => runs.filter(run => run.task === task).at(-1);
+  const describeRun = (run: SunlightTaskRun | undefined) =>
+    run ? `${day(run.ts)} ${formatTime(run.ts)} (${run.appState === 'active' ? 'app open' : 'background'})` : 'never';
+  const backgroundRuns = runs.filter(run => run.appState !== 'active').length;
   const day = (ts: number) => new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
   return (
@@ -37,6 +46,9 @@ export function SunlightTrackingLog() {
         <>
           <Text style={styles.meta}>
             {`Counting since ${day(trackingSince)} ${formatTime(trackingSince)} · ${events.length} arrivals/departures · ${samples.length} GPS checks`}
+          </Text>
+          <Text style={styles.meta}>
+            {`Background wake-ups: last GPS batch ${describeRun(lastRun('precise'))} · last place event ${describeRun(lastRun('geofence'))} · ${backgroundRuns} of the last ${runs.length} ran in the background`}
           </Text>
           {entries.length === 0 && <Text style={styles.meta}>Nothing recorded yet.</Text>}
           {entries.map(entry => (

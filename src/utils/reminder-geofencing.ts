@@ -1,5 +1,6 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
+import { AppState } from 'react-native';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useCuesStore } from '../store/cues-store';
 import { useSettingsStore } from '../store/settings-store';
@@ -16,10 +17,41 @@ import {
 } from './reminder-utils';
 import { waitForHydration } from './store-hydration';
 import { syncSunlightNotification } from './sunlight-notification';
+import { noteSunlightTaskRun } from './sunlight-persist';
 import { rehydrateSunlight } from './sunlight-sync';
 import { getSunlightRegionPlaceId } from './sunlight-utils';
 
 export const REMINDER_GEOFENCE_TASK = 'recupero-reminder-geofence';
+
+/** Events this soon after registering are Android's initial "you're inside/outside" report, not movement. */
+const INITIAL_TRIGGER_WINDOW_MS = 30_000;
+let lastRegisteredAt = 0;
+
+function getRegionsKey(regions: Array<Partial<Location.LocationRegion>>): string {
+  return JSON.stringify(
+    regions
+      .map(region => [
+        region.identifier,
+        region.latitude,
+        region.longitude,
+        region.radius,
+        region.notifyOnEnter,
+        region.notifyOnExit,
+      ])
+      .sort((a, b) => String(a[0]).localeCompare(String(b[0]))),
+  );
+}
+
+async function getRegisteredRegionsKey(): Promise<string | null> {
+  try {
+    const options = (await TaskManager.getTaskOptionsAsync(REMINDER_GEOFENCE_TASK)) as
+      | { regions?: Array<Partial<Location.LocationRegion>> }
+      | undefined;
+    return options?.regions ? getRegionsKey(options.regions) : null;
+  } catch {
+    return null;
+  }
+}
 
 interface GeofenceTaskData {
   eventType: Location.GeofencingEventType;
@@ -32,6 +64,11 @@ async function handleGeofenceEvent({ eventType, region }: GeofenceTaskData): Pro
   const direction = eventType === Location.GeofencingEventType.Enter ? 'enter' : 'exit';
   const sunlightPlaceId = getSunlightRegionPlaceId(placeId);
   if (sunlightPlaceId) {
+    void noteSunlightTaskRun('geofence', AppState.currentState);
+    // Registering geofences makes Android report "inside"/"outside" for every region at once. With small
+    // radii those are fuzzy (it said "arrived" at a shop while driving off), and the GPS check on app
+    // open already knows where you are, so they aren't real arrivals or departures.
+    if (Date.now() - lastRegisteredAt < INITIAL_TRIGGER_WINDOW_MS) return;
     await Promise.all([waitForHydration(useSunlightStore), waitForHydration(useCuesStore)]);
     // This may run in a separate background copy of the app; pick up what the other copy saved first.
     await rehydrateSunlight();
@@ -111,6 +148,9 @@ export async function syncReminderGeofences(
     if (running) await Location.stopGeofencingAsync(REMINDER_GEOFENCE_TASK);
     return;
   }
+  // Re-registering the same regions on every launch made Android re-send arrive/leave for all of them.
+  if (running && (await getRegisteredRegionsKey()) === getRegionsKey(regions)) return;
   // Calling start again replaces the previous set of regions.
+  lastRegisteredAt = Date.now();
   await Location.startGeofencingAsync(REMINDER_GEOFENCE_TASK, regions);
 }

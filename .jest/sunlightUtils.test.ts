@@ -544,3 +544,38 @@ describe('edited sessions', () => {
     expect(getFreeSessionStart(5, [5, 6])).toBe(7);
   });
 });
+
+describe('trip between far places with no departure seen', () => {
+  const { getSunlightPresence: presence } = jest.requireActual('../src/utils/sunlight-utils');
+  const home = place('home', { isHome: true });
+  const shop = place('shop', { lat: 21.04 });
+  const t0 = Date.UTC(2024, 5, 21, 2);
+  it('counts from the last sighting at the shop to the first at home', () => {
+    const result = presence(
+      [event('enter', 'shop', t0 + 1000)],
+      [
+        { ts: t0, placeId: 'shop' },
+        { ts: t0 + 10 * MIN, placeId: 'home' },
+      ],
+      [home, shop],
+      0,
+      t0 + HOUR,
+    );
+    expect(result.ranges).toEqual([{ start: t0 + 1000, end: t0 + 10 * MIN }]);
+    expect(result.insidePlaceIds).toEqual(['home']);
+  });
+  it('does not invent a trip between overlapping places', () => {
+    const room = place('room', { lat: 21.0301 });
+    const result = presence(
+      [],
+      [
+        { ts: t0, placeId: 'home' },
+        { ts: t0 + 10 * MIN, placeId: 'room' },
+      ],
+      [home, room],
+      0,
+      t0 + HOUR,
+    );
+    expect(result.ranges).toEqual([]);
+  });
+});

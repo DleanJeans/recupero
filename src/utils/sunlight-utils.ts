@@ -11,7 +11,7 @@ import type {
   SunlightWeather,
   SunlightWeatherHour,
 } from '../types/sunlight';
-import type { GeoPoint } from './geofence-utils';
+import { distanceMeters, type GeoPoint } from './geofence-utils';
 import type { ReminderGeofenceRegion } from './reminder-utils';
 import { addLocalDays, getDaylightRange, getSunTimes, startOfLocalDay } from './sun-utils';
 
@@ -28,6 +28,8 @@ export const MAX_SUNLIGHT_GOAL_MINUTES = 240;
 export const MIN_OUTDOOR_MS = 2 * MS_PER_MINUTE;
 /** With no event for this long, assume an arrival was missed and stop counting. */
 export const MAX_OUTDOOR_STRETCH_MS = 8 * MS_PER_HOUR;
+/** Two saved places at least this far apart can't be reached from one another without going outside. */
+export const MIN_TRIP_DISTANCE_M = 100;
 /** Clear-sky sunlight gives roughly 100-120 lux per W/m² of global horizontal irradiance. */
 export const LUX_PER_WM2 = 120;
 /** Below this, daylight is too dim to count as "bright" (heavy overcast, dusk). */
@@ -137,9 +139,12 @@ export function getSunlightPresence(
   now: number,
 ): SunlightPresence {
   const indoorIds = new Set(indoorPlaces.map(place => place.id));
+  const placeById = new Map(indoorPlaces.map(place => [place.id, place]));
   const ranges: SunlightRange[] = [];
   let inside: Set<string> | null = null;
   let outSince: number | null = null;
+  /** Last time something confirmed you were at one of the places in `inside` (a GPS check or an arrival). */
+  let lastAt: number | null = null;
 
   const close = (end: number) => {
     if (outSince == null) return;
@@ -148,10 +153,34 @@ export function getSunlightPresence(
     if (capped - start >= MIN_OUTDOOR_MS) ranges.push({ start, end: capped });
     outSince = null;
   };
+  /** Whether getting from every one of `from` to `to` means going outside (they're not the same building). */
+  const isTrip = (from: Set<string>, to: string) => {
+    const target = placeById.get(to);
+    if (!target || from.size === 0 || from.has(to)) return false;
+    for (const id of from) {
+      const place = placeById.get(id);
+      if (!place || distanceMeters(place, target) < MIN_TRIP_DISTANCE_M) return false;
+    }
+    return true;
+  };
 
   for (const event of getPresenceEvents(activity, samples, indoorIds)) {
     if (event.ts > now) break;
     const wasOut: boolean = inside != null && inside.size === 0;
+    // Showing up at a far-away place with no departure seen (a missed exit) means you travelled in between:
+    // count from the last time you were seen at the old place.
+    if (
+      !wasOut &&
+      inside &&
+      event.placeId &&
+      event.kind !== 'exit' &&
+      lastAt != null &&
+      isTrip(inside, event.placeId)
+    ) {
+      outSince = lastAt;
+      close(event.ts);
+      inside = new Set();
+    }
     if (event.kind === 'sample') {
       inside = new Set(event.placeId ? [event.placeId] : []);
     } else {
@@ -161,6 +190,7 @@ export function getSunlightPresence(
       else if (event.placeId) inside.delete(event.placeId);
     }
     const isOut = inside.size === 0;
+    if (!isOut && event.placeId && event.kind !== 'exit') lastAt = event.ts;
     if (!wasOut && isOut) outSince = event.ts;
     else if (wasOut && !isOut) close(event.ts);
     // A check that finds you out after a long gap restarts the cap from here.

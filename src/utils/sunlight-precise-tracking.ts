@@ -1,11 +1,13 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
+import { AppState } from 'react-native';
 import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
 import { findPlaceAtPoint } from './geofence-utils';
 import { hasBackgroundLocationPermission } from './reminder-geofencing';
 import { waitForHydration } from './store-hydration';
 import { syncSunlightNotification } from './sunlight-notification';
+import { noteSunlightTaskRun } from './sunlight-persist';
 import { rehydrateSunlight } from './sunlight-sync';
 import { getIndoorPlaces, roundCoordinate, shouldRecordPreciseSample } from './sunlight-utils';
 
@@ -16,6 +18,7 @@ const MAX_ACCURACY_M = 100;
 const SAMPLE_COORD_DECIMALS = 3;
 
 async function handleLocations(locations: Location.LocationObject[]): Promise<void> {
+  void noteSunlightTaskRun('precise', AppState.currentState);
   await waitForHydration(useSunlightStore);
   await waitForHydration(useCuesStore);
   const { enabled, preciseTracking, outdoorPlaceIds, radiusM, samples, addSample } = useSunlightStore.getState();
