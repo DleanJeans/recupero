@@ -10,8 +10,8 @@ on:
       profile:
         description: EAS build profile to build
         type: choice
-        options: [development, preview, production]
-        default: development
+        options: [preview, development, production]
+        default: preview
 
 permissions:
   contents: write
@@ -22,11 +22,17 @@ jobs:
     uses: DleanJeans/expo-workflows/.github/workflows/eas.yml@main
     with:
       app-name: recupero-dev
+      # Notification title prefix only; app-name stays recupero-dev because release names/Obtainium match on it.
+      ntfy-title: recupero
       expo-project-slug: recupero
       ota-label: send ota
       profile: ${{ inputs.profile || '' }}
       # Build these APKs on push whenever the native fingerprint changes (no build-apk keyword needed).
       auto-build-profiles: development,preview
+      # `build-apk` in a commit message (or the APK label) builds this profile.
+      apk-profile: preview
+      # Development builds are off while only the preview app is used. Remove this line to re-enable them.
+      disabled-profiles: development
       # Tapping the "OTA published" ntfy notification opens the preview app (its URL scheme) instead of the Expo page.
       ota-click-url: exp+recupero-preview://
     secrets:
