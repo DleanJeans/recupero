@@ -37,6 +37,7 @@ export type RootStackParamList = {
   Shop: undefined;
   MoneyLog: undefined;
   Settings: undefined;
+  PatchNotes: undefined;
   NeedsHistory: undefined;
   NeedsSettings: undefined;
   Cues: undefined;

@@ -14,7 +14,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-15',
     items: [
-      'Settings now ends with these patch notes.',
+      'Patch notes: a button at the end of Settings opens this list.',
       'Sunlight: the sheet is reorganised into Now, Today, Past week and Settings. Settings are one line each and open in place.',
       "Sunlight: Precise tracking is now the Outside Mode button, next to Pause and I'm outside. Turn it on while you move between places.",
       'Sunlight: Today is a timeline of your places, sessions and pauses, and each session shows its lux·min.',

@@ -1,5 +1,5 @@
 import { PATCH_NOTES } from '../src/data/patch-notes';
-import { formatPatchNotesDate, PATCH_NOTES_COLLAPSED_DAYS, visiblePatchNotes } from '../src/utils/patch-notes-utils';
+import { formatPatchNotesDate } from '../src/utils/patch-notes-utils';
 
 describe('patch notes', () => {
   it('lists days newest first with valid unique dates and no empty days', () => {
@@ -12,11 +12,5 @@ describe('patch notes', () => {
 
   it('formats dates in local calendar terms', () => {
     expect(formatPatchNotesDate('2026-11-15')).toBe('Sun, Nov 15, 2026');
-  });
-
-  it('collapses to the newest days until expanded', () => {
-    const notes = [1, 2, 3, 4, 5].map(n => ({ date: `2026-11-0${n}`, items: ['x'] }));
-    expect(visiblePatchNotes(notes, false)).toHaveLength(PATCH_NOTES_COLLAPSED_DAYS);
-    expect(visiblePatchNotes(notes, true)).toHaveLength(5);
   });
 });
