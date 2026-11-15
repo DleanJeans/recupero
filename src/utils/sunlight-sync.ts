@@ -9,14 +9,13 @@ import {
   getIndoorPlaces,
   getSunReferencePoint,
   getWeatherUrl,
+  isUsableSunlightFix,
   parseWeatherHours,
   roundCoordinate,
   shouldRefreshWeather,
 } from './sunlight-utils';
 
 const MIN_SAMPLE_GAP_MS = 5 * 60_000;
-/** A fix vaguer than this is a cell-tower guess; keep the last known state instead. */
-const MAX_SAMPLE_ACCURACY_M = 100;
 const SAMPLE_COORD_DECIMALS = 3;
 
 /** Checks where the phone is now (only if location is already allowed) and records whether it's at a tracked place. */
@@ -29,12 +28,13 @@ async function samplePresence(now: number, force: boolean): Promise<void> {
   // GPS, not Wi-Fi/cell: with a 10 m radius a Balanced fix (often 50-100 m off) can't tell home from the street.
   const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
   const { latitude, longitude, accuracy } = position.coords;
-  if (accuracy != null && accuracy > MAX_SAMPLE_ACCURACY_M) return;
   // Judge by the fix's centre (the blue dot), not its accuracy circle, so being down the street counts as out.
   const indoor = getIndoorPlaces(useCuesStore.getState().places, outdoorPlaceIds).map(place => ({ ...place, radiusM }));
+  const fix = describeSunlightFix(indoor, { lat: latitude, lng: longitude }, accuracy);
+  if (!isUsableSunlightFix(fix, accuracy)) return;
   addSample({
     ts: position.timestamp || now,
-    ...describeSunlightFix(indoor, { lat: latitude, lng: longitude }, accuracy),
+    ...fix,
     lat: roundCoordinate(latitude, SAMPLE_COORD_DECIMALS),
     lng: roundCoordinate(longitude, SAMPLE_COORD_DECIMALS),
   });

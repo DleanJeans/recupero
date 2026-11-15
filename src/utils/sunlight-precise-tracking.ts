@@ -9,12 +9,16 @@ import { waitForHydration } from './store-hydration';
 import { syncSunlightNotification } from './sunlight-notification';
 import { noteSunlightTaskRun } from './sunlight-persist';
 import { rehydrateSunlight } from './sunlight-sync';
-import { describeSunlightFix, getIndoorPlaces, roundCoordinate, shouldRecordPreciseSample } from './sunlight-utils';
+import {
+  describeSunlightFix,
+  getIndoorPlaces,
+  isUsableSunlightFix,
+  roundCoordinate,
+  shouldRecordPreciseSample,
+} from './sunlight-utils';
 
 export const SUNLIGHT_PRECISE_TASK = 'recupero-sunlight-precise';
 
-/** Same cut-off as the app-open check: a vaguer fix is a cell-tower guess. */
-const MAX_ACCURACY_M = 100;
 const SAMPLE_COORD_DECIMALS = 3;
 
 async function handleLocations(locations: Location.LocationObject[]): Promise<void> {
@@ -26,17 +30,21 @@ async function handleLocations(locations: Location.LocationObject[]): Promise<vo
   const places = useCuesStore.getState().places;
   const indoor = getIndoorPlaces(places, outdoorPlaceIds).map(place => ({ ...place, radiusM }));
   const isNew = ({ coords, timestamp }: Location.LocationObject) => {
-    if (coords.accuracy != null && coords.accuracy > MAX_ACCURACY_M) return false;
-    const placeId = findPlaceAtPoint(indoor, { lat: coords.latitude, lng: coords.longitude })?.id ?? null;
-    return shouldRecordPreciseSample(useSunlightStore.getState().samples.at(-1) ?? samples.at(-1), placeId, timestamp);
+    const fix = describeSunlightFix(indoor, { lat: coords.latitude, lng: coords.longitude }, coords.accuracy);
+    if (!isUsableSunlightFix(fix, coords.accuracy)) return false;
+    return shouldRecordPreciseSample(
+      useSunlightStore.getState().samples.at(-1) ?? samples.at(-1),
+      fix.placeId,
+      timestamp,
+    );
   };
   if (!locations.some(isNew)) return;
   // Another copy of the app (a background geofence event) may have saved since; build on that.
   await rehydrateSunlight();
   let recorded = false;
   for (const { coords, timestamp } of locations) {
-    if (coords.accuracy != null && coords.accuracy > MAX_ACCURACY_M) continue;
     const fix = describeSunlightFix(indoor, { lat: coords.latitude, lng: coords.longitude }, coords.accuracy);
+    if (!isUsableSunlightFix(fix, coords.accuracy)) continue;
     const last = useSunlightStore.getState().samples.at(-1) ?? samples.at(-1);
     if (!shouldRecordPreciseSample(last, fix.placeId, timestamp)) continue;
     addSample({

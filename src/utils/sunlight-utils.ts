@@ -145,6 +145,22 @@ function getPresenceEvents(
   return events.sort((a, b) => a.ts - b.ts);
 }
 
+/** Fixes vaguer than this are usually a cell-tower guess. */
+export const MAX_FIX_ACCURACY_M = 100;
+
+/**
+ * Whether a fix is good enough to record: accurate, or vague but so far from every place that even its
+ * accuracy circle can't reach one (the first fixes after leaving are often coarse; waiting for a sharp one
+ * delayed noticing you'd left by minutes).
+ */
+export function isUsableSunlightFix(
+  fix: Pick<SunlightPresenceSample, 'placeId' | 'edgeM'>,
+  accuracyM?: number | null,
+): boolean {
+  if (accuracyM == null || accuracyM <= MAX_FIX_ACCURACY_M) return true;
+  return fix.placeId == null && fix.edgeM != null && fix.edgeM > accuracyM;
+}
+
 /** Where a GPS fix is relative to the indoor places: inside one, or how far past the nearest one's edge. */
 export function describeSunlightFix(
   indoor: Array<GeoPoint & { id: string; radiusM: number }>,

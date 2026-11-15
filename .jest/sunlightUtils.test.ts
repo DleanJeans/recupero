@@ -636,3 +636,13 @@ describe('eye-level lux on sessions', () => {
     expect(result.stretches[1].eyeLux).toBe(3000);
   });
 });
+
+describe('isUsableSunlightFix', () => {
+  const { isUsableSunlightFix } = jest.requireActual('../src/utils/sunlight-utils');
+  it('accepts a vague fix only when it is clearly away from every place', () => {
+    expect(isUsableSunlightFix({ placeId: 'home' }, 30)).toBe(true);
+    expect(isUsableSunlightFix({ placeId: null, edgeM: 400 }, 150)).toBe(true);
+    expect(isUsableSunlightFix({ placeId: null, edgeM: 80 }, 150)).toBe(false);
+    expect(isUsableSunlightFix({ placeId: 'home' }, 150)).toBe(false);
+  });
+});
