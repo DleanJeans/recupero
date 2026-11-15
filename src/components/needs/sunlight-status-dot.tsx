@@ -9,6 +9,7 @@ export const SUNLIGHT_STATUS_COLORS: Record<SunlightStatusKind, string> = {
   sunDown: Colors.text.muted,
   unknown: Colors.text.faint,
   off: Colors.status.dangerLight,
+  paused: Colors.status.info,
 };
 
 /** A small dot that is green while the sunlight counter is running. */

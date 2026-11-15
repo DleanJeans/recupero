@@ -4,7 +4,9 @@ import { useSunlightStore } from '../store/sunlight-store';
 import { startOfLocalDay } from './sun-utils';
 import {
   calibrateWeather,
+  getActivePause,
   getIndoorPlaces,
+  getPausedRanges,
   getRunningManualSession,
   getSunlightDay,
   getSunlightNotificationPlan,
@@ -29,6 +31,8 @@ export function syncSunlightNotification(): void {
     outdoorPlaceIds,
     events,
     deletedRanges,
+    pause,
+    pauses,
     samples,
     weather: rawWeather,
     luxCalibrations,
@@ -46,14 +50,16 @@ export function syncSunlightNotification(): void {
     const point = getSunReferencePoint(samples, places);
     const today = getSunlightDay(
       startOfLocalDay(now),
-      subtractSunlightRanges(presence.ranges, deletedRanges),
+      subtractSunlightRanges(presence.ranges, [...deletedRanges, ...getPausedRanges(pauses, pause)]),
       point,
       weather,
       now,
       manualSessions,
     );
-    plan = getSunlightNotificationPlan(presence, today, goalMinutes, weather, now);
+    plan = getSunlightNotificationPlan(presence, today, goalMinutes, weather, now, getActivePause(pause, now)?.until);
   }
+  // Builds from before pausing existed would keep counting on their notification, so hide it there instead.
+  if (plan?.pausedUntil != null && !SunlightNotification.supportsPause?.()) plan = null;
   try {
     if (plan) {
       // Restart only when something other than the clock changed (the service counts up on its own).

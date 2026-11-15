@@ -29,6 +29,7 @@ import { SunlightCalibration } from './sunlight-calibration';
 import { SunlightEyeLevel } from './sunlight-eye-level';
 import { SunlightLightDose } from './sunlight-light-dose';
 import { SunlightManualSession } from './sunlight-manual-session';
+import { SunlightPauseCard } from './sunlight-pause';
 import { SunlightPlacesMap } from './sunlight-places-map';
 import { SunlightPreciseRow } from './sunlight-precise-row';
 import { SUNLIGHT_STATUS_COLORS, SunlightStatusDot } from './sunlight-status-dot';
@@ -153,6 +154,10 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
             </View>
           )}
 
+          <SunlightPauseCard
+            pause={sunlight.pause}
+            now={sunlight.now}
+          />
           <SunlightManualSession session={sunlight.manualSession} />
           <SunlightPreciseRow />
 

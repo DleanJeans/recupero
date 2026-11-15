@@ -452,4 +452,71 @@ describe('mergeSunlightHistory', () => {
     );
     expect(merged.manualSessions).toEqual([{ start: 1, end: 9, lux: 5 }]);
   });
+
+  it('keeps pauses from both copies', () => {
+    const a = { start: 1, end: 5 };
+    const b = { start: 9, end: 12 };
+    expect(mergeSunlightHistory({ pauses: [a] }, { pauses: [a, b] }).pauses).toEqual([a, b]);
+  });
+});
+
+describe('manual pause', () => {
+  const {
+    getActivePause,
+    getPausedRanges,
+    getPauseUntil,
+    formatPauseUntil,
+    SUNLIGHT_PAUSE_OPTIONS,
+    subtractSunlightRanges: subtract,
+    getSunlightNotificationPlan,
+  } = jest.requireActual('../src/utils/sunlight-utils');
+  const t0 = new Date(2024, 5, 21, 10, 0).getTime();
+
+  it('ends after the chosen minutes or at the end of the day', () => {
+    expect(getPauseUntil(SUNLIGHT_PAUSE_OPTIONS[1], t0)).toBe(t0 + HOUR);
+    expect(getPauseUntil(SUNLIGHT_PAUSE_OPTIONS[3], t0)).toBe(new Date(2024, 5, 22).getTime());
+  });
+
+  it('is active only between its start and end', () => {
+    const pause = { start: t0, until: t0 + HOUR };
+    expect(getActivePause(pause, t0 + 30 * MIN)).toBe(pause);
+    expect(getActivePause(pause, t0 + HOUR)).toBeUndefined();
+    expect(getActivePause(undefined, t0)).toBeUndefined();
+  });
+
+  it('keeps the time before the pause and counts again once it ends', () => {
+    const out = [{ start: t0 - HOUR, end: t0 + 3 * HOUR }];
+    const cuts = getPausedRanges([], { start: t0, until: t0 + HOUR });
+    expect(subtract(out, cuts)).toEqual([
+      { start: t0 - HOUR, end: t0 },
+      { start: t0 + HOUR, end: t0 + 3 * HOUR },
+    ]);
+    // Resumed early: the finished pause is shorter.
+    expect(subtract(out, getPausedRanges([{ start: t0, end: t0 + 10 * MIN }], undefined))).toEqual([
+      { start: t0 - HOUR, end: t0 },
+      { start: t0 + 10 * MIN, end: t0 + 3 * HOUR },
+    ]);
+  });
+
+  it('words the end of a pause', () => {
+    const time = () => '11:00 AM';
+    expect(formatPauseUntil(t0 + HOUR, t0, time)).toBe('until 11:00 AM');
+    expect(formatPauseUntil(new Date(2024, 5, 22).getTime(), t0, time)).toBe('until tomorrow');
+  });
+
+  it('puts the pause in the notification plan: numbers stand still, counting restarts after it', () => {
+    const london = { lat: 51.5074, lng: -0.1278 };
+    const sun = getSunTimesForDate(2024, 5, 21, london.lat, london.lng);
+    const noon = (sun.sunrise as number) + 6 * HOUR;
+    const today = getSunlightDay(new Date(2024, 5, 21).getTime(), [], london, undefined, noon);
+    const presence = { insidePlaceIds: [], outSince: noon - HOUR };
+    const plan = getSunlightNotificationPlan(presence, today, 30, undefined, noon, noon + HOUR);
+    expect(plan).toMatchObject({ pausedUntil: noon + HOUR, snapshotAt: noon + HOUR, outSince: noon + HOUR });
+    // Not paused (or the pause already ran out): the plan is the usual one.
+    expect(getSunlightNotificationPlan(presence, today, 30, undefined, noon, noon)).toMatchObject({
+      snapshotAt: noon,
+      outSince: noon - HOUR,
+    });
+    expect(getSunlightNotificationPlan(presence, today, 30, undefined, noon)).not.toHaveProperty('pausedUntil');
+  });
 });

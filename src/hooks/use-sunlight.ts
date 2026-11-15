@@ -2,17 +2,26 @@ import { useEffect, useMemo, useState } from 'react';
 import { AppState } from 'react-native';
 import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
-import type { SunlightDay, SunlightManualSession, SunlightRange, SunlightWeather } from '../types/sunlight';
+import type {
+  SunlightDay,
+  SunlightManualSession,
+  SunlightPause,
+  SunlightRange,
+  SunlightWeather,
+} from '../types/sunlight';
 import type { GeoPoint } from '../utils/geofence-utils';
 import { hasBackgroundLocationPermission } from '../utils/reminder-geofencing';
 import { addLocalDays, getSunTimes, startOfLocalDay } from '../utils/sun-utils';
 import {
   calibrateWeather,
   formatLux,
+  formatPauseUntil,
+  getActivePause,
   getCalibrationFactorAt,
   getEyeLevelFactorAt,
   getIndoorPlaces,
   getLuxAt,
+  getPausedRanges,
   getRunningManualSession,
   getSunlightDays,
   getSunlightPresence,
@@ -23,6 +32,7 @@ import {
   type SunlightStatus,
   subtractSunlightRanges,
 } from '../utils/sunlight-utils';
+import { formatTime } from '../utils/time-utils';
 
 const TICK_MS = 60_000;
 
@@ -52,6 +62,8 @@ export interface SunlightSnapshot {
   outSince?: number;
   /** The manual session running now, if any. */
   manualSession?: SunlightManualSession;
+  /** Detection paused by hand and not yet resumed, if any. */
+  pause?: SunlightPause;
   hasPlaces: boolean;
   now: number;
 }
@@ -87,6 +99,8 @@ export function useSunlight(): SunlightSnapshot {
   const samples = useSunlightStore(state => state.samples);
   const manualSessions = useSunlightStore(state => state.manualSessions);
   const deletedRanges = useSunlightStore(state => state.deletedRanges);
+  const pause = useSunlightStore(state => state.pause);
+  const pauses = useSunlightStore(state => state.pauses);
   const rawWeather = useSunlightStore(state => state.weather);
   const luxCalibrations = useSunlightStore(state => state.luxCalibrations);
   const eyeLevelFactors = useSunlightStore(state => state.eyeLevelFactors);
@@ -106,7 +120,7 @@ export function useSunlight(): SunlightSnapshot {
     const indoor = getIndoorPlaces(places, outdoorPlaceIds);
     const presence = getSunlightPresence(events, samples, indoor, trackingSince, now);
     const point = getSunReferencePoint(samples, places);
-    const ranges = subtractSunlightRanges(presence.ranges, deletedRanges);
+    const ranges = subtractSunlightRanges(presence.ranges, [...deletedRanges, ...getPausedRanges(pauses, pause)]);
     const days = getSunlightDays(ranges, point, weather, now, undefined, manualSessions);
     const tomorrow = point ? getSunTimes(addLocalDays(startOfLocalDay(now), 1), point.lat, point.lng) : undefined;
     const manualSession = getRunningManualSession(manualSessions, now);
@@ -118,10 +132,14 @@ export function useSunlight(): SunlightSnapshot {
       id => places.find(place => place.id === id)?.name,
     );
     const sunUp = isSunUp(days[0], now);
+    const activePause = getActivePause(pause, now);
+    // A session you started by hand outranks a pause; a pause outranks what the position says.
     const status: SunlightStatus =
       manualSession && sunUp
         ? { kind: 'counting', label: `Counting · manual session at ${formatLux(manualSession.lux)}` }
-        : autoStatus;
+        : activePause
+          ? { kind: 'paused', label: `Paused by you · ${formatPauseUntil(activePause.until, now, formatTime)}` }
+          : autoStatus;
     const luxNow = weather && sunUp ? getLuxAt(now, weather.hours, weather.calibration) : undefined;
     const rawLuxNow = rawWeather && sunUp ? getLuxAt(now, rawWeather.hours) : undefined;
     return {
@@ -135,6 +153,7 @@ export function useSunlight(): SunlightSnapshot {
       today: days[0],
       outNow: isOutNow(ranges, now) || manualSession != null,
       manualSession,
+      pause: activePause,
       outSince: presence.outSince,
       status,
       locationAllowed,
@@ -150,6 +169,8 @@ export function useSunlight(): SunlightSnapshot {
     enabled,
     events,
     deletedRanges,
+    pause,
+    pauses,
     goalMinutes,
     locationAllowed,
     outdoorPlaceIds,

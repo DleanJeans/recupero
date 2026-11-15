@@ -4,6 +4,7 @@ import type {
   SunlightDay,
   SunlightGeofenceEvent,
   SunlightManualSession,
+  SunlightPause,
   SunlightPresenceSample,
   SunlightRange,
   SunlightStretch,
@@ -193,6 +194,40 @@ export function subtractSunlightRanges(ranges: SunlightRange[], deleted: Sunligh
     });
   }
   return result;
+}
+
+export interface SunlightPauseOption {
+  label: string;
+  /** Minutes to pause for; undefined means the rest of today. */
+  minutes?: number;
+}
+
+/** Quick pauses for visiting somewhere that isn't a saved place. Every pause ends by itself. */
+export const SUNLIGHT_PAUSE_OPTIONS: SunlightPauseOption[] = [
+  { label: '30 min', minutes: 30 },
+  { label: '1 h', minutes: 60 },
+  { label: '2 h', minutes: 120 },
+  { label: 'Rest of today' },
+];
+
+/** When a pause started `now` ends: after the chosen minutes, or at the end of the local day. */
+export function getPauseUntil(option: SunlightPauseOption, now: number): number {
+  return option.minutes != null ? now + option.minutes * MS_PER_MINUTE : addLocalDays(startOfLocalDay(now), 1);
+}
+
+/** The pause in effect right now, if any (one that has run out has resumed by itself). */
+export function getActivePause(pause: SunlightPause | undefined, now: number): SunlightPause | undefined {
+  return pause != null && pause.start <= now && now < pause.until ? pause : undefined;
+}
+
+/** Every stretch spent paused, past and current, to cut out of the outdoor time. */
+export function getPausedRanges(pauses: SunlightRange[], pause: SunlightPause | undefined): SunlightRange[] {
+  return pause ? [...pauses, { start: pause.start, end: pause.until }] : pauses;
+}
+
+/** "until 3:30 PM", or "until tomorrow" when it runs past midnight. */
+export function formatPauseUntil(until: number, now: number, formatTime: (ts: number) => string): string {
+  return until >= addLocalDays(startOfLocalDay(now), 1) ? 'until tomorrow' : `until ${formatTime(until)}`;
 }
 
 export function isOutNow(ranges: SunlightRange[], now: number): boolean {
@@ -461,7 +496,7 @@ export function getSunEventText(
   return tomorrowSunrise != null ? `rises at ${formatTime(tomorrowSunrise)}` : undefined;
 }
 
-export type SunlightStatusKind = 'counting' | 'indoors' | 'sunDown' | 'unknown' | 'off';
+export type SunlightStatusKind = 'counting' | 'indoors' | 'sunDown' | 'unknown' | 'off' | 'paused';
 
 export interface SunlightStatus {
   kind: SunlightStatusKind;
@@ -630,6 +665,8 @@ export interface SunlightNotificationPlan {
   stopAt: number;
   /** Eye-level lux per minute in 10-minute steps along the blended weather curve. */
   rates: Array<{ until: number; perMinute: number }>;
+  /** Paused by hand until this time: the notification shows it, then counts again (from here on) if you're still out. */
+  pausedUntil?: number;
 }
 
 /** A plan for the live notification while you're out in daylight, or null when it should be hidden. */
@@ -639,29 +676,34 @@ export function getSunlightNotificationPlan(
   goalMinutes: number,
   weather: SunlightWeather | undefined,
   now: number,
+  pausedUntil?: number,
 ): SunlightNotificationPlan | null {
   if (presence.insidePlaceIds == null || presence.insidePlaceIds.length > 0 || presence.outSince == null) return null;
   if (!isSunUp(today, now)) return null;
   const sunset = today.polar === 'day' || today.sunset == null ? addLocalDays(today.dayStart, 1) : today.sunset;
   const stopAt = Math.min(sunset, presence.outSince + MAX_OUTDOOR_STRETCH_MS);
   if (stopAt <= now) return null;
+  // While paused the numbers stand still; counting (and the clock) restart when the pause ends.
+  const paused = pausedUntil != null && pausedUntil > now;
+  const countFrom = paused ? pausedUntil : now;
   // 10-minute steps along the blended curve, until the stop time or the end of the weather.
   const rates: SunlightNotificationPlan['rates'] = [];
-  for (let from = now; from < stopAt; from += RATE_STEP_MS) {
+  for (let from = countFrom; from < stopAt; from += RATE_STEP_MS) {
     const until = Math.min(stopAt, from + RATE_STEP_MS);
     const lux = weather ? getLuxAt((from + until) / 2, weather.hours, weather.calibration) : undefined;
     if (lux == null) break;
     rates.push({ until, perMinute: lux * getEyeLevelFactorAt(weather?.eyeLevel, from) });
   }
   return {
-    snapshotAt: now,
+    snapshotAt: countFrom,
     luxMinutes: today.luxMinutes,
     minutes: today.minutes,
     target: getLightDoseTarget(goalMinutes),
     goalMinutes,
-    outSince: presence.outSince,
+    outSince: paused ? countFrom : presence.outSince,
     stopAt,
     rates,
+    ...(paused ? { pausedUntil } : {}),
   };
 }
 
@@ -680,12 +722,15 @@ export function shouldRecordPreciseSample(
 export const MAX_SUNLIGHT_SAMPLES = 500;
 export const MAX_SUNLIGHT_EVENTS = 2000;
 export const MAX_MANUAL_SESSIONS = 200;
+export const MAX_SUNLIGHT_PAUSES = 100;
 
 /** The append-only history a background task and the app can both write to. */
 export interface SunlightHistory {
   events: SunlightGeofenceEvent[];
   samples: SunlightPresenceSample[];
   deletedRanges: SunlightRange[];
+  /** Earlier pauses; the one running now is saved separately. */
+  pauses: SunlightRange[];
   manualSessions: SunlightManualSession[];
   /** Start times of manual sessions you deleted, so another copy of the history can't bring them back. */
   deletedManualStarts: number[];
@@ -724,6 +769,9 @@ export function mergeSunlightHistory(a: Partial<SunlightHistory>, b: Partial<Sun
       .sort(byTs)
       .slice(-MAX_SUNLIGHT_SAMPLES),
     deletedRanges: unionBy(a.deletedRanges, b.deletedRanges, range => `${range.start}|${range.end}`),
+    pauses: unionBy(a.pauses, b.pauses, range => `${range.start}|${range.end}`)
+      .sort((x, y) => x.start - y.start)
+      .slice(-MAX_SUNLIGHT_PAUSES),
     // A stopped or edited copy of a session wins over one still running.
     manualSessions: unionBy(
       a.manualSessions,

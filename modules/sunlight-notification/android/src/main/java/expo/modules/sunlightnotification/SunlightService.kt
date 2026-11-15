@@ -12,10 +12,12 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.text.format.DateFormat
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import org.json.JSONObject
 import java.text.NumberFormat
+import java.util.Date
 import java.util.Locale
 
 /**
@@ -102,7 +104,11 @@ class SunlightService : Service() {
     val stopAt: Long,
     /** Eye-level lux per minute, each valid until `until` (hour ends). */
     val rates: List<Pair<Long, Double>>,
+    /** Paused by hand until this time (0 = not paused): the numbers stand still, then counting resumes. */
+    val pausedUntil: Long = 0L,
   ) {
+    fun isPausedAt(now: Long): Boolean = pausedUntil > now
+
     /** Dose at `now`: the snapshot plus each hour's rate for the minutes since the snapshot. */
     fun luxMinutesAt(now: Long): Double {
       var total = luxMinutes
@@ -138,6 +144,7 @@ class SunlightService : Service() {
           outSince = obj.getDouble("outSince").toLong(),
           stopAt = obj.getDouble("stopAt").toLong(),
           rates = rates,
+          pausedUntil = obj.optDouble("pausedUntil", 0.0).toLong(),
         )
       } catch (error: Exception) {
         Log.w(TAG, "Bad sunlight plan", error)
@@ -214,18 +221,28 @@ class SunlightService : Service() {
       val minutes = plan.minutesAt(now).toInt()
       val ratio = if (plan.target > 0) (dose / plan.target).coerceIn(0.0, 1.0) else 0.0
       val percent = if (plan.target > 0) dose / plan.target * 100 else 0.0
-      val title = "☀️ Sunlight · $minutes / ${plan.goalMinutes.toInt()} min"
+      val paused = plan.isPausedAt(now)
+      val title = if (paused) {
+        "⏸ Sunlight paused · $minutes / ${plan.goalMinutes.toInt()} min"
+      } else {
+        "☀️ Sunlight · $minutes / ${plan.goalMinutes.toInt()} min"
+      }
       val text = "${format.format(dose.toLong())} / ${format.format(plan.target.toLong())} lux·min · " +
         String.format(Locale.US, "%.1f%%", percent)
+      val subText = if (paused) {
+        "Paused until " + DateFormat.getTimeFormat(context).format(Date(plan.pausedUntil))
+      } else {
+        "Counting while you're outside"
+      }
       return NotificationCompat.Builder(context, CHANNEL_ID)
         .setSmallIcon(smallIcon(context))
         .setContentTitle(title)
         .setContentText(text)
-        .setSubText("Counting while you're outside")
+        .setSubText(subText)
         .setProgress(PROGRESS_MAX, (ratio * PROGRESS_MAX).toInt(), false)
         .setWhen(plan.outSince)
-        .setShowWhen(true)
-        .setUsesChronometer(true)
+        .setShowWhen(!paused)
+        .setUsesChronometer(!paused)
         .setOngoing(true)
         .setOnlyAlertOnce(true)
         .setSilent(true)

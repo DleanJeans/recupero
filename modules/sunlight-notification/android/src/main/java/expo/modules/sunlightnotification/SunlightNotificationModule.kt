@@ -18,6 +18,11 @@ class SunlightNotificationModule : Module() {
       SunlightService.start(context, json)
     }
 
+    // Lets JS tell builds that can show a pause from older ones (which would keep counting).
+    Function("supportsPause") {
+      true
+    }
+
     Function("stop") {
       SunlightService.stop(context)
     }

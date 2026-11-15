@@ -4,6 +4,7 @@ import type {
   SunlightCalibrationStep,
   SunlightGeofenceEvent,
   SunlightManualSession,
+  SunlightPause,
   SunlightPresenceSample,
   SunlightRange,
   SunlightWeather,
@@ -14,9 +15,11 @@ import {
   addCalibrationStep,
   DEFAULT_SUNLIGHT_GOAL_MINUTES,
   DEFAULT_SUNLIGHT_RADIUS_M,
+  getActivePause,
   MAX_MANUAL_SESSIONS,
   MAX_SUNLIGHT_EVENTS,
   MAX_SUNLIGHT_GOAL_MINUTES,
+  MAX_SUNLIGHT_PAUSES,
   MAX_SUNLIGHT_SAMPLES,
   MIN_SUNLIGHT_GOAL_MINUTES,
   mergeSunlightHistory,
@@ -57,6 +60,14 @@ export interface SunlightStore {
   stopManualSession: () => void;
   deleteManualSession: (start: number) => void;
   deletedManualStarts: number[];
+  /** Detection paused by hand (e.g. visiting somewhere that isn't a saved place); it resumes by itself at `until`. */
+  pause?: SunlightPause;
+  /** Earlier pauses, cut out of the counted time. */
+  pauses: SunlightRange[];
+  /** Stops counting now (time so far is kept) until `until`; changing an active pause keeps its start. */
+  pauseUntil: (until: number) => void;
+  /** Ends the pause now. */
+  resumeSunlight: () => void;
   samples: SunlightPresenceSample[];
   weather?: SunlightWeather;
   setEnabled: (enabled: boolean) => void;
@@ -113,6 +124,27 @@ export const useSunlightStore = create<SunlightStore>()(
           manualSessions: state.manualSessions.filter(session => session.start !== start),
           deletedManualStarts: [...state.deletedManualStarts, start],
         })),
+      pause: undefined,
+      pauses: [],
+      pauseUntil: until =>
+        set(state => {
+          const now = Date.now();
+          const active = getActivePause(state.pause, now);
+          // A pause that already ran out is history; start a fresh one.
+          const pauses =
+            state.pause && !active
+              ? [...state.pauses, { start: state.pause.start, end: state.pause.until }]
+              : state.pauses;
+          return { pauses: pauses.slice(-MAX_SUNLIGHT_PAUSES), pause: { start: active?.start ?? now, until } };
+        }),
+      resumeSunlight: () =>
+        set(state => {
+          const { pause } = state;
+          if (!pause) return state;
+          const now = Date.now();
+          const ended = { start: pause.start, end: Math.min(now, pause.until) };
+          return { pause: undefined, pauses: [...state.pauses, ended].slice(-MAX_SUNLIGHT_PAUSES) };
+        }),
       samples: [],
       weather: undefined,
       setEnabled: enabled =>

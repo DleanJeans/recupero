@@ -63,6 +63,12 @@ export interface SunlightManualSession {
   lux: number;
 }
 
+/** Outdoor detection switched off by hand from `start` until `until` (or until you resume sooner). */
+export interface SunlightPause {
+  start: number;
+  until: number;
+}
+
 export interface SunlightDay {
   dayStart: number;
   /** Whether there's a position to work out the sun from (a saved place or a location check). */
