@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import { AppState } from 'react-native';
@@ -7,7 +8,12 @@ import { useSettingsStore } from '../store/settings-store';
 import { useSunlightStore } from '../store/sunlight-store';
 import type { Cue, SavedPlace } from '../types/cue';
 import { toDateString } from './date-utils';
-import { getPlaceTaskNotificationContent, getPlaceTasksForArrival } from './place-task-utils';
+import {
+  getPlaceTaskNotificationContent,
+  getPlaceTasksDueByDwell,
+  type PlaceArrivals,
+  pruneStalePlaceArrivals,
+} from './place-task-utils';
 import { presentPlaceTaskNotification, presentReminderNotification } from './reminder-notifications';
 import {
   type GeofenceWatch,
@@ -84,7 +90,7 @@ async function handleGeofenceEvent({ eventType, region }: GeofenceTaskData): Pro
   const place = places.find(candidate => candidate.id === placeId);
   if (!place) return;
   addActivityEvent({ kind: direction, placeId });
-  if (direction === 'enter') await completePlaceTasksOnArrival(place);
+  await trackPlaceTaskStay(placeId, direction);
 
   const behaviors = useBehaviorStore.getState().behaviors;
   for (const cue of getRemindersForGeofenceEvent(cues, placeId, direction)) {
@@ -92,18 +98,59 @@ async function handleGeofenceEvent({ eventType, region }: GeofenceTaskData): Pro
   }
 }
 
-/** "Go to this location" tasks tick themselves off (and log their behaviour) on arrival. */
-async function completePlaceTasksOnArrival(place: SavedPlace): Promise<void> {
-  await waitForHydration(useSettingsStore);
+const PLACE_ARRIVALS_KEY = 'recupero-place-arrivals';
+
+async function readPlaceArrivals(now: number): Promise<PlaceArrivals> {
+  try {
+    const raw = await AsyncStorage.getItem(PLACE_ARRIVALS_KEY);
+    return pruneStalePlaceArrivals(raw ? (JSON.parse(raw) as PlaceArrivals) : {}, now);
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * "Go to this location" tasks tick themselves off (and log their behaviour) once you have stayed at the place
+ * for the task's duration, so walking around the neighbourhood doesn't count. Geofences only tell us about
+ * enter/leave, so the stay is checked when you leave, on the next geofence event and when the app opens.
+ */
+export async function completeDuePlaceTasks(now = Date.now(), arrivals?: PlaceArrivals): Promise<void> {
+  await Promise.all([
+    waitForHydration(useBehaviorStore),
+    waitForHydration(useCuesStore),
+    waitForHydration(useSettingsStore),
+  ]);
+  const stays = arrivals ?? (await readPlaceArrivals(now));
+  if (Object.keys(stays).length === 0) return;
   const { dayCutoffHour } = useSettingsStore.getState();
-  const todayStr = toDateString(new Date(), dayCutoffHour);
+  const todayStr = toDateString(new Date(now), dayCutoffHour);
   const { tasks, toggleTaskCompletion } = useBehaviorStore.getState();
-  const arrived = getPlaceTasksForArrival(tasks, place.id, todayStr, dayCutoffHour);
-  if (arrived.length === 0) return;
-  for (const task of arrived) toggleTaskCompletion(task.id, todayStr);
-  await presentPlaceTaskNotification(getPlaceTaskNotificationContent(arrived, place)).catch(error =>
-    console.warn('Place task notification failed', error),
-  );
+  const due = getPlaceTasksDueByDwell(tasks, stays, now, todayStr, dayCutoffHour);
+  if (due.length === 0) return;
+  const { places } = useCuesStore.getState();
+  for (const task of due) toggleTaskCompletion(task.id, todayStr);
+  for (const place of places) {
+    const placeTasks = due.filter(task => task.placeId === place.id);
+    if (placeTasks.length === 0) continue;
+    await presentPlaceTaskNotification(getPlaceTaskNotificationContent(placeTasks, place)).catch(error =>
+      console.warn('Place task notification failed', error),
+    );
+  }
+}
+
+async function trackPlaceTaskStay(placeId: string, direction: 'enter' | 'exit'): Promise<void> {
+  const now = Date.now();
+  const arrivals = await readPlaceArrivals(now);
+  if (direction === 'enter') {
+    // A repeated enter (geofence jitter) must not restart the clock.
+    const next = { ...arrivals, [placeId]: arrivals[placeId] ?? now };
+    await AsyncStorage.setItem(PLACE_ARRIVALS_KEY, JSON.stringify(next));
+    await completeDuePlaceTasks(now, next);
+    return;
+  }
+  await completeDuePlaceTasks(now, arrivals);
+  const { [placeId]: _left, ...remaining } = arrivals;
+  await AsyncStorage.setItem(PLACE_ARRIVALS_KEY, JSON.stringify(remaining));
 }
 
 // Must be defined at module load (imported from index.ts) so Android can run it with the app closed.

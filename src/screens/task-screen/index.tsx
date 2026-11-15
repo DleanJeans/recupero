@@ -17,6 +17,7 @@ import { getActiveBehaviors } from '../../utils/archive-utils';
 import { getCalendarTaskCompletionMetrics } from '../../utils/calendar-metrics';
 import { Colors } from '../../utils/colors';
 import { toDateString } from '../../utils/date-utils';
+import { DEFAULT_PLACE_DWELL_MIN, getPlaceDwellMin } from '../../utils/place-task-utils';
 import { requestPlaceTaskPermissions } from '../../utils/reminder-permissions';
 import { getTaskStarsForDate, getTasksForDate, isTaskCompleteOnDate } from '../../utils/task-utils';
 import { DateNavigationRow } from '../components/date-navigation-row';
@@ -43,6 +44,7 @@ export function TaskScreen() {
   const [stars, setStars] = useState<TaskStarValue>(1);
   const [selectedBehaviorId, setSelectedBehaviorId] = useState<string | undefined>();
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | undefined>();
+  const [placeDwellMin, setPlaceDwellMin] = useState(DEFAULT_PLACE_DWELL_MIN);
   const [composerOpen, setComposerOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | undefined>();
 
@@ -94,6 +96,7 @@ export function TaskScreen() {
     setBehaviorQuery('');
     setSelectedBehaviorId(undefined);
     setSelectedPlaceId(undefined);
+    setPlaceDwellMin(DEFAULT_PLACE_DWELL_MIN);
     setEditingTaskId(undefined);
   };
 
@@ -115,6 +118,7 @@ export function TaskScreen() {
       source: isBehaviorOnlyTask ? ('behavior' as const) : ('oneOff' as const),
       behaviorId: selectedBehavior?.id,
       placeId: selectedPlaceId && placeById.has(selectedPlaceId) ? selectedPlaceId : undefined,
+      placeDwellMin: selectedPlaceId && placeById.has(selectedPlaceId) ? placeDwellMin : undefined,
     };
 
     if (editingTaskId) {
@@ -144,6 +148,7 @@ export function TaskScreen() {
       setStars(task.stars);
       setSelectedBehaviorId(task.behaviorId);
       setSelectedPlaceId(task.placeId);
+      setPlaceDwellMin(getPlaceDwellMin(task));
       setEditingTaskId(task.id);
       setComposerOpen(true);
     },
@@ -235,6 +240,8 @@ export function TaskScreen() {
             places={places}
             selectedPlaceId={selectedPlaceId}
             onPlaceSelect={setSelectedPlaceId}
+            placeDwellMin={placeDwellMin}
+            onPlaceDwellChange={setPlaceDwellMin}
             onAdd={handleSubmitTask}
             onCancel={closeComposer}
             submitLabel={editingTaskId ? 'Save' : 'Add'}

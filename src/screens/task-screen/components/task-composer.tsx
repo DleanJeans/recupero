@@ -6,6 +6,7 @@ import type { BehaviorEntry } from '../../../types/behavior';
 import type { SavedPlace } from '../../../types/cue';
 import type { TaskStarValue } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
+import { DEFAULT_PLACE_DWELL_MIN } from '../../../utils/place-task-utils';
 import { BehaviorSelector } from './behavior-selector';
 import { StarPicker } from './star-picker';
 import { TaskPlacePicker } from './task-place-picker';
@@ -19,6 +20,8 @@ interface TaskComposerProps {
   places?: SavedPlace[];
   selectedPlaceId?: string;
   onPlaceSelect?: (placeId: string | undefined) => void;
+  placeDwellMin?: number;
+  onPlaceDwellChange?: (minutes: number) => void;
   onTitleChange: (title: string) => void;
   onBehaviorQueryChange: (query: string) => void;
   onStarsChange: (stars: TaskStarValue) => void;
@@ -44,6 +47,8 @@ export function TaskComposer({
   places,
   selectedPlaceId,
   onPlaceSelect,
+  placeDwellMin = DEFAULT_PLACE_DWELL_MIN,
+  onPlaceDwellChange,
   onTitleChange,
   onBehaviorQueryChange,
   onStarsChange,
@@ -87,11 +92,13 @@ export function TaskComposer({
           onQueryChange={onBehaviorQueryChange}
           onSelect={onBehaviorSelect}
         />
-        {places && onPlaceSelect && (
+        {places && onPlaceSelect && onPlaceDwellChange && (
           <TaskPlacePicker
             places={places}
             selectedPlaceId={selectedPlaceId}
             onSelect={onPlaceSelect}
+            dwellMin={placeDwellMin}
+            onDwellChange={onPlaceDwellChange}
           />
         )}
       </View>

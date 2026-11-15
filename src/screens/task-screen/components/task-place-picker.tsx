@@ -9,15 +9,18 @@ import type { SavedPlace } from '../../../types/cue';
 import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
 import { getPlaceEmoji } from '../../../utils/cue-utils';
+import { formatPlaceDwell, PLACE_DWELL_OPTIONS_MIN } from '../../../utils/place-task-utils';
 
 interface TaskPlacePickerProps {
   places: SavedPlace[];
   selectedPlaceId: string | undefined;
   onSelect: (placeId: string | undefined) => void;
+  dwellMin: number;
+  onDwellChange: (minutes: number) => void;
 }
 
 /** "Go to this location": pick a saved place and the task ticks itself off on arrival. */
-export function TaskPlacePicker({ places, selectedPlaceId, onSelect }: TaskPlacePickerProps) {
+export function TaskPlacePicker({ places, selectedPlaceId, onSelect, dwellMin, onDwellChange }: TaskPlacePickerProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const selectedPlace = places.find(place => place.id === selectedPlaceId);
 
@@ -68,10 +71,42 @@ export function TaskPlacePicker({ places, selectedPlaceId, onSelect }: TaskPlace
           <Text style={styles.addText}>{places.length === 0 ? 'Add a place' : 'Place'}</Text>
         </Pressable>
       </ScrollView>
+      {selectedPlace && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.chips}
+        >
+          <Ionicons
+            name="timer-outline"
+            size={16}
+            color={Colors.cue.location}
+            style={styles.leadingIcon}
+          />
+          {PLACE_DWELL_OPTIONS_MIN.map(minutes => {
+            const selected = minutes === dwellMin;
+            return (
+              <Pressable
+                key={minutes}
+                style={({ pressed }) => [styles.chip, selected && styles.selectedChip, pressed && styles.pressed]}
+                onPress={() => onDwellChange(minutes)}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`Stay ${formatPlaceDwell(minutes)}`}
+              >
+                <Text style={[styles.chipText, selected && styles.selectedChipText]}>{formatPlaceDwell(minutes)}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
       <Text style={styles.hint}>
         {selectedPlace
-          ? `Ticks itself off when you arrive at ${selectedPlace.name}.`
-          : 'Optional: pick a place to tick this off when you arrive.'}
+          ? dwellMin > 0
+            ? `Ticks itself off after you stay ${formatPlaceDwell(dwellMin)} at ${selectedPlace.name}.`
+            : `Ticks itself off as soon as you arrive at ${selectedPlace.name}.`
+          : 'Optional: pick a place to tick this off when you get there.'}
       </Text>
     </View>
   );

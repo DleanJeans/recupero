@@ -423,6 +423,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               source: input.source,
               behaviorId: input.behaviorId,
               placeId: input.placeId,
+              placeDwellMin: input.placeDwellMin,
               completedDates: [],
               completedAtByDate: undefined,
               createdAt: Date.now(),

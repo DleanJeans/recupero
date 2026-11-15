@@ -1,9 +1,13 @@
 import type { TaskEntry } from '../src/types/task';
 import { toDateString } from '../src/utils/date-utils';
 import {
+  formatPlaceDwell,
+  getPlaceDwellMin,
   getPlaceTaskGeofenceWatches,
   getPlaceTaskNotificationContent,
+  getPlaceTasksDueByDwell,
   getPlaceTasksForArrival,
+  pruneStalePlaceArrivals,
 } from '../src/utils/place-task-utils';
 
 const today = toDateString(new Date());
@@ -29,8 +33,8 @@ describe('getPlaceTaskGeofenceWatches', () => {
       task('f', { placeId: 'shop', archived: true }),
     ];
     expect(getPlaceTaskGeofenceWatches(tasks)).toEqual([
-      { placeId: 'bank', enter: true },
-      { placeId: 'gym', enter: true },
+      { placeId: 'bank', enter: true, exit: true },
+      { placeId: 'gym', enter: true, exit: true },
     ]);
   });
 });
@@ -57,5 +61,39 @@ describe('getPlaceTaskNotificationContent', () => {
   });
   it('lists several tasks', () => {
     expect(getPlaceTaskNotificationContent([{ title: 'A' }, { title: 'B' }], gym).title).toBe('2 tasks done');
+  });
+});
+
+describe('place task dwell', () => {
+  const now = Date.now();
+  const min = 60_000;
+
+  it('defaults to 5 minutes and keeps an explicit 0', () => {
+    expect(getPlaceDwellMin(task('a'))).toBe(5);
+    expect(getPlaceDwellMin(task('a', { placeDwellMin: 0 }))).toBe(0);
+    expect(getPlaceDwellMin(task('a', { placeDwellMin: 15 }))).toBe(15);
+  });
+
+  it('formats the stay', () => {
+    expect(formatPlaceDwell(0)).toBe('Instantly');
+    expect(formatPlaceDwell(10)).toBe('10 min');
+    expect(formatPlaceDwell(60)).toBe('1 h');
+  });
+
+  it('only completes tasks once the stay is long enough', () => {
+    const tasks = [
+      task('default', { placeId: 'gym' }),
+      task('short', { placeId: 'gym', placeDwellMin: 2 }),
+      task('instant', { placeId: 'gym', placeDwellMin: 0 }),
+      task('other', { placeId: 'bank' }),
+    ];
+    const due = (enteredAt: number) => getPlaceTasksDueByDwell(tasks, { gym: enteredAt }, now, today).map(t => t.id);
+    expect(due(now - 1 * min)).toEqual(['instant']);
+    expect(due(now - 3 * min)).toEqual(['short', 'instant']);
+    expect(due(now - 5 * min)).toEqual(['default', 'short', 'instant']);
+  });
+
+  it('drops arrivals we never saw the exit for', () => {
+    expect(pruneStalePlaceArrivals({ old: now - 25 * 60 * min, fresh: now - min }, now)).toEqual({ fresh: now - min });
   });
 });

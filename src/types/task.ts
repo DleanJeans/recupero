@@ -10,6 +10,8 @@ export interface TaskEntry {
   behaviorId?: string;
   /** "Go to this location": ticks itself off when the user arrives at this saved place. */
   placeId?: string;
+  /** Minutes to stay at the place before the task ticks itself off. Unset means the default (5). */
+  placeDwellMin?: number;
   completedDates: string[];
   completedAtByDate?: Record<string, number>;
   completionLogIds?: Record<string, string>;
@@ -24,4 +26,5 @@ export interface AddTaskInput {
   source?: TaskSource;
   behaviorId?: string;
   placeId?: string;
+  placeDwellMin?: number;
 }

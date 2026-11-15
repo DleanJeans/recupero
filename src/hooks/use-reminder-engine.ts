@@ -10,7 +10,7 @@ import type { RootStackParamList } from '../types/navigation';
 import { syncAppOpenWatches } from '../utils/app-open-watches';
 import { handleBackgroundNotificationAction, isBackgroundNotificationAction } from '../utils/notification-actions';
 import { getPlaceTaskGeofenceWatches, PLACE_TASK_NOTIFICATION_KIND } from '../utils/place-task-utils';
-import { syncReminderGeofences } from '../utils/reminder-geofencing';
+import { completeDuePlaceTasks, syncReminderGeofences } from '../utils/reminder-geofencing';
 import {
   scheduleDelayedReminder,
   setupReminderNotifications,
@@ -92,6 +92,15 @@ export function useReminderEngine(
     };
     syncIfChanged();
 
+    // Place tasks need a stay of N minutes; whoever is still there when the app opens gets them ticked.
+    const checkPlaceTaskStays = () => {
+      completeDuePlaceTasks().catch(error => console.warn('Place task check failed', error));
+    };
+    checkPlaceTaskStays();
+    const appStateSubscription = AppState.addEventListener('change', state => {
+      if (state === 'active') checkPlaceTaskStays();
+    });
+
     const unsubscribeCues = useCuesStore.subscribe(syncIfChanged);
     const unsubscribeSunlight = useSunlightStore.subscribe((state, previous) => {
       if (
@@ -122,6 +131,7 @@ export function useReminderEngine(
       }
     });
     return () => {
+      appStateSubscription.remove();
       unsubscribeCues();
       unsubscribeSunlight();
       unsubscribeBehaviors();
