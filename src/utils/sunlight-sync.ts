@@ -2,7 +2,7 @@ import * as Location from 'expo-location';
 import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
 import type { SavedPlace } from '../types/cue';
-import { distanceMeters, findPlaceAtPoint } from './geofence-utils';
+import { distanceMeters } from './geofence-utils';
 import { syncSunlightNotification } from './sunlight-notification';
 import {
   describeSunlightFix,

@@ -3,7 +3,6 @@ import * as TaskManager from 'expo-task-manager';
 import { AppState } from 'react-native';
 import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
-import { findPlaceAtPoint } from './geofence-utils';
 import { hasBackgroundLocationPermission } from './reminder-geofencing';
 import { waitForHydration } from './store-hydration';
 import { syncSunlightNotification } from './sunlight-notification';
