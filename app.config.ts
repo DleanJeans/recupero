@@ -72,8 +72,12 @@ const config: ExpoConfig = {
   },
   android: {
     adaptiveIcon: {
+      // "Planter Battery" icon (design-review/25, concept 10): sprout growing out of an 80% battery.
       foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#ffffff',
+      backgroundImage: './assets/adaptive-icon-background.png',
+      backgroundColor: '#0b1510',
+      // Android 13+ themed icons.
+      monochromeImage: './assets/monochrome-icon.png',
     },
     package: bundleId,
     intentFilters: [
