@@ -23,18 +23,18 @@ export function SunlightSessionEditor({ stretch, onClose, onDelete }: SunlightSe
   const insets = useSafeAreaInsets();
   const [start, setStart] = useState(stretch.start);
   const [end, setEnd] = useState(stretch.end);
-  const initialLux = stretch.lux != null ? String(Math.round(stretch.lux)) : '';
+  const initialLux = stretch.eyeLux != null ? String(Math.round(stretch.eyeLux)) : '';
   const [luxText, setLuxText] = useState(initialLux);
   const typedLux = getManualLuxFromText(parseDecimalInput(luxText));
   const luxChanged = luxText.trim() !== initialLux;
   const error = getSessionEditError(start, end, Date.now());
   const luxInvalid = luxChanged && luxText.trim() !== '' && typedLux == null;
-  const fixedLux = stretch.manual && stretch.lux != null;
+  const fixedLux = stretch.manual && stretch.eyeLux != null;
 
   const save = () => {
     if (error || luxInvalid) return;
     // Untouched light on a detected session keeps following the weather; a typed one is fixed.
-    const lux = luxChanged ? typedLux : fixedLux ? stretch.lux : undefined;
+    const lux = luxChanged ? typedLux : fixedLux ? stretch.eyeLux : undefined;
     editSession(stretch, { start, end, lux });
     onClose();
   };
@@ -61,7 +61,7 @@ export function SunlightSessionEditor({ stretch, onClose, onDelete }: SunlightSe
         <Text style={styles.duration}>{error ?? formatSunlightMinutes(Math.floor((end - start) / 60_000))}</Text>
 
         <View style={styles.luxRow}>
-          <Text style={styles.label}>Light</Text>
+          <Text style={styles.label}>Light at eyes</Text>
           <TextInput
             style={styles.input}
             value={luxText}

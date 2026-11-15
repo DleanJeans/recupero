@@ -234,8 +234,8 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
                   {stretch.manual ? ' ✋' : stretch.edited ? ' ✎' : ''}
                 </Text>
                 <Text style={styles.stretchLux}>
-                  {stretch.lux != null
-                    ? `${formatLux(stretch.lux)} · ${BRIGHTNESS_LABELS[getSunlightBrightness(stretch.lux)]}`
+                  {stretch.eyeLux != null
+                    ? `${formatLux(stretch.eyeLux)} at eyes · ${BRIGHTNESS_LABELS[getSunlightBrightness(stretch.eyeLux)]}`
                     : ''}
                 </Text>
                 <Text style={styles.stretchMinutes}>

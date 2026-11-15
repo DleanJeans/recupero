@@ -50,8 +50,10 @@ export interface SunlightRange {
 
 /** A stretch of time away from tracked places while the sun was up. */
 export interface SunlightStretch extends SunlightRange {
-  /** Estimated outdoor illuminance from the weather, if known. */
+  /** Estimated outdoor illuminance from the weather (open ground), if known; for a manual session, the lux you set. */
   lux?: number;
+  /** Average light reaching your eyes (open-ground lux × the eye-level share in effect then), if known. */
+  eyeLux?: number;
   /** Still going (you're out now and the sun is up). */
   ongoing: boolean;
   /** Started by hand (e.g. on a balcony) with a lux level you chose, not detected from your position. */

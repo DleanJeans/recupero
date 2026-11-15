@@ -619,3 +619,20 @@ describe('bursts and wobble', () => {
     expect(result.ranges).toHaveLength(1);
   });
 });
+
+describe('eye-level lux on sessions', () => {
+  const { getSunlightDay: day } = jest.requireActual('../src/utils/sunlight-utils');
+  it('applies the eye-level share to a detected session and not to a manual one', () => {
+    const london = { lat: 51.5, lng: -0.12 };
+    const dayStart = new Date(2026, 5, 21).getTime();
+    const noon = dayStart + 12 * HOUR;
+    const hours = Array.from({ length: 24 }, (_, i) => ({ ts: dayStart + (i + 1) * HOUR, wm2: 500 }));
+    const weather = { fetchedAt: 0, lat: 51.5, lng: -0.12, hours, eyeLevel: [{ from: 0, factor: 0.4 }] };
+    const result = day(dayStart, [{ start: noon, end: noon + 30 * MIN }], london, weather, noon + 2 * HOUR, [
+      { start: noon + HOUR, end: noon + HOUR + 10 * MIN, lux: 3000 },
+    ]);
+    expect(result.stretches[0].lux).toBeCloseTo(60_000);
+    expect(result.stretches[0].eyeLux).toBeCloseTo(24_000);
+    expect(result.stretches[1].eyeLux).toBe(3000);
+  });
+});

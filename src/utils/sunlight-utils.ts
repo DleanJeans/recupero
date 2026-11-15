@@ -427,6 +427,12 @@ export function getManualLuxFromText(value: number | null | undefined): number |
   return Math.min(MAX_MANUAL_LUX, Math.round(value));
 }
 
+/** Average lux over a range from its light dose (lux·min). */
+function averageOverMinutes(luxMinutes: number, range: SunlightRange): number | undefined {
+  const minutes = (range.end - range.start) / MS_PER_MINUTE;
+  return minutes > 0 ? luxMinutes / minutes : undefined;
+}
+
 /** Outdoor time on one local day, counted only between sunrise and sunset there. */
 export function getSunlightDay(
   dayStart: number,
@@ -451,10 +457,12 @@ export function getSunlightDay(
         lux: weather ? getAverageLux(overlap, weather.hours, weather.calibration) : undefined,
         ongoing: overlap.end >= now && range.end >= now,
       };
-      stretches.push(stretch);
       if (stretch.lux != null) {
-        luxMinutes += getEyeLuxMinutes(stretch, weather?.hours ?? [], weather?.calibration, weather?.eyeLevel);
+        const dose = getEyeLuxMinutes(stretch, weather?.hours ?? [], weather?.calibration, weather?.eyeLevel);
+        luxMinutes += dose;
+        stretch.eyeLux = averageOverMinutes(dose, overlap);
       }
+      stretches.push(stretch);
     }
     for (const range of manualRanges) {
       const overlap = intersect(range, daylight);
@@ -463,15 +471,21 @@ export function getSunlightDay(
       const ongoing = session?.end == null && overlap.end >= now;
       const kind = range.edited ? { edited: true } : { manual: true };
       if (range.lux != null) {
-        stretches.push({ ...overlap, lux: range.lux, ongoing, ...kind });
+        stretches.push({ ...overlap, lux: range.lux, eyeLux: range.lux, ongoing, ...kind });
         luxMinutes += (range.lux * (overlap.end - overlap.start)) / MS_PER_MINUTE;
       } else {
         // Edited times but not the light: estimate it from the weather like any detected session.
         const lux = weather ? getAverageLux(overlap, weather.hours, weather.calibration) : undefined;
-        stretches.push({ ...overlap, lux, ongoing, ...kind });
-        if (lux != null) {
-          luxMinutes += getEyeLuxMinutes(overlap, weather?.hours ?? [], weather?.calibration, weather?.eyeLevel);
-        }
+        const dose =
+          lux != null ? getEyeLuxMinutes(overlap, weather?.hours ?? [], weather?.calibration, weather?.eyeLevel) : 0;
+        luxMinutes += dose;
+        stretches.push({
+          ...overlap,
+          lux,
+          eyeLux: lux != null ? averageOverMinutes(dose, overlap) : undefined,
+          ongoing,
+          ...kind,
+        });
       }
     }
     stretches.sort((a, b) => a.start - b.start);
