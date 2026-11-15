@@ -64,6 +64,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
   const [adding, setAdding] = useState(false);
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState('');
 
   const need = needs.find(item => item.id === needId);
   const behaviorById = useMemo(() => new Map(behaviors.map(behavior => [behavior.id, behavior])), [behaviors]);
@@ -109,6 +110,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
   const close = () => {
     setAdding(false);
     setQuery('');
+    setFilter('');
     onClose();
   };
 
@@ -147,7 +149,17 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
     setQuery('');
   };
 
-  const selectedCategories = categories.filter(category => need.config.categoryRefills?.[category.id] != null);
+  const filterText = filter.trim().toLowerCase();
+  const matchesFilter = (name: string) => !filterText || name.toLowerCase().includes(filterText);
+  const selectedCategories = categories.filter(
+    category => need.config.categoryRefills?.[category.id] != null && matchesFilter(category.name),
+  );
+  const shownRefillIds = refillIds.filter(id => matchesFilter(behaviorById.get(id)?.name ?? ''));
+  const shownSuggestedIds = suggestedIds.filter(id => matchesFilter(behaviorById.get(id)?.name ?? ''));
+  const totalRefillRows =
+    refillIds.length +
+    suggestedIds.length +
+    categories.filter(category => need.config.categoryRefills?.[category.id] != null).length;
 
   const refillDetail = (behavior: BehaviorEntry) => {
     if (need.config.refills[behavior.id]) return undefined;
@@ -296,6 +308,23 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
               {sourceField.unit ? ` ${sourceField.unit}` : ''} = full. Change it in Settings.
             </Text>
           ) : null}
+          {totalRefillRows >= 4 ? (
+            <View style={styles.search}>
+              <Ionicons
+                name="search"
+                size={16}
+                color={Colors.text.faint}
+              />
+              <TextInput
+                style={styles.searchInput}
+                value={filter}
+                onChangeText={setFilter}
+                placeholder="Search refills"
+                placeholderTextColor={Colors.text.faint}
+                autoCorrect={false}
+              />
+            </View>
+          ) : null}
           {selectedCategories.map(category => {
             const refill = need.config.categoryRefills?.[category.id];
             if (!refill) return null;
@@ -319,7 +348,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
               />
             );
           })}
-          {refillIds.map(id => {
+          {shownRefillIds.map(id => {
             const behavior = behaviorById.get(id);
             if (!behavior) return null;
             const refill = need.config.refills[id];
@@ -335,7 +364,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
               />
             );
           })}
-          {suggestedIds.map(id => {
+          {shownSuggestedIds.map(id => {
             const behavior = behaviorById.get(id);
             if (!behavior) return null;
             return (
@@ -348,7 +377,10 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
               />
             );
           })}
-          {refillIds.length === 0 && suggestedIds.length === 0 && selectedCategories.length === 0 && !adding ? (
+          {filterText && selectedCategories.length + shownRefillIds.length + shownSuggestedIds.length === 0 ? (
+            <Text style={styles.hint}>No refills match "{filter.trim()}".</Text>
+          ) : null}
+          {refillIds.length === 0 && suggestedIds.length === 0 && totalRefillRows === 0 && !adding ? (
             <Text style={styles.hint}>Nothing refills {info.label} yet. Add a category or the behaviours that do.</Text>
           ) : null}
 
