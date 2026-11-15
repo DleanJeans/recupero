@@ -13,6 +13,7 @@ import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
 import { CUE_LIST_MAX_HEIGHT, CUE_LIST_SEARCH_MIN, filterBySearch, getPlaceEmoji } from '../../../utils/cue-utils';
 import { PlaceMapPreview } from './place-map-preview';
+import { PlaceReminderOptions } from './place-reminder-options';
 
 type LocationTrigger = Extract<CueTrigger, { type: 'location' }>;
 
@@ -83,6 +84,7 @@ export function LocationTriggerEditor({ value, onChange }: LocationTriggerEditor
         })}
       </ScrollView>
       {selectedPlace && <PlaceMapPreview place={selectedPlace} />}
+      {selectedPlace && <PlaceReminderOptions />}
       <Pressable
         style={({ pressed }) => [styles.addPlace, pressed && styles.pressed]}
         onPress={() => navigation.navigate('LocationEdit')}

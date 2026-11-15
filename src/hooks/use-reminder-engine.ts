@@ -45,7 +45,7 @@ function getExtraGeofenceRegions() {
 
 function getGeofenceOptions() {
   const { reminderRadiusM, placeDwellMin } = useSettingsStore.getState();
-  return { minRadiusM: reminderRadiusM, dwellMin: placeDwellMin };
+  return { radiusM: reminderRadiusM, dwellMin: placeDwellMin };
 }
 
 async function syncAll() {

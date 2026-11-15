@@ -3,7 +3,7 @@ import type { Cue, CueRef, CueTrigger, SavedPlace } from '../types/cue';
 import { getCueTriggerLabel, placeCueRef } from './cue-utils';
 import { getLogEndTimestamp } from './log-utils';
 
-/** Android geofencing is unreliable below roughly 100 m, so reminder geofences never go smaller. */
+/** Default reminder area. Android geofencing is unreliable below roughly 100 m; Settings can go smaller. */
 export const GEOFENCE_MIN_RADIUS_M = 100;
 /** How long you must stay at a place before an "I enter" reminder fires (Settings can change or turn it off). */
 export const DEFAULT_PLACE_DWELL_MIN = 5;
@@ -13,9 +13,9 @@ export function getDwellNotificationId(cueId: string): string {
   return `${DWELL_ID_PREFIX}${cueId}`;
 }
 
-/** Geofence settings from Settings: the smallest area used for reminders and the stay needed before "enter" fires. */
+/** Geofence settings: the area every place reminder watches (same for all places) and the stay needed before "enter" fires. */
 export interface ReminderGeofenceOptions {
-  minRadiusM?: number;
+  radiusM?: number;
   dwellMin?: number;
 }
 /** Same reminder won't fire twice within this window (geofences flap at the edge). */
@@ -92,10 +92,6 @@ export function getActivePushReminders(cues: Cue[]): Cue[] {
   );
 }
 
-export function geofenceRadius(radiusM: number, minRadiusM = GEOFENCE_MIN_RADIUS_M): number {
-  return Math.max(minRadiusM, radiusM);
-}
-
 export function getTimeReminderSchedules(cues: Cue[]): TimeReminderSchedule[] {
   return getActivePushReminders(cues).flatMap<TimeReminderSchedule>(cue => {
     const trigger = cue.trigger;
@@ -123,7 +119,7 @@ export function getReminderGeofenceRegions(
   extraWatches: GeofenceWatch[] = [],
   /** Regions with their own identifier and radius (e.g. sunlight's small ones), added as they are. */
   extraRegions: ReminderGeofenceRegion[] = [],
-  { minRadiusM = GEOFENCE_MIN_RADIUS_M, dwellMin = 0 }: ReminderGeofenceOptions = {},
+  { radiusM = GEOFENCE_MIN_RADIUS_M, dwellMin = 0 }: ReminderGeofenceOptions = {},
 ): ReminderGeofenceRegion[] {
   const directions = new Map<string, { enter: boolean; exit: boolean }>();
   const watch = (placeId: string, enter: boolean, exit: boolean) => {
@@ -145,7 +141,7 @@ export function getReminderGeofenceRegions(
         identifier: place.id,
         latitude: place.lat,
         longitude: place.lng,
-        radius: geofenceRadius(place.radiusM, minRadiusM),
+        radius: radiusM,
         // Always both: the enter event is how we know the user is inside, so a stray "left" can be ignored.
         notifyOnEnter: true,
         notifyOnExit: true,

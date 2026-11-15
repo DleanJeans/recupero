@@ -224,7 +224,7 @@ export async function syncReminderGeofences(
   await waitForHydration(useSettingsStore);
   const { reminderRadiusM, placeDwellMin } = useSettingsStore.getState();
   const regions = getReminderGeofenceRegions(cues, places, extraWatches, extraRegions, {
-    minRadiusM: reminderRadiusM,
+    radiusM: reminderRadiusM,
     dwellMin: placeDwellMin,
   });
   const running = await Location.hasStartedGeofencingAsync(REMINDER_GEOFENCE_TASK).catch(() => false);

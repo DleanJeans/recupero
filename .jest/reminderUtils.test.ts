@@ -105,14 +105,14 @@ describe('reminders without behaviours', () => {
 });
 
 describe('getReminderGeofenceRegions', () => {
-  it('uses the Settings minimum radius and watches exits while an enter reminder waits out the stay', () => {
+  it('uses the Settings radius and watches exits while an enter reminder waits out the stay', () => {
     const cues = [cue('a', { type: 'location', placeId: 'gym', direction: 'enter' })];
-    expect(getReminderGeofenceRegions(cues, [place('gym', 20)], [], [], { minRadiusM: 50, dwellMin: 5 })).toEqual([
+    expect(getReminderGeofenceRegions(cues, [place('gym', 20)], [], [], { radiusM: 50, dwellMin: 5 })).toEqual([
       { identifier: 'gym', latitude: 10, longitude: 20, radius: 50, notifyOnEnter: true, notifyOnExit: true },
     ]);
   });
 
-  it('registers only referenced places, at least 100 m, with the directions in use', () => {
+  it('registers only referenced places, all at the reminder radius, with the directions in use', () => {
     const cues = [
       cue('a', { type: 'location', placeId: 'gym', direction: 'enter' }),
       cue('b', { type: 'location', placeId: 'gym', direction: 'exit' }),
@@ -121,7 +121,7 @@ describe('getReminderGeofenceRegions', () => {
     const regions = getReminderGeofenceRegions(cues, [place('gym', 20), place('park', 250), place('home', 50)]);
     expect(regions).toEqual([
       { identifier: 'gym', latitude: 10, longitude: 20, radius: 100, notifyOnEnter: true, notifyOnExit: true },
-      { identifier: 'park', latitude: 10, longitude: 20, radius: 250, notifyOnEnter: true, notifyOnExit: true },
+      { identifier: 'park', latitude: 10, longitude: 20, radius: 100, notifyOnEnter: true, notifyOnExit: true },
     ]);
   });
 
@@ -138,7 +138,7 @@ describe('getReminderGeofenceRegions', () => {
     );
     expect(regions).toEqual([
       { identifier: 'gym', latitude: 10, longitude: 20, radius: 100, notifyOnEnter: true, notifyOnExit: true },
-      { identifier: 'bank', latitude: 10, longitude: 20, radius: 150, notifyOnEnter: true, notifyOnExit: true },
+      { identifier: 'bank', latitude: 10, longitude: 20, radius: 100, notifyOnEnter: true, notifyOnExit: true },
     ]);
   });
 

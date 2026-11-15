@@ -19,7 +19,7 @@ import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import { createDefaultCueTrigger, getCueAccent, isCueTriggerComplete } from '../../utils/cue-utils';
 import { requestReminderPermissions } from '../../utils/reminder-permissions';
-import { canTriggerFireAutomatically, geofenceRadius } from '../../utils/reminder-utils';
+import { canTriggerFireAutomatically } from '../../utils/reminder-utils';
 import { AdditionalConditionsEditor } from './components/additional-conditions-editor';
 import { TriggerEditor } from './components/trigger-editor';
 import { TriggerTypeGrid } from './components/trigger-type-grid';
@@ -55,8 +55,8 @@ export function CueFormScreen() {
     ? trigger.type === 'time'
       ? 'Wake-up detection is not automatic yet, so this one only shows as a suggestion.'
       : 'Shows as a suggestion when you log this, no notification needed.'
-    : triggerPlace && geofenceRadius(triggerPlace.radiusM, minRadiusM) > triggerPlace.radiusM
-      ? `The notification watches a ${minRadiusM} m area around ${triggerPlace.name} (change it in Settings). Log tagging still uses ${triggerPlace.radiusM} m.`
+    : triggerPlace && minRadiusM !== triggerPlace.radiusM
+      ? `The notification watches a ${minRadiusM} m area around ${triggerPlace.name} (change it under the map). Log tagging still uses ${triggerPlace.radiusM} m.`
       : trigger.type === 'location'
         ? 'Notifies you in the background, even when Recupero is closed.'
         : trigger.type === 'app'

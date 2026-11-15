@@ -23,7 +23,7 @@ interface SettingsStore {
   /** Behaviour screen header: stats card unfolded (bars) vs folded (chips). */
   behaviorHeaderExpanded: boolean;
   setBehaviorHeaderExpanded: (v: boolean) => void;
-  /** Smallest area (m) place reminders use. Android misses geofences much below 100 m, so lower is less reliable. */
+  /** Area (m) every place reminder watches. Android misses geofences much below 100 m, so lower is less reliable. */
   reminderRadiusM: number;
   setReminderRadiusM: (v: number) => void;
   /** Minutes you must stay at a place before an "I enter" reminder fires. 0 = fire immediately. */
