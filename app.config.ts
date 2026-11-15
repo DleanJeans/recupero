@@ -74,7 +74,7 @@ const config: ExpoConfig = {
   },
   android: {
     adaptiveIcon: {
-      // "Sprout Spectrum" icon (design-review/25, concept 17): sprout inside a 3/4 ring blending the Stats colours.
+      // "Sprout Spectrum" icon (design-review/25, concept 18): sprout inside a 3/4 ring blending pink -> red -> amber -> green.
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#121212',
       // Android 13+ themed icons.
