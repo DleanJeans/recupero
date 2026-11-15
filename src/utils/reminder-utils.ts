@@ -146,8 +146,9 @@ export function getReminderGeofenceRegions(
         latitude: place.lat,
         longitude: place.lng,
         radius: geofenceRadius(place.radiusM, minRadiusM),
-        notifyOnEnter: direction.enter,
-        notifyOnExit: direction.exit,
+        // Always both: the enter event is how we know the user is inside, so a stray "left" can be ignored.
+        notifyOnEnter: true,
+        notifyOnExit: true,
       },
     ];
   });

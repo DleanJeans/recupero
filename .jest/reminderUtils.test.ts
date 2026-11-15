@@ -121,7 +121,7 @@ describe('getReminderGeofenceRegions', () => {
     const regions = getReminderGeofenceRegions(cues, [place('gym', 20), place('park', 250), place('home', 50)]);
     expect(regions).toEqual([
       { identifier: 'gym', latitude: 10, longitude: 20, radius: 100, notifyOnEnter: true, notifyOnExit: true },
-      { identifier: 'park', latitude: 10, longitude: 20, radius: 250, notifyOnEnter: false, notifyOnExit: true },
+      { identifier: 'park', latitude: 10, longitude: 20, radius: 250, notifyOnEnter: true, notifyOnExit: true },
     ]);
   });
 
@@ -138,7 +138,7 @@ describe('getReminderGeofenceRegions', () => {
     );
     expect(regions).toEqual([
       { identifier: 'gym', latitude: 10, longitude: 20, radius: 100, notifyOnEnter: true, notifyOnExit: true },
-      { identifier: 'bank', latitude: 10, longitude: 20, radius: 150, notifyOnEnter: true, notifyOnExit: false },
+      { identifier: 'bank', latitude: 10, longitude: 20, radius: 150, notifyOnEnter: true, notifyOnExit: true },
     ]);
   });
 

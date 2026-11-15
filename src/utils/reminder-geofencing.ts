@@ -37,6 +37,18 @@ export const REMINDER_GEOFENCE_TASK = 'recupero-reminder-geofence';
 /** Events this soon after registering are Android's initial "you're inside/outside" report, not movement. */
 const INITIAL_TRIGGER_WINDOW_MS = 30_000;
 let lastRegisteredAt = 0;
+const REGISTERED_AT_KEY = 'recupero-geofence-registered-at';
+
+/** The background copy of the app that receives events is a fresh process, so the time is also saved. */
+async function wasJustRegistered(now: number): Promise<boolean> {
+  if (now - lastRegisteredAt < INITIAL_TRIGGER_WINDOW_MS) return true;
+  try {
+    const saved = Number(await AsyncStorage.getItem(REGISTERED_AT_KEY));
+    return Number.isFinite(saved) && now - saved < INITIAL_TRIGGER_WINDOW_MS;
+  } catch {
+    return false;
+  }
+}
 
 function getRegionsKey(regions: Array<Partial<Location.LocationRegion>>): string {
   return JSON.stringify(
@@ -79,7 +91,7 @@ async function handleGeofenceEvent({ eventType, region }: GeofenceTaskData): Pro
     // Registering geofences makes Android report "inside"/"outside" for every region at once. With small
     // radii those are fuzzy (it said "arrived" at a shop while driving off), and the GPS check on app
     // open already knows where you are, so they aren't real arrivals or departures.
-    if (Date.now() - lastRegisteredAt < INITIAL_TRIGGER_WINDOW_MS) return;
+    if (await wasJustRegistered(Date.now())) return;
     await Promise.all([waitForHydration(useSunlightStore), waitForHydration(useCuesStore)]);
     // This may run in a separate background copy of the app; pick up what the other copy saved first.
     await rehydrateSunlight();
@@ -94,8 +106,16 @@ async function handleGeofenceEvent({ eventType, region }: GeofenceTaskData): Pro
   const { cues, places, addActivityEvent } = useCuesStore.getState();
   const place = places.find(candidate => candidate.id === placeId);
   if (!place) return;
-  addActivityEvent({ kind: direction, placeId });
+  // Android reports every place at once whenever the regions are re-registered, and "left" for places the
+  // user never entered. Only trust an exit for a place we know the user was inside, and ignore repeats.
+  const now = Date.now();
+  const wasInside = (await readPlaceArrivals(now))[placeId] !== undefined;
+  const initialReport = await wasJustRegistered(now);
+  if (direction === 'exit' && !wasInside) return;
+  if (direction === 'enter' && wasInside) return;
   await trackPlaceTaskStay(placeId, direction);
+  if (initialReport) return;
+  addActivityEvent({ kind: direction, placeId });
 
   const behaviors = useBehaviorStore.getState().behaviors;
   await waitForHydration(useSettingsStore);
@@ -216,5 +236,6 @@ export async function syncReminderGeofences(
   if (running && (await getRegisteredRegionsKey()) === getRegionsKey(regions)) return;
   // Calling start again replaces the previous set of regions.
   lastRegisteredAt = Date.now();
+  await AsyncStorage.setItem(REGISTERED_AT_KEY, String(lastRegisteredAt)).catch(() => {});
   await Location.startGeofencingAsync(REMINDER_GEOFENCE_TASK, regions);
 }

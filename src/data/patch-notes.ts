@@ -14,6 +14,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-15',
     items: [
+      'Activity: fixed lots of false "Left <place>" events (e.g. 996 Space) that showed up when you had never been there, often right after adding a reminder. A "Left" now only counts if the app saw you arrive first.',
       'New reminder: the place and behaviour lists scroll inside a limited height and have a search box, and choosing a place shows it on a map.',
       'New reminder: you can now pick no behaviour and just send yourself a notification with your own message.',
       'Settings: new Place reminders section with sliders (and − / + buttons) for the area size (down from 100 m if you like; Android may miss very small areas) and how long you must stay before an "I enter" reminder fires (5 min by default, or off).',
