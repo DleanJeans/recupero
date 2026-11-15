@@ -1,6 +1,6 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../../components/button';
@@ -10,6 +10,7 @@ import { CueSectionLabel } from '../../components/cues/cue-section-label';
 import { CueToggle } from '../../components/cues/cue-toggle';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text, TextInput } from '../../components/text';
+import { useKeyboardHeight } from '../../hooks/use-keyboard-height';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useCuesStore } from '../../store/cues-store';
 import { useSettingsStore } from '../../store/settings-store';
@@ -27,6 +28,8 @@ type CueFormRoute = NativeStackScreenProps<RootStackParamList, 'CueForm'>['route
 
 export function CueFormScreen() {
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
+  const keyboardHeight = useKeyboardHeight();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<CueFormRoute>();
   const cueId = route.params?.cueId;
@@ -126,8 +129,12 @@ export function CueFormScreen() {
         showBalance={false}
       />
       <ScrollView
+        ref={scrollRef}
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={[styles.content, { paddingBottom: 32 + insets.bottom }]}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: 32 + (keyboardHeight > 0 ? keyboardHeight : insets.bottom) },
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.section}>
@@ -179,6 +186,8 @@ export function CueFormScreen() {
               style={styles.input}
               value={name}
               onChangeText={setName}
+              // The name box sits near the bottom; once the keyboard has padded the list, scroll it above the keyboard.
+              onFocus={() => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 250)}
               placeholder={behaviorIds.length === 0 ? 'e.g. Buy milk' : 'e.g. Evening groceries'}
               placeholderTextColor={Colors.text.faint}
             />
