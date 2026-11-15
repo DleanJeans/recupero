@@ -781,7 +781,6 @@ export function mergeSunlightHistory(a: Partial<SunlightHistory>, b: Partial<Sun
       .sort(byTs)
       .slice(-MAX_SUNLIGHT_SAMPLES),
     deletedRanges: unionBy(a.deletedRanges, b.deletedRanges, range => `${range.start}|${range.end}`),
-    pauses: unionBy(a.pauses, b.pauses, range => `${range.start}|${range.end}`).sort((x, y) => x.start - y.start),
     pauses: unionBy(a.pauses, b.pauses, range => `${range.start}|${range.end}`)
       .sort((x, y) => x.start - y.start)
       .slice(-MAX_SUNLIGHT_PAUSES),
