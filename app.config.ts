@@ -108,7 +108,8 @@ const config: ExpoConfig = {
   updates: {
     url: 'https://u.expo.dev/8a864518-09f4-4aac-b87c-44f7cfe5ae0c',
   },
-  runtimeVersion: { policy: 'fingerprint' },
+  // Fixed so OTAs reach every installed APK (DJ, 2026-11-15). Bump only when an OTA must NOT reach old APKs.
+  runtimeVersion: '1',
   extra: {
     googleHealthClientId,
     eas: {
