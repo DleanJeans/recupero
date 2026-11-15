@@ -223,7 +223,7 @@ class SunlightService : Service() {
       val percent = if (plan.target > 0) dose / plan.target * 100 else 0.0
       val paused = plan.isPausedAt(now)
       val title = if (paused) {
-        "⏸ Sunlight paused · $minutes / ${plan.goalMinutes.toInt()} min"
+        "☀️ Sunlight paused · $minutes / ${plan.goalMinutes.toInt()} min"
       } else {
         "☀️ Sunlight · $minutes / ${plan.goalMinutes.toInt()} min"
       }
@@ -235,7 +235,8 @@ class SunlightService : Service() {
         "Counting while you're outside"
       }
       return NotificationCompat.Builder(context, CHANNEL_ID)
-        .setSmallIcon(smallIcon(context))
+        // A pause symbol in the status bar and notification header while paused.
+        .setSmallIcon(if (paused) android.R.drawable.ic_media_pause else smallIcon(context))
         .setContentTitle(title)
         .setContentText(text)
         .setSubText(subText)

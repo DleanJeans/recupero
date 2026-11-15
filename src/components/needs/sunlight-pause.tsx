@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSunlightStore } from '../../store/sunlight-store';
@@ -54,7 +55,12 @@ export function SunlightPauseCard({ pause, now }: SunlightPauseProps) {
             accessibilityRole="button"
             accessibilityLabel={`Pause for ${option.label}`}
           >
-            <Text style={styles.chipText}>{`⏸ ${option.label}`}</Text>
+            <Ionicons
+              name="pause"
+              size={12}
+              color={Colors.text.primary}
+            />
+            <Text style={styles.chipText}>{option.label}</Text>
           </Pressable>
         ))}
       </View>
@@ -94,6 +100,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: Colors.text.dim,
