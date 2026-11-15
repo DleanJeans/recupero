@@ -59,7 +59,10 @@ export function CuesScreen() {
       style={styles.container}
       edges={['top', 'left', 'right']}
     >
-      <CueScreenHeader title="Cues" />
+      <CueScreenHeader
+        title="Cues"
+        showSettings
+      />
       <View style={styles.tabs}>
         <CueSegmentedControl
           value={tab}

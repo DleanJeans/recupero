@@ -1,12 +1,10 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { SelectPill } from '../../../components/select-pill';
+import { RadiusSlider } from '../../../components/radius-slider';
+import { StepSlider } from '../../../components/step-slider';
 import { Text } from '../../../components/text';
 import { useSettingsStore } from '../../../store/settings-store';
 import { Colors } from '../../../utils/colors';
-
-const RADIUS_OPTIONS = [30, 50, 75, 100, 150];
-const DWELL_OPTIONS = [0, 2, 5, 10, 15];
 
 export function PlaceRemindersSection() {
   const reminderRadiusM = useSettingsStore(state => state.reminderRadiusM);
@@ -18,39 +16,24 @@ export function PlaceRemindersSection() {
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>PLACE REMINDERS</Text>
       <View style={styles.card}>
-        <Text style={styles.label}>Smallest area</Text>
-        <View style={styles.row}>
-          {RADIUS_OPTIONS.map(radius => (
-            <SelectPill
-              key={radius}
-              label={`${radius} m`}
-              active={reminderRadiusM === radius}
-              activeBtnStyle={styles.active}
-              activeTextStyle={styles.activeText}
-              style={styles.pill}
-              onPress={() => setReminderRadiusM(radius)}
-            />
-          ))}
-        </View>
+        <RadiusSlider
+          label="Smallest area"
+          value={reminderRadiusM}
+          onChange={setReminderRadiusM}
+        />
         <Text style={styles.hint}>
           Reminders watch at least this big an area around a place (bigger places keep their own size). Android often
           misses areas under about 100 m, so smaller can mean late or missing notifications.
         </Text>
 
-        <Text style={[styles.label, styles.second]}>Stay before “I enter” fires</Text>
-        <View style={styles.row}>
-          {DWELL_OPTIONS.map(minutes => (
-            <SelectPill
-              key={minutes}
-              label={minutes === 0 ? 'Off' : `${minutes} min`}
-              active={placeDwellMin === minutes}
-              activeBtnStyle={styles.active}
-              activeTextStyle={styles.activeText}
-              style={styles.pill}
-              onPress={() => setPlaceDwellMin(minutes)}
-            />
-          ))}
-        </View>
+        <StepSlider
+          label="Stay before “I enter” fires"
+          value={placeDwellMin}
+          min={0}
+          max={30}
+          formatValue={minutes => (minutes === 0 ? 'Off' : `${minutes} min`)}
+          onChange={setPlaceDwellMin}
+        />
         <Text style={styles.hint}>
           The notification waits this long and is dropped if you leave first, so just passing by stays quiet.
         </Text>
@@ -70,11 +53,5 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   card: { backgroundColor: Colors.bg.card, borderRadius: 8, padding: 14, gap: 10 },
-  label: { color: Colors.text.secondary, fontSize: 15 },
-  second: { marginTop: 6 },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  pill: { backgroundColor: Colors.bg.input, borderRadius: 8 },
-  active: { backgroundColor: Colors.bg.elevated, borderColor: Colors.cue.location },
-  activeText: { color: Colors.text.primary },
   hint: { color: Colors.text.faint, fontSize: 12, lineHeight: 17 },
 });
