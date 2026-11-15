@@ -34,6 +34,7 @@ import { SunlightPlacesMap } from './sunlight-places-map';
 import { SunlightPreciseRow } from './sunlight-precise-row';
 import { SunlightSessionEditor } from './sunlight-session-editor';
 import { SUNLIGHT_STATUS_COLORS, SunlightStatusDot } from './sunlight-status-dot';
+import { SunlightTrackingLog } from './sunlight-tracking-log';
 import { SunlightWeekChart } from './sunlight-week-chart';
 
 const BRIGHTNESS_LABELS: Record<SunlightBrightness, string> = {
@@ -323,6 +324,7 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
             Below about 50 m, phone GPS can wobble across the line, so very short trips (under 2 min) are ignored. Light
             levels are estimated from hourly weather (Open-Meteo).
           </Text>
+          <SunlightTrackingLog />
         </ScrollView>
       </View>
       {editing && (

@@ -822,3 +822,29 @@ export function setTimeOfDay(ts: number, hours: number, minutes: number): number
   date.setHours(hours, minutes, 0, 0);
   return date.getTime();
 }
+
+export interface SunlightLogEntry {
+  ts: number;
+  source: 'geofence' | 'gps';
+  /** Place id for an arrival/departure or a GPS fix inside a place; null = GPS fix away from every place. */
+  placeId: string | null;
+  kind: 'enter' | 'exit' | 'sample';
+}
+
+/** Recent arrivals, departures and GPS checks, newest first (the Tracking log in the sheet). */
+export function getSunlightLogEntries(
+  events: SunlightGeofenceEvent[],
+  samples: SunlightPresenceSample[],
+  limit = 60,
+): SunlightLogEntry[] {
+  const entries: SunlightLogEntry[] = [
+    ...events.map(event => ({ ts: event.ts, source: 'geofence' as const, placeId: event.placeId, kind: event.kind })),
+    ...samples.map(sample => ({
+      ts: sample.ts,
+      source: 'gps' as const,
+      placeId: sample.placeId,
+      kind: 'sample' as const,
+    })),
+  ];
+  return entries.sort((a, b) => b.ts - a.ts).slice(0, limit);
+}
