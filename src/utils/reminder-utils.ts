@@ -5,6 +5,19 @@ import { getLogEndTimestamp } from './log-utils';
 
 /** Android geofencing is unreliable below roughly 100 m, so reminder geofences never go smaller. */
 export const GEOFENCE_MIN_RADIUS_M = 100;
+/** How long you must stay at a place before an "I enter" reminder fires (Settings can change or turn it off). */
+export const DEFAULT_PLACE_DWELL_MIN = 5;
+export const DWELL_ID_PREFIX = 'reminder-dwell:';
+
+export function getDwellNotificationId(cueId: string): string {
+  return `${DWELL_ID_PREFIX}${cueId}`;
+}
+
+/** Geofence settings from Settings: the smallest area used for reminders and the stay needed before "enter" fires. */
+export interface ReminderGeofenceOptions {
+  minRadiusM?: number;
+  dwellMin?: number;
+}
 /** Same reminder won't fire twice within this window (geofences flap at the edge). */
 export const REMINDER_COOLDOWN_MS = 15 * 60 * 1000;
 /** Logs older than this when they first appear (imports, back-dated logs) don't start habit reminders. */
@@ -70,12 +83,17 @@ export function canTriggerFireAutomatically(trigger: CueTrigger): boolean {
 /** Enabled reminders with push on whose trigger the app can fire automatically. */
 export function getActivePushReminders(cues: Cue[]): Cue[] {
   return cues.filter(
-    cue => cue.enabled && cue.notify.push && cue.behaviorIds.length > 0 && canTriggerFireAutomatically(cue.trigger),
+    cue =>
+      cue.enabled &&
+      cue.notify.push &&
+      // A reminder without behaviours is just a notification, so it needs a message (its name).
+      (cue.behaviorIds.length > 0 || (cue.name?.trim().length ?? 0) > 0) &&
+      canTriggerFireAutomatically(cue.trigger),
   );
 }
 
-export function geofenceRadius(radiusM: number): number {
-  return Math.max(GEOFENCE_MIN_RADIUS_M, radiusM);
+export function geofenceRadius(radiusM: number, minRadiusM = GEOFENCE_MIN_RADIUS_M): number {
+  return Math.max(minRadiusM, radiusM);
 }
 
 export function getTimeReminderSchedules(cues: Cue[]): TimeReminderSchedule[] {
@@ -105,6 +123,7 @@ export function getReminderGeofenceRegions(
   extraWatches: GeofenceWatch[] = [],
   /** Regions with their own identifier and radius (e.g. sunlight's small ones), added as they are. */
   extraRegions: ReminderGeofenceRegion[] = [],
+  { minRadiusM = GEOFENCE_MIN_RADIUS_M, dwellMin = 0 }: ReminderGeofenceOptions = {},
 ): ReminderGeofenceRegion[] {
   const directions = new Map<string, { enter: boolean; exit: boolean }>();
   const watch = (placeId: string, enter: boolean, exit: boolean) => {
@@ -113,7 +132,9 @@ export function getReminderGeofenceRegions(
   };
   for (const cue of getActivePushReminders(cues)) {
     if (cue.trigger.type !== 'location') continue;
-    watch(cue.trigger.placeId, cue.trigger.direction === 'enter', cue.trigger.direction === 'exit');
+    const entering = cue.trigger.direction === 'enter';
+    // Leaving before the stay is over cancels the pending "enter" reminder, so it needs the exit event too.
+    watch(cue.trigger.placeId, entering, cue.trigger.direction === 'exit' || (entering && dwellMin > 0));
   }
   for (const extra of extraWatches) watch(extra.placeId, extra.enter === true, extra.exit === true);
   const regions = places.flatMap(place => {
@@ -124,7 +145,7 @@ export function getReminderGeofenceRegions(
         identifier: place.id,
         latitude: place.lat,
         longitude: place.lng,
-        radius: geofenceRadius(place.radiusM),
+        radius: geofenceRadius(place.radiusM, minRadiusM),
         notifyOnEnter: direction.enter,
         notifyOnExit: direction.exit,
       },
@@ -225,10 +246,12 @@ export function getReminderNotificationContent(
     .map(id => behaviors.find(behavior => behavior.id === id))
     .filter((behavior): behavior is BehaviorEntry => behavior != null && behavior.archivedAt == null);
   const names = suggested.map(behavior => behavior.name);
-  const title = cue.name?.trim() || getCueTriggerLabel(cue.trigger, places, behaviors);
+  const message = cue.name?.trim();
+  // With no behaviours the name is the message, so the title says what triggered it.
+  const title = (names.length > 0 && message) || getCueTriggerLabel(cue.trigger, places, behaviors);
   const body =
     names.length === 0
-      ? 'Tap to open Recupero.'
+      ? message || 'Tap to open Recupero.'
       : names.length === 1
         ? `Time for ${names[0]}? Tap to log it.`
         : `Try ${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}.`;
@@ -266,6 +289,7 @@ export function getReminderScheduleSignature(
   behaviors: BehaviorEntry[],
   extraWatches: GeofenceWatch[] = [],
   extraRegions: ReminderGeofenceRegion[] = [],
+  geofenceOptions: ReminderGeofenceOptions = {},
 ): string {
   const active = getActivePushReminders(cues);
   const behaviorIds = new Set(active.flatMap(cue => cue.behaviorIds));
@@ -277,6 +301,7 @@ export function getReminderScheduleSignature(
     active,
     extraWatches,
     extraRegions,
+    geofenceOptions,
     places: places.filter(place => placeIds.has(place.id)),
     behaviors: behaviors
       .filter(behavior => behaviorIds.has(behavior.id))

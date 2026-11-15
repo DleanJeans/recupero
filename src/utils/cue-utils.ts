@@ -122,7 +122,7 @@ export function getCueBehaviorLabel(behaviorIds: string[], behaviors: BehaviorEn
   const names = behaviorIds
     .map(id => behaviors.find(behavior => behavior.id === id)?.name)
     .filter((name): name is string => name != null);
-  if (names.length === 0) return 'Choose behaviours';
+  if (names.length === 0) return 'Just a notification';
   if (names.length <= 2) return names.join(' + ');
   return `${names[0]} + ${names.length - 1} more`;
 }
@@ -312,4 +312,16 @@ export function getCueLogDays(behaviors: BehaviorEntry[], ref: CueRef, dayCutoff
 
 export function cueKindToTriggerType(kind: CueSourceKind): Extract<CueTriggerType, 'location' | 'mood' | 'body'> {
   return kind === 'place' ? 'location' : kind;
+}
+
+/** Max height of a pick list inside the reminder form; longer lists scroll in place. */
+export const CUE_LIST_MAX_HEIGHT = 280;
+/** Lists with at least this many rows get a search box. */
+export const CUE_LIST_SEARCH_MIN = 6;
+
+/** Case-insensitive "contains" filter on any of the given text fields. An empty query keeps everything. */
+export function filterBySearch<T>(items: T[], query: string, getText: (item: T) => Array<string | undefined>): T[] {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return items;
+  return items.filter(item => getText(item).some(text => text?.toLowerCase().includes(needle)));
 }

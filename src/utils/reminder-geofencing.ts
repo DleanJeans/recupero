@@ -14,7 +14,12 @@ import {
   type PlaceArrivals,
   pruneStalePlaceArrivals,
 } from './place-task-utils';
-import { presentPlaceTaskNotification, presentReminderNotification } from './reminder-notifications';
+import {
+  cancelDwellReminders,
+  presentPlaceTaskNotification,
+  presentReminderNotification,
+  scheduleDwellReminder,
+} from './reminder-notifications';
 import {
   type GeofenceWatch,
   getReminderGeofenceRegions,
@@ -93,8 +98,15 @@ async function handleGeofenceEvent({ eventType, region }: GeofenceTaskData): Pro
   await trackPlaceTaskStay(placeId, direction);
 
   const behaviors = useBehaviorStore.getState().behaviors;
+  await waitForHydration(useSettingsStore);
+  const { placeDwellMin } = useSettingsStore.getState();
+  if (direction === 'exit') {
+    // Left before the stay was over: the pending "enter" reminders no longer apply.
+    await cancelDwellReminders(getRemindersForGeofenceEvent(cues, placeId, 'enter').map(cue => cue.id));
+  }
   for (const cue of getRemindersForGeofenceEvent(cues, placeId, direction)) {
-    await presentReminderNotification(cue, places, behaviors);
+    if (direction === 'enter' && placeDwellMin > 0) await scheduleDwellReminder(cue, placeDwellMin, places, behaviors);
+    else await presentReminderNotification(cue, places, behaviors);
   }
 }
 
@@ -189,7 +201,12 @@ export async function syncReminderGeofences(
   extraWatches: GeofenceWatch[] = [],
   extraRegions: ReminderGeofenceRegion[] = [],
 ): Promise<void> {
-  const regions = getReminderGeofenceRegions(cues, places, extraWatches, extraRegions);
+  await waitForHydration(useSettingsStore);
+  const { reminderRadiusM, placeDwellMin } = useSettingsStore.getState();
+  const regions = getReminderGeofenceRegions(cues, places, extraWatches, extraRegions, {
+    minRadiusM: reminderRadiusM,
+    dwellMin: placeDwellMin,
+  });
   const running = await Location.hasStartedGeofencingAsync(REMINDER_GEOFENCE_TASK).catch(() => false);
   if (regions.length === 0 || !(await hasBackgroundLocationPermission())) {
     if (running) await Location.stopGeofencingAsync(REMINDER_GEOFENCE_TASK);

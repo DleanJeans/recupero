@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useCuesStore } from '../store/cues-store';
+import { useSettingsStore } from '../store/settings-store';
 import { useSunlightStore } from '../store/sunlight-store';
 import { useTimerStore } from '../store/timer-store';
 import type { RootStackParamList } from '../types/navigation';
@@ -40,6 +41,11 @@ function getExtraGeofenceRegions() {
   const { places } = useCuesStore.getState();
   const { enabled, outdoorPlaceIds, radiusM } = useSunlightStore.getState();
   return getSunlightGeofenceRegions(enabled, places, outdoorPlaceIds, radiusM);
+}
+
+function getGeofenceOptions() {
+  const { reminderRadiusM, placeDwellMin } = useSettingsStore.getState();
+  return { minRadiusM: reminderRadiusM, dwellMin: placeDwellMin };
 }
 
 async function syncAll() {
@@ -85,6 +91,7 @@ export function useReminderEngine(
         behaviors,
         getExtraGeofenceWatches(),
         getExtraGeofenceRegions(),
+        getGeofenceOptions(),
       );
       if (signature === lastSignature.current) return;
       lastSignature.current = signature;
@@ -102,6 +109,7 @@ export function useReminderEngine(
     });
 
     const unsubscribeCues = useCuesStore.subscribe(syncIfChanged);
+    const unsubscribeSettings = useSettingsStore.subscribe(syncIfChanged);
     const unsubscribeSunlight = useSunlightStore.subscribe((state, previous) => {
       if (
         state.enabled !== previous.enabled ||
@@ -133,6 +141,7 @@ export function useReminderEngine(
     return () => {
       appStateSubscription.remove();
       unsubscribeCues();
+      unsubscribeSettings();
       unsubscribeSunlight();
       unsubscribeBehaviors();
       unsubscribeTimer();

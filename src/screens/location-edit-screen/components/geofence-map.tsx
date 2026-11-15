@@ -10,9 +10,13 @@ import { DARK_MAP_STYLE } from '../../../utils/map-style';
 interface GeofenceMapProps {
   point: GeoPoint | null;
   radiusM: number;
-  isLocating: boolean;
-  onChangePoint: (point: GeoPoint) => void;
-  onLocateMe: () => void;
+  isLocating?: boolean;
+  /** Without these the map is a read-only preview: no pin dropping, dragging or locate button. */
+  onChangePoint?: (point: GeoPoint) => void;
+  onLocateMe?: () => void;
+  /** Overrides the hint chip (e.g. the place name in a preview). */
+  label?: string;
+  height?: number;
 }
 
 /** Fallback view (whole world) until we know where to center. */
@@ -22,7 +26,15 @@ const SLOW_LOAD_MS = 15_000;
 
 type LoadState = 'loading' | 'slow' | 'loaded';
 
-export function GeofenceMap({ point, radiusM, isLocating, onChangePoint, onLocateMe }: GeofenceMapProps) {
+export function GeofenceMap({
+  point,
+  radiusM,
+  isLocating = false,
+  onChangePoint,
+  onLocateMe,
+  label,
+  height,
+}: GeofenceMapProps) {
   const mapRef = useRef<MapView>(null);
   const initialRegion = useRef(point ? regionForGeofence(point, radiusM) : WORLD_REGION).current;
   const [loadState, setLoadState] = useState<LoadState>('loading');
@@ -39,11 +51,11 @@ export function GeofenceMap({ point, radiusM, isLocating, onChangePoint, onLocat
 
   const handleCoordinateEvent = (event: { nativeEvent: { coordinate: LatLng } }) => {
     const { latitude, longitude } = event.nativeEvent.coordinate;
-    onChangePoint({ lat: latitude, lng: longitude });
+    onChangePoint?.({ lat: latitude, lng: longitude });
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, height != null && { height }]}>
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFill}
@@ -53,8 +65,8 @@ export function GeofenceMap({ point, radiusM, isLocating, onChangePoint, onLocat
         showsUserLocation
         showsMyLocationButton={false}
         toolbarEnabled={false}
-        onPress={handleCoordinateEvent}
-        onLongPress={handleCoordinateEvent}
+        onPress={onChangePoint ? handleCoordinateEvent : undefined}
+        onLongPress={onChangePoint ? handleCoordinateEvent : undefined}
         onMapLoaded={() => setLoadState('loaded')}
       >
         {point && (
@@ -69,7 +81,7 @@ export function GeofenceMap({ point, radiusM, isLocating, onChangePoint, onLocat
             <Marker
               coordinate={{ latitude: point.lat, longitude: point.lng }}
               pinColor={Colors.cue.location}
-              draggable
+              draggable={onChangePoint != null}
               onDragEnd={handleCoordinateEvent}
             />
           </>
@@ -106,29 +118,33 @@ export function GeofenceMap({ point, radiusM, isLocating, onChangePoint, onLocat
         style={styles.chip}
         pointerEvents="none"
       >
-        <Text style={styles.chipText}>{point ? `📍 ${formatCoordinate(point)}` : 'Tap the map to drop a pin'}</Text>
+        <Text style={styles.chipText}>
+          {label ?? (point ? `📍 ${formatCoordinate(point)}` : 'Tap the map to drop a pin')}
+        </Text>
       </View>
 
-      <Pressable
-        style={styles.locateButton}
-        onPress={onLocateMe}
-        disabled={isLocating}
-        accessibilityRole="button"
-        accessibilityLabel="Use my current location"
-      >
-        {isLocating ? (
-          <ActivityIndicator
-            size="small"
-            color={Colors.cue.location}
-          />
-        ) : (
-          <Ionicons
-            name="locate"
-            size={20}
-            color={Colors.cue.location}
-          />
-        )}
-      </Pressable>
+      {onLocateMe && (
+        <Pressable
+          style={styles.locateButton}
+          onPress={onLocateMe}
+          disabled={isLocating}
+          accessibilityRole="button"
+          accessibilityLabel="Use my current location"
+        >
+          {isLocating ? (
+            <ActivityIndicator
+              size="small"
+              color={Colors.cue.location}
+            />
+          ) : (
+            <Ionicons
+              name="locate"
+              size={20}
+              color={Colors.cue.location}
+            />
+          )}
+        </Pressable>
+      )}
     </View>
   );
 }

@@ -1,16 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppIcon } from '../../../components/app-icon';
+import { CueSearchBox } from '../../../components/cues/cue-search-box';
 import { CueSegmentedControl } from '../../../components/cues/cue-segmented-control';
 import { Text } from '../../../components/text';
 import { useCuesStore } from '../../../store/cues-store';
 import type { CueTrigger } from '../../../types/cue';
 import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
-import { getPlaceEmoji } from '../../../utils/cue-utils';
+import { CUE_LIST_MAX_HEIGHT, CUE_LIST_SEARCH_MIN, filterBySearch, getPlaceEmoji } from '../../../utils/cue-utils';
+import { PlaceMapPreview } from './place-map-preview';
 
 type LocationTrigger = Extract<CueTrigger, { type: 'location' }>;
 
@@ -22,6 +24,12 @@ interface LocationTriggerEditorProps {
 export function LocationTriggerEditor({ value, onChange }: LocationTriggerEditorProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const places = useCuesStore(state => state.places);
+  const [query, setQuery] = useState('');
+  const visiblePlaces = useMemo(
+    () => filterBySearch(places, query, place => [place.name, place.address]),
+    [places, query],
+  );
+  const selectedPlace = places.find(place => place.id === value.placeId);
 
   return (
     <View style={styles.editor}>
@@ -33,8 +41,23 @@ export function LocationTriggerEditor({ value, onChange }: LocationTriggerEditor
         ]}
         onChange={direction => onChange({ ...value, direction })}
       />
-      <View style={styles.placeList}>
-        {places.map(place => {
+      {places.length >= CUE_LIST_SEARCH_MIN && (
+        <CueSearchBox
+          value={query}
+          placeholder="Search places"
+          onChangeText={setQuery}
+        />
+      )}
+      {visiblePlaces.length === 0 && places.length > 0 && (
+        <Text style={styles.placeDetail}>No place matches “{query.trim()}”.</Text>
+      )}
+      <ScrollView
+        style={styles.placeScroll}
+        contentContainerStyle={styles.placeList}
+        nestedScrollEnabled
+        keyboardShouldPersistTaps="handled"
+      >
+        {visiblePlaces.map(place => {
           const selected = place.id === value.placeId;
           return (
             <Pressable
@@ -58,7 +81,8 @@ export function LocationTriggerEditor({ value, onChange }: LocationTriggerEditor
             </Pressable>
           );
         })}
-      </View>
+      </ScrollView>
+      {selectedPlace && <PlaceMapPreview place={selectedPlace} />}
       <Pressable
         style={({ pressed }) => [styles.addPlace, pressed && styles.pressed]}
         onPress={() => navigation.navigate('LocationEdit')}
@@ -76,6 +100,7 @@ export function LocationTriggerEditor({ value, onChange }: LocationTriggerEditor
 
 const styles = StyleSheet.create({
   editor: { gap: 10 },
+  placeScroll: { maxHeight: CUE_LIST_MAX_HEIGHT },
   placeList: { gap: 7 },
   place: {
     flexDirection: 'row',

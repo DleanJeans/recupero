@@ -12,12 +12,13 @@ import { SafeAreaView } from '../../components/safe-area-view';
 import { Text, TextInput } from '../../components/text';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useCuesStore } from '../../store/cues-store';
+import { useSettingsStore } from '../../store/settings-store';
 import type { CueTrigger, CueTriggerType } from '../../types/cue';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import { createDefaultCueTrigger, getCueAccent, isCueTriggerComplete } from '../../utils/cue-utils';
 import { requestReminderPermissions } from '../../utils/reminder-permissions';
-import { canTriggerFireAutomatically, GEOFENCE_MIN_RADIUS_M } from '../../utils/reminder-utils';
+import { canTriggerFireAutomatically, geofenceRadius } from '../../utils/reminder-utils';
 import { AdditionalConditionsEditor } from './components/additional-conditions-editor';
 import { TriggerEditor } from './components/trigger-editor';
 import { TriggerTypeGrid } from './components/trigger-type-grid';
@@ -44,14 +45,15 @@ export function CueFormScreen() {
   const [combiner, setCombiner] = useState<'AND' | 'OR'>(existingCue?.combiner ?? 'AND');
   const [behaviorIds, setBehaviorIds] = useState<string[]>(existingCue?.behaviorIds ?? []);
   const [push, setPush] = useState(existingCue?.notify.push ?? true);
+  const minRadiusM = useSettingsStore(state => state.reminderRadiusM);
   const canNotify = canTriggerFireAutomatically(trigger);
   const triggerPlace = trigger.type === 'location' ? places.find(place => place.id === trigger.placeId) : undefined;
   const notifyDetail = !canNotify
     ? trigger.type === 'time'
       ? 'Wake-up detection is not automatic yet, so this one only shows as a suggestion.'
       : 'Shows as a suggestion when you log this, no notification needed.'
-    : triggerPlace && triggerPlace.radiusM < GEOFENCE_MIN_RADIUS_M
-      ? `Android can't reliably detect ${triggerPlace.radiusM} m, so the notification uses a ${GEOFENCE_MIN_RADIUS_M} m area around ${triggerPlace.name}. Log tagging still uses ${triggerPlace.radiusM} m.`
+    : triggerPlace && geofenceRadius(triggerPlace.radiusM, minRadiusM) > triggerPlace.radiusM
+      ? `The notification watches a ${minRadiusM} m area around ${triggerPlace.name} (change it in Settings). Log tagging still uses ${triggerPlace.radiusM} m.`
       : trigger.type === 'location'
         ? 'Notifies you in the background, even when Recupero is closed.'
         : trigger.type === 'app'
@@ -71,8 +73,8 @@ export function CueFormScreen() {
       Alert.alert('Finish the conditions', 'One of the extra conditions is incomplete.');
       return;
     }
-    if (behaviorIds.length === 0) {
-      Alert.alert('Choose a behaviour', 'Select at least one behaviour to suggest.');
+    if (behaviorIds.length === 0 && !name.trim()) {
+      Alert.alert('Add a message', 'Select a behaviour to suggest, or type a message to send yourself.');
       return;
     }
 
@@ -153,24 +155,31 @@ export function CueFormScreen() {
         </View>
 
         <View style={styles.section}>
-          <CueSectionLabel>Then · suggest</CueSectionLabel>
+          <CueSectionLabel>Then · suggest · optional</CueSectionLabel>
           <View style={styles.editorCard}>
             <CueBehaviorPicker
               selectedIds={behaviorIds}
               onChange={setBehaviorIds}
             />
+            {behaviorIds.length === 0 && (
+              <Text style={styles.notifyDetail}>
+                No behaviour selected: the reminder is just a notification with the message you type below.
+              </Text>
+            )}
           </View>
         </View>
 
         <View style={styles.section}>
           <CueSectionLabel>Details</CueSectionLabel>
           <View style={styles.editorCard}>
-            <Text style={styles.fieldLabel}>Cue name · optional</Text>
+            <Text style={styles.fieldLabel}>
+              {behaviorIds.length === 0 ? 'Notification message' : 'Cue name · optional'}
+            </Text>
             <TextInput
               style={styles.input}
               value={name}
               onChangeText={setName}
-              placeholder="e.g. Evening groceries"
+              placeholder={behaviorIds.length === 0 ? 'e.g. Buy milk' : 'e.g. Evening groceries'}
               placeholderTextColor={Colors.text.faint}
             />
             <View style={styles.notifyRow}>

@@ -14,6 +14,9 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-15',
     items: [
+      'New reminder: the place and behaviour lists scroll inside a limited height and have a search box, and choosing a place shows it on a map.',
+      'New reminder: you can now pick no behaviour and just send yourself a notification with your own message.',
+      'Settings: new Place reminders section to set the area size (down from 100 m if you like; Android may miss very small areas) and how long you must stay before an "I enter" reminder fires (5 min by default, or off).',
       'Sunlight: tap a day in Past week to see its route on the map and its timeline.',
       'Needs: the Refill list now has a search box (shown once there are a few refills) to filter by name.',
       'Patch notes: a button at the end of Settings opens this list.',

@@ -4,6 +4,7 @@ import type { BehaviorEntry } from '../types/behavior';
 import type { Cue, SavedPlace } from '../types/cue';
 import { PLACE_TASK_NOTIFICATION_KIND } from './place-task-utils';
 import {
+  getDwellNotificationId,
   getReminderNotificationContent,
   getTimeReminderSchedules,
   isReminderOnCooldown,
@@ -112,6 +113,53 @@ export async function presentReminderNotification(
   });
   await AsyncStorage.setItem(LAST_FIRED_KEY, JSON.stringify({ ...lastFired, [cue.id]: now }));
   return true;
+}
+
+/**
+ * "When I enter" reminders wait for you to stay: the notification is scheduled `dwellMin` minutes ahead and
+ * cancelled if you leave first, so walking past a place doesn't fire it.
+ */
+export async function scheduleDwellReminder(
+  cue: Cue,
+  dwellMin: number,
+  places: SavedPlace[],
+  behaviors: BehaviorEntry[],
+  now = Date.now(),
+): Promise<void> {
+  const identifier = getDwellNotificationId(cue.id);
+  const lastFired = await readLastFired();
+  if (isReminderOnCooldown(lastFired[cue.id], now)) return;
+  await setupReminderNotifications();
+  const pending = await Notifications.getAllScheduledNotificationsAsync();
+  // A repeated enter (geofence jitter) must not restart the clock.
+  if (pending.some(request => request.identifier === identifier)) return;
+  await Notifications.scheduleNotificationAsync({
+    identifier,
+    content: await buildContent(cue, places, behaviors),
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: Math.max(1, Math.round(dwellMin * 60)),
+      channelId: REMINDER_CHANNEL_ID,
+    },
+  });
+  // Counts as fired when it will show, so the cooldown covers the wait too.
+  await AsyncStorage.setItem(LAST_FIRED_KEY, JSON.stringify({ ...lastFired, [cue.id]: now + dwellMin * 60_000 }));
+}
+
+/** You left before the stay was over: drop the pending "enter" reminders (and their cooldown). */
+export async function cancelDwellReminders(cueIds: string[]): Promise<void> {
+  if (cueIds.length === 0) return;
+  const pending = await Notifications.getAllScheduledNotificationsAsync();
+  const cancelled = cueIds.filter(cueId =>
+    pending.some(request => request.identifier === getDwellNotificationId(cueId)),
+  );
+  if (cancelled.length === 0) return;
+  await Promise.all(
+    cancelled.map(cueId => Notifications.cancelScheduledNotificationAsync(getDwellNotificationId(cueId))),
+  );
+  const lastFired = await readLastFired();
+  for (const cueId of cancelled) delete lastFired[cueId];
+  await AsyncStorage.setItem(LAST_FIRED_KEY, JSON.stringify(lastFired));
 }
 
 /** Tells the user a "Go to this location" task ticked itself off. Tapping it opens Tasks. */

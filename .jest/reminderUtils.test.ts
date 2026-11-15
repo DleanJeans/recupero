@@ -86,7 +86,32 @@ describe('getTimeReminderSchedules', () => {
   });
 });
 
+describe('reminders without behaviours', () => {
+  it('stay active only when they have a message', () => {
+    const trigger: CueTrigger = { type: 'location', placeId: 'gym', direction: 'enter' };
+    expect(getRemindersForGeofenceEvent([cue('a', trigger, { behaviorIds: [] })], 'gym', 'enter')).toEqual([]);
+    const named = cue('b', trigger, { behaviorIds: [], name: 'Buy milk' });
+    expect(getRemindersForGeofenceEvent([named], 'gym', 'enter')).toEqual([named]);
+  });
+
+  it('uses the name as the notification message', () => {
+    const named = cue(
+      'b',
+      { type: 'location', placeId: 'gym', direction: 'enter' },
+      { behaviorIds: [], name: 'Buy milk' },
+    );
+    expect(getReminderNotificationContent(named, [place('gym', 20)], []).body).toBe('Buy milk');
+  });
+});
+
 describe('getReminderGeofenceRegions', () => {
+  it('uses the Settings minimum radius and watches exits while an enter reminder waits out the stay', () => {
+    const cues = [cue('a', { type: 'location', placeId: 'gym', direction: 'enter' })];
+    expect(getReminderGeofenceRegions(cues, [place('gym', 20)], [], [], { minRadiusM: 50, dwellMin: 5 })).toEqual([
+      { identifier: 'gym', latitude: 10, longitude: 20, radius: 50, notifyOnEnter: true, notifyOnExit: true },
+    ]);
+  });
+
   it('registers only referenced places, at least 100 m, with the directions in use', () => {
     const cues = [
       cue('a', { type: 'location', placeId: 'gym', direction: 'enter' }),
