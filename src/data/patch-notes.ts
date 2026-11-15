@@ -1,0 +1,63 @@
+export interface PatchNotesDay {
+  /** Local calendar date, yyyy-MM-dd. */
+  date: string;
+  /** Plain-language, user-facing changes made that day. */
+  items: string[];
+}
+
+/**
+ * Patch notes shown at the bottom of Settings. Newest day first.
+ * Add an entry (or a bullet to today's day) with every user-facing change.
+ * Write for the app's user, not for developers.
+ */
+export const PATCH_NOTES: PatchNotesDay[] = [
+  {
+    date: '2026-11-15',
+    items: [
+      'Settings now ends with these patch notes.',
+      'Sunlight: pause tracking manually for 30 min, 1 h, 2 h or the rest of today. The status and the live notification show the pause.',
+      'Sunlight: edit the start, end and lux of Today sessions, and see the light that reaches your eyes.',
+      'Sunlight: a tracking log in the sheet lists place arrivals, departures and GPS checks, so lost sessions can be debugged.',
+      'Sunlight: fewer false sessions. Rapid bursts of place events and GPS wobble at home are ignored, and trips between far places are inferred.',
+      'Tasks: a place task now needs you to stay there (5 min by default) before it ticks off.',
+    ],
+  },
+  {
+    date: '2026-11-14',
+    items: [
+      'Sunlight: precise background tracking toggle and a setting for how much light reaches your eyes.',
+      'Sunlight: add manual sessions, delete misfires from Today, and Calibrate now only applies from here on.',
+      'Needs: pickers and sheets open full screen with a back button.',
+      'Needs charts: lines slope straight to a manual update instead of dropping vertically.',
+      'Icon picker: full screen so the search box stays above the keyboard, and you can search emoji by typing or pasting the emoji itself.',
+      'Image search: Back goes back through the browser before closing.',
+      'Dialogs with a text box move to the top of the screen only while the keyboard is showing.',
+      'Daily screen: the Cardio and Sunlight cards are gone (both live in Needs).',
+      'Metadata: a custom rate basis instead of a fixed per 100.',
+    ],
+  },
+  {
+    date: '2026-11-13',
+    items: [
+      'Settings: Check for update button that downloads the update and restarts into it.',
+      'Sunlight: a live ongoing notification counts up while you are outside.',
+      'Sunlight: lux is blended hour by hour and can be calibrated against a lux meter.',
+      'Needs: sleep refills show on the Energy chart as a rise across the night.',
+    ],
+  },
+  {
+    date: '2026-11-12',
+    items: [
+      'Needs: top up a need without logging a behavior.',
+      'Needs: Active Zone Minutes moved into the Needs panel.',
+      'Needs: a Sunlight bar counts time outside between sunrise and sunset, with estimated lux and a light dose bar.',
+      'Needs: charts refresh right after a check-in or top-up, and draw as solid lines.',
+      "Timer: a level ring, today's sessions, and Pause, which logs each segment.",
+      'Behavior Log: a smart main button, a split Log | Timer button and a ⋯ menu.',
+      'Reminders: Start timer and Later buttons on suggestion notifications, and Open app reminders.',
+      'Cues: tap a place to see the logs made there.',
+      'Icons: image icons fill their tile, tap the icon on Behavior and Place details to edit it, and the picker has steadier sliders and -/+ buttons.',
+      'Settings: app version, native runtime and the running update shown at the bottom.',
+    ],
+  },
+];

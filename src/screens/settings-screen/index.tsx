@@ -8,6 +8,7 @@ import { AppVersionSection } from './components/app-version-section';
 import { DataTransferSection } from './components/data-transfer-section';
 import { DayCutoffPicker } from './components/day-cutoff-picker';
 import { MoneyRewardsSection } from './components/money-rewards-section';
+import { PatchNotesSection } from './components/patch-notes-section';
 import { PrivateBehaviorSection } from './components/private-behavior-section';
 import { TimeFormatPicker } from './components/time-format-picker';
 
@@ -29,6 +30,7 @@ export function SettingsScreen() {
         <PrivateBehaviorSection />
         <DataTransferSection />
         <AppVersionSection />
+        <PatchNotesSection />
       </ScrollView>
     </SafeAreaView>
   );
