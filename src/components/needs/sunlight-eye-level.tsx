@@ -13,7 +13,7 @@ interface SunlightEyeLevelProps {
   factor: number;
 }
 
-/** How much of the sky's light reaches your eyes (you mostly look ahead or down); applies from when saved. */
+/** −/+ for the share of the sky's light reaching your eyes; applies from when saved (its Settings row is the label). */
 export function SunlightEyeLevel({ factor }: SunlightEyeLevelProps) {
   const setFactor = useSunlightStore(state => state.setEyeLevelFactor);
   const [draft, setDraft] = useState<number | null>(null);
@@ -33,7 +33,6 @@ export function SunlightEyeLevel({ factor }: SunlightEyeLevelProps) {
   return (
     <View style={styles.container}>
       <View style={styles.row}>
-        <Text style={styles.label}>Light reaching your eyes</Text>
         <Pressable
           onPress={() => nudge(-STEP)}
           hitSlop={8}
@@ -72,7 +71,6 @@ export function SunlightEyeLevel({ factor }: SunlightEyeLevelProps) {
 const styles = StyleSheet.create({
   container: { gap: 6, paddingHorizontal: 4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  label: { flex: 1, color: Colors.text.secondary, fontSize: 13 },
   value: { color: Colors.text.primary, fontSize: 14, fontWeight: '700', minWidth: 40, textAlign: 'center' },
   action: { color: SUNLIGHT_COLOR, fontSize: 15, fontWeight: '700' },
   hint: { color: Colors.text.faint, fontSize: 11, lineHeight: 15 },

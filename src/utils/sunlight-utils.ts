@@ -8,6 +8,7 @@ import type {
   SunlightPresenceSample,
   SunlightRange,
   SunlightStretch,
+  SunlightTrailPoint,
   SunlightWeather,
   SunlightWeatherHour,
 } from '../types/sunlight';
@@ -46,7 +47,7 @@ export const WEATHER_REFRESH_MS = MS_PER_HOUR;
 /** Rounded to about 1 km before leaving the phone. */
 const WEATHER_COORD_DECIMALS = 2;
 
-interface PresenceEvent {
+export interface PresenceEvent {
   ts: number;
   kind: 'enter' | 'exit' | 'sample';
   placeId: string | null;
@@ -86,7 +87,7 @@ export function getSunlightRegionPlaceId(identifier: string): string | undefined
   return identifier.startsWith(SUNLIGHT_REGION_PREFIX) ? identifier.slice(SUNLIGHT_REGION_PREFIX.length) : undefined;
 }
 
-type PlaceEvent = Pick<SunlightGeofenceEvent, 'ts'> & { kind: string; placeId?: string };
+export type PlaceEvent = Pick<SunlightGeofenceEvent, 'ts'> & { kind: string; placeId?: string };
 
 /** Geofence events this close together form one burst when they span this many places. */
 const BURST_GAP_MS = 3_000;
@@ -122,7 +123,7 @@ export function isWobbleSample(sample: SunlightPresenceSample): boolean {
   return sample.edgeM <= wobble;
 }
 
-function getPresenceEvents(
+export function getPresenceEvents(
   activity: PlaceEvent[],
   samples: SunlightPresenceSample[],
   indoorIds: Set<string>,
@@ -851,6 +852,16 @@ export const MAX_SUNLIGHT_SAMPLES = 500;
 export const MAX_SUNLIGHT_EVENTS = 2000;
 export const MAX_MANUAL_SESSIONS = 200;
 export const MAX_SUNLIGHT_PAUSES = 100;
+export const MAX_TRAIL_POINTS = 3000;
+/** The path on the map only needs this week's points. */
+const TRAIL_KEEP_MS = (SUNLIGHT_HISTORY_DAYS + 1) * 24 * MS_PER_HOUR;
+
+/** Drops trail points over a week older than the newest one, and the oldest beyond the cap. Expects ts order. */
+export function pruneTrail(trail: SunlightTrailPoint[]): SunlightTrailPoint[] {
+  const newest = trail.at(-1)?.ts;
+  if (newest == null) return trail;
+  return trail.filter(point => point.ts >= newest - TRAIL_KEEP_MS).slice(-MAX_TRAIL_POINTS);
+}
 
 /** The append-only history a background task and the app can both write to. */
 export interface SunlightHistory {
@@ -864,6 +875,8 @@ export interface SunlightHistory {
   deletedManualStarts: number[];
   luxCalibrations: SunlightCalibrationStep[];
   eyeLevelFactors: SunlightCalibrationStep[];
+  /** Outside Mode's fine positions, for the path on the map. */
+  trail: SunlightTrailPoint[];
 }
 
 function unionBy<T>(a: T[] | undefined, b: T[] | undefined, key: (item: T) => string, pick?: (x: T, y: T) => T): T[] {
@@ -913,6 +926,7 @@ export function mergeSunlightHistory(a: Partial<SunlightHistory>, b: Partial<Sun
     deletedManualStarts,
     luxCalibrations: unionBy(a.luxCalibrations, b.luxCalibrations, step => `${step.from}`).sort(byFrom),
     eyeLevelFactors: unionBy(a.eyeLevelFactors, b.eyeLevelFactors, step => `${step.from}`).sort(byFrom),
+    trail: pruneTrail(unionBy(a.trail, b.trail, point => `${point.ts}`).sort(byTs)),
   };
 }
 

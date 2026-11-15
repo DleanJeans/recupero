@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useCuesStore } from '../../store/cues-store';
 import { useSunlightStore } from '../../store/sunlight-store';
 import { Colors } from '../../utils/colors';
@@ -16,9 +16,8 @@ function describe(entry: SunlightLogEntry, placeName: (id: string) => string): s
   return `GPS: away from places${detail}`;
 }
 
-/** What tracking saw recently (geofence arrivals/departures and GPS checks), to see why a session did or didn't count. */
+/** Recent arrivals, departures and GPS checks, to see why a session did or didn't count (its Settings row opens it). */
 export function SunlightTrackingLog() {
-  const [open, setOpen] = useState(false);
   const events = useSunlightStore(state => state.events);
   const samples = useSunlightStore(state => state.samples);
   const trackingSince = useSunlightStore(state => state.trackingSince);
@@ -26,9 +25,9 @@ export function SunlightTrackingLog() {
   const placeName = (id: string) => places.find(place => place.id === id)?.name ?? 'a removed place';
   const [runs, setRuns] = useState<SunlightTaskRun[]>([]);
   useEffect(() => {
-    if (open) void getSunlightTaskRuns().then(setRuns);
-  }, [open]);
-  const entries = open ? getSunlightLogEntries(events, samples) : [];
+    void getSunlightTaskRuns().then(setRuns);
+  }, []);
+  const entries = getSunlightLogEntries(events, samples);
   const lastRun = (task: SunlightTaskRun['task']) => runs.filter(run => run.task === task).at(-1);
   const describeRun = (run: SunlightTaskRun | undefined) =>
     run ? `${day(run.ts)} ${formatTime(run.ts)} (${run.appState === 'active' ? 'app open' : 'background'})` : 'never';
@@ -37,38 +36,27 @@ export function SunlightTrackingLog() {
 
   return (
     <View style={styles.container}>
-      <Pressable
-        onPress={() => setOpen(value => !value)}
-        hitSlop={8}
-        accessibilityRole="button"
-      >
-        <Text style={styles.toggle}>{open ? 'Hide tracking log' : 'Show tracking log'}</Text>
-      </Pressable>
-      {open && (
-        <>
-          <Text style={styles.meta}>
-            {`Counting since ${day(trackingSince)} ${formatTime(trackingSince)} · ${events.length} arrivals/departures · ${samples.length} GPS checks`}
+      <Text style={styles.meta}>
+        {`Counting since ${day(trackingSince)} ${formatTime(trackingSince)} · ${events.length} arrivals/departures · ${samples.length} GPS checks`}
+      </Text>
+      <Text style={styles.meta}>
+        {`Background wake-ups: last GPS batch ${describeRun(lastRun('precise'))} · last place event ${describeRun(lastRun('geofence'))} · ${backgroundRuns} of the last ${runs.length} ran in the background`}
+      </Text>
+      {entries.length === 0 && <Text style={styles.meta}>Nothing recorded yet.</Text>}
+      {entries.map(entry => (
+        <View
+          key={`${entry.source}${entry.ts}${entry.kind}${entry.placeId}`}
+          style={styles.row}
+        >
+          <Text style={styles.time}>{`${day(entry.ts)} ${formatTime(entry.ts, undefined, true)}`}</Text>
+          <Text
+            style={[styles.text, entry.kind !== 'sample' && styles.geofence, entry.ignored && styles.ignored]}
+            numberOfLines={1}
+          >
+            {`${describe(entry, placeName)}${entry.ignored ? ' · ignored' : ''}`}
           </Text>
-          <Text style={styles.meta}>
-            {`Background wake-ups: last GPS batch ${describeRun(lastRun('precise'))} · last place event ${describeRun(lastRun('geofence'))} · ${backgroundRuns} of the last ${runs.length} ran in the background`}
-          </Text>
-          {entries.length === 0 && <Text style={styles.meta}>Nothing recorded yet.</Text>}
-          {entries.map(entry => (
-            <View
-              key={`${entry.source}${entry.ts}${entry.kind}${entry.placeId}`}
-              style={styles.row}
-            >
-              <Text style={styles.time}>{`${day(entry.ts)} ${formatTime(entry.ts, undefined, true)}`}</Text>
-              <Text
-                style={[styles.text, entry.kind !== 'sample' && styles.geofence, entry.ignored && styles.ignored]}
-                numberOfLines={1}
-              >
-                {`${describe(entry, placeName)}${entry.ignored ? ' · ignored' : ''}`}
-              </Text>
-            </View>
-          ))}
-        </>
-      )}
+        </View>
+      ))}
     </View>
   );
 }
@@ -77,12 +65,6 @@ const styles = StyleSheet.create({
   container: {
     gap: 4,
     paddingHorizontal: 4,
-  },
-  toggle: {
-    color: Colors.text.light,
-    fontSize: 13,
-    fontWeight: '600',
-    paddingVertical: 4,
   },
   meta: {
     color: Colors.text.faint,

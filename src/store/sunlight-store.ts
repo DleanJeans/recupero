@@ -7,10 +7,12 @@ import type {
   SunlightPause,
   SunlightPresenceSample,
   SunlightRange,
+  SunlightTrailPoint,
   SunlightWeather,
 } from '../types/sunlight';
 import { clampGeofenceRadius } from '../utils/geofence-utils';
 import { sunlightStorage } from '../utils/sunlight-persist';
+import { addTrailPoints } from '../utils/sunlight-timeline-utils';
 import {
   addCalibrationStep,
   DEFAULT_SUNLIGHT_GOAL_MINUTES,
@@ -47,9 +49,17 @@ export interface SunlightStore {
   eyeLevelFactors: SunlightCalibrationStep[];
   /** Set the eye-level share from now on; earlier time keeps its old share. */
   setEyeLevelFactor: (factor: number) => void;
-  /** Follow your position about every second in the background (GPS + foreground service); costs battery. */
+  /**
+   * Outside Mode: follow your position about every second in the background (GPS + foreground service) while
+   * you move between places; costs battery. Stored under its old name, "precise tracking".
+   */
   preciseTracking: boolean;
+  /** When Outside Mode was last turned on. */
+  preciseSince?: number;
   setPreciseTracking: (on: boolean) => void;
+  /** Outside Mode's fine positions for the path on the map. */
+  trail: SunlightTrailPoint[];
+  addTrailPoints: (points: SunlightTrailPoint[]) => void;
   events: SunlightGeofenceEvent[];
   /** Stretches outside the user deleted (e.g. misfires from a small radius); cut out of the counted time. */
   deletedRanges: SunlightRange[];
@@ -105,7 +115,15 @@ export const useSunlightStore = create<SunlightStore>()(
       setEyeLevelFactor: factor =>
         set(state => ({ eyeLevelFactors: addCalibrationStep(state.eyeLevelFactors, Date.now(), factor) })),
       preciseTracking: false,
-      setPreciseTracking: preciseTracking => set({ preciseTracking }),
+      preciseSince: undefined,
+      setPreciseTracking: preciseTracking =>
+        set(state =>
+          preciseTracking === state.preciseTracking
+            ? state
+            : { preciseTracking, preciseSince: preciseTracking ? Date.now() : undefined },
+        ),
+      trail: [],
+      addTrailPoints: points => set(state => ({ trail: addTrailPoints(state.trail, points) })),
       events: [],
       deletedRanges: [],
       deleteRange: range => set(state => ({ deletedRanges: [...state.deletedRanges, range] })),

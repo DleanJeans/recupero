@@ -15,6 +15,11 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-15',
     items: [
       'Settings now ends with these patch notes.',
+      'Sunlight: the sheet is reorganised into Now, Today, Past week and Settings. Settings are one line each and open in place.',
+      "Sunlight: Precise tracking is now the Outside Mode button, next to Pause and I'm outside. Turn it on while you move between places.",
+      'Sunlight: Today is a timeline of your places, sessions and pauses, and each session shows its lux·min.',
+      "Sunlight: the map draws today's route (solid where it counted as outside). Outside Mode records a detailed route.",
+      'Sunlight: "Pause within" is labelled as measured from each place\'s centre (it always was).',
       'Sunlight: pause tracking manually for 30 min, 1 h, 2 h or the rest of today. The status and the live notification show the pause.',
       'Sunlight: edit the start, end and lux of Today sessions, and see the light that reaches your eyes.',
       'Sunlight: a tracking log in the sheet lists place arrivals, departures and GPS checks, so lost sessions can be debugged.',

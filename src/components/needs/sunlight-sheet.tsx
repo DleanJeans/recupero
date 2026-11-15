@@ -1,68 +1,40 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SunlightNotification } from '../../../modules/sunlight-notification';
 import { resyncReminders } from '../../hooks/use-reminder-engine';
 import { useSunlight } from '../../hooks/use-sunlight';
-import { useCuesStore } from '../../store/cues-store';
+import { useSunlightTimeline } from '../../hooks/use-sunlight-timeline';
 import { useSunlightStore } from '../../store/sunlight-store';
 import type { SunlightStretch } from '../../types/sunlight';
 import { Colors } from '../../utils/colors';
 import { requestBackgroundLocationPermission } from '../../utils/reminder-geofencing';
 import { syncSunlight } from '../../utils/sunlight-sync';
-import {
-  formatLux,
-  formatSunlightMinutes,
-  getLightDoseRate,
-  getSunlightBrightness,
-  SUNLIGHT_GOAL_STEP_MINUTES,
-  type SunlightBrightness,
-} from '../../utils/sunlight-utils';
+import { formatLux, formatSunlightMinutes } from '../../utils/sunlight-utils';
 import { formatTime } from '../../utils/time-utils';
-import { AppIcon } from '../app-icon';
 import { CueSectionLabel } from '../cues/cue-section-label';
 import { FullScreenModal } from '../full-screen-modal';
-import { RadiusSlider } from '../radius-slider';
 import { Text } from '../text';
+import { SunlightActions } from './sunlight-actions';
 import { SUNLIGHT_COLOR } from './sunlight-bar-row';
-import { SunlightCalibration } from './sunlight-calibration';
-import { SunlightEyeLevel } from './sunlight-eye-level';
-import { SunlightLightDose } from './sunlight-light-dose';
-import { SunlightManualSession } from './sunlight-manual-session';
-import { SunlightPauseCard } from './sunlight-pause';
+import { SunlightNowCard } from './sunlight-now-card';
 import { SunlightPlacesMap } from './sunlight-places-map';
-import { SunlightPreciseRow } from './sunlight-precise-row';
 import { SunlightSessionEditor } from './sunlight-session-editor';
-import { SUNLIGHT_STATUS_COLORS, SunlightStatusDot } from './sunlight-status-dot';
-import { SunlightTrackingLog } from './sunlight-tracking-log';
+import { SunlightSettings } from './sunlight-settings';
+import { SunlightTimeline } from './sunlight-timeline';
 import { SunlightWeekChart } from './sunlight-week-chart';
-
-const BRIGHTNESS_LABELS: Record<SunlightBrightness, string> = {
-  bright: 'bright',
-  overcast: 'overcast',
-  dim: 'dim',
-};
 
 interface SunlightSheetProps {
   visible: boolean;
   onClose: () => void;
 }
 
-/** Today's stretches outside while the sun was up, the past week, the daily goal and which places count as outdoors. */
+/** Sunlight in four sections: Now (status, minutes, light dose, actions), Today (route + timeline), week, Settings. */
 export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
   const sunlight = useSunlight();
-  const places = useCuesStore(state => state.places);
-  const outdoorPlaceIds = useSunlightStore(state => state.outdoorPlaceIds);
-  const toggleOutdoorPlace = useSunlightStore(state => state.toggleOutdoorPlace);
-  const setGoalMinutes = useSunlightStore(state => state.setGoalMinutes);
+  const timeline = useSunlightTimeline(sunlight);
   const insets = useSafeAreaInsets();
-  const radiusM = useSunlightStore(state => state.radiusM);
-  const weather = useSunlightStore(state => state.weather);
-  const liveNotification = useSunlightStore(state => state.liveNotification);
-  const setLiveNotification = useSunlightStore(state => state.setLiveNotification);
   const deleteRange = useSunlightStore(state => state.deleteRange);
   const deleteManualSession = useSunlightStore(state => state.deleteManualSession);
-  const setRadiusM = useSunlightStore(state => state.setRadiusM);
   const [justAllowed, setJustAllowed] = useState(false);
   const [editing, setEditing] = useState<SunlightStretch | null>(null);
   const locationAllowed = sunlight.locationAllowed || justAllowed;
@@ -74,7 +46,6 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
   if (!visible) return null;
 
   const { today, goalMinutes, days } = sunlight;
-  const hasWeather = weather != null;
   // A stretch out that's too short to count yet still shows, so it never looks like nothing is running.
   const pendingSince =
     sunlight.status.kind === 'counting' &&
@@ -125,45 +96,19 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
               <Text style={styles.title}>
                 Sunlight
                 <Text style={{ color: done ? Colors.type.desirable : SUNLIGHT_COLOR }}>
-                  {` · ${formatSunlightMinutes(today.minutes)}`}
+                  {` · ${formatSunlightMinutes(today.minutes)} / ${formatSunlightMinutes(goalMinutes)}`}
                 </Text>
               </Text>
               <Text style={styles.subtitle}>
-                {`Goal ${goalMinutes} min · ${sunWindow}`}
+                {sunWindow}
                 {sunlight.luxNow != null ? ` · ${formatLux(sunlight.luxNow)} now` : ''}
                 {today.lux != null ? ` · ${formatLux(today.lux)} avg while out` : ''}
               </Text>
             </View>
           </View>
 
-          <View style={styles.status}>
-            <SunlightStatusDot
-              kind={sunlight.status.kind}
-              size={10}
-            />
-            <Text style={[styles.statusText, { color: SUNLIGHT_STATUS_COLORS[sunlight.status.kind] }]}>
-              {sunlight.status.label}
-            </Text>
-          </View>
-          {SunlightNotification && (
-            <View style={styles.liveRow}>
-              <Text style={styles.liveLabel}>Live notification while outside</Text>
-              <Switch
-                value={liveNotification}
-                onValueChange={setLiveNotification}
-                trackColor={{ true: SUNLIGHT_COLOR }}
-                thumbColor={Colors.text.primary}
-              />
-            </View>
-          )}
-
-          <SunlightPauseCard
-            pause={sunlight.pause}
-            now={sunlight.now}
-          />
-          <SunlightManualSession session={sunlight.manualSession} />
-          <SunlightPreciseRow />
-
+          <CueSectionLabel>Now</CueSectionLabel>
+          <SunlightNowCard sunlight={sunlight} />
           {!locationAllowed && (
             <View style={styles.warning}>
               <Text style={styles.warningText}>
@@ -183,77 +128,15 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
               Save the places where you spend time indoors (Home, work) under Places, so time away from them counts.
             </Text>
           )}
-
-          <SunlightLightDose
-            luxMinutes={today.luxMinutes}
-            ratePerMinute={
-              sunlight.manualSession
-                ? sunlight.status.kind === 'counting'
-                  ? (sunlight.manualSession.lux ?? 0)
-                  : 0
-                : getLightDoseRate(sunlight.status.kind === 'counting', sunlight.luxNow, sunlight.eyeLevelFactor)
-            }
-            snapshotAt={sunlight.now}
-            goalMinutes={goalMinutes}
-            hasWeather={hasWeather}
-            eyeLevelFactor={sunlight.eyeLevelFactor}
-          />
-          <SunlightEyeLevel factor={sunlight.eyeLevelFactor} />
-          <SunlightCalibration
-            factor={sunlight.luxCalibration}
-            luxNow={sunlight.luxNow}
-            rawLuxNow={sunlight.rawLuxNow}
-          />
+          <SunlightActions sunlight={sunlight} />
 
           <CueSectionLabel>Today</CueSectionLabel>
-          {pendingSince != null && (
-            <View style={[styles.stretch, styles.stretchLive]}>
-              <Text style={styles.stretchTime}>{formatTime(pendingSince)} – now</Text>
-              <Text style={styles.stretchLux}>Just started · counts after 2 min</Text>
-              <Text style={styles.stretchMinutes}>0 min</Text>
-            </View>
-          )}
-          {today.stretches.length === 0 && pendingSince == null ? (
-            <Text style={styles.hint}>No time outside in daylight yet.</Text>
-          ) : (
-            [...today.stretches].reverse().map(stretch => (
-              <Pressable
-                key={`${stretch.manual || stretch.edited ? 'm' : 'a'}${stretch.start}`}
-                style={({ pressed }) => [
-                  styles.stretch,
-                  stretch.ongoing && styles.stretchLive,
-                  pressed && styles.pressed,
-                ]}
-                onPress={() => setEditing(stretch)}
-                disabled={stretch.ongoing}
-                accessibilityRole="button"
-                accessibilityHint="Edit times and light"
-              >
-                <Text style={styles.stretchTime}>
-                  {formatTime(stretch.start)} – {stretch.ongoing ? 'now' : formatTime(stretch.end)}
-                  {stretch.manual ? ' ✋' : stretch.edited ? ' ✎' : ''}
-                </Text>
-                <Text style={styles.stretchLux}>
-                  {stretch.eyeLux != null
-                    ? `${formatLux(stretch.eyeLux)} at eyes · ${BRIGHTNESS_LABELS[getSunlightBrightness(stretch.eyeLux)]}`
-                    : ''}
-                </Text>
-                <Text style={styles.stretchMinutes}>
-                  {formatSunlightMinutes(Math.floor((stretch.end - stretch.start) / 60_000))}
-                </Text>
-                {!stretch.ongoing && (
-                  <Pressable
-                    onPress={() => confirmDelete(stretch)}
-                    hitSlop={10}
-                    accessibilityRole="button"
-                    accessibilityLabel="Delete session"
-                  >
-                    <Text style={styles.stretchDelete}>✕</Text>
-                  </Pressable>
-                )}
-              </Pressable>
-            ))
-          )}
+          <SunlightPlacesMap path={timeline.path} />
+          <SunlightTimeline
+            items={timeline.items}
+            pendingSince={pendingSince}
+            onEdit={setEditing}
+          />
 
           <CueSectionLabel>Past week</CueSectionLabel>
           <SunlightWeekChart
@@ -261,70 +144,8 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
             goalMinutes={goalMinutes}
           />
 
-          <CueSectionLabel>Daily goal</CueSectionLabel>
-          <View style={styles.stepper}>
-            <Pressable
-              style={({ pressed }) => [styles.stepButton, pressed && styles.pressed]}
-              onPress={() => setGoalMinutes(goalMinutes - SUNLIGHT_GOAL_STEP_MINUTES)}
-              accessibilityRole="button"
-              accessibilityLabel="Lower goal"
-            >
-              <Text style={styles.stepText}>−</Text>
-            </Pressable>
-            <Text style={styles.goal}>{formatSunlightMinutes(goalMinutes)}</Text>
-            <Pressable
-              style={({ pressed }) => [styles.stepButton, pressed && styles.pressed]}
-              onPress={() => setGoalMinutes(goalMinutes + SUNLIGHT_GOAL_STEP_MINUTES)}
-              accessibilityRole="button"
-              accessibilityLabel="Raise goal"
-            >
-              <Text style={styles.stepText}>+</Text>
-            </Pressable>
-          </View>
-
-          <CueSectionLabel>Where it pauses</CueSectionLabel>
-          <RadiusSlider
-            label="Pause within"
-            value={radiusM}
-            onChange={setRadiusM}
-            color={SUNLIGHT_COLOR}
-            revealOnTap
-          />
-          <SunlightPlacesMap />
-
-          {places.length > 0 && (
-            <>
-              <CueSectionLabel>Places that count as outside</CueSectionLabel>
-              <View style={styles.chips}>
-                {places.map(place => {
-                  const outdoor = outdoorPlaceIds.includes(place.id);
-                  return (
-                    <Pressable
-                      key={place.id}
-                      style={({ pressed }) => [styles.chip, outdoor && styles.chipOn, pressed && styles.pressed]}
-                      onPress={() => toggleOutdoorPlace(place.id)}
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: outdoor }}
-                    >
-                      <AppIcon
-                        value={place.emoji}
-                        fallback={place.isHome ? '🏠' : '📍'}
-                        size={15}
-                      />
-                      <Text style={[styles.chipText, outdoor && styles.chipTextOn]}>{place.name}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </>
-          )}
-
-          <Text style={styles.hint}>
-            Counts time more than {radiusM} m from your saved places, only between sunrise and sunset where you are.
-            Below about 50 m, phone GPS can wobble across the line, so very short trips (under 2 min) are ignored. Light
-            levels are estimated from hourly weather (Open-Meteo).
-          </Text>
-          <SunlightTrackingLog />
+          <CueSectionLabel>Settings</CueSectionLabel>
+          <SunlightSettings sunlight={sunlight} />
         </ScrollView>
       </View>
       {editing && (
@@ -391,121 +212,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-  status: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: Colors.bg.input,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  liveRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 4,
-  },
-  liveLabel: {
-    color: Colors.text.secondary,
-    fontSize: 13,
-  },
-  statusText: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: '700',
-  },
   hint: {
     color: Colors.text.faint,
     fontSize: 12,
     lineHeight: 17,
     paddingHorizontal: 4,
-  },
-  stretch: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: Colors.bg.input,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  stretchLive: {
-    borderWidth: 1,
-    borderColor: SUNLIGHT_COLOR,
-  },
-  stretchTime: {
-    color: Colors.text.secondary,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  stretchLux: {
-    flex: 1,
-    color: Colors.text.faint,
-    fontSize: 12,
-  },
-  stretchMinutes: {
-    color: SUNLIGHT_COLOR,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  stretchDelete: {
-    color: Colors.text.faint,
-    fontSize: 15,
-    paddingLeft: 4,
-  },
-  stepper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  stepButton: {
-    width: 40,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: Colors.bg.input,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepText: {
-    color: Colors.text.primary,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  goal: {
-    color: Colors.text.primary,
-    fontSize: 15,
-    fontWeight: '700',
-    minWidth: 64,
-    textAlign: 'center',
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: Colors.bg.input,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: Colors.bg.input,
-  },
-  chipOn: {
-    borderColor: SUNLIGHT_COLOR,
-  },
-  chipText: {
-    color: Colors.text.muted,
-    fontSize: 13,
-  },
-  chipTextOn: {
-    color: Colors.text.primary,
   },
 });

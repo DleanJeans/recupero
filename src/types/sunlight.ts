@@ -94,3 +94,10 @@ export interface SunlightDay {
   /** Light dose: eye-level lux × minutes summed over the stretches (0 where the weather is unknown). */
   luxMinutes: number;
 }
+
+/** A fine-grained position while Outside Mode is on, for drawing the day's path on the map. */
+export interface SunlightTrailPoint {
+  ts: number;
+  lat: number;
+  lng: number;
+}

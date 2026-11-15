@@ -1,23 +1,15 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSunlightStore } from '../../store/sunlight-store';
-import type { SunlightManualSession } from '../../types/sunlight';
 import { Colors } from '../../utils/colors';
 import { parseDecimalInput } from '../../utils/metadata-calculation-utils';
 import { DEFAULT_MANUAL_LUX, formatLux, getManualLuxFromText, MANUAL_LUX_PRESETS } from '../../utils/sunlight-utils';
-import { formatTime } from '../../utils/time-utils';
 import { Text, TextInput } from '../text';
 import { SUNLIGHT_COLOR } from './sunlight-bar-row';
 
-interface SunlightManualSessionProps {
-  /** The manual session running now, if any. */
-  session?: SunlightManualSession;
-}
-
-/** Start or stop a session by hand at a lux level you pick: for sitting outside while the phone says you're at a place. */
-export function SunlightManualSession({ session }: SunlightManualSessionProps) {
+/** Start a session by hand at a lux level you pick: for sitting outside while the phone says you're at a place. */
+export function SunlightManualSession() {
   const start = useSunlightStore(state => state.startManualSession);
-  const stop = useSunlightStore(state => state.stopManualSession);
   const [lux, setLux] = useState(DEFAULT_MANUAL_LUX);
   const [custom, setCustom] = useState('');
 
@@ -30,28 +22,6 @@ export function SunlightManualSession({ session }: SunlightManualSessionProps) {
     const parsed = getManualLuxFromText(parseDecimalInput(text));
     if (parsed != null) setLux(parsed);
   };
-
-  if (session) {
-    return (
-      <View style={styles.card}>
-        <View style={styles.row}>
-          <View style={styles.info}>
-            <Text style={styles.title}>Manual session running</Text>
-            <Text
-              style={styles.detail}
-            >{`Since ${formatTime(session.start)} · ${formatLux(session.lux ?? DEFAULT_MANUAL_LUX)}`}</Text>
-          </View>
-          <Pressable
-            style={({ pressed }) => [styles.button, styles.stopButton, pressed && styles.pressed]}
-            onPress={stop}
-            accessibilityRole="button"
-          >
-            <Text style={styles.stopText}>Stop</Text>
-          </Pressable>
-        </View>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.card}>
@@ -165,16 +135,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  stopButton: {
-    backgroundColor: Colors.status.error,
-  },
   startText: {
     color: '#1a1300',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  stopText: {
-    color: Colors.status.dangerLight,
     fontSize: 13,
     fontWeight: '700',
   },
