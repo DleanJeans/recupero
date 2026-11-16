@@ -1,6 +1,7 @@
 import type { SavedPlace } from '../src/types/cue';
 import type { SunlightStretch } from '../src/types/sunlight';
 import {
+  addStayGapRanges,
   addTrailPoints,
   getPlaceStays,
   getStretchLuxMinutes,
@@ -195,5 +196,31 @@ describe('getSunlightPath', () => {
         ],
       },
     ]);
+  });
+});
+
+describe('addStayGapRanges', () => {
+  const stay = (placeId: string, start: number, end: number, ongoing = false) => ({ placeId, start, end, ongoing });
+
+  it('fills the gap between two different places', () => {
+    const ranges = addStayGapRanges([], [stay('a', 0, 18 * MIN), stay('b', 21 * MIN, 40 * MIN, true)]);
+    expect(ranges).toEqual([{ start: 18 * MIN, end: 21 * MIN }]);
+  });
+
+  it('only adds what is not already counted', () => {
+    const ranges = addStayGapRanges(
+      [{ start: 18 * MIN, end: 19 * MIN }],
+      [stay('a', 0, 18 * MIN), stay('b', 25 * MIN, 40 * MIN)],
+    );
+    expect(ranges).toEqual([
+      { start: 18 * MIN, end: 19 * MIN },
+      { start: 19 * MIN, end: 25 * MIN },
+    ]);
+  });
+
+  it('ignores the same place, tiny gaps and day-long gaps', () => {
+    expect(addStayGapRanges([], [stay('a', 0, 10 * MIN), stay('a', 20 * MIN, 30 * MIN)])).toEqual([]);
+    expect(addStayGapRanges([], [stay('a', 0, 10 * MIN), stay('b', 11 * MIN, 30 * MIN)])).toEqual([]);
+    expect(addStayGapRanges([], [stay('a', 0, 10 * MIN), stay('b', 20 * 60 * MIN, 21 * 60 * MIN)])).toEqual([]);
   });
 });

@@ -3,6 +3,7 @@ import type { SunlightPresenceSample, SunlightRange, SunlightStretch, SunlightTr
 import { distanceMeters, type GeoPoint } from './geofence-utils';
 import {
   getPresenceEvents,
+  MAX_OUTDOOR_STRETCH_MS,
   MIN_OUTDOOR_MS,
   type PlaceEvent,
   pruneTrail,
@@ -233,4 +234,26 @@ export function getSunlightPath({
 /** Every coordinate on the path, to fit the map around it. */
 export function getPathCoordinates(segments: SunlightPathSegment[]): GeoPoint[] {
   return segments.flatMap(segment => segment.points);
+}
+
+/**
+ * Outdoor ranges plus the time between leaving one place and arriving at another. Travel counts as outside even
+ * when the position checks and geofence events missed it; anything already counted is left alone, and pauses,
+ * deleted ranges, manual sessions and daylight are applied afterwards like for any other range.
+ */
+export function addStayGapRanges(ranges: SunlightRange[], stays: SunlightPlaceStay[]): SunlightRange[] {
+  const sorted = [...stays].sort((a, b) => a.start - b.start);
+  const added: SunlightRange[] = [];
+  for (let index = 0; index + 1 < sorted.length; index++) {
+    const from = sorted[index];
+    const to = sorted[index + 1];
+    // Leaving and coming back to the same place is a GPS blip, not a trip.
+    if (from.ongoing || from.placeId === to.placeId) continue;
+    const gap = { start: from.end, end: to.start };
+    if (gap.end - gap.start < MIN_OUTDOOR_MS || gap.end - gap.start > MAX_OUTDOOR_STRETCH_MS) continue;
+    for (const piece of subtractSunlightRanges([gap], ranges)) {
+      if (piece.end - piece.start >= MIN_OUTDOOR_MS) added.push(piece);
+    }
+  }
+  return added.length === 0 ? ranges : [...ranges, ...added].sort((a, b) => a.start - b.start);
 }

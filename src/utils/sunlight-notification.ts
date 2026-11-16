@@ -2,6 +2,7 @@ import { SunlightNotification } from '../../modules/sunlight-notification';
 import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
 import { startOfLocalDay } from './sun-utils';
+import { addStayGapRanges, getPlaceStays } from './sunlight-timeline-utils';
 import {
   calibrateWeather,
   getActivePause,
@@ -46,11 +47,15 @@ export function syncSunlightNotification(): void {
   let plan = null;
   // A manual session has its own light level, which the notification's weather curve doesn't know about.
   if (enabled && liveNotification && !getRunningManualSession(manualSessions, now)) {
-    const presence = getSunlightPresence(events, samples, getIndoorPlaces(places, outdoorPlaceIds), trackingSince, now);
+    const indoor = getIndoorPlaces(places, outdoorPlaceIds);
+    const presence = getSunlightPresence(events, samples, indoor, trackingSince, now);
     const point = getSunReferencePoint(samples, places);
     const today = getSunlightDay(
       startOfLocalDay(now),
-      subtractSunlightRanges(presence.ranges, [...deletedRanges, ...getPausedRanges(pauses, pause)]),
+      subtractSunlightRanges(
+        addStayGapRanges(presence.ranges, getPlaceStays(events, samples, indoor, trackingSince, now)),
+        [...deletedRanges, ...getPausedRanges(pauses, pause)],
+      ),
       point,
       weather,
       now,

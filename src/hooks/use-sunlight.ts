@@ -12,6 +12,7 @@ import type {
 import type { GeoPoint } from '../utils/geofence-utils';
 import { hasBackgroundLocationPermission } from '../utils/reminder-geofencing';
 import { addLocalDays, getSunTimes, startOfLocalDay } from '../utils/sun-utils';
+import { addStayGapRanges, getPlaceStays } from '../utils/sunlight-timeline-utils';
 import {
   calibrateWeather,
   formatLux,
@@ -120,7 +121,10 @@ export function useSunlight(): SunlightSnapshot {
     const indoor = getIndoorPlaces(places, outdoorPlaceIds);
     const presence = getSunlightPresence(events, samples, indoor, trackingSince, now);
     const point = getSunReferencePoint(samples, places);
-    const ranges = subtractSunlightRanges(presence.ranges, [...deletedRanges, ...getPausedRanges(pauses, pause)]);
+    const ranges = subtractSunlightRanges(
+      addStayGapRanges(presence.ranges, getPlaceStays(events, samples, indoor, trackingSince, now)),
+      [...deletedRanges, ...getPausedRanges(pauses, pause)],
+    );
     const days = getSunlightDays(ranges, point, weather, now, undefined, manualSessions);
     const tomorrow = point ? getSunTimes(addLocalDays(startOfLocalDay(now), 1), point.lat, point.lng) : undefined;
     const manualSession = getRunningManualSession(manualSessions, now);
