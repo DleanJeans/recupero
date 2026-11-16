@@ -37,7 +37,8 @@ function buildNudgeInputs(now: number): NeedNudgeInput[] {
       id: behaviorId,
       name: nameById.get(behaviorId) ?? '',
     }));
-    return { id, config, level: state.level, lastRefillAt: state.lastRefillAt, refills };
+    const lastRefillName = state.lastRefillBehaviorId != null ? nameById.get(state.lastRefillBehaviorId) : undefined;
+    return { id, config, level: state.level, lastRefillAt: state.lastRefillAt, lastRefillName, refills };
   });
 }
 

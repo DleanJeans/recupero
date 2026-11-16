@@ -236,7 +236,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
 
           {history && history.entries.length > 0 ? (
             <>
-              <CueSectionLabel>{history.today ? 'Refilled today' : 'Last refill'}</CueSectionLabel>
+              <CueSectionLabel>{history.today ? 'Logged today' : 'Last logged'}</CueSectionLabel>
               <View style={styles.history}>
                 {history.entries.map(entry => {
                   const time = history.today
@@ -301,7 +301,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
             </>
           ) : null}
 
-          <CueSectionLabel>Refill</CueSectionLabel>
+          <CueSectionLabel>What helps</CueSectionLabel>
           {sourceField && need.source ? (
             <Text style={styles.hint}>
               Any log with {sourceField.label} counts: {need.source.fullAmount}
@@ -319,7 +319,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                 style={styles.searchInput}
                 value={filter}
                 onChangeText={setFilter}
-                placeholder="Search refills"
+                placeholder="Search behaviours"
                 placeholderTextColor={Colors.text.faint}
                 autoCorrect={false}
               />
@@ -378,10 +378,12 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
             );
           })}
           {filterText && selectedCategories.length + shownRefillIds.length + shownSuggestedIds.length === 0 ? (
-            <Text style={styles.hint}>No refills match "{filter.trim()}".</Text>
+            <Text style={styles.hint}>Nothing matches "{filter.trim()}".</Text>
           ) : null}
           {refillIds.length === 0 && suggestedIds.length === 0 && totalRefillRows === 0 && !adding ? (
-            <Text style={styles.hint}>Nothing refills {info.label} yet. Add a category or the behaviours that do.</Text>
+            <Text style={styles.hint}>
+              Nothing is set to help {info.label} yet. Add a category or the behaviours that do.
+            </Text>
           ) : null}
 
           {adding ? (
@@ -431,7 +433,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                 size={16}
                 color={Colors.text.muted}
               />
-              <Text style={styles.addText}>Add a category or behaviour that refills {info.label}</Text>
+              <Text style={styles.addText}>Add a category or behaviour that helps {info.label}</Text>
             </Pressable>
           )}
 

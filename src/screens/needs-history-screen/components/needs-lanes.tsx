@@ -60,7 +60,7 @@ export function NeedsLanes({ histories, range, from, to, dayStarts, onOpen }: Ne
               <Text style={styles.stats}>
                 {stats.avg == null
                   ? 'No data'
-                  : `avg ${Math.round(stats.avg)}% · ${formatLowTime(stats.lowMs)} low · ${refills} refill${refills === 1 ? '' : 's'}`}
+                  : `avg ${Math.round(stats.avg)}% · ${formatLowTime(stats.lowMs)} low · ${refills} logged`}
               </Text>
             </View>
             {range === 'day' ? (

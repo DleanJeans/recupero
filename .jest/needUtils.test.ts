@@ -215,13 +215,22 @@ describe('getNeedNudgePlans', () => {
   const base = { ...DEFAULT_NEED_CONFIGS.thirst, emptyHours: 10 }; // 10%/h, nudge at 15%
   it('schedules a push for when the nudge line is crossed', () => {
     const plans = getNeedNudgePlans(
-      [{ id: 'thirst', config: base, level: 35, lastRefillAt: T0 - H, refills: [{ id: 'water', name: 'Water' }] }],
+      [
+        {
+          id: 'thirst',
+          config: base,
+          level: 35,
+          lastRefillAt: T0 - H,
+          lastRefillName: 'Drink Water',
+          refills: [{ id: 'water', name: 'Water' }],
+        },
+      ],
       T0,
     );
     expect(plans).toHaveLength(1);
     expect(plans[0].at).toBe(T0 + 2 * H);
     expect(plans[0].identifier).toBe('need-nudge:thirst');
-    expect(plans[0].body).toBe('Last refill 3h ago. Water?');
+    expect(plans[0].body).toBe('3h since your last drink water. Water?');
     expect(plans[0].actions.map(action => action.id)).toEqual(['log:water', NEED_NOT_YET_ACTION]);
     expect(isNeedNotificationData(plans[0].data)).toBe(true);
   });

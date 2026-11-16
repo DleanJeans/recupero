@@ -282,6 +282,8 @@ export interface NeedState {
   /** Level and time right after the last event, which the current level decays from. */
   anchor?: { ts: number; level: number };
   lastRefillAt?: number;
+  /** The behaviour logged at `lastRefillAt`, when it was a logged behaviour. */
+  lastRefillBehaviorId?: string;
 }
 
 /** Replays events with a constant decay rate and returns the level at `now`. */
@@ -291,10 +293,14 @@ export function simulateNeed(events: NeedEvent[], decayPerHour: number, now: num
   let level = NEED_UNKNOWN_START_LEVEL;
   let t = past[0].ts;
   let lastRefillAt: number | undefined;
+  let lastRefillBehaviorId: string | undefined;
   for (const event of past) {
     level = clampLevel(level - (decayPerHour * Math.max(0, event.ts - t)) / MS_PER_HOUR);
     level = event.kind === 'add' ? clampLevel(level + event.amount) : clampLevel(event.level);
-    if (event.kind === 'add' || !event.checkIn) lastRefillAt = event.ts;
+    if (event.kind === 'add' || !event.checkIn) {
+      lastRefillAt = event.ts;
+      lastRefillBehaviorId = event.behaviorId;
+    }
     t = Math.max(t, event.ts);
   }
   const anchor = { ts: t, level };
@@ -302,6 +308,7 @@ export function simulateNeed(events: NeedEvent[], decayPerHour: number, now: num
     level: clampLevel(level - (decayPerHour * (now - t)) / MS_PER_HOUR),
     anchor,
     lastRefillAt,
+    lastRefillBehaviorId,
   };
 }
 
@@ -510,6 +517,8 @@ export interface NeedNudgeInput {
   config: NeedConfig;
   level?: number;
   lastRefillAt?: number;
+  /** Name of the behaviour logged at `lastRefillAt`, if known. */
+  lastRefillName?: string;
   /** Top refills, best first. */
   refills: Array<{ id: string; name: string }>;
 }
@@ -529,7 +538,11 @@ export function getNeedNudgePlans(needs: NeedNudgeInput[], now: number): NeedNud
     if (at - now < MIN_NUDGE_LEAD_MS) continue;
     const info = NEED_INFO[need.id];
     const top = need.refills.slice(0, MAX_NUDGE_ACTIONS);
-    const since = need.lastRefillAt != null ? `Last refill ${formatAgo(at - need.lastRefillAt)} ago. ` : '';
+    const lastName = need.lastRefillName?.trim().toLowerCase();
+    const since =
+      need.lastRefillAt == null
+        ? `No ${info.label.toLowerCase()} logged yet. `
+        : `${formatAgo(at - need.lastRefillAt)} since your last ${lastName || 'top-up'}. `;
     const suggestion = top.length ? `${top.map(item => item.name).join(' or ')}?` : 'Tap to check in.';
     plans.push({
       identifier: `${NEED_NUDGE_ID_PREFIX}${need.id}`,

@@ -124,7 +124,7 @@ export function NeedHistorySection({ needId, onEditLog }: NeedHistorySectionProp
 
       {history.points.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>No refills or check-ins in this range yet.</Text>
+          <Text style={styles.emptyText}>No logs or check-ins in this range yet.</Text>
         </View>
       ) : range === '7d' ? (
         <>
