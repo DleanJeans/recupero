@@ -12,6 +12,13 @@ export interface PatchNotesDay {
  */
 export const PATCH_NOTES: PatchNotesDay[] = [
   {
+    date: '2026-11-16',
+    items: [
+      'Cook a batch: the new pot button on Routines turns a home-cooked pot into one food. Pick the ingredient behaviours, weigh each raw, enter the cooked weight, and log each portion by its weight to get its macros.',
+      'A batch card shows how much is left in the pot. Edit batch changes the ingredients (past portions are recalculated) and Finish batch archives it when it is eaten.',
+    ],
+  },
+  {
     date: '2026-11-15',
     items: [
       'Activity: fixed lots of false "Left <place>" events (e.g. 996 Space) that showed up when you had never been there, often right after adding a reminder. A "Left" now only counts if the app saw you arrive first.',

@@ -10,6 +10,7 @@ import { useChecklistSelectionStore } from '../store/checklist-selection-store';
 import type { RootStackParamList } from '../types/navigation';
 import { isArchived } from '../utils/archive-utils';
 import { Colors } from '../utils/colors';
+import { confirmFinishBatch } from '../utils/finish-batch';
 import { BehaviorIcon } from './behavior-icon';
 import { Text } from './text';
 
@@ -42,7 +43,13 @@ export function BehaviorActionSheet({ showSelect = false }: BehaviorActionSheetP
 
   const handleEdit = () => {
     close();
-    navigation.navigate('BehaviorForm', { behaviorId: behavior.id });
+    if (behavior.batch) navigation.navigate('MealBatchForm', { behaviorId: behavior.id });
+    else navigation.navigate('BehaviorForm', { behaviorId: behavior.id });
+  };
+
+  const handleFinishBatch = () => {
+    close();
+    confirmFinishBatch(behavior);
   };
 
   const handleSelect = () => {
@@ -100,9 +107,18 @@ export function BehaviorActionSheet({ showSelect = false }: BehaviorActionSheetP
           </View>
           <SheetOption
             icon="create-outline"
-            label="Edit"
+            label={behavior.batch ? 'Edit batch' : 'Edit'}
+            hint={behavior.batch ? 'Change ingredients or cooked weight.' : undefined}
             onPress={handleEdit}
           />
+          {behavior.batch && !archived && (
+            <SheetOption
+              icon="checkmark-done-outline"
+              label="Finish batch"
+              hint="Archive it once it is eaten."
+              onPress={handleFinishBatch}
+            />
+          )}
           {!archived && showSelect && (
             <SheetOption
               icon="checkbox-outline"

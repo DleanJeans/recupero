@@ -41,6 +41,11 @@ export function HomeHeader({ showXp, onToggleXp, isSearching, onSearchPress }: H
             accessibilityLabel={isSearching ? 'Close search' : 'Search'}
           />
           <HeaderIcon
+            name="restaurant-outline"
+            onPress={() => navigation.navigate('MealBatchForm')}
+            accessibilityLabel="Cook a batch"
+          />
+          <HeaderIcon
             name="settings-outline"
             onPress={() => navigation.navigate('Settings')}
             accessibilityLabel="Settings"

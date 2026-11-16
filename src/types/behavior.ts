@@ -41,6 +41,27 @@ export interface LogEntry {
   sleep?: LogSleepDetails;
 }
 
+/** One ingredient of a cooked batch, as weighed raw when it was cooked. */
+export interface MealBatchIngredient {
+  behaviorId: string;
+  /** Name when cooked, kept so the batch still reads right after the ingredient is renamed or deleted. */
+  name: string;
+  amount: number;
+}
+
+/** Marks a behaviour as one cooked batch (a pot of food eaten as portions). Its calculated rates come from the
+ *  ingredients: total of (ingredient amount x its rate) spread over `cookedAmount`. */
+export interface MealBatch {
+  ingredients: MealBatchIngredient[];
+  /** Weight of all the cooked food (without the pot), in the amount field's unit. */
+  cookedAmount: number;
+  /** How many portions the batch was planned for. Only used to suggest an amount when logging. */
+  plannedPortions?: number;
+  cookedAt: number;
+  /** Set when the batch was finished (the behaviour is archived at the same time). */
+  finishedAt?: number;
+}
+
 export interface LogSleepDetails {
   asleepMinutes: number;
   awakeMinutes?: number;
@@ -102,6 +123,8 @@ export interface BehaviorEntry {
    *  portion. Undefined = 100 (per 100 g). */
   metadataRateBasis?: number;
   metadataQuantityUnit?: string;
+  /** Set on behaviours made by "Cook a batch". Undefined for ordinary behaviours. */
+  batch?: MealBatch;
   logs: LogEntry[];
   cooldownMinutes: number;
   cooldownType?: 'rest' | 'limit';

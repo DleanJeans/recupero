@@ -13,6 +13,7 @@ import { isArchived } from '../../../utils/archive-utils';
 import { getBehaviorTypeColor } from '../../../utils/behavior-type-utils';
 import { Colors } from '../../../utils/colors';
 import { formatCompactDate } from '../../../utils/time-utils';
+import { BatchFooter } from './batch-footer';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 type Mode = 'details' | 'log';
@@ -147,6 +148,7 @@ export const BehaviorCard = React.memo(function BehaviorCard({
             inlineElapsedWhenNoCooldown
           />
         </Pressable>
+        {behavior.batch && !archived && <BatchFooter behavior={behavior} />}
         {archived && (
           <View style={styles.archivedFooter}>
             <Text style={styles.archivedLabel}>Archived {formatCompactDate(behavior.archivedAt ?? Date.now())}</Text>

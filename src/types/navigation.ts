@@ -55,4 +55,6 @@ export type RootStackParamList = {
   /** Create (no checklistId) or edit a checklist. behaviorIds prefills a new one from select mode on Routines. */
   ChecklistForm: { checklistId?: string; behaviorIds?: string[] };
   ChecklistRun: { checklistId: string };
+  /** Cook a batch (no behaviorId) or edit one. */
+  MealBatchForm: { behaviorId?: string } | undefined;
 };

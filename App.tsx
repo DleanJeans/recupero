@@ -34,6 +34,7 @@ import { CuesScreen } from './src/screens/cues-screen';
 import { DayScreen } from './src/screens/day-screen';
 import { HomeScreen } from './src/screens/home-screen';
 import { LocationEditScreen } from './src/screens/location-edit-screen';
+import { MealBatchFormScreen } from './src/screens/meal-batch-form-screen';
 import { MoneyLogScreen } from './src/screens/money-log-screen';
 import { MoodLogScreen } from './src/screens/mood-log-screen';
 import { NeedsHistoryScreen } from './src/screens/needs-history-screen';
@@ -270,6 +271,10 @@ export default function App() {
                   <Stack.Screen
                     name="ChecklistRun"
                     component={ChecklistRunScreen}
+                  />
+                  <Stack.Screen
+                    name="MealBatchForm"
+                    component={MealBatchFormScreen}
                   />
                 </Stack.Navigator>
                 {pendingRouteName != null && (

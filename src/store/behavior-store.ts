@@ -9,6 +9,7 @@ import type {
   BehaviorEntry,
   BehaviorType,
   Category,
+  MealBatch,
   MetadataField,
   StarPeriod,
 } from '../types/behavior';
@@ -67,6 +68,16 @@ interface BehaviorStore {
     group?: string,
     metadataRateBasis?: number,
   ) => void;
+  /** Creates the behaviour for a cooked batch (see `MealBatch`) and returns its id. */
+  addBatchBehavior: (input: {
+    name: string;
+    icon?: string;
+    type: BehaviorType;
+    categoryId: string;
+    metadataAmountFieldKey?: string;
+    defaultMetadata: Record<string, number>;
+    batch: MealBatch;
+  }) => string;
   updateBehaviorCooldown: (behaviorId: string, cooldownMinutes: number) => void;
   updateBehavior: (
     behaviorId: string,
@@ -99,6 +110,7 @@ interface BehaviorStore {
       autoTrackApp?: AutoTrackApp | undefined;
       autoTrackSite?: AutoTrackSite | undefined;
       group?: string | undefined;
+      batch?: MealBatch;
     },
   ) => void;
   /** Turns app sessions and Firefox site visits into logs for behaviors that auto-track them, then marks them synced. */
@@ -158,6 +170,30 @@ export const useBehaviorStore = create<BehaviorStore>()(
           const { [key]: _previous, ...rest } = state.groupEmojis ?? {};
           return { groupEmojis: emoji ? { ...rest, [key]: emoji } : rest };
         }),
+      addBatchBehavior: input => {
+        const id = uuidv4();
+        set(state => ({
+          behaviors: [
+            ...state.behaviors,
+            {
+              id,
+              name: input.name,
+              type: input.type,
+              icon: input.icon,
+              categoryId: input.categoryId,
+              lastTimestamp: null,
+              metadata: {},
+              defaultMetadata: input.defaultMetadata,
+              metadataAmountFieldKey: input.metadataAmountFieldKey,
+              logs: [],
+              cooldownMinutes: 0,
+              cooldownType: 'rest',
+              batch: input.batch,
+            },
+          ],
+        }));
+        return id;
+      },
       addBehavior: (
         name,
         type,
