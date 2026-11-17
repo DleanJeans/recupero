@@ -647,8 +647,9 @@ describe('isUsableSunlightFix', () => {
   });
 });
 
+import { getSunlightPinGeofenceRegions, hasLeftPausePin } from '../src/utils/sunlight-utils';
+
 describe('pause pin', () => {
-  const { getSunlightPinGeofenceRegions, hasLeftPausePin } = require('../src/utils/sunlight-utils');
   const pin = { lat: 10, lng: 106 };
 
   it('registers an exit-only geofence while a pinned pause is active', () => {
