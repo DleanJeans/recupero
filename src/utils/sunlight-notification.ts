@@ -61,7 +61,14 @@ export function syncSunlightNotification(): void {
       now,
       manualSessions,
     );
-    plan = getSunlightNotificationPlan(presence, today, goalMinutes, weather, now, getActivePause(pause, now)?.until);
+    plan = getSunlightNotificationPlan(
+      presence,
+      today,
+      goalMinutes,
+      weather,
+      now,
+      getActivePause(pause, now)?.pin ? undefined : getActivePause(pause, now)?.until,
+    );
   }
   // Builds from before pausing existed would keep counting on their notification, so hide it there instead.
   if (plan?.pausedUntil != null && !SunlightNotification.supportsPause?.()) plan = null;

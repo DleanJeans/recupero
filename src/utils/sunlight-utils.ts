@@ -87,6 +87,44 @@ export function getSunlightRegionPlaceId(identifier: string): string | undefined
   return identifier.startsWith(SUNLIGHT_REGION_PREFIX) ? identifier.slice(SUNLIGHT_REGION_PREFIX.length) : undefined;
 }
 
+/** Geofence id of the temporary pause pin (no saved place has this id). */
+export const SUNLIGHT_PIN_PLACE_ID = 'pause-pin';
+
+/** A pinned pause that never sees you leave still ends after this long. */
+export const SUNLIGHT_PIN_MAX_MS = 12 * 60 * MS_PER_MINUTE;
+
+/** The geofence around an active pause pin, so leaving it is noticed even with the app closed. */
+export function getSunlightPinGeofenceRegions(
+  pause: SunlightPause | undefined,
+  radiusM: number,
+  now: number,
+): ReminderGeofenceRegion[] {
+  const active = getActivePause(pause, now);
+  if (!active?.pin) return [];
+  return [
+    {
+      identifier: `${SUNLIGHT_REGION_PREFIX}${SUNLIGHT_PIN_PLACE_ID}`,
+      latitude: active.pin.lat,
+      longitude: active.pin.lng,
+      radius: radiusM,
+      notifyOnEnter: false,
+      notifyOnExit: true,
+    },
+  ];
+}
+
+/** Whether a GPS fix has left a pause pin's radius (judged by the fix centre, so vague fixes can't end it early). */
+export function hasLeftPausePin(
+  pin: { lat: number; lng: number },
+  point: GeoPoint,
+  radiusM: number,
+  accuracyM?: number | null,
+): boolean {
+  const distance = distanceMeters(pin, point);
+  if (distance <= radiusM) return false;
+  return accuracyM == null || accuracyM <= MAX_FIX_ACCURACY_M || distance > radiusM + accuracyM;
+}
+
 export type PlaceEvent = Pick<SunlightGeofenceEvent, 'ts'> & { kind: string; placeId?: string };
 
 /** Geofence events this close together form one burst when they span this many places. */
@@ -329,7 +367,13 @@ export function getPausedRanges(pauses: SunlightRange[], pause: SunlightPause | 
 }
 
 /** "until 3:30 PM", or "until tomorrow" when it runs past midnight. */
-export function formatPauseUntil(until: number, now: number, formatTime: (ts: number) => string): string {
+export function formatPauseUntil(
+  until: number,
+  now: number,
+  formatTime: (ts: number) => string,
+  pinned = false,
+): string {
+  if (pinned) return 'until you leave';
   return until >= addLocalDays(startOfLocalDay(now), 1) ? 'until tomorrow' : `until ${formatTime(until)}`;
 }
 

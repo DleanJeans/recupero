@@ -1,39 +1,83 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import * as Location from 'expo-location';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { resyncReminders } from '../../hooks/use-reminder-engine';
 import { useSunlightStore } from '../../store/sunlight-store';
 import { Colors } from '../../utils/colors';
-import { getPauseUntil, SUNLIGHT_PAUSE_OPTIONS } from '../../utils/sunlight-utils';
+import { getPauseUntil, SUNLIGHT_PAUSE_OPTIONS, SUNLIGHT_PIN_MAX_MS } from '../../utils/sunlight-utils';
 import { Text } from '../text';
 
-/** Pause outdoor detection for a while (visiting somewhere that isn't a saved place). Resuming is the Pause button. */
+/**
+ * Pause outdoor detection at somewhere that isn't a saved place: drops a temporary pin here (at the sunlight
+ * radius) and counting resumes by itself once you leave it, which also removes the pin. Fixed durations are
+ * only offered if the position can't be read.
+ */
 export function SunlightPauseCard() {
   const pauseUntil = useSunlightStore(state => state.pauseUntil);
+  const radiusM = useSunlightStore(state => state.radiusM);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const pinHere = async () => {
+    setBusy(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') throw new Error('no location permission');
+      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const now = Date.now();
+      pauseUntil(now + SUNLIGHT_PIN_MAX_MS, { lat: position.coords.latitude, lng: position.coords.longitude });
+      void resyncReminders();
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Pause counting for</Text>
+      <Text style={styles.title}>Pause here</Text>
       <Text style={styles.detail}>
-        Somewhere you haven't saved as a place? Pause so that time doesn't count. It resumes by itself.
+        {`Somewhere you haven't saved as a place? Drops a temporary pin here (${radiusM} m). Counting resumes and the pin is removed when you leave it.`}
       </Text>
-      <View style={styles.chips}>
-        {SUNLIGHT_PAUSE_OPTIONS.map(option => (
-          <Pressable
-            key={option.label}
-            style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
-            onPress={() => pauseUntil(getPauseUntil(option, Date.now()))}
-            accessibilityRole="button"
-            accessibilityLabel={`Pause for ${option.label}`}
-          >
-            <Ionicons
-              name="pause"
-              size={12}
-              color={Colors.text.primary}
-            />
-            <Text style={styles.chipText}>{option.label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <Pressable
+        style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
+        onPress={pinHere}
+        disabled={busy}
+        accessibilityRole="button"
+        accessibilityLabel="Pause here with a temporary pin"
+      >
+        <Ionicons
+          name="pin"
+          size={12}
+          color={Colors.text.primary}
+        />
+        <Text style={styles.chipText}>{busy ? 'Getting location…' : 'Pause here'}</Text>
+      </Pressable>
+      {failed && (
+        <>
+          <Text style={styles.detail}>Couldn't read your location. Pause for a set time instead:</Text>
+          <View style={styles.chips}>
+            {SUNLIGHT_PAUSE_OPTIONS.map(option => (
+              <Pressable
+                key={option.label}
+                style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
+                onPress={() => pauseUntil(getPauseUntil(option, Date.now()))}
+                accessibilityRole="button"
+                accessibilityLabel={`Pause for ${option.label}`}
+              >
+                <Ionicons
+                  name="pause"
+                  size={12}
+                  color={Colors.text.primary}
+                />
+                <Text style={styles.chipText}>{option.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      )}
     </View>
   );
 }

@@ -9,6 +9,7 @@ import {
   getIndoorPlaces,
   getSunReferencePoint,
   getWeatherUrl,
+  hasLeftPausePin,
   isUsableSunlightFix,
   parseWeatherHours,
   roundCoordinate,
@@ -20,7 +21,7 @@ const SAMPLE_COORD_DECIMALS = 3;
 
 /** Checks where the phone is now (only if location is already allowed) and records whether it's at a tracked place. */
 async function samplePresence(now: number, force: boolean): Promise<void> {
-  const { samples, outdoorPlaceIds, radiusM, addSample } = useSunlightStore.getState();
+  const { samples, outdoorPlaceIds, radiusM, addSample, pause, resumeSunlight } = useSunlightStore.getState();
   const last = samples[samples.length - 1];
   if (!force && last && now - last.ts < MIN_SAMPLE_GAP_MS) return;
   const { status } = await Location.getForegroundPermissionsAsync();
@@ -28,6 +29,8 @@ async function samplePresence(now: number, force: boolean): Promise<void> {
   // GPS, not Wi-Fi/cell: with a 10 m radius a Balanced fix (often 50-100 m off) can't tell home from the street.
   const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
   const { latitude, longitude, accuracy } = position.coords;
+  // A pinned pause ends (and its pin goes) once you're outside the pin's radius.
+  if (pause?.pin && hasLeftPausePin(pause.pin, { lat: latitude, lng: longitude }, radiusM, accuracy)) resumeSunlight();
   // Judge by the fix's centre (the blue dot), not its accuracy circle, so being down the street counts as out.
   const indoor = getIndoorPlaces(useCuesStore.getState().places, outdoorPlaceIds).map(place => ({ ...place, radiusM }));
   const fix = describeSunlightFix(indoor, { lat: latitude, lng: longitude }, accuracy);

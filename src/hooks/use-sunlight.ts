@@ -145,7 +145,10 @@ export function useSunlight(): SunlightSnapshot {
             label: `Counting · manual session${manualSession.lux != null ? ` at ${formatLux(manualSession.lux)}` : ''}`,
           }
         : activePause
-          ? { kind: 'paused', label: `Paused by you · ${formatPauseUntil(activePause.until, now, formatTime)}` }
+          ? {
+              kind: 'paused',
+              label: `Paused by you · ${formatPauseUntil(activePause.until, now, formatTime, activePause.pin != null)}`,
+            }
           : autoStatus;
     const luxNow = weather && sunUp ? getLuxAt(now, weather.hours, weather.calibration) : undefined;
     const rawLuxNow = rawWeather && sunUp ? getLuxAt(now, rawWeather.hours) : undefined;

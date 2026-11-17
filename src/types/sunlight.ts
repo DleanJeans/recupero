@@ -76,7 +76,10 @@ export interface SunlightManualSession {
 /** Outdoor detection switched off by hand from `start` until `until` (or until you resume sooner). */
 export interface SunlightPause {
   start: number;
+  /** For a pinned pause this is only a safety cap; it really ends when you leave the pin. */
   until: number;
+  /** A temporary pin dropped where you paused; leaving its radius resumes counting and removes the pin. */
+  pin?: { lat: number; lng: number };
 }
 
 export interface SunlightDay {

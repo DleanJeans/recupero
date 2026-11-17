@@ -116,7 +116,7 @@ export function SunlightActions({ sunlight }: SunlightActionsProps) {
         <ActionButton
           icon={pause ? 'play' : 'pause'}
           label={pause ? 'Resume' : 'Pause'}
-          detail={pause ? formatPauseUntil(pause.until, now, formatTime) : 'Not a saved place'}
+          detail={pause ? formatPauseUntil(pause.until, now, formatTime, pause.pin != null) : 'Not a saved place'}
           on={pause != null}
           open={panel === 'pause' && !pause}
           onPress={pressPause}

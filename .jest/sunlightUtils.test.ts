@@ -646,3 +646,28 @@ describe('isUsableSunlightFix', () => {
     expect(isUsableSunlightFix({ placeId: 'home' }, 150)).toBe(false);
   });
 });
+
+describe('pause pin', () => {
+  const { getSunlightPinGeofenceRegions, hasLeftPausePin } = require('../src/utils/sunlight-utils');
+  const pin = { lat: 10, lng: 106 };
+
+  it('registers an exit-only geofence while a pinned pause is active', () => {
+    const regions = getSunlightPinGeofenceRegions({ start: 0, until: 1000, pin }, 30, 500);
+    expect(regions).toHaveLength(1);
+    expect(regions[0]).toMatchObject({
+      latitude: 10,
+      longitude: 106,
+      radius: 30,
+      notifyOnExit: true,
+      notifyOnEnter: false,
+    });
+    expect(getSunlightPinGeofenceRegions({ start: 0, until: 1000, pin }, 30, 2000)).toEqual([]);
+    expect(getSunlightPinGeofenceRegions({ start: 0, until: 1000 }, 30, 500)).toEqual([]);
+  });
+
+  it('ends only when the fix centre is outside the radius', () => {
+    expect(hasLeftPausePin(pin, { lat: 10, lng: 106 }, 30, 10)).toBe(false);
+    expect(hasLeftPausePin(pin, { lat: 10.001, lng: 106 }, 30, 10)).toBe(true);
+    expect(hasLeftPausePin(pin, { lat: 10.0004, lng: 106 }, 30, 300)).toBe(false);
+  });
+});

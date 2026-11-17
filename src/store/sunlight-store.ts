@@ -76,7 +76,7 @@ export interface SunlightStore {
   /** Earlier pauses, cut out of the counted time. */
   pauses: SunlightRange[];
   /** Stops counting now (time so far is kept) until `until`; changing an active pause keeps its start. */
-  pauseUntil: (until: number) => void;
+  pauseUntil: (until: number, pin?: SunlightPause['pin']) => void;
   /** Ends the pause now. */
   resumeSunlight: () => void;
   /**
@@ -177,7 +177,7 @@ export const useSunlightStore = create<SunlightStore>()(
         })),
       pause: undefined,
       pauses: [],
-      pauseUntil: until =>
+      pauseUntil: (until, pin) =>
         set(state => {
           const now = Date.now();
           const active = getActivePause(state.pause, now);
@@ -186,7 +186,10 @@ export const useSunlightStore = create<SunlightStore>()(
             state.pause && !active
               ? [...state.pauses, { start: state.pause.start, end: state.pause.until }]
               : state.pauses;
-          return { pauses: pauses.slice(-MAX_SUNLIGHT_PAUSES), pause: { start: active?.start ?? now, until } };
+          return {
+            pauses: pauses.slice(-MAX_SUNLIGHT_PAUSES),
+            pause: { start: active?.start ?? now, until, ...(pin ? { pin } : {}) },
+          };
         }),
       resumeSunlight: () =>
         set(state => {

@@ -24,7 +24,7 @@ import {
   isReminderNotificationData,
   parseReminderAction,
 } from '../utils/reminder-utils';
-import { getSunlightGeofenceRegions } from '../utils/sunlight-utils';
+import { getSunlightGeofenceRegions, getSunlightPinGeofenceRegions } from '../utils/sunlight-utils';
 import { isTimerNotificationData, isTimerRunning } from '../utils/timer-notification-utils';
 import { dismissRunningTimerNotification } from '../utils/timer-notifications';
 
@@ -39,8 +39,11 @@ function getExtraGeofenceWatches() {
 /** Sunlight's own small geofences around every indoor place (not floored to 100 m like reminders). */
 function getExtraGeofenceRegions() {
   const { places } = useCuesStore.getState();
-  const { enabled, outdoorPlaceIds, radiusM } = useSunlightStore.getState();
-  return getSunlightGeofenceRegions(enabled, places, outdoorPlaceIds, radiusM);
+  const { enabled, outdoorPlaceIds, radiusM, pause } = useSunlightStore.getState();
+  return [
+    ...getSunlightGeofenceRegions(enabled, places, outdoorPlaceIds, radiusM),
+    ...(enabled ? getSunlightPinGeofenceRegions(pause, radiusM, Date.now()) : []),
+  ];
 }
 
 function getGeofenceOptions() {
@@ -114,7 +117,8 @@ export function useReminderEngine(
       if (
         state.enabled !== previous.enabled ||
         state.outdoorPlaceIds !== previous.outdoorPlaceIds ||
-        state.radiusM !== previous.radiusM
+        state.radiusM !== previous.radiusM ||
+        state.pause?.pin !== previous.pause?.pin
       ) {
         syncIfChanged();
       }

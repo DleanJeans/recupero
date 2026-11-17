@@ -30,7 +30,7 @@ import { waitForHydration } from './store-hydration';
 import { syncSunlightNotification } from './sunlight-notification';
 import { noteSunlightTaskRun } from './sunlight-persist';
 import { rehydrateSunlight } from './sunlight-sync';
-import { getSunlightRegionPlaceId } from './sunlight-utils';
+import { getSunlightRegionPlaceId, SUNLIGHT_PIN_PLACE_ID } from './sunlight-utils';
 
 export const REMINDER_GEOFENCE_TASK = 'recupero-reminder-geofence';
 
@@ -95,6 +95,12 @@ async function handleGeofenceEvent({ eventType, region }: GeofenceTaskData): Pro
     await Promise.all([waitForHydration(useSunlightStore), waitForHydration(useCuesStore)]);
     // This may run in a separate background copy of the app; pick up what the other copy saved first.
     await rehydrateSunlight();
+    if (sunlightPlaceId === SUNLIGHT_PIN_PLACE_ID) {
+      // Leaving the pause pin resumes counting and removes the pin.
+      if (direction === 'exit' && useSunlightStore.getState().pause?.pin) useSunlightStore.getState().resumeSunlight();
+      syncSunlightNotification();
+      return;
+    }
     useSunlightStore.getState().addEvent({ ts: Date.now(), kind: direction, placeId: sunlightPlaceId });
     // Leaving starts the live "counting sunlight" notification, arriving ends it (the geofence event lets
     // Android start its foreground service from the background).
