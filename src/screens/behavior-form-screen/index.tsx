@@ -473,10 +473,10 @@ export function BehaviorFormScreen() {
         <BackButton />
         <ScreenTitle>{isEdit ? 'Edit Behavior' : 'New Behavior'}</ScreenTitle>
       </View>
-      {/* Inner body ends at the safe-area padding, so the absolute FAB sits above the system nav bar. */}
+      {/* Save sits in normal flow under the scroll area; the SafeAreaView bottom padding keeps it above the system nav bar. */}
       <View style={styles.flex}>
         <KeyboardAvoidingView
-          behavior="height"
+          behavior="padding"
           style={styles.flex}
         >
           <ScrollView
@@ -665,9 +665,11 @@ export function BehaviorFormScreen() {
         </KeyboardAvoidingView>
 
         {!isKeyboardOpen && (
+          <View style={styles.footer}>
           <Button
             variant="primary"
             fab
+            style={styles.saveButton}
             onPress={handleSave}
             disabled={
               isEdit
@@ -681,6 +683,7 @@ export function BehaviorFormScreen() {
           >
             {isEdit ? 'Save' : 'Add'}
           </Button>
+          </View>
         )}
       </View>
     </SafeAreaView>
@@ -737,8 +740,19 @@ const styles = StyleSheet.create({
   form: {
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 96,
+    paddingBottom: 16,
     gap: 20,
+  },
+  footer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  saveButton: {
+    position: 'relative',
+    bottom: undefined,
+    left: undefined,
+    right: undefined,
   },
   formWithEmojiOpen: {
     paddingBottom: 320,
