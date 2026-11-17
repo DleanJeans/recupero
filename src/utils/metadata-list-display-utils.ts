@@ -76,8 +76,8 @@ export function setMetadataFieldListDisplay(
 
 export const METADATA_CALCULATION_LABELS: Record<MetadataFieldCalculation, string> = {
   manual: 'Manual',
-  amount: 'Amount',
-  per100: 'Per amount',
+  amount: 'Base',
+  per100: 'Calculated',
 };
 
 export const METADATA_LIST_DISPLAY_LABELS: Record<MetadataFieldListDisplay, string> = {
