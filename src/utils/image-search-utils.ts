@@ -23,14 +23,16 @@ export function parseImageCandidate(data: string): ImageCandidate | null {
 }
 
 /**
- * Runs inside the search page. Twice a second it posts the biggest image fully on screen (Google's preview of a
+ * Runs inside the search page. Twice a second it posts the best image fully on screen (Google's preview of a
  * tapped result is the biggest), so the app can offer "Use this image". Tiny icons and data: thumbnails are skipped.
+ * Google's own thumbnails (gstatic encrypted-tbn) are JPEGs, which flatten transparency to white, so an image from
+ * the original site (usually the real PNG) beats one of them, and a bigger source file beats a smaller one.
  */
 export const IMAGE_SEARCH_SCRIPT = `
 (function () {
   var last = '';
   function pick() {
-    var vw = window.innerWidth, vh = window.innerHeight, best = null, bestArea = 0;
+    var vw = window.innerWidth, vh = window.innerHeight, best = null, bestScore = 0;
     var imgs = document.images;
     for (var i = 0; i < imgs.length; i++) {
       var img = imgs[i];
@@ -39,8 +41,9 @@ export const IMAGE_SEARCH_SCRIPT = `
       var r = img.getBoundingClientRect();
       if (r.width < 80 || r.height < 80) continue;
       if (r.top < -r.height / 4 || r.bottom > vh + r.height / 4 || r.left < -10 || r.right > vw + 10) continue;
-      var area = r.width * r.height;
-      if (area > bestArea) { bestArea = area; best = img; }
+      var thumb = /gstatic\\.com|encrypted-tbn/i.test(src);
+      var score = (r.width * r.height) * (thumb ? 1 : 4) + (img.naturalWidth * img.naturalHeight) / 1000;
+      if (score > bestScore) { bestScore = score; best = img; }
     }
     var next = best ? JSON.stringify({ src: best.currentSrc || best.src, width: best.naturalWidth, height: best.naturalHeight }) : '';
     if (next !== last) {
