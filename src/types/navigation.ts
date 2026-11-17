@@ -17,6 +17,8 @@ export type RootStackParamList = {
     timerEndTimestamp?: number;
     /** Cues to pre-select on a new log, e.g. the mood that suggested this behaviour. */
     initialCues?: CueRef[];
+    /** Opened from a log saved for later: prefill from it; logging (or saving again) replaces it. */
+    pendingLogId?: string;
     /** Opened from a checklist row: the new log joins today's checklist run and ticks this item. */
     checklistItem?: { checklistId: string; itemId: string };
   };

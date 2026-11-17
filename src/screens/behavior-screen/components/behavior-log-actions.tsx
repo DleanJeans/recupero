@@ -21,6 +21,7 @@ export function BehaviorLogActions({ form }: Props) {
     earnedXp,
     handleConfirm,
     handleDelete,
+    handleSaveForLater,
     handleStartTimer,
     hasTimerRange,
     moneyRewardAmount,
@@ -47,6 +48,21 @@ export function BehaviorLogActions({ form }: Props) {
             name="trash-outline"
             size={20}
             color={Colors.type.undesirable}
+          />
+        </Button>
+      )}
+      {!editLogId && (
+        <Button
+          variant="icon"
+          style={styles.deleteButton}
+          onPress={handleSaveForLater}
+          disabled={pending}
+          accessibilityLabel="Save for later"
+        >
+          <Ionicons
+            name="bookmark-outline"
+            size={20}
+            color={Colors.text.primary}
           />
         </Button>
       )}

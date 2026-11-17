@@ -5,6 +5,7 @@ import React, { useCallback, useState } from 'react';
 import { Alert, BackHandler, LayoutAnimation, StyleSheet, View } from 'react-native';
 import { BackButton } from '../../components/back-button';
 import { BehaviorGroupChips } from '../../components/behavior-group-chips';
+import { PendingLogsStrip } from '../../components/pending-logs-strip';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text } from '../../components/text';
 import { useBehaviorStore } from '../../store/behavior-store';
@@ -29,6 +30,7 @@ export function BehaviorScreen() {
     initialCues,
     checklistItem,
     logId,
+    pendingLogId,
     timerStartTimestamp,
     timerEndTimestamp,
   } = route.params;
@@ -156,6 +158,7 @@ export function BehaviorScreen() {
       {mode === 'details' ? (
         <View style={styles.detailsBody}>
           {isArchived(behavior) && <ArchivedBanner behaviorId={behavior.id} />}
+          <PendingLogsStrip behaviorId={behavior.id} />
           <BehaviorLogList
             behavior={behavior}
             onEditLog={handleEditLog}
@@ -173,6 +176,7 @@ export function BehaviorScreen() {
           behaviorId={behaviorId}
           behavior={behavior}
           editLogId={editLogId}
+          pendingLogId={pendingLogId}
           initialNotes={initialNotes}
           initialCues={initialCues}
           checklistItem={checklistItem}

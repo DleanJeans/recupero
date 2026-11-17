@@ -7,6 +7,7 @@ import { type MoneyRewardPreview, REWARD_ANIMATION_MS } from '../../../component
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useChecklistsStore } from '../../../store/checklists-store';
 import { useCuesStore } from '../../../store/cues-store';
+import { usePendingLogsStore } from '../../../store/pending-logs-store';
 import { useSettingsStore } from '../../../store/settings-store';
 import { useTimerStore } from '../../../store/timer-store';
 import type { BehaviorEntry, LogEntry } from '../../../types/behavior';
@@ -47,6 +48,8 @@ export interface BehaviorLogFormProps {
   behaviorId: string;
   behavior: BehaviorEntry;
   editLogId?: string;
+  /** Prefill from a log saved for later; logging it removes it. */
+  pendingLogId?: string;
   initialNotes?: string;
   initialCues?: CueRef[];
   /** Opened from a checklist row: the log joins today's checklist run and ticks the item. */
@@ -60,6 +63,7 @@ export function useBehaviorLogForm({
   behaviorId,
   behavior,
   editLogId,
+  pendingLogId,
   initialNotes,
   initialCues,
   checklistItem,
@@ -67,6 +71,7 @@ export function useBehaviorLogForm({
   timerEndTimestamp,
   onSaved,
 }: BehaviorLogFormProps) {
+  const pendingLog = usePendingLogsStore.getState().pendingLogs.find(p => p.id === pendingLogId);
   const existingLog = useMemo(
     () => (editLogId ? behavior.logs.find(log => log.id === editLogId) : undefined),
     [behavior.logs, editLogId],
@@ -121,9 +126,9 @@ export function useBehaviorLogForm({
   const showTimeRange =
     hasTimerRange || existingLog?.endTimestamp != null || (!existingLog && behavior.durationXpEnabled === true);
   const notesRef = useRef<import('react-native').TextInput>(null);
-  const [notes, setNotes] = useState(String(existingLog?.metadata?.notes ?? initialNotes ?? ''));
+  const [notes, setNotes] = useState(String(existingLog?.metadata?.notes ?? pendingLog?.notes ?? initialNotes ?? ''));
   const [selectedCues, setSelectedCues] = useState<CueRef[]>(() =>
-    existingLog ? (existingLog.cues ?? []) : (initialCues ?? []),
+    existingLog ? (existingLog.cues ?? []) : (pendingLog?.cues ?? initialCues ?? []),
   );
   /** Set once the user taps a place cue, so the automatic place pick never overrides their choice. */
   const placeCueTouchedRef = useRef(false);
@@ -175,6 +180,8 @@ export function useBehaviorLogForm({
         const value = existingLog.metadata[field.key];
         if (value != null) values[field.key] = String(value);
       }
+    } else if (pendingLog) {
+      Object.assign(values, pendingLog.metadataValues);
     } else {
       Object.assign(values, getInitialLogMetadataValues(metadataFields, amountField, behavior.defaultMetadata));
     }
@@ -455,6 +462,7 @@ export function useBehaviorLogForm({
       : undefined;
     const stackId = checklistRun?.stackId ?? (stackedLogs.length > 0 ? uuidv4() : undefined);
     const logId = logBehavior(behaviorId, startTimestamp, metadataOrUndefined, saveEndTimestamp, selectedCues, stackId);
+    if (pendingLogId) usePendingLogsStore.getState().removePending(pendingLogId);
     if (checklistItem) {
       useChecklistsStore
         .getState()
@@ -518,6 +526,7 @@ export function useBehaviorLogForm({
     metadataValues,
     notes,
     onSaved,
+    pendingLogId,
     selectedCues,
     selectedDate,
     showSeconds,
@@ -532,6 +541,18 @@ export function useBehaviorLogForm({
     moneyRewardMultiplier,
     originalMoneyRewardAmount,
   ]);
+
+  /** Keep the entered details (amount, metadata, notes, cues) without logging; the time is set when it is finished. */
+  const handleSaveForLater = useCallback(() => {
+    usePendingLogsStore.getState().savePending({
+      id: pendingLogId,
+      behaviorId,
+      metadataValues,
+      notes,
+      cues: selectedCues,
+    });
+    onSaved();
+  }, [behaviorId, metadataValues, notes, onSaved, pendingLogId, selectedCues]);
 
   const handleDelete = useCallback(() => {
     if (!editLogId) return;
@@ -591,6 +612,7 @@ export function useBehaviorLogForm({
     handleConfirm,
     handleDelete,
     handleInputBlur,
+    handleSaveForLater,
     handleStartTimer,
     hasTimerRange,
     manualMetadataFields,

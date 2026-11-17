@@ -13,7 +13,10 @@ export interface PatchNotesDay {
 export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-17',
-    items: ['The Energy sheet now has Connect Fitbit and Sync now at the bottom.'],
+    items: [
+      'The Energy sheet now has Connect Fitbit and Sync now at the bottom.',
+      'Save for later: on a behaviour\'s log form, the new bookmark button keeps the amount and details you entered without logging. It shows under "Saved for later" on Routines and on that behaviour; tap Done to log it at the time you finish, or tap it to adjust the amount or time first.',
+    ],
   },
   {
     date: '2026-11-16',

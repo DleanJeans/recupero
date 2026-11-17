@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { BehaviorActionSheet } from '../../components/behavior-action-sheet';
 import { Button } from '../../components/button';
+import { PendingLogsStrip } from '../../components/pending-logs-strip';
 import { RunningTimerPill } from '../../components/running-timer-pill';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text } from '../../components/text';
@@ -151,6 +152,7 @@ export function HomeScreen() {
       )}
 
       {!selecting && !isSearching && !archivedSelected && <ChecklistStrip />}
+      {!selecting && !isSearching && !archivedSelected && <PendingLogsStrip />}
 
       {selecting ? null : isSearching ? (
         <HomeSearchBar
