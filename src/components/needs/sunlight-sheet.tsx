@@ -12,12 +12,13 @@ import { syncSunlight } from '../../utils/sunlight-sync';
 import { formatLux, formatSunlightMinutes } from '../../utils/sunlight-utils';
 import { formatTime } from '../../utils/time-utils';
 import { CueSectionLabel } from '../cues/cue-section-label';
+import { ExpandableMap } from '../expandable-map';
 import { FullScreenModal } from '../full-screen-modal';
 import { Text } from '../text';
 import { SunlightActions } from './sunlight-actions';
 import { SUNLIGHT_COLOR } from './sunlight-bar-row';
 import { SunlightNowCard } from './sunlight-now-card';
-import { SunlightPlacesMap } from './sunlight-places-map';
+import { SunlightPlacesMapView } from './sunlight-places-map-view';
 import { SunlightSessionEditor } from './sunlight-session-editor';
 import { SunlightSettings } from './sunlight-settings';
 import { SunlightTimeline } from './sunlight-timeline';
@@ -166,11 +167,16 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
               </Pressable>
             )}
           </View>
-          <SunlightPlacesMap
-            path={timeline.path}
-            dayStart={shownDay.dayStart}
-            isToday={isToday}
-          />
+          <ExpandableMap>
+            {map => (
+              <SunlightPlacesMapView
+                path={timeline.path}
+                dayStart={shownDay.dayStart}
+                isToday={isToday}
+                {...map}
+              />
+            )}
+          </ExpandableMap>
           <SunlightTimeline
             items={timeline.items}
             pendingSince={pendingSince}

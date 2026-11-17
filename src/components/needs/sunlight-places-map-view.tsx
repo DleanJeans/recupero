@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import MapView, { Circle, Marker, Polyline } from 'react-native-maps';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCuesStore } from '../../store/cues-store';
 import { useSunlightStore } from '../../store/sunlight-store';
 import { Colors } from '../../utils/colors';
@@ -10,6 +11,7 @@ import { getCurrentPointIfPermitted } from '../../utils/location-utils';
 import { DARK_MAP_STYLE } from '../../utils/map-style';
 import { getPathCoordinates, type SunlightPathSegment } from '../../utils/sunlight-timeline-utils';
 import { getSunlightMapRegion, getSunReferencePoint } from '../../utils/sunlight-utils';
+import { MapExpandButton } from '../map-expand-button';
 import { Text } from '../text';
 import { SUNLIGHT_COLOR } from './sunlight-bar-row';
 
@@ -24,13 +26,23 @@ interface SunlightPlacesMapProps {
   /** The day shown; picking another one refits the map to its route. */
   dayStart: number;
   isToday: boolean;
+  fullScreen: boolean;
+  onToggleFullScreen: () => void;
 }
 
 /**
  * Your position, every saved place with the sunlight radius drawn (inside a blue circle = paused) and today's
  * route. Opens fitted to the route when there is one, else centred on you.
  */
-export function SunlightPlacesMap({ path, dayStart, isToday }: SunlightPlacesMapProps) {
+export function SunlightPlacesMapView({
+  path,
+  dayStart,
+  isToday,
+  fullScreen,
+  onToggleFullScreen,
+}: SunlightPlacesMapProps) {
+  const insets = useSafeAreaInsets();
+  const edge = fullScreen ? { top: insets.top, bottom: insets.bottom } : { top: 0, bottom: 0 };
   const mapRef = useRef<MapView>(null);
   const places = useCuesStore(state => state.places);
   const outdoorPlaceIds = useSunlightStore(state => state.outdoorPlaceIds);
@@ -76,7 +88,7 @@ export function SunlightPlacesMap({ path, dayStart, isToday }: SunlightPlacesMap
   }, [dayStart]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, fullScreen && styles.fullScreen]}>
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFill}
@@ -124,7 +136,7 @@ export function SunlightPlacesMap({ path, dayStart, isToday }: SunlightPlacesMap
       </MapView>
 
       <View
-        style={styles.legend}
+        style={[styles.legend, { top: 10 + edge.top }]}
         pointerEvents="none"
       >
         <Text style={styles.legendText}>
@@ -143,7 +155,7 @@ export function SunlightPlacesMap({ path, dayStart, isToday }: SunlightPlacesMap
 
       {hasPath && (
         <Pressable
-          style={[styles.locateButton, styles.pathButton]}
+          style={[styles.locateButton, styles.pathButton, { bottom: 10 + edge.bottom }]}
           onPress={fitPath}
           accessibilityRole="button"
           accessibilityLabel="Show today's route"
@@ -156,7 +168,7 @@ export function SunlightPlacesMap({ path, dayStart, isToday }: SunlightPlacesMap
         </Pressable>
       )}
       <Pressable
-        style={styles.locateButton}
+        style={[styles.locateButton, { bottom: 10 + edge.bottom }]}
         onPress={() => locate()}
         accessibilityRole="button"
         accessibilityLabel="Centre on my location"
@@ -167,6 +179,11 @@ export function SunlightPlacesMap({ path, dayStart, isToday }: SunlightPlacesMap
           color={INDOOR_COLOR}
         />
       </Pressable>
+      <MapExpandButton
+        fullScreen={fullScreen}
+        onPress={onToggleFullScreen}
+        color={INDOOR_COLOR}
+      />
     </View>
   );
 }
@@ -180,6 +197,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border.default,
   },
+  fullScreen: { height: undefined, flex: 1, borderRadius: 0, borderWidth: 0 },
   pathButton: {
     right: 58,
   },
@@ -187,7 +205,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     left: 10,
-    right: 10,
+    right: 58,
     alignItems: 'flex-start',
   },
   legendText: {

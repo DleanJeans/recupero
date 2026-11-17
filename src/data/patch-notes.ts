@@ -14,6 +14,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-17',
     items: [
+      'Every map (Sunlight, place editing and place previews) has a new expand button in the top-right corner that opens it full screen, with a close button to go back.',
       'The Energy sheet now has Connect Fitbit and Sync now at the bottom.',
       'Save for later: on a behaviour\'s log form, the new bookmark button keeps the amount and details you entered without logging. It shows under "Saved for later" on Routines and on that behaviour; tap Done to log it at the time you finish, or tap it to adjust the amount or time first.',
     ],
