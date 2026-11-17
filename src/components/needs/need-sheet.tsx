@@ -35,6 +35,7 @@ import { BehaviorIcon } from '../behavior-icon';
 import { CueSectionLabel } from '../cues/cue-section-label';
 import { FullScreenModal } from '../full-screen-modal';
 import { Text, TextInput } from '../text';
+import { FitbitConnectRow } from './fitbit-connect-row';
 import { NEED_TONE_COLORS } from './need-bar-row';
 import { NeedHistorySection } from './need-history-section';
 import { NeedRateLearning } from './need-rate-learning';
@@ -438,6 +439,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
           )}
 
           <NeedRateLearning needId={need.id} />
+          {need.id === 'energy' && <FitbitConnectRow />}
         </ScrollView>
       </View>
     </FullScreenModal>

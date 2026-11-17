@@ -12,6 +12,10 @@ export interface PatchNotesDay {
  */
 export const PATCH_NOTES: PatchNotesDay[] = [
   {
+    date: '2026-11-17',
+    items: ['The Energy sheet now has Connect Fitbit and Sync now at the bottom.'],
+  },
+  {
     date: '2026-11-16',
     items: [
       'Cook a batch: the new pot button on Routines turns a home-cooked pot into one food. Pick the ingredient behaviours, weigh each raw, enter the cooked weight, and log each portion by its weight to get its macros.',
