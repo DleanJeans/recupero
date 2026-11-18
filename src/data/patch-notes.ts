@@ -15,6 +15,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-18',
     items: [
       'Cook a batch: the cooked weight fills itself in from the total of the ingredients until you type your own. A link puts the total back.',
+      'Fixed the bookmark badge on the small saved-for-later circle being cut off.',
     ],
   },
   {

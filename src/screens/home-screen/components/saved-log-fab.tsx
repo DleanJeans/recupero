@@ -48,14 +48,25 @@ export function SavedLogFab({ behavior, collapsed, onPress, onLongPress }: Saved
         >
           {behavior.name}
         </Animated.Text>
-        <View style={[styles.badge, collapsed && styles.badgeCollapsed]}>
+        {!collapsed && (
+          <View style={styles.badge}>
+            <Ionicons
+              name="bookmark"
+              size={14}
+              color={Colors.cooldown.yellow}
+            />
+          </View>
+        )}
+      </Animated.View>
+      {collapsed && (
+        <View style={styles.badgeCollapsed}>
           <Ionicons
             name="bookmark"
-            size={collapsed ? 9 : 14}
-            color={collapsed ? Colors.bg.black : Colors.cooldown.yellow}
+            size={10}
+            color={Colors.bg.black}
           />
         </View>
-      </Animated.View>
+      )}
     </Pressable>
   );
 }
@@ -77,12 +88,11 @@ const styles = StyleSheet.create({
   badge: { paddingHorizontal: 10 },
   badgeCollapsed: {
     position: 'absolute',
-    top: 2,
-    right: 2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    paddingHorizontal: 0,
+    top: -3,
+    right: -3,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.cooldown.yellow,
