@@ -14,6 +14,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-18',
     items: [
+      'The emoji on the small saved-for-later circle is now centred.',
       'Home header: the title is slightly smaller and the icons are packed closer together, so the first icon no longer touches the title.',
       'Cook a batch: the cooked weight fills itself in from the total of the ingredients until you type your own. A link puts the total back.',
       'Fixed the bookmark badge on the small saved-for-later circle being cut off.',
