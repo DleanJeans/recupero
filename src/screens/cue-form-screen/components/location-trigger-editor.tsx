@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { LayoutAnimation, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppIcon } from '../../../components/app-icon';
 import { CueSearchBox } from '../../../components/cues/cue-search-box';
 import { CueSegmentedControl } from '../../../components/cues/cue-segmented-control';
@@ -26,10 +26,11 @@ export function LocationTriggerEditor({ value, onChange }: LocationTriggerEditor
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const places = useCuesStore(state => state.places);
   const [query, setQuery] = useState('');
-  const visiblePlaces = useMemo(
-    () => filterBySearch(places, query, place => [place.name, place.address]),
-    [places, query],
-  );
+  const visiblePlaces = useMemo(() => {
+    const matches = filterBySearch(places, query, place => [place.name, place.address]);
+    const selected = matches.filter(place => place.id === value.placeId);
+    return [...selected, ...matches.filter(place => place.id !== value.placeId)];
+  }, [places, query, value.placeId]);
   const selectedPlace = places.find(place => place.id === value.placeId);
 
   return (
@@ -64,7 +65,10 @@ export function LocationTriggerEditor({ value, onChange }: LocationTriggerEditor
             <Pressable
               key={place.id}
               style={({ pressed }) => [styles.place, selected && styles.selectedPlace, pressed && styles.pressed]}
-              onPress={() => onChange({ ...value, placeId: place.id })}
+              onPress={() => {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                onChange({ ...value, placeId: place.id });
+              }}
             >
               <AppIcon
                 value={getPlaceEmoji(place)}

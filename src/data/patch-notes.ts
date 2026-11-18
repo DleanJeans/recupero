@@ -12,6 +12,10 @@ export interface PatchNotesDay {
  */
 export const PATCH_NOTES: PatchNotesDay[] = [
   {
+    date: '2026-11-18',
+    items: ['On the reminder screen, the selected place now moves to the top of the place list with a smooth animation.'],
+  },
+  {
     date: '2026-11-17',
     items: [
       'Every map (Sunlight, place editing and place previews) has a new expand button in the top-right corner that opens it full screen, with a close button to go back.',
