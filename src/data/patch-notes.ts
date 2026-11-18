@@ -14,6 +14,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-18',
     items: [
+      'Home header: the title is slightly smaller and the icons are packed closer together, so the first icon no longer touches the title.',
       'Cook a batch: the cooked weight fills itself in from the total of the ingredients until you type your own. A link puts the total back.',
       'Fixed the bookmark badge on the small saved-for-later circle being cut off.',
       'Saved for later items now float as small pills above the Add behavior button (a bookmark marks them) instead of a card on Routines. Tap one to open its log form and add more details (it stays saved if you go back); long-press to log it now or discard it. They shrink while you scroll down, and with more than 3 you see the 2 newest plus a +N more button that lists them all.',

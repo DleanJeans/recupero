@@ -22,7 +22,12 @@ export function HomeHeader({ showXp, onToggleXp, isSearching, onSearchPress }: H
 
   return (
     <View style={styles.titleRow}>
-      <Text style={styles.title}>Recupero</Text>
+      <Text
+        style={styles.title}
+        numberOfLines={1}
+      >
+        Recupero
+      </Text>
       <View style={styles.titleActions}>
         <View style={styles.iconActions}>
           <HeaderIcon
@@ -91,10 +96,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 8,
     marginBottom: 8,
+    gap: 12,
   },
   title: {
+    flexShrink: 1,
     color: Colors.text.primary,
-    fontSize: 34,
+    fontSize: 30,
     fontWeight: 'bold',
     letterSpacing: -0.5,
   },
@@ -104,7 +111,7 @@ const styles = StyleSheet.create({
   },
   iconActions: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 10,
     alignItems: 'center',
   },
 });
