@@ -14,6 +14,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-18',
     items: [
+      'The bottom navigation bar no longer has a dark gap above it, and the Add behavior button text is now centred.',
       'The Add behavior button is now a smaller floating button on the right that shrinks to a plus circle while you scroll down and expands again when you scroll up, so it takes less space.',
       'Searching for a behaviour with no results, then tapping Add behavior, now fills in the name with your search.',
       'While typing a new behaviour name, existing behaviours with a similar name appear below it after a short pause, so you do not create duplicates.',

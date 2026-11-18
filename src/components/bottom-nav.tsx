@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
   wrap: {
     paddingHorizontal: 16,
     paddingBottom: 10,
-    paddingTop: 8,
+    paddingTop: 0,
     backgroundColor: Colors.bg.primary,
   },
   bar: {

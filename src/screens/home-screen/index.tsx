@@ -252,6 +252,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 16,
     right: 16,
+    paddingBottom: 12,
     gap: 8,
   },
   pill: {

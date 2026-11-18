@@ -1,10 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet } from 'react-native';
 import { Colors } from '../../../utils/colors';
 
 const HEIGHT = 48;
-const EXPANDED_WIDTH = 164;
+const ICON_SIZE = 26;
+const LEFT_PAD = (HEIGHT - ICON_SIZE) / 2;
+const LABEL_GAP = 4;
+const RIGHT_PAD = 20;
+const FALLBACK_LABEL_WIDTH = 100;
 
 interface AddBehaviorFabProps {
   collapsed: boolean;
@@ -13,6 +17,8 @@ interface AddBehaviorFabProps {
 
 /** Floating "+ Add behavior" pill that shrinks to a circle while the list scrolls down. */
 export function AddBehaviorFab({ collapsed, onPress }: AddBehaviorFabProps) {
+  const [labelWidth, setLabelWidth] = useState(FALLBACK_LABEL_WIDTH);
+  const expandedWidth = LEFT_PAD + ICON_SIZE + LABEL_GAP + labelWidth + RIGHT_PAD;
   const progress = useRef(new Animated.Value(collapsed ? 1 : 0)).current;
   useEffect(() => {
     Animated.timing(progress, {
@@ -22,7 +28,7 @@ export function AddBehaviorFab({ collapsed, onPress }: AddBehaviorFabProps) {
       useNativeDriver: false,
     }).start();
   }, [collapsed, progress]);
-  const width = progress.interpolate({ inputRange: [0, 1], outputRange: [EXPANDED_WIDTH, HEIGHT] });
+  const width = progress.interpolate({ inputRange: [0, 1], outputRange: [expandedWidth, HEIGHT] });
   const labelOpacity = progress.interpolate({ inputRange: [0, 0.6], outputRange: [1, 0], extrapolate: 'clamp' });
 
   return (
@@ -35,11 +41,12 @@ export function AddBehaviorFab({ collapsed, onPress }: AddBehaviorFabProps) {
       <Animated.View style={[styles.fab, { width }]}>
         <Ionicons
           name="add"
-          size={26}
+          size={ICON_SIZE}
           color={Colors.bg.black}
         />
         <Animated.Text
           numberOfLines={1}
+          onLayout={e => setLabelWidth(Math.ceil(e.nativeEvent.layout.width))}
           style={[styles.label, { opacity: labelOpacity }]}
         >
           Add behavior
@@ -62,7 +69,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.text.primary,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 11,
+    paddingLeft: LEFT_PAD,
     overflow: 'hidden',
     elevation: 4,
   },
@@ -70,6 +77,7 @@ const styles = StyleSheet.create({
     color: Colors.bg.black,
     fontSize: 15,
     fontWeight: '700',
-    marginLeft: 4,
+    marginLeft: LABEL_GAP,
+    flexShrink: 0,
   },
 });
