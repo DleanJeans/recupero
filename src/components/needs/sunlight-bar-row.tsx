@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     fontSize: 14,
     fontWeight: '600',
-    width: 64,
+    width: 80,
   },
   track: {
     flex: 1,

@@ -1,13 +1,15 @@
-export type NeedId =
-  | 'hunger'
-  | 'thirst'
-  | 'hygiene'
-  | 'energy'
-  | 'fun'
-  | 'social'
-  | 'comfort'
-  | 'movement'
-  | 'tidiness';
+/** Built-in need ids, plus `custom:<id>` for needs the user made. */
+export type NeedId = string;
+
+/** A need the user made: it uses the same model as the built-in ones. */
+export interface CustomNeedDef {
+  id: NeedId;
+  emoji: string;
+  label: string;
+  /** Hours from 100% to 0% before any check-in teaches a better rate. */
+  emptyHours: number;
+  color: string;
+}
 
 /** How logging a behaviour refills a need. */
 export type NeedRefill =

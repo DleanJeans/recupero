@@ -73,7 +73,13 @@ export function NeedBarRow({ needId, config, level, detail, onPress }: NeedBarRo
     >
       <View style={styles.main}>
         <Text style={styles.emoji}>{info.emoji}</Text>
-        <Text style={styles.label}>{info.label}</Text>
+        <Text
+          style={styles.label}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
+          {info.label}
+        </Text>
         <View style={styles.track}>
           {level != null && <Animated.View style={[styles.fill, { width, backgroundColor: color }]} />}
           <View style={[styles.tick, { left: `${config.cravingLine}%` }]} />
@@ -107,7 +113,7 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     fontSize: 14,
     fontWeight: '600',
-    width: 64,
+    width: 80,
   },
   track: {
     flex: 1,

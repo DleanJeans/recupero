@@ -2,8 +2,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { NeedCheckIn, NeedCheckInSource, NeedConfig, NeedId, NeedMetadataSource, NeedRefill } from '../types/need';
-import { emptyRateHistory, type NeedRatePoint } from '../utils/need-history-utils';
+import type {
+  CustomNeedDef,
+  NeedCheckIn,
+  NeedCheckInSource,
+  NeedConfig,
+  NeedId,
+  NeedMetadataSource,
+  NeedRefill,
+} from '../types/need';
+import { emptyRateHistory, NEED_CHART_COLORS, type NeedRatePoint } from '../utils/need-history-utils';
 import {
   clampLevel,
   DEFAULT_NEED_CONFIGS,
@@ -14,6 +22,7 @@ import {
   NEED_IDS,
   NEED_LOOKBACK_MS,
   NEED_UNKNOWN_START_LEVEL,
+  registerCustomNeeds,
   simulateNeed,
 } from '../utils/need-utils';
 import { useBehaviorStore } from './behavior-store';
@@ -23,7 +32,27 @@ const MAX_RATE_POINTS = 200;
 
 export type NeedHistoryDisplay = 'lanes' | 'overlay';
 
+/** Makes custom needs known to the lookup tables (and chart colours) before anything reads them. */
+function syncCustomNeeds(defs: readonly CustomNeedDef[]) {
+  registerCustomNeeds(defs);
+  for (const def of defs) NEED_CHART_COLORS[def.id] = def.color;
+}
+
+export interface NewCustomNeed {
+  emoji: string;
+  label: string;
+  emptyHours: number;
+  color: string;
+}
+
 export interface NeedsStore {
+  /** Needs the user made, in order. Their ids are in NEED_IDS too once registered. */
+  customNeeds: CustomNeedDef[];
+  /** Makes a need with the built-in model; returns its id. */
+  addCustomNeed: (input: NewCustomNeed) => NeedId;
+  updateCustomNeed: (id: NeedId, patch: Partial<NewCustomNeed>) => void;
+  /** Deletes the need and its check-ins. Logs and behaviours are untouched. */
+  removeCustomNeed: (id: NeedId) => void;
   needs: Record<NeedId, NeedConfig>;
   checkIns: NeedCheckIn[];
   /** Each need's learned rate over time, so history charts use the rate you had then. */
@@ -99,6 +128,41 @@ export const useNeedsStore = create<NeedsStore>()(
   persist(
     set => ({
       needs: withDefaults(undefined),
+      customNeeds: [],
+      addCustomNeed: input => {
+        const id = `custom:${uuidv4().slice(0, 8)}`;
+        const def: CustomNeedDef = { id, ...input, label: input.label.trim() };
+        set(state => {
+          const customNeeds = [...state.customNeeds, def];
+          syncCustomNeeds(customNeeds);
+          return {
+            customNeeds,
+            needs: { ...state.needs, [id]: { ...DEFAULT_NEED_CONFIGS[id], refills: {}, categoryRefills: {} } },
+            rateHistory: { ...state.rateHistory, [id]: [] },
+          };
+        });
+        return id;
+      },
+      updateCustomNeed: (id, patch) =>
+        set(state => {
+          const old = state.customNeeds.find(def => def.id === id);
+          if (!old) return {};
+          const next = { ...old, ...patch, label: (patch.label ?? old.label).trim() };
+          const customNeeds = state.customNeeds.map(def => (def.id === id ? next : def));
+          syncCustomNeeds(customNeeds);
+          const config = state.needs[id];
+          // Until a check-in has taught a rate, the typed decay time is the rate.
+          const emptyHours = config.learnedFrom === 0 ? next.emptyHours : config.emptyHours;
+          return { customNeeds, needs: { ...state.needs, [id]: { ...config, emptyHours } } };
+        }),
+      removeCustomNeed: id =>
+        set(state => {
+          const customNeeds = state.customNeeds.filter(def => def.id !== id);
+          syncCustomNeeds(customNeeds);
+          const { [id]: _config, ...needs } = state.needs;
+          const { [id]: _history, ...rateHistory } = state.rateHistory;
+          return { customNeeds, needs, rateHistory, checkIns: state.checkIns.filter(entry => entry.needId !== id) };
+        }),
       checkIns: [],
       rateHistory: emptyRateHistory(),
       historyDisplay: 'lanes',
@@ -183,9 +247,11 @@ export const useNeedsStore = create<NeedsStore>()(
       version: 2,
       migrate: persistedState => {
         const state = persistedState as Partial<NeedsStore>;
+        syncCustomNeeds(state.customNeeds ?? []);
         const needs = withDefaults(state.needs);
         return {
           ...state,
+          customNeeds: state.customNeeds ?? [],
           needs,
           checkIns: state.checkIns ?? [],
           rateHistory: withRateHistory(state.rateHistory, needs),
@@ -193,10 +259,12 @@ export const useNeedsStore = create<NeedsStore>()(
       },
       merge: (persisted, current) => {
         const state = persisted as Partial<NeedsStore> | undefined;
+        syncCustomNeeds(state?.customNeeds ?? []);
         const needs = withDefaults(state?.needs);
         return {
           ...current,
           ...state,
+          customNeeds: state?.customNeeds ?? [],
           needs,
           checkIns: state?.checkIns ?? [],
           rateHistory: withRateHistory(state?.rateHistory, needs),

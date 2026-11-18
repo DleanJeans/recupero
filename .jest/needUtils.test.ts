@@ -435,3 +435,26 @@ describe('updates without a log', () => {
     expect(history.entries).toEqual([{ logId: 'u', update: true, ts: T0 + H, amountLabel: '+25%' }]);
   });
 });
+
+describe('registerCustomNeeds', () => {
+  const { registerCustomNeeds, NEED_IDS, NEED_INFO, DEFAULT_NEED_CONFIGS } = require('../src/utils/need-utils');
+
+  afterEach(() => registerCustomNeeds([]));
+
+  it('adds a custom need to every lookup and removes it again', () => {
+    const builtIn = NEED_IDS.length;
+    registerCustomNeeds([{ id: 'custom:a', emoji: '📚', label: 'Reading', emptyHours: 48, color: '#fff' }]);
+    expect(NEED_IDS).toHaveLength(builtIn + 1);
+    expect(NEED_INFO['custom:a'].label).toBe('Reading');
+    expect(NEED_INFO['custom:a'].suggest.test('Reading time')).toBe(true);
+    expect(DEFAULT_NEED_CONFIGS['custom:a'].emptyHours).toBe(48);
+    registerCustomNeeds([]);
+    expect(NEED_IDS).toHaveLength(builtIn);
+    expect(NEED_INFO['custom:a']).toBeUndefined();
+  });
+
+  it('survives labels with regex characters', () => {
+    registerCustomNeeds([{ id: 'custom:b', emoji: '⭐', label: 'C++ (study)', emptyHours: 24, color: '#fff' }]);
+    expect(NEED_INFO['custom:b'].suggest.test('C++ (study) session')).toBe(true);
+  });
+});

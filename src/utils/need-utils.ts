@@ -1,9 +1,9 @@
 import type { BehaviorEntry, Category, LogSleepDetails, MetadataField } from '../types/behavior';
-import type { NeedCheckIn, NeedConfig, NeedId, NeedMetadataSource, NeedRefill } from '../types/need';
+import type { CustomNeedDef, NeedCheckIn, NeedConfig, NeedId, NeedMetadataSource, NeedRefill } from '../types/need';
 
 const MS_PER_HOUR = 3_600_000;
 
-export const NEED_IDS: readonly NeedId[] = [
+export const NEED_IDS: NeedId[] = [
   'hunger',
   'thirst',
   'hygiene',
@@ -705,4 +705,49 @@ export function getNeedRefillHistory(
   const todays = all.filter(entry => isToday(entry.ts));
   if (todays.length > 0) return { entries: todays, today: true };
   return { entries: all.slice(0, 1), today: false };
+}
+
+const BUILT_IN_NEED_COUNT = NEED_IDS.length;
+const registeredCustomIds = new Set<NeedId>();
+
+/** Colours offered when making a custom need. */
+export const CUSTOM_NEED_COLORS = ['#f472b6', '#c084fc', '#fb923c', '#38bdf8', '#4ade80', '#facc15', '#f87171'];
+
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Makes the user's own needs known to every lookup table above (NEED_IDS, NEED_INFO, defaults,
+ * update questions), replacing the ones registered before. Built-in needs are left alone.
+ */
+export function registerCustomNeeds(defs: readonly CustomNeedDef[]): void {
+  for (const id of registeredCustomIds) {
+    delete NEED_INFO[id];
+    delete DEFAULT_NEED_CONFIGS[id];
+    delete NEED_UPDATE_QUESTIONS[id];
+  }
+  registeredCustomIds.clear();
+  NEED_IDS.length = BUILT_IN_NEED_COUNT;
+  for (const def of defs) {
+    registeredCustomIds.add(def.id);
+    NEED_IDS.push(def.id);
+    const name = def.label.toLowerCase();
+    NEED_INFO[def.id] = {
+      id: def.id,
+      emoji: def.emoji,
+      label: def.label,
+      question: `How is your ${name}?`,
+      checkIns: checkInLevels(['Empty', 'Low', 'Okay', 'Good', 'Full']),
+      bodySensations: [],
+      suggest: new RegExp(escapeRegExp(def.label.trim()) || '$^', 'i'),
+    };
+    DEFAULT_NEED_CONFIGS[def.id] = {
+      enabled: true,
+      emptyHours: def.emptyHours,
+      cravingLine: 30,
+      nudgeLine: 15,
+      refills: {},
+      learnedFrom: 0,
+    };
+    NEED_UPDATE_QUESTIONS[def.id] = `Topped up ${name} without logging it?`;
+  }
 }

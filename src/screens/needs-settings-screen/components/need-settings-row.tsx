@@ -12,9 +12,11 @@ interface NeedSettingsRowProps {
   needId: NeedId;
   first: boolean;
   onPickSource: () => void;
+  /** Set for needs you made: opens the editor. */
+  onEdit?: () => void;
 }
 
-export function NeedSettingsRow({ needId, first, onPickSource }: NeedSettingsRowProps) {
+export function NeedSettingsRow({ needId, first, onPickSource, onEdit }: NeedSettingsRowProps) {
   const config = useNeedsStore(state => state.needs[needId]);
   const setEnabled = useNeedsStore(state => state.setEnabled);
   const setMetadataSource = useNeedsStore(state => state.setMetadataSource);
@@ -81,6 +83,16 @@ export function NeedSettingsRow({ needId, first, onPickSource }: NeedSettingsRow
                 {field.unit ? <Text style={styles.unit}>{field.unit}</Text> : null}
               </View>
             </View>
+          ) : null}
+          {onEdit ? (
+            <Pressable
+              style={({ pressed }) => [styles.detailRow, pressed && styles.pressed]}
+              onPress={onEdit}
+              accessibilityRole="button"
+            >
+              <Text style={styles.detailLabel}>Name, icon, decay time, delete</Text>
+              <Text style={styles.detailValue}>Edit ›</Text>
+            </Pressable>
           ) : null}
           {config.learnedFrom > 0 ? (
             <Pressable
