@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { SectionList, StyleSheet } from 'react-native';
+import { type NativeScrollEvent, type NativeSyntheticEvent, SectionList, StyleSheet } from 'react-native';
 import { Text } from '../../../components/text';
 import { useSettingsStore } from '../../../store/settings-store';
 import type { BehaviorEntry } from '../../../types/behavior';
@@ -23,6 +23,7 @@ interface BehaviorListProps {
   motionEnabled?: boolean;
   /** Space kept clear under the last card for the floating Add behavior button and pills. */
   bottomPadding?: number;
+  onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
 }
 
 export const BehaviorList = React.memo(function BehaviorList({
@@ -33,6 +34,7 @@ export const BehaviorList = React.memo(function BehaviorList({
   searchQuery,
   motionEnabled = true,
   bottomPadding,
+  onScroll,
 }: BehaviorListProps) {
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const [now, setNow] = useState(() => Date.now());
@@ -111,6 +113,8 @@ export const BehaviorList = React.memo(function BehaviorList({
       ListEmptyComponent={listEmptyComponent}
       contentContainerStyle={contentContainerStyle}
       contentInsetAdjustmentBehavior="automatic"
+      onScroll={onScroll}
+      scrollEventThrottle={32}
     />
   );
 });

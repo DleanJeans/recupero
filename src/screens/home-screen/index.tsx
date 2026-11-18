@@ -3,7 +3,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { BehaviorActionSheet } from '../../components/behavior-action-sheet';
-import { Button } from '../../components/button';
 import { PendingLogsStrip } from '../../components/pending-logs-strip';
 import { RunningTimerPill } from '../../components/running-timer-pill';
 import { SafeAreaView } from '../../components/safe-area-view';
@@ -12,6 +11,7 @@ import { UpdateReadyPill } from '../../components/update-ready-pill';
 import { useAfterInteractionsFlag } from '../../hooks/use-after-interactions-flag';
 import { useBackGuard } from '../../hooks/use-back-guard';
 import { useDeferredCategorySelection } from '../../hooks/use-deferred-category-selection';
+import { useFabCollapse } from '../../hooks/use-fab-collapse';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useChecklistSelectionStore } from '../../store/checklist-selection-store';
 import { useScreenUiStore } from '../../store/screen-ui-store';
@@ -21,6 +21,7 @@ import { getActiveBehaviors, getArchivedBehaviors, isArchivedCategoryFilterId } 
 import { capitalizeFirst, collapseBehaviorGroups, matchesBehaviorOrGroupName } from '../../utils/behavior-group-utils';
 import { Colors } from '../../utils/colors';
 import { getCooldownBehaviors, isCooldownCategoryFilterId } from '../../utils/cooldown-filter';
+import { AddBehaviorFab } from './components/add-behavior-fab';
 import { BehaviorList } from './components/behavior-list';
 import { BehaviorTypeXPPanel } from './components/behavior-type-xp-panel';
 import { CategoriesFilter } from './components/categories-filter';
@@ -44,6 +45,7 @@ export function HomeScreen() {
   const setHomeSelectedCategoryId = useScreenUiStore(s => s.setHomeSelectedCategoryId);
   const selecting = useChecklistSelectionStore(s => s.active);
   const [bottomBarHeight, setBottomBarHeight] = useState(0);
+  const { collapsed: fabCollapsed, onScroll: onListScroll } = useFabCollapse();
   const {
     selectedCategoryId,
     listCategoryId,
@@ -205,6 +207,7 @@ export function HomeScreen() {
           searchQuery={isSearching ? searchQuery : undefined}
           motionEnabled={motionEnabled}
           bottomPadding={bottomBarHeight + 24}
+          onScroll={onListScroll}
         />
       )}
 
@@ -221,9 +224,8 @@ export function HomeScreen() {
           onPress={() => navigation.navigate('Timer')}
         />
         {!selecting && (
-          <Button
-            fab
-            variant="primary"
+          <AddBehaviorFab
+            collapsed={fabCollapsed}
             onPress={() =>
               navigation.navigate('BehaviorForm', {
                 defaultCategoryId: addBehaviorDefaultCategoryId,
@@ -233,10 +235,7 @@ export function HomeScreen() {
                     : undefined,
               })
             }
-            style={styles.addButton}
-          >
-            + Add behavior
-          </Button>
+          />
         )}
       </View>
     </SafeAreaView>
@@ -258,12 +257,6 @@ const styles = StyleSheet.create({
   pill: {
     paddingTop: 0,
     backgroundColor: 'transparent',
-  },
-  addButton: {
-    position: 'relative',
-    left: 0,
-    right: 0,
-    bottom: 0,
   },
   listLoading: {
     flex: 1,
