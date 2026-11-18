@@ -3,7 +3,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { BehaviorActionSheet } from '../../components/behavior-action-sheet';
-import { PendingLogsStrip } from '../../components/pending-logs-strip';
 import { RunningTimerPill } from '../../components/running-timer-pill';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text } from '../../components/text';
@@ -30,6 +29,7 @@ import { ChecklistSelectionBar } from './components/checklist-selection-bar';
 import { ChecklistStrip } from './components/checklist-strip';
 import { HomeHeader } from './components/home-header';
 import { HomeSearchBar } from './components/home-search-bar';
+import { SavedLogFabs } from './components/saved-log-fabs';
 
 export function HomeScreen() {
   useBackGuard();
@@ -154,7 +154,6 @@ export function HomeScreen() {
       )}
 
       {!selecting && !isSearching && !archivedSelected && <ChecklistStrip />}
-      {!selecting && !isSearching && !archivedSelected && <PendingLogsStrip />}
 
       {selecting ? null : isSearching ? (
         <HomeSearchBar
@@ -223,6 +222,7 @@ export function HomeScreen() {
           style={styles.pill}
           onPress={() => navigation.navigate('Timer')}
         />
+        {!selecting && <SavedLogFabs collapsed={fabCollapsed} />}
         {!selecting && (
           <AddBehaviorFab
             collapsed={fabCollapsed}
