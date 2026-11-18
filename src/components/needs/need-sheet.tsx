@@ -174,28 +174,33 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
   };
 
   return (
-    <FullScreenModal onClose={close}>
+    <FullScreenModal
+      onClose={close}
+      headerContent={
+        <>
+          <Text style={styles.headerEmoji}>{info.emoji}</Text>
+          <Text
+            style={styles.title}
+            numberOfLines={1}
+          >
+            {info.label}
+            <Text style={{ color }}>{need.level == null ? '' : ` · ${Math.round(need.level)}%`}</Text>
+          </Text>
+        </>
+      }
+    >
       <View style={styles.sheet}>
         <ScrollView
           contentContainerStyle={[styles.content, { paddingBottom: styles.content.paddingBottom + insets.bottom }]}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.header}>
-            <Text style={styles.headerEmoji}>{info.emoji}</Text>
-            <View style={styles.headerText}>
-              <Text style={styles.title}>
-                {info.label}
-                <Text style={{ color }}>{need.level == null ? '' : ` · ${Math.round(need.level)}%`}</Text>
-              </Text>
-              <Text style={styles.subtitle}>
-                {emptyIn}
-                {`Full to empty in ~${formatEmptyHours(need.config.emptyHours)}`}
-                {need.config.learnedFrom > 0
-                  ? ` · learned from ${need.config.learnedFrom} check-in${need.config.learnedFrom === 1 ? '' : 's'}`
-                  : ' · default'}
-              </Text>
-            </View>
-          </View>
+          <Text style={styles.subtitle}>
+            {emptyIn}
+            {`Full to empty in ~${formatEmptyHours(need.config.emptyHours)}`}
+            {need.config.learnedFrom > 0
+              ? ` · learned from ${need.config.learnedFrom} check-in${need.config.learnedFrom === 1 ? '' : 's'}`
+              : ' · default'}
+          </Text>
 
           <NeedHistorySection
             needId={need.id}
@@ -588,17 +593,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 32,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
   headerEmoji: {
     fontSize: 26,
-  },
-  headerText: {
-    flex: 1,
-    gap: 2,
   },
   title: {
     color: Colors.text.primary,
