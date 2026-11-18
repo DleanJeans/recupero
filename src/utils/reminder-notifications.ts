@@ -3,6 +3,7 @@ import * as Notifications from 'expo-notifications';
 import type { BehaviorEntry } from '../types/behavior';
 import type { Cue, SavedPlace } from '../types/cue';
 import { PLACE_TASK_NOTIFICATION_KIND } from './place-task-utils';
+import { showToastForNotification } from './reminder-toast';
 import {
   getDwellNotificationId,
   getReminderNotificationContent,
@@ -23,12 +24,16 @@ let setupPromise: Promise<void> | null = null;
 export function setupReminderNotifications(): Promise<void> {
   if (!setupPromise) {
     Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-      }),
+      handleNotification: async notification => {
+        // A habit reminder that arrives while the app is open shows as an in-app toast instead.
+        const shownAsToast = showToastForNotification(notification);
+        return {
+          shouldShowBanner: !shownAsToast,
+          shouldShowList: !shownAsToast,
+          shouldPlaySound: !shownAsToast,
+          shouldSetBadge: false,
+        };
+      },
     });
     setupPromise =
       process.env.EXPO_OS === 'android'

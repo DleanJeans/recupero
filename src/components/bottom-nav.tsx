@@ -30,6 +30,9 @@ export type BottomNavRoute = (typeof ITEMS)[number]['route'];
 const BAR_PADDING = 4;
 const WRAP_BOTTOM_PADDING = 10;
 const HIGHLIGHT_DURATION_MS = 400;
+const ITEM_MIN_HEIGHT = 48;
+/** Height of the nav bar without the system inset, so floating UI can sit just above it. */
+export const BOTTOM_NAV_HEIGHT = ITEM_MIN_HEIGHT + BAR_PADDING * 2 + 2 + WRAP_BOTTOM_PADDING;
 
 interface BottomNavProps {
   activeRoute: BottomNavRoute;
@@ -149,7 +152,7 @@ const styles = StyleSheet.create({
   },
   item: {
     flex: 1,
-    minHeight: 48,
+    minHeight: ITEM_MIN_HEIGHT,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',

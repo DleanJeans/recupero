@@ -10,6 +10,7 @@ import { DayCutoffPicker } from './components/day-cutoff-picker';
 import { MoneyRewardsSection } from './components/money-rewards-section';
 import { PatchNotesButton } from './components/patch-notes-button';
 import { PrivateBehaviorSection } from './components/private-behavior-section';
+import { ReminderToastSection } from './components/reminder-toast-section';
 import { TimeFormatPicker } from './components/time-format-picker';
 
 export function SettingsScreen() {
@@ -27,6 +28,7 @@ export function SettingsScreen() {
         <TimeFormatPicker />
         <DayCutoffPicker />
         <MoneyRewardsSection />
+        <ReminderToastSection />
         <PrivateBehaviorSection />
         <DataTransferSection />
         <AppVersionSection />

@@ -14,6 +14,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-18',
     items: [
+      'Habit reminders (After logging X) now show as a card inside the app when it is open, instead of a notification. The card shows the suggested behaviour with a countdown ring and buttons: Later, Log, and Start timer. A reminder with buttons you do not answer in 10 seconds becomes a normal notification. Settings > Reminder toast lets you turn it off or put it at the top or bottom.',
       'Sunlight: a new graph shows the estimated light level from sunrise to sunset, with the time you spent outside highlighted. Tap a day in the past-week chart to see its graph too.',
       'Cook a batch: the new Weigh button on a batch card takes what is really left in the pot. The cooked weight becomes eaten + leftover (water that evaporated drops out) and the macros per 100 g, including logged portions, are recalculated.',
       'The emoji on the small saved-for-later circle is now centred.',

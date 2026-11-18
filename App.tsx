@@ -6,9 +6,10 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context';
-import { BottomNav, type BottomNavRoute } from './src/components/bottom-nav';
+import { BOTTOM_NAV_HEIGHT, BottomNav, type BottomNavRoute } from './src/components/bottom-nav';
 import { ConfettiOverlay } from './src/components/confetti-overlay';
 import { ImageClearHost } from './src/components/image-clear-host';
+import { ReminderToastHost } from './src/components/reminder-toast-host';
 import { RunningTimerPill } from './src/components/running-timer-pill';
 import { Text } from './src/components/text';
 import { UpdateReadyPill } from './src/components/update-ready-pill';
@@ -288,6 +289,10 @@ export default function App() {
                 )}
               </View>
               <ImageClearHost />
+              <ReminderToastHost
+                navigationRef={navigationRef}
+                bottomOffset={isBottomNavRoute(activeRouteName) ? BOTTOM_NAV_HEIGHT : 0}
+              />
               {/* Routines shows these above its Add behavior button instead. */}
               {isBottomNavRoute(activeRouteName) && activeRouteName !== 'Home' && <UpdateReadyPill />}
               {isBottomNavRoute(activeRouteName) && activeRouteName !== 'Home' && (

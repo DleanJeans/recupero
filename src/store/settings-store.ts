@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { normalizeDayCutoffHour } from '../utils/date-utils';
+import { DEFAULT_TOAST_POSITION, type ReminderToastPosition } from '../utils/reminder-toast-utils';
 import { DEFAULT_PLACE_DWELL_MIN, GEOFENCE_MIN_RADIUS_M } from '../utils/reminder-utils';
 
 export type TimeFormat = '12h' | '24h';
@@ -29,6 +30,11 @@ interface SettingsStore {
   /** Minutes you must stay at a place before an "I enter" reminder fires. 0 = fire immediately. */
   placeDwellMin: number;
   setPlaceDwellMin: (v: number) => void;
+  /** Habit reminders that fire while the app is open show as a toast card instead of a system notification. */
+  reminderToastEnabled: boolean;
+  setReminderToastEnabled: (v: boolean) => void;
+  reminderToastPosition: ReminderToastPosition;
+  setReminderToastPosition: (v: ReminderToastPosition) => void;
 }
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -43,6 +49,8 @@ export const useSettingsStore = create<SettingsStore>()(
       behaviorHeaderExpanded: false,
       reminderRadiusM: GEOFENCE_MIN_RADIUS_M,
       placeDwellMin: DEFAULT_PLACE_DWELL_MIN,
+      reminderToastEnabled: true,
+      reminderToastPosition: DEFAULT_TOAST_POSITION,
       setTimeFormat: format => set({ timeFormat: format }),
       setDayCutoffHour: hour => set({ dayCutoffHour: normalizeDayCutoffHour(hour) }),
       setHidePrivate: v => set({ hidePrivate: v }),
@@ -52,6 +60,8 @@ export const useSettingsStore = create<SettingsStore>()(
       setBehaviorHeaderExpanded: v => set({ behaviorHeaderExpanded: v }),
       setReminderRadiusM: v => set({ reminderRadiusM: v }),
       setPlaceDwellMin: v => set({ placeDwellMin: v }),
+      setReminderToastEnabled: v => set({ reminderToastEnabled: v }),
+      setReminderToastPosition: v => set({ reminderToastPosition: v }),
     }),
     {
       name: 'recupero-settings',
