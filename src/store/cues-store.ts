@@ -36,8 +36,12 @@ export interface CuesStore {
   removePlace: (id: string) => void;
   logMood: (mood: MoodId, note?: string) => string;
   updateMoodNote: (id: string, note?: string) => void;
+  /** Undoes a mood log (and its activity entry). */
+  removeMoodLog: (id: string) => void;
   logBodySensation: (sensation: BodySensationId, note?: string) => string;
   updateBodyNote: (id: string, note?: string) => void;
+  /** Undoes a body sensation log (and its activity entry). */
+  removeBodyLog: (id: string) => void;
   addActivityEvent: (event: CueActivityInput) => string;
   addCustomMood: (option: Omit<CueOption, 'id'>) => string;
   addCustomSensation: (option: Omit<CueOption, 'id'>) => string;
@@ -122,6 +126,15 @@ export const useCuesStore = create<CuesStore>()(
         set(state => ({
           moodLogs: state.moodLogs.map(log => (log.id === id ? { ...log, note: note?.trim() || undefined } : log)),
         })),
+      removeMoodLog: id =>
+        set(state => {
+          const log = state.moodLogs.find(item => item.id === id);
+          if (!log) return state;
+          return {
+            moodLogs: state.moodLogs.filter(item => item.id !== id),
+            activity: state.activity.filter(event => !(event.kind === 'mood' && event.ts === log.ts)),
+          };
+        }),
       logBodySensation: (sensation, note) => {
         const id = uuidv4();
         const ts = Date.now();
@@ -136,6 +149,15 @@ export const useCuesStore = create<CuesStore>()(
         set(state => ({
           bodyLogs: state.bodyLogs.map(log => (log.id === id ? { ...log, note: note?.trim() || undefined } : log)),
         })),
+      removeBodyLog: id =>
+        set(state => {
+          const log = state.bodyLogs.find(item => item.id === id);
+          if (!log) return state;
+          return {
+            bodyLogs: state.bodyLogs.filter(item => item.id !== id),
+            activity: state.activity.filter(event => !(event.kind === 'body' && event.ts === log.ts)),
+          };
+        }),
       addActivityEvent: event => {
         const id = uuidv4();
         set(state => ({

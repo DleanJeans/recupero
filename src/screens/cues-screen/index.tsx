@@ -5,6 +5,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button } from '../../components/button';
 import { type AddCueOptionKind, AddCueOptionModal } from '../../components/cues/add-cue-option-modal';
+import { CheckInCard } from '../../components/cues/check-in/check-in-card';
 import { CueScreenHeader } from '../../components/cues/cue-screen-header';
 import { CueSectionLabel } from '../../components/cues/cue-section-label';
 import { CueSegmentedControl } from '../../components/cues/cue-segmented-control';
@@ -126,6 +127,8 @@ function CueSourcesTab() {
 
   return (
     <>
+      <CheckInCard />
+
       <NeedsPanel />
 
       <Text style={styles.hint}>XP from behaviours you logged with each cue. Pick cues on the log screen.</Text>
@@ -153,8 +156,6 @@ function CueSourcesTab() {
         <SectionHeader
           label="Moods"
           detail={currentMood ? `Now ${iconText(getMoodOption(currentMood.mood, custom.moods).emoji)}` : undefined}
-          action="Log mood"
-          onAction={() => navigation.navigate('MoodLog')}
         />
         {renderRows(byKind.mood)}
         <AddRow
@@ -171,8 +172,6 @@ function CueSourcesTab() {
               ? `Now ${iconText(getBodySensationOption(recentBody.sensation, custom.sensations).emoji)}`
               : undefined
           }
-          action="Log sensation"
-          onAction={() => navigation.navigate('BodyLog')}
         />
         {renderRows(byKind.body)}
         <AddRow
@@ -214,8 +213,8 @@ function AddRow({ label, onPress }: AddRowProps) {
 interface SectionHeaderProps {
   label: string;
   detail?: string;
-  action: string;
-  onAction: () => void;
+  action?: string;
+  onAction?: () => void;
 }
 
 function SectionHeader({ label, detail, action, onAction }: SectionHeaderProps) {
@@ -225,14 +224,16 @@ function SectionHeader({ label, detail, action, onAction }: SectionHeaderProps) 
         <CueSectionLabel>{label}</CueSectionLabel>
         {detail ? <Text style={styles.sectionDetail}>{detail}</Text> : null}
       </View>
-      <Pressable
-        onPress={onAction}
-        hitSlop={8}
-        accessibilityRole="button"
-        style={({ pressed }) => pressed && styles.pressed}
-      >
-        <Text style={styles.sectionAction}>{action}</Text>
-      </Pressable>
+      {action && onAction ? (
+        <Pressable
+          onPress={onAction}
+          hitSlop={8}
+          accessibilityRole="button"
+          style={({ pressed }) => pressed && styles.pressed}
+        >
+          <Text style={styles.sectionAction}>{action}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }

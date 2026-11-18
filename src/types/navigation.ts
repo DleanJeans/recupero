@@ -49,6 +49,7 @@ export type RootStackParamList = {
   CueLogs: { cueRef: CueRef };
   SavedPlaces: undefined;
   LocationEdit: { placeId?: string } | undefined;
+  CheckIn: undefined;
   MoodLog: undefined;
   BodyLog: undefined;
   Cravings: undefined;

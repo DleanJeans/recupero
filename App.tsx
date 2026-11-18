@@ -15,6 +15,7 @@ import { Text } from './src/components/text';
 import { UpdateReadyPill } from './src/components/update-ready-pill';
 import { useAppFonts } from './src/hooks/use-app-fonts';
 import { useAppUsageSync } from './src/hooks/use-app-usage-sync';
+import { useCheckInNudges } from './src/hooks/use-checkin-nudges';
 import { useDeferredBottomNavNavigation } from './src/hooks/use-deferred-bottom-nav-navigation';
 import { useDevHandoffImport } from './src/hooks/use-dev-handoff-import';
 import { useGoogleHealthSync } from './src/hooks/use-google-health-sync';
@@ -25,6 +26,7 @@ import { BehaviorFormScreen } from './src/screens/behavior-form-screen';
 import { BehaviorScreen } from './src/screens/behavior-screen';
 import { BodyLogScreen } from './src/screens/body-log-screen';
 import { CategoryFormScreen } from './src/screens/category-form-screen';
+import { CheckInScreen } from './src/screens/check-in-screen';
 import { ChecklistFormScreen } from './src/screens/checklist-form-screen';
 import { ChecklistRunScreen } from './src/screens/checklist-run-screen';
 import { CravingsScreen } from './src/screens/cravings-screen';
@@ -48,6 +50,7 @@ import { ShopScreen } from './src/screens/shop-screen';
 import { TaskScreen } from './src/screens/task-screen';
 import { TimerScreen } from './src/screens/timer-screen';
 import { useBehaviorStore } from './src/store/behavior-store';
+import { useCheckInStore } from './src/store/checkin-store';
 import { useChecklistsStore } from './src/store/checklists-store';
 import { useCravingsStore } from './src/store/cravings-store';
 import { useCuesStore } from './src/store/cues-store';
@@ -64,6 +67,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const BOTTOM_NAV_ROUTES = new Set<string>(['Cues', 'Cravings', 'Home', 'Day', 'Tasks']);
 const PERSISTED_STORES = [
   useBehaviorStore,
+  useCheckInStore,
   useChecklistsStore,
   useCravingsStore,
   useCuesStore,
@@ -94,6 +98,7 @@ const linking: LinkingOptions<RootStackParamList> = {
       CueLogs: 'cues/logs',
       SavedPlaces: 'cues/places',
       LocationEdit: 'cues/places/edit',
+      CheckIn: 'cues/check-in',
       MoodLog: 'cues/mood',
       BodyLog: 'cues/body',
       Cravings: 'cravings',
@@ -116,6 +121,7 @@ export default function App() {
   useGoogleHealthSync(storesReady);
   useReminderEngine(storesReady, navigationRef);
   useNeedNudges(storesReady, navigationRef);
+  useCheckInNudges(storesReady, navigationRef);
   useSunlightTracking(storesReady);
   useDevHandoffImport(storesReady);
 
@@ -247,6 +253,10 @@ export default function App() {
                   <Stack.Screen
                     name="LocationEdit"
                     component={LocationEditScreen}
+                  />
+                  <Stack.Screen
+                    name="CheckIn"
+                    component={CheckInScreen}
                   />
                   <Stack.Screen
                     name="MoodLog"

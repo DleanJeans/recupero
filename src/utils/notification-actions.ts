@@ -4,6 +4,8 @@ import * as TaskManager from 'expo-task-manager';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useCuesStore } from '../store/cues-store';
 import { useTimerStore } from '../store/timer-store';
+import { getNextMoodXp, presentCheckInConfirmation } from './checkin-notifications';
+import { isCheckInNotificationData, parseCheckInAction } from './checkin-utils';
 import { type NotificationActionInput, readTaskNotificationAction } from './notification-action-utils';
 import { snoozeReminder } from './reminder-notifications';
 import { isReminderNotificationData, parseReminderAction } from './reminder-utils';
@@ -47,6 +49,7 @@ export function isBackgroundNotificationAction({
   data,
 }: Omit<NotificationActionInput, 'notificationId'>) {
   if (isTimerNotificationData(data)) return actionIdentifier === TIMER_STOP_ACTION_ID;
+  if (isCheckInNotificationData(data)) return parseCheckInAction(actionIdentifier) !== undefined;
   if (!isReminderNotificationData(data)) return false;
   const action = parseReminderAction(actionIdentifier);
   return action.kind === 'timer' || action.kind === 'snooze';
@@ -82,7 +85,7 @@ async function stopTimer(now: number): Promise<void> {
 }
 
 /**
- * Runs a notification button that doesn't open Recupero: start a suggested behaviour's timer, snooze a
+ * Runs a notification button that doesn't open Recupero: log a check-in mood, start a suggested behaviour's timer, snooze a
  * suggestion, or stop the timer. Safe to run twice for one tap (the background task and an in-app listener
  * can both see it): starting the same timer again and re-snoozing are no-ops.
  */
@@ -92,6 +95,16 @@ export async function handleBackgroundNotificationAction(
 ): Promise<void> {
   if (!isBackgroundNotificationAction({ actionIdentifier, data })) return;
   if (!(await claimTap(`${notificationId}:${notificationDate ?? ''}:${actionIdentifier}`))) return;
+  if (isCheckInNotificationData(data)) {
+    const mood = parseCheckInAction(actionIdentifier);
+    if (!mood) return;
+    await waitForHydration(useCuesStore);
+    const xp = getNextMoodXp();
+    useCuesStore.getState().logMood(mood);
+    await Notifications.dismissNotificationAsync(notificationId).catch(() => undefined);
+    await presentCheckInConfirmation(mood, xp);
+    return;
+  }
   await Promise.all([waitForHydration(useBehaviorStore), waitForHydration(useTimerStore)]);
 
   if (isTimerNotificationData(data)) {

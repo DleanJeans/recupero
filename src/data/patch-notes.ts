@@ -12,6 +12,14 @@ export interface PatchNotesDay {
  */
 export const PATCH_NOTES: PatchNotesDay[] = [
   {
+    date: '2026-11-19',
+    items: [
+      'Cues: a new Check-in card at the top shows your current mood and body as two squares. Tap one to log how you feel in one tap, with an Undo. A square turns amber when the last log is a few hours old.',
+      'Check-in streak and XP: logging a mood (+5 XP) or a body sensation (+3 XP, first 4 logs a day) now levels up Check-in and keeps a daily streak. Tap the card header to see your level, best streak, 2-week calendar and mood mix.',
+      'Check-in nudges (off by default, turn on from the Check in screen): a notification at times you pick, with mood buttons you can tap without opening the app, plus an optional streak-saver at 21:00.',
+    ],
+  },
+  {
     date: '2026-11-18',
     items: [
       'Habit reminders (After logging X) now show as a card inside the app when it is open, instead of a notification. The card shows the suggested behaviour with a countdown ring and buttons: Later, Log, and Start timer. A reminder with buttons you do not answer in 10 seconds becomes a normal notification. Settings > Reminder toast lets you turn it off or put it at the top or bottom.',
