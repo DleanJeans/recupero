@@ -23,6 +23,10 @@ import {
   NEED_UNKNOWN_START_LEVEL,
   shiftOutOfQuietHours,
   simulateNeed,
+  DEFAULT_NEED_CONFIGS,
+  NEED_IDS,
+  NEED_INFO,
+  registerCustomNeeds,
 } from '../src/utils/need-utils';
 
 const H = 3_600_000;
@@ -437,8 +441,6 @@ describe('updates without a log', () => {
 });
 
 describe('registerCustomNeeds', () => {
-  const { registerCustomNeeds, NEED_IDS, NEED_INFO, DEFAULT_NEED_CONFIGS } = require('../src/utils/need-utils');
-
   afterEach(() => registerCustomNeeds([]));
 
   it('adds a custom need to every lookup and removes it again', () => {
