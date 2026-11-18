@@ -185,7 +185,7 @@ export function ChecklistStrip() {
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginBottom: 6,
+    marginBottom: 0,
   },
   clip: {
     overflow: 'hidden',
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   },
   handle: {
     alignSelf: 'center',
-    height: 18,
+    height: 14,
     width: 64,
     alignItems: 'center',
     justifyContent: 'center',

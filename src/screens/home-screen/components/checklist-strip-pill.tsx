@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppIcon } from '../../../components/app-icon';
 import { Text } from '../../../components/text';
@@ -19,6 +19,7 @@ interface ChecklistStripPillProps {
 /** Collapsed checklist on Routines: a slim pill filled by today's progress. A finished one folds to emoji and ✓. */
 export function ChecklistStripPill({ checklist }: ChecklistStripPillProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [pillWidth, setPillWidth] = useState(0);
   const { status, done, started, fraction, count } = useChecklistStatus(checklist);
 
   return (
@@ -31,6 +32,7 @@ export function ChecklistStripPill({ checklist }: ChecklistStripPillProps) {
       ]}
       onPress={() => navigation.navigate('ChecklistRun', { checklistId: checklist.id })}
       onLongPress={() => navigation.navigate('ChecklistForm', { checklistId: checklist.id })}
+      onLayout={event => setPillWidth(event.nativeEvent.layout.width)}
       accessibilityRole="button"
       accessibilityLabel={`${checklist.name}, ${status}`}
       accessibilityHint="Opens the checklist. Long-press to edit."
@@ -38,7 +40,7 @@ export function ChecklistStripPill({ checklist }: ChecklistStripPillProps) {
       {fraction > 0 && !done && (
         <View
           pointerEvents="none"
-          style={[styles.fill, { width: `${Math.round(fraction * 100)}%` }]}
+          style={[styles.fill, { width: pillWidth * fraction }]}
         />
       )}
       <AppIcon
