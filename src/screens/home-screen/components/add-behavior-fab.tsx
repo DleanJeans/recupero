@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet } from 'react-native';
+import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 
+const AnimatedText = Animated.createAnimatedComponent(Text);
 const HEIGHT = 48;
 const ICON_SIZE = 26;
 const LEFT_PAD = (HEIGHT - ICON_SIZE) / 2;
@@ -44,13 +46,13 @@ export function AddBehaviorFab({ collapsed, onPress }: AddBehaviorFabProps) {
           size={ICON_SIZE}
           color={Colors.bg.black}
         />
-        <Animated.Text
+        <AnimatedText
           numberOfLines={1}
           onLayout={e => setLabelWidth(Math.ceil(e.nativeEvent.layout.width))}
           style={[styles.label, { opacity: labelOpacity }]}
         >
           Add behavior
-        </Animated.Text>
+        </AnimatedText>
       </Animated.View>
     </Pressable>
   );
@@ -75,8 +77,8 @@ const styles = StyleSheet.create({
   },
   label: {
     color: Colors.bg.black,
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
     marginLeft: LABEL_GAP,
     flexShrink: 0,
   },
