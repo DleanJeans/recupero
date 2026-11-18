@@ -36,6 +36,7 @@ import { CueSectionLabel } from '../cues/cue-section-label';
 import { FullScreenModal } from '../full-screen-modal';
 import { Text, TextInput } from '../text';
 import { FitbitConnectRow } from './fitbit-connect-row';
+import { NeedAmountDialog } from './need-amount-dialog';
 import { NEED_TONE_COLORS } from './need-bar-row';
 import { NeedHistorySection } from './need-history-section';
 import { NeedRateLearning } from './need-rate-learning';
@@ -63,6 +64,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
   const setRefill = useNeedsStore(state => state.setRefill);
   const setCategoryRefill = useNeedsStore(state => state.setCategoryRefill);
   const [adding, setAdding] = useState(false);
+  const [customDialog, setCustomDialog] = useState<'checkIn' | 'update'>();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('');
@@ -223,6 +225,19 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                 <Text style={styles.checkInLevel}>{choice.level}%</Text>
               </Pressable>
             ))}
+            <Pressable
+              style={({ pressed }) => [styles.checkIn, pressed && styles.pressed]}
+              onPress={() => setCustomDialog('checkIn')}
+              accessibilityRole="button"
+              accessibilityLabel="Enter a custom level"
+            >
+              <Ionicons
+                name="create-outline"
+                size={16}
+                color={Colors.text.muted}
+              />
+              <Text style={styles.checkInLabel}>Custom</Text>
+            </Pressable>
           </View>
 
           <CueSectionLabel>{NEED_UPDATE_QUESTIONS[need.id]}</CueSectionLabel>
@@ -238,6 +253,14 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                 <Text style={styles.updateAmount}>{amount >= 100 ? 'Full' : `+${amount}%`}</Text>
               </Pressable>
             ))}
+            <Pressable
+              style={({ pressed }) => [styles.checkIn, pressed && styles.pressed]}
+              onPress={() => setCustomDialog('update')}
+              accessibilityRole="button"
+              accessibilityLabel="Enter a custom amount"
+            >
+              <Text style={styles.customAmount}>Custom</Text>
+            </Pressable>
           </View>
 
           {history && history.entries.length > 0 ? (
@@ -449,6 +472,35 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
           {need.id === 'energy' && <FitbitConnectRow />}
         </ScrollView>
       </View>
+      {customDialog === 'checkIn' ? (
+        <NeedAmountDialog
+          title={info.question}
+          hint={`Type how full ${info.label} is right now, 0-100.`}
+          min={0}
+          max={100}
+          initial={need.level ?? undefined}
+          onSubmit={value => {
+            checkIn(need.id, value, 'tap');
+            setCustomDialog(undefined);
+            close();
+          }}
+          onClose={() => setCustomDialog(undefined)}
+        />
+      ) : null}
+      {customDialog === 'update' ? (
+        <NeedAmountDialog
+          title={NEED_UPDATE_QUESTIONS[need.id]}
+          hint={`Type how many points to add to ${info.label}. 100 fills it.`}
+          min={1}
+          max={100}
+          suffix="%"
+          onSubmit={value => {
+            updateLevel(need.id, value);
+            setCustomDialog(undefined);
+          }}
+          onClose={() => setCustomDialog(undefined)}
+        />
+      ) : null}
     </FullScreenModal>
   );
 }
@@ -631,6 +683,11 @@ const styles = StyleSheet.create({
   },
   updateAmount: {
     color: Colors.type.desirable,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  customAmount: {
+    color: Colors.text.muted,
     fontSize: 13,
     fontWeight: '700',
   },
