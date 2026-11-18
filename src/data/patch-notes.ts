@@ -13,7 +13,11 @@ export interface PatchNotesDay {
 export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-18',
-    items: ['On the reminder screen, the selected place now moves to the top of the place list with a smooth animation.'],
+    items: [
+      'Searching for a behaviour with no results, then tapping Add behavior, now fills in the name with your search.',
+      'While typing a new behaviour name, existing behaviours with a similar name appear below it after a short pause, so you do not create duplicates.',
+      'On the reminder screen, the selected place now moves to the top of the place list with a smooth animation.',
+    ],
   },
   {
     date: '2026-11-17',

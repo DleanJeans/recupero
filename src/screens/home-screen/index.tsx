@@ -18,7 +18,7 @@ import { useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
 import type { RootStackParamList } from '../../types/navigation';
 import { getActiveBehaviors, getArchivedBehaviors, isArchivedCategoryFilterId } from '../../utils/archive-utils';
-import { collapseBehaviorGroups, matchesBehaviorOrGroupName } from '../../utils/behavior-group-utils';
+import { capitalizeFirst, collapseBehaviorGroups, matchesBehaviorOrGroupName } from '../../utils/behavior-group-utils';
 import { Colors } from '../../utils/colors';
 import { getCooldownBehaviors, isCooldownCategoryFilterId } from '../../utils/cooldown-filter';
 import { BehaviorList } from './components/behavior-list';
@@ -224,7 +224,15 @@ export function HomeScreen() {
           <Button
             fab
             variant="primary"
-            onPress={() => navigation.navigate('BehaviorForm', { defaultCategoryId: addBehaviorDefaultCategoryId })}
+            onPress={() =>
+              navigation.navigate('BehaviorForm', {
+                defaultCategoryId: addBehaviorDefaultCategoryId,
+                defaultName:
+                  isSearching && searchQuery.trim() && listedBehaviors.length === 0
+                    ? capitalizeFirst(searchQuery)
+                    : undefined,
+              })
+            }
             style={styles.addButton}
           >
             + Add behavior

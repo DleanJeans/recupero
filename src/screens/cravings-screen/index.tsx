@@ -18,6 +18,7 @@ import type { BehaviorEntry, BehaviorType } from '../../types/behavior';
 import type { CravingOutcome } from '../../types/craving';
 import type { RootStackParamList } from '../../types/navigation';
 import { getActiveBehaviors } from '../../utils/archive-utils';
+import { capitalizeFirst } from '../../utils/behavior-group-utils';
 import { Colors } from '../../utils/colors';
 import { getCravingTone } from '../../utils/craving-tone';
 import {
@@ -145,7 +146,7 @@ export function CravingsScreen() {
             query.trim() ? (
               <Pressable
                 style={({ pressed }) => [styles.createRow, pressed && styles.pressed]}
-                onPress={() => navigation.navigate('BehaviorForm', { defaultName: query.trim() })}
+                onPress={() => navigation.navigate('BehaviorForm', { defaultName: capitalizeFirst(query) })}
                 accessibilityRole="button"
               >
                 <Ionicons

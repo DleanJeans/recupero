@@ -158,3 +158,18 @@ export function collapseBehaviorGroups(
   }
   return result;
 }
+
+/** Uppercases the first letter, e.g. a search text turned into a new behaviour name. Trims spaces. */
+export function capitalizeFirst(text: string): string {
+  const trimmed = text.trim();
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+}
+
+/** Existing behaviours whose name or group is like the typed name, to warn about duplicates. Empty name matches none. */
+export function findSimilarBehaviors(behaviors: BehaviorEntry[], name: string, excludeId?: string): BehaviorEntry[] {
+  const q = name.trim().toLowerCase();
+  if (!q) return [];
+  return behaviors.filter(
+    b => b.id !== excludeId && (matchesBehaviorOrGroupName(b, q) || q.includes(b.name.toLowerCase())),
+  );
+}

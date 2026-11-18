@@ -46,6 +46,7 @@ import { CooldownInput } from './components/cooldown-input';
 import { CooldownTypeToggle } from './components/cooldown-type-toggle';
 import { CravingAlternativesField } from './components/craving-alternatives-field';
 import { MoneyRewardInput } from './components/money-reward-input';
+import { SimilarBehaviorsList } from './components/similar-behaviors-list';
 import { StarMoneyMultipliersFormField } from './components/star-money-multipliers-form-field';
 import { StarThresholdsFormField } from './components/star-thresholds-form-field';
 import { XPDecayInput } from './components/xp-decay-input';
@@ -499,6 +500,11 @@ export function BehaviorFormScreen() {
                 onSubmit={handleSave}
               />
             </View>
+
+            <SimilarBehaviorsList
+              name={name}
+              excludeId={behaviorId}
+            />
 
             <BehaviorTypePicker
               value={type}
