@@ -1,7 +1,7 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '../../components/button';
@@ -64,6 +64,8 @@ export function MealBatchFormScreen() {
     })),
   );
   const [cookedText, setCookedText] = useState(existing?.batch ? String(existing.batch.cookedAmount) : '');
+  /** Until the user types a cooked weight, it follows the sum of the raw ingredient amounts. */
+  const [cookedEdited, setCookedEdited] = useState(existing?.batch != null);
   const [portionsText, setPortionsText] = useState(
     existing?.batch?.plannedPortions ? String(existing.batch.plannedPortions) : '',
   );
@@ -88,13 +90,14 @@ export function MealBatchFormScreen() {
     const amount = parseDecimalInput(row.amountText);
     return behavior && amount != null ? [{ behavior, amount }] : [];
   });
-  const cooked = parseDecimalInput(cookedText);
+  const rawTotal = Math.round(inputs.reduce((sum, input) => sum + input.amount, 0) * 100) / 100;
+  const shownCookedText = cookedEdited ? cookedText : rawTotal > 0 ? String(rawTotal) : '';
+  const cooked = parseDecimalInput(shownCookedText);
   const portions = parseDecimalInput(portionsText);
   const totals = useMemo(() => sumBatchTotals(fields, inputs), [fields, inputs]);
   const rates = getBatchRates(totals, cooked ?? 0, RATE_BASIS);
   const suggestedPortion = getSuggestedPortionAmount(cooked ?? 0, portions ?? undefined);
   const portionValues = getPortionValues(totals, cooked ?? 0, suggestedPortion ?? 0);
-  const rawTotal = inputs.reduce((sum, input) => sum + input.amount, 0);
 
   const addIngredients = (ids: string[]) => {
     setPickerOpen(false);
@@ -243,10 +246,13 @@ export function MealBatchFormScreen() {
               <Text style={styles.fieldLabel}>{`Cooked weight${unit ? ` (${unit})` : ''}`}</Text>
               <TextInput
                 style={styles.input}
-                value={cookedText}
-                onChangeText={setCookedText}
+                value={shownCookedText}
+                onChangeText={text => {
+                  setCookedEdited(true);
+                  setCookedText(text);
+                }}
                 keyboardType="decimal-pad"
-                placeholder={rawTotal > 0 ? `raw ${Math.round(rawTotal)}` : '0'}
+                placeholder="0"
                 placeholderTextColor={Colors.text.faint}
               />
             </View>
@@ -262,7 +268,19 @@ export function MealBatchFormScreen() {
               />
             </View>
           </View>
+          {cookedEdited && rawTotal > 0 && cooked !== rawTotal && (
+            <Pressable
+              onPress={() => setCookedEdited(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Use the total of the ingredients"
+            >
+              <Text style={styles.link}>{`Use total of ingredients (${rawTotal}${unit ? ` ${unit}` : ''})`}</Text>
+            </Pressable>
+          )}
           <Text style={styles.hint}>
+            {!cookedEdited && rawTotal > 0
+              ? 'Filled from the ingredients. Type the weighed cooked weight to change it. '
+              : ''}
             Weigh all the cooked food without the pot. Water lost or soaked up while cooking is already covered by this.
           </Text>
         </View>
@@ -316,6 +334,7 @@ const styles = StyleSheet.create({
   },
   emojiInput: { width: 56, height: 46, borderRadius: 10 },
   nameInput: { flex: 1, fontSize: 17, fontWeight: '600' },
+  link: { color: '#4ade80', fontSize: 12, fontWeight: '600' },
   hint: { color: Colors.text.faint, fontSize: 12, lineHeight: 17 },
   cookedRow: { flexDirection: 'row', gap: 10 },
   cookedField: { flex: 1, gap: 4 },
