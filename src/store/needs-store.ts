@@ -69,6 +69,8 @@ export interface NeedsStore {
   updateLevel: (needId: NeedId, amount: number) => void;
   /** Undoes a check-in or update. */
   removeCheckIn: (id: string) => void;
+  /** Sets how much one log refills a need, or clears it with undefined. */
+  setLogAmount: (needId: NeedId, logId: string, amount: number | undefined) => void;
   setRefill: (needId: NeedId, behaviorId: string, refill: NeedRefill | undefined) => void;
   setCategoryRefill: (needId: NeedId, categoryId: string, refill: NeedRefill | undefined) => void;
   setMetadataSource: (needId: NeedId, source: NeedMetadataSource | null | undefined) => void;
@@ -104,6 +106,7 @@ function withDefaults(needs: Partial<Record<NeedId, Partial<NeedConfig>>> | unde
       ...saved,
       refills: { ...saved?.refills },
       categoryRefills: { ...saved?.categoryRefills },
+      logAmounts: { ...saved?.logAmounts },
     };
   }
   return result;
@@ -207,6 +210,13 @@ export const useNeedsStore = create<NeedsStore>()(
           return { checkIns: [...state.checkIns, entry].slice(-MAX_CHECK_INS) };
         }),
       removeCheckIn: id => set(state => ({ checkIns: state.checkIns.filter(checkIn => checkIn.id !== id) })),
+      setLogAmount: (needId, logId, amount) =>
+        set(state => {
+          const logAmounts = { ...state.needs[needId].logAmounts };
+          if (amount == null) delete logAmounts[logId];
+          else logAmounts[logId] = amount;
+          return { needs: { ...state.needs, [needId]: { ...state.needs[needId], logAmounts } } };
+        }),
       setRefill: (needId, behaviorId, refill) =>
         set(state => {
           const refills = { ...state.needs[needId].refills };

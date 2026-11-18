@@ -17,6 +17,9 @@ interface NeedAmountDialogProps {
   max: number;
   /** Shown after the number, e.g. "%". */
   suffix?: string;
+  /** When set, a button that clears the typed value. */
+  onReset?: () => void;
+  resetLabel?: string;
   onSubmit: (value: number) => void;
   onClose: () => void;
 }
@@ -29,6 +32,8 @@ export function NeedAmountDialog({
   min,
   max,
   suffix = '%',
+  onReset,
+  resetLabel = 'Reset',
   onSubmit,
   onClose,
 }: NeedAmountDialogProps) {
@@ -75,6 +80,7 @@ export function NeedAmountDialog({
             <Text style={styles.suffix}>{suffix}</Text>
           </View>
           <View style={styles.actions}>
+            {onReset ? <Button onPress={onReset}>{resetLabel}</Button> : null}
             <Button onPress={onClose}>Cancel</Button>
             <Button
               variant="primary"

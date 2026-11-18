@@ -28,6 +28,7 @@ import {
   NEED_INFO,
   NEED_UPDATE_AMOUNTS,
   NEED_UPDATE_QUESTIONS,
+  type NeedRefillEntry,
 } from '../../utils/need-utils';
 import { formatCompactDate, formatElapsedNumeric, formatTime } from '../../utils/time-utils';
 import { AppIcon } from '../app-icon';
@@ -61,10 +62,12 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
   const checkIns = useNeedsStore(state => state.checkIns);
   const updateLevel = useNeedsStore(state => state.updateLevel);
   const removeCheckIn = useNeedsStore(state => state.removeCheckIn);
+  const setLogAmount = useNeedsStore(state => state.setLogAmount);
   const setRefill = useNeedsStore(state => state.setRefill);
   const setCategoryRefill = useNeedsStore(state => state.setCategoryRefill);
   const [adding, setAdding] = useState(false);
   const [customDialog, setCustomDialog] = useState<'checkIn' | 'update'>();
+  const [amountLog, setAmountLog] = useState<NeedRefillEntry>();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('');
@@ -323,7 +326,18 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                       >
                         {behavior.name}
                       </Text>
-                      <Text style={styles.historyAmount}>{entry.amountLabel}</Text>
+                      <Pressable
+                        style={({ pressed }) => [styles.amount, pressed && styles.pressed]}
+                        onPress={() => setAmountLog(entry)}
+                        hitSlop={6}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Refill ${entry.amountLabel}, tap to change`}
+                      >
+                        <Text style={styles.amountText}>
+                          {entry.amountLabel}
+                          {entry.custom ? ' ✎' : ''}
+                        </Text>
+                      </Pressable>
                       <Text style={styles.historyTime}>{time}</Text>
                     </Pressable>
                   );
@@ -472,6 +486,29 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
           {need.id === 'energy' && <FitbitConnectRow />}
         </ScrollView>
       </View>
+      {amountLog ? (
+        <NeedAmountDialog
+          title={`How much did ${behaviorById.get(amountLog.behaviorId ?? '')?.name ?? 'this log'} refill?`}
+          hint={`It shows ${amountLog.amountLabel}. Type what it really did for ${info.label}, in points, 100 fills it.`}
+          min={0}
+          max={100}
+          initial={
+            Number.parseFloat(amountLog.amountLabel.replace(/[^0-9.]/g, '')) ||
+            (amountLog.amountLabel === 'Full' ? 100 : 0)
+          }
+          onReset={
+            amountLog.custom
+              ? () => (setLogAmount(need.id, amountLog.logId, undefined), setAmountLog(undefined))
+              : undefined
+          }
+          resetLabel="Use usual"
+          onSubmit={value => {
+            setLogAmount(need.id, amountLog.logId, value);
+            setAmountLog(undefined);
+          }}
+          onClose={() => setAmountLog(undefined)}
+        />
+      ) : null}
       {customDialog === 'checkIn' ? (
         <NeedAmountDialog
           title={info.question}

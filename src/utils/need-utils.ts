@@ -276,6 +276,13 @@ export function getRefillEvent(
   };
 }
 
+/** A log whose refill the user typed in refills by that many points instead, whatever its setting says. */
+export function applyLogAmount(event: NeedEvent | undefined, config: Pick<NeedConfig, 'logAmounts'>) {
+  const amount = event?.logId ? config.logAmounts?.[event.logId] : undefined;
+  if (!event || amount == null) return event;
+  return { ...event, kind: 'add', amount, startTs: event.kind === 'add' ? event.startTs : undefined } as NeedEvent;
+}
+
 /**
  * How a behaviour refills a need: its own setting, else its category's. A category that has the
  * need's metadata field (e.g. Calorie) refills by that field only, so its 0 kcal behaviours don't count.
@@ -321,7 +328,7 @@ export function getNeedEvents(
     for (const log of behavior.logs) {
       const end = log.endTimestamp ?? log.timestamp;
       if (end < since) continue;
-      const event = getRefillEvent(behavior.id, log, refill, source);
+      const event = applyLogAmount(getRefillEvent(behavior.id, log, refill, source), config);
       if (event) events.push(event);
     }
   }
@@ -665,6 +672,8 @@ export interface NeedRefillEntry {
   update?: boolean;
   /** A "how do you feel" check-in; only listed for today. */
   checkIn?: boolean;
+  /** The amount was typed in by the user instead of the usual refill. */
+  custom?: boolean;
   ts: number;
   /** "+45%", "Full" or "Check-in 70%". */
   amountLabel: string;
@@ -701,11 +710,12 @@ export function getNeedRefillHistory(
     const refill = getBehaviorRefill(config, behavior, source);
     if (!refill && !source) continue;
     for (const log of behavior.logs) {
-      const event = getRefillEvent(behavior.id, log, refill, source);
+      const event = applyLogAmount(getRefillEvent(behavior.id, log, refill, source), config);
       if (!event) continue;
       all.push({
         behaviorId: behavior.id,
         logId: log.id,
+        ...(config.logAmounts?.[log.id] != null ? { custom: true } : {}),
         ts: event.ts,
         amountLabel: event.kind === 'add' ? `+${Math.round(event.amount)}%` : 'Full',
       });

@@ -62,6 +62,8 @@ export interface NeedConfig {
   refills: Record<string, NeedRefill>;
   /** Whole categories whose behaviours refill this need, by category id. */
   categoryRefills?: Record<string, NeedRefill>;
+  /** Typed-in amounts (percentage points) for single logs, by log id. They replace what the log would refill. */
+  logAmounts?: Record<string, number>;
   /** Undefined = automatic (Hunger picks a calorie field). Null = off. */
   metadataSource?: NeedMetadataSource | null;
   /** How many check-ins have adjusted the rate since the last reset. */

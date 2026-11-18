@@ -276,6 +276,16 @@ describe('getNeedRefillHistory', () => {
       ['r1', '+50%'],
     ]);
   });
+  it('uses a typed-in amount for a log and marks it custom', () => {
+    const config = {
+      ...DEFAULT_NEED_CONFIGS.thirst,
+      refills: { water: { mode: 'add' as const, amount: 40 } },
+      logAmounts: { w1: 75 },
+    };
+    const behaviors = [makeBehavior('water', [{ id: 'w1', timestamp: T0 }])];
+    const history = getNeedRefillHistory(config, behaviors, undefined, isToday);
+    expect(history.entries).toEqual([{ behaviorId: 'water', logId: 'w1', ts: T0, amountLabel: '+75%', custom: true }]);
+  });
   it('falls back to the last refill from an earlier day', () => {
     const config = { ...DEFAULT_NEED_CONFIGS.hygiene, refills: { shower: { mode: 'set' as const } } };
     const behaviors = [
