@@ -32,7 +32,7 @@ export function BehaviorLogActions({ form }: Props) {
   } = form;
 
   const label = editLogId ? 'Save' : stackedLogs.length > 0 ? `Log ${stackedLogs.length + 1}` : 'Log';
-  const showTimerSegment = !editLogId && !hasTimerRange;
+  const showTimerSegment = !editLogId && !hasTimerRange && behavior.durationXpEnabled === true;
 
   return (
     <FabButtonRow>
