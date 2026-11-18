@@ -666,23 +666,23 @@ export function BehaviorFormScreen() {
 
         {!isKeyboardOpen && (
           <View style={styles.footer}>
-          <Button
-            variant="primary"
-            fab
-            style={styles.saveButton}
-            onPress={handleSave}
-            disabled={
-              isEdit
-                ? !hasChanges || moneyRewardInputInvalid || starMoneyMultipliersInvalid || siteDomainInvalid
-                : !name.trim() ||
-                  !icon.trim() ||
-                  moneyRewardInputInvalid ||
-                  starMoneyMultipliersInvalid ||
-                  siteDomainInvalid
-            }
-          >
-            {isEdit ? 'Save' : 'Add'}
-          </Button>
+            <Button
+              variant="primary"
+              fab
+              style={styles.saveButton}
+              onPress={handleSave}
+              disabled={
+                isEdit
+                  ? !hasChanges || moneyRewardInputInvalid || starMoneyMultipliersInvalid || siteDomainInvalid
+                  : !name.trim() ||
+                    !icon.trim() ||
+                    moneyRewardInputInvalid ||
+                    starMoneyMultipliersInvalid ||
+                    siteDomainInvalid
+              }
+            >
+              {isEdit ? 'Save' : 'Add'}
+            </Button>
           </View>
         )}
       </View>
