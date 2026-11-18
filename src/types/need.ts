@@ -1,4 +1,13 @@
-export type NeedId = 'hunger' | 'thirst' | 'hygiene' | 'energy';
+export type NeedId =
+  | 'hunger'
+  | 'thirst'
+  | 'hygiene'
+  | 'energy'
+  | 'fun'
+  | 'social'
+  | 'comfort'
+  | 'movement'
+  | 'tidiness';
 
 /** How logging a behaviour refills a need. */
 export type NeedRefill =

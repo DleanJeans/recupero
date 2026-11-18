@@ -3,7 +3,17 @@ import type { NeedCheckIn, NeedConfig, NeedId, NeedMetadataSource, NeedRefill } 
 
 const MS_PER_HOUR = 3_600_000;
 
-export const NEED_IDS: readonly NeedId[] = ['hunger', 'thirst', 'hygiene', 'energy'];
+export const NEED_IDS: readonly NeedId[] = [
+  'hunger',
+  'thirst',
+  'hygiene',
+  'energy',
+  'fun',
+  'social',
+  'comfort',
+  'movement',
+  'tidiness',
+];
 
 export interface NeedInfo {
   id: NeedId;
@@ -60,6 +70,51 @@ export const NEED_INFO: Record<NeedId, NeedInfo> = {
     // Word boundaries so "Napa cabbage" or "Restaurant" don't count.
     suggest: /\b(sleep|nap|rest)\b/i,
   },
+  fun: {
+    id: 'fun',
+    emoji: '🎮',
+    label: 'Fun',
+    question: 'How entertained are you?',
+    checkIns: checkInLevels(['Bored stiff', 'Meh', 'Okay', 'Enjoying', 'Blast']),
+    bodySensations: [],
+    suggest: /game|gaming|movie|film|show|music|guitar|play|hobby|draw|read|fun|party|karaoke/i,
+  },
+  social: {
+    id: 'social',
+    emoji: '👥',
+    label: 'Social',
+    question: 'How connected do you feel?',
+    checkIns: checkInLevels(['Isolated', 'Lonely', 'Okay', 'Close', 'Full']),
+    bodySensations: [],
+    suggest: /call|chat|friend|family|hang ?out|meet|visit|date|dinner with|party|text|message/i,
+  },
+  comfort: {
+    id: 'comfort',
+    emoji: '🛋️',
+    label: 'Comfort',
+    question: 'How comfortable are you?',
+    checkIns: checkInLevels(['Aching', 'Stiff', 'Okay', 'Cosy', 'Blissful']),
+    bodySensations: ['aches'],
+    suggest: /couch|sofa|lie down|lying|relax|stretch|massage|bath|rest|chill/i,
+  },
+  movement: {
+    id: 'movement',
+    emoji: '🚶',
+    label: 'Movement',
+    question: 'How active have you been?',
+    checkIns: checkInLevels(['Stuck', 'Sluggish', 'Okay', 'Active', 'Buzzing']),
+    bodySensations: [],
+    suggest: /walk|run|jog|workout|exercise|gym|stretch|yoga|swim|cycle|bike|pushup|squat|cardio|dance/i,
+  },
+  tidiness: {
+    id: 'tidiness',
+    emoji: '🏠',
+    label: 'Tidiness',
+    question: 'How tidy is your place?',
+    checkIns: checkInLevels(['Messy', 'Cluttered', 'Okay', 'Tidy', 'Spotless']),
+    bodySensations: [],
+    suggest: /clean|tidy|dish|laundry|vacuum|sweep|mop|trash|garbage|declutter|bed|wash/i,
+  },
 };
 
 export const DEFAULT_NEED_CONFIGS: Record<NeedId, NeedConfig> = {
@@ -67,6 +122,11 @@ export const DEFAULT_NEED_CONFIGS: Record<NeedId, NeedConfig> = {
   thirst: { enabled: true, emptyHours: 5, cravingLine: 30, nudgeLine: 15, refills: {}, learnedFrom: 0 },
   hygiene: { enabled: true, emptyHours: 36, cravingLine: 30, nudgeLine: 10, refills: {}, learnedFrom: 0 },
   energy: { enabled: true, emptyHours: 16, cravingLine: 25, nudgeLine: 10, refills: {}, learnedFrom: 0 },
+  fun: { enabled: true, emptyHours: 10, cravingLine: 30, nudgeLine: 15, refills: {}, learnedFrom: 0 },
+  social: { enabled: true, emptyHours: 72, cravingLine: 30, nudgeLine: 15, refills: {}, learnedFrom: 0 },
+  comfort: { enabled: true, emptyHours: 6, cravingLine: 30, nudgeLine: 15, refills: {}, learnedFrom: 0 },
+  movement: { enabled: true, emptyHours: 4, cravingLine: 30, nudgeLine: 15, refills: {}, learnedFrom: 0 },
+  tidiness: { enabled: true, emptyHours: 96, cravingLine: 30, nudgeLine: 15, refills: {}, learnedFrom: 0 },
 };
 
 /** Calories that take Hunger from empty to full, until the user changes it in Settings. */
@@ -446,6 +506,11 @@ export function getDefaultRefill(needId: NeedId): NeedRefill {
   if (needId === 'hygiene') return { mode: 'set' };
   if (needId === 'energy') return { mode: 'duration', fullMinutes: 8 * 60 };
   if (needId === 'thirst') return { mode: 'add', amount: 40 };
+  if (needId === 'fun') return { mode: 'duration', fullMinutes: 120 };
+  if (needId === 'social') return { mode: 'duration', fullMinutes: 120 };
+  if (needId === 'comfort') return { mode: 'duration', fullMinutes: 60 };
+  if (needId === 'movement') return { mode: 'duration', fullMinutes: 45 };
+  if (needId === 'tidiness') return { mode: 'add', amount: 30 };
   return { mode: 'add', amount: 60 };
 }
 
@@ -585,6 +650,11 @@ export const NEED_UPDATE_QUESTIONS: Record<NeedId, string> = {
   thirst: "Drank something you didn't log?",
   hygiene: 'Freshened up without logging?',
   energy: 'Rested without logging?',
+  fun: 'Had fun without logging it?',
+  social: 'Spent time with someone without logging it?',
+  comfort: 'Relaxed without logging it?',
+  movement: 'Moved around without logging it?',
+  tidiness: 'Tidied up without logging it?',
 };
 
 export interface NeedRefillEntry {

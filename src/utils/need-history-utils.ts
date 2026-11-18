@@ -251,7 +251,17 @@ export function getHistoryDayStarts(
 }
 
 export function emptyRateHistory(): Record<NeedId, NeedRatePoint[]> {
-  return { hunger: [], thirst: [], hygiene: [], energy: [] };
+  return {
+    hunger: [],
+    thirst: [],
+    hygiene: [],
+    energy: [],
+    fun: [],
+    social: [],
+    comfort: [],
+    movement: [],
+    tidiness: [],
+  };
 }
 
 /** Quiet hours (23:00–07:00 local) that overlap `from`–`to`, for shading charts. */
@@ -311,6 +321,11 @@ export const NEED_CHART_COLORS: Record<NeedId, string> = {
   thirst: '#60a5fa',
   hygiene: '#2dd4bf',
   energy: '#a3e635',
+  fun: '#f472b6',
+  social: '#c084fc',
+  comfort: '#fb923c',
+  movement: '#4ade80',
+  tidiness: '#38bdf8',
 };
 
 /** "+45%", "Full" or "Check-in 25%" for an event dot. */
