@@ -415,6 +415,39 @@ export function getAverageLux(
   return covered > 0 ? total / covered : undefined;
 }
 
+export interface SunlightLuxPoint {
+  /** Middle of the slice. */
+  ts: number;
+  /** Estimated open-ground lux (calibrated); 0 outside daylight or where the weather isn't known. */
+  lux: number;
+  /** You were outside during this slice. */
+  out: boolean;
+}
+
+/** Lux from sunrise to sunset in equal slices, marking the slices you spent outside. Empty if sun times or weather are missing. */
+export function getLuxCurve(
+  sunrise: number | undefined,
+  sunset: number | undefined,
+  hours: SunlightWeatherHour[],
+  calibration: SunlightCalibrationStep[] | undefined,
+  stretches: SunlightRange[],
+  slices = 48,
+): SunlightLuxPoint[] {
+  if (sunrise == null || sunset == null || sunset <= sunrise || hours.length === 0) return [];
+  const step = (sunset - sunrise) / slices;
+  const points: SunlightLuxPoint[] = [];
+  for (let index = 0; index < slices; index++) {
+    const ts = sunrise + step * (index + 0.5);
+    const lux = getLuxAt(ts, hours, calibration);
+    points.push({
+      ts,
+      lux: lux ?? 0,
+      out: stretches.some(stretch => stretch.start < ts && ts < stretch.end),
+    });
+  }
+  return points.some(point => point.lux > 0) ? points : [];
+}
+
 /** The eye-level share of the light in effect at a moment: the latest step that started by then (50% before the first). */
 export function getEyeLevelFactorAt(steps: SunlightCalibrationStep[] | undefined, ts: number): number {
   let factor = EYE_LEVEL_LUX_FACTOR;

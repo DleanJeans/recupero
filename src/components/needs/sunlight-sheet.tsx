@@ -17,6 +17,7 @@ import { FullScreenModal } from '../full-screen-modal';
 import { Text } from '../text';
 import { SunlightActions } from './sunlight-actions';
 import { SUNLIGHT_COLOR } from './sunlight-bar-row';
+import { SunlightLuxChart } from './sunlight-lux-chart';
 import { SunlightNowCard } from './sunlight-now-card';
 import { SunlightPlacesMapView } from './sunlight-places-map-view';
 import { SunlightSessionEditor } from './sunlight-session-editor';
@@ -167,6 +168,12 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
               </Pressable>
             )}
           </View>
+          <SunlightLuxChart
+            day={shownDay}
+            weather={sunlight.weather}
+            now={sunlight.now}
+            isToday={isToday}
+          />
           <ExpandableMap>
             {map => (
               <SunlightPlacesMapView

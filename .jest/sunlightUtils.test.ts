@@ -8,6 +8,7 @@ import {
   getIndoorPlaces,
   getLightDoseTarget,
   getLuxAt,
+  getLuxCurve,
   getOutdoorRanges,
   getSunlightDay,
   getSunlightGeofenceRegions,
@@ -670,5 +671,21 @@ describe('pause pin', () => {
     expect(hasLeftPausePin(pin, { lat: 10, lng: 106 }, 30, 10)).toBe(false);
     expect(hasLeftPausePin(pin, { lat: 10.001, lng: 106 }, 30, 10)).toBe(true);
     expect(hasLeftPausePin(pin, { lat: 10.0004, lng: 106 }, 30, 300)).toBe(false);
+  });
+});
+
+describe('getLuxCurve', () => {
+  const hour = 3_600_000;
+  const hours = Array.from({ length: 24 }, (_, i) => ({ ts: (i + 1) * hour, wm2: i >= 6 && i < 18 ? 500 : 0 }));
+  it('is empty without sun times or weather', () => {
+    expect(getLuxCurve(undefined, undefined, hours, undefined, [])).toEqual([]);
+    expect(getLuxCurve(6 * hour, 18 * hour, [], undefined, [])).toEqual([]);
+  });
+  it('slices sunrise to sunset and marks outside time', () => {
+    const points = getLuxCurve(6 * hour, 18 * hour, hours, undefined, [{ start: 6 * hour, end: 9 * hour }], 12);
+    expect(points).toHaveLength(12);
+    expect(points[0].out).toBe(true);
+    expect(points[11].out).toBe(false);
+    expect(points[5].lux).toBeGreaterThan(0);
   });
 });

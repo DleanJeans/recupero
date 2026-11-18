@@ -14,6 +14,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-18',
     items: [
+      'Sunlight: a new graph shows the estimated light level from sunrise to sunset, with the time you spent outside highlighted. Tap a day in the past-week chart to see its graph too.',
       'Cook a batch: the new Weigh button on a batch card takes what is really left in the pot. The cooked weight becomes eaten + leftover (water that evaporated drops out) and the macros per 100 g, including logged portions, are recalculated.',
       'The emoji on the small saved-for-later circle is now centred.',
       'Home header: the title is slightly smaller and the icons are packed closer together, so the first icon no longer touches the title.',
