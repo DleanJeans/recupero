@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
 import { useBehaviorStore } from '../../../store/behavior-store';
@@ -9,6 +9,7 @@ import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
 import { confirmFinishBatch } from '../../../utils/finish-batch';
 import { getBatchStatus } from '../../../utils/meal-batch-utils';
+import { BatchLeftoverModal } from './batch-leftover-modal';
 
 interface BatchFooterProps {
   behavior: BehaviorEntry;
@@ -18,6 +19,7 @@ interface BatchFooterProps {
 export function BatchFooter({ behavior }: BatchFooterProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const categories = useBehaviorStore(state => state.categories);
+  const [weighing, setWeighing] = useState(false);
   const status = getBatchStatus(behavior, categories);
   if (!status) return null;
   const unit = status.unit ? ` ${status.unit}` : '';
@@ -30,6 +32,14 @@ export function BatchFooter({ behavior }: BatchFooterProps) {
           <View style={[styles.fill, { width: `${leftShare * 100}%` }]} />
         </View>
       </View>
+      <Pressable
+        style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+        onPress={() => setWeighing(true)}
+        accessibilityRole="button"
+        accessibilityLabel={`Weigh leftover of ${behavior.name}`}
+      >
+        <Text style={styles.buttonLabel}>Weigh</Text>
+      </Pressable>
       <Pressable
         style={({ pressed }) => [styles.button, pressed && styles.pressed]}
         onPress={() => navigation.navigate('MealBatchForm', { behaviorId: behavior.id })}
@@ -46,6 +56,12 @@ export function BatchFooter({ behavior }: BatchFooterProps) {
       >
         <Text style={styles.buttonLabel}>Finish</Text>
       </Pressable>
+      {weighing && (
+        <BatchLeftoverModal
+          behavior={behavior}
+          onClose={() => setWeighing(false)}
+        />
+      )}
     </View>
   );
 }
@@ -54,7 +70,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
     marginTop: -4,
     paddingLeft: 20,
     paddingRight: 14,
@@ -65,7 +81,7 @@ const styles = StyleSheet.create({
   track: { height: 4, borderRadius: 2, backgroundColor: Colors.bg.input, overflow: 'hidden' },
   fill: { height: '100%', backgroundColor: '#4ade80', borderRadius: 2 },
   button: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 16,
     borderWidth: 1,

@@ -138,3 +138,32 @@ export function buildBatchName(name: string, cookedAt: number): string {
 export function stripBatchNameDate(name: string): string {
   return name.replace(/ · [A-Z][a-z]{2} \d{1,2}$/, '');
 }
+
+export interface LeftoverAdjustment {
+  /** Eaten so far + the leftover just weighed: what the pot really held, after any water evaporated. */
+  cookedAmount: number;
+  /** Same as the behaviour's, with calculated rates raised to match the smaller pot. */
+  defaultMetadata: Record<string, number>;
+}
+
+/** The batch after weighing what is left: cooked amount becomes eaten + leftover and the rates (the same totals
+ *  spread over less food) are rescaled. Null when there is nothing to adjust. */
+export function getLeftoverAdjustment(
+  behavior: BehaviorEntry,
+  categories: Category[],
+  leftover: number,
+): LeftoverAdjustment | null {
+  const status = getBatchStatus(behavior, categories);
+  if (!behavior.batch || !status || !Number.isFinite(leftover) || leftover < 0) return null;
+  const cookedAmount = round(status.eaten + leftover, 2);
+  if (cookedAmount <= 0 || behavior.batch.cookedAmount <= 0) return null;
+  const amountField = getBehaviorAmountField(behavior, getBehaviorMetadataFields(behavior, categories));
+  const factor = behavior.batch.cookedAmount / cookedAmount;
+  const defaultMetadata = Object.fromEntries(
+    Object.entries(behavior.defaultMetadata ?? {}).map(([key, value]) => [
+      key,
+      key === amountField?.key ? value : round(value * factor, 4),
+    ]),
+  );
+  return { cookedAmount, defaultMetadata };
+}

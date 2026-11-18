@@ -3,6 +3,7 @@ import {
   buildBatchName,
   getBatchRates,
   getBatchStatus,
+  getLeftoverAdjustment,
   getPortionValues,
   getSuggestedPortionAmount,
   stripBatchNameDate,
@@ -79,5 +80,20 @@ describe('meal batch maths', () => {
     const name = buildBatchName('Chicken rice', new Date(2026, 10, 16).getTime());
     expect(name).toBe('Chicken rice · Nov 16');
     expect(stripBatchNameDate(name)).toBe('Chicken rice');
+  });
+
+  it('rescales rates when the leftover shows water evaporated', () => {
+    const batch = food('b', 100, 10, undefined, {
+      metadataAmountFieldKey: 'amt',
+      defaultMetadata: { kcal: 100, p: 10, amt: 400 },
+      batch: { ingredients: [], cookedAmount: 1000, cookedAt: 0 },
+      logs: [{ id: '1', timestamp: 1, metadata: { amt: 400 } }],
+    });
+    // 400 eaten + 500 left = 900 g really cooked
+    const adjusted = getLeftoverAdjustment(batch, categories, 500);
+    expect(adjusted?.cookedAmount).toBe(900);
+    expect(adjusted?.defaultMetadata.kcal).toBeCloseTo(111.1111, 3);
+    expect(adjusted?.defaultMetadata.amt).toBe(400);
+    expect(getLeftoverAdjustment(batch, categories, -1)).toBeNull();
   });
 });
