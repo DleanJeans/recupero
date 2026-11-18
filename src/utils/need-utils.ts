@@ -663,8 +663,10 @@ export interface NeedRefillEntry {
   /** The log's id, or the update's check-in id. */
   logId: string;
   update?: boolean;
+  /** A "how do you feel" check-in; only listed for today. */
+  checkIn?: boolean;
   ts: number;
-  /** "+45%" or "Full". */
+  /** "+45%", "Full" or "Check-in 70%". */
   amountLabel: string;
 }
 
@@ -679,6 +681,14 @@ export function getNeedRefillHistory(
   isToday: (ts: number) => boolean,
   updates: NeedCheckIn[] = [],
 ): { entries: NeedRefillEntry[]; today: boolean } {
+  const checkIns: NeedRefillEntry[] = updates
+    .filter(entry => entry.amount == null && isToday(entry.ts))
+    .map(entry => ({
+      logId: entry.id,
+      checkIn: true,
+      ts: entry.ts,
+      amountLabel: `Check-in ${Math.round(entry.level)}%`,
+    }));
   const all: NeedRefillEntry[] = updates
     .filter(update => update.amount != null)
     .map(update => ({
@@ -702,7 +712,7 @@ export function getNeedRefillHistory(
     }
   }
   all.sort((a, b) => b.ts - a.ts);
-  const todays = all.filter(entry => isToday(entry.ts));
+  const todays = [...all.filter(entry => isToday(entry.ts)), ...checkIns].sort((a, b) => b.ts - a.ts);
   if (todays.length > 0) return { entries: todays, today: true };
   return { entries: all.slice(0, 1), today: false };
 }

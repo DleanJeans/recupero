@@ -14,6 +14,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      'Needs: you can now remove a check-in. Check-ins show in the Logged today list with an X, and tapping a check-in dot on the chart has a bin button.',
       'Needs: the need screen now shows its icon and title right next to the Back button, so there is more room for the chart.',
       'Cues: a new Check-in card at the top shows your current mood and body as two squares. Tap one to log how you feel in one tap, with an Undo. A square turns amber when the last log is a few hours old.',
       'Check-in streak and XP: logging a mood (+5 XP) or a body sensation (+3 XP, first 4 logs a day) now levels up Check-in and keeps a daily streak. Tap the card header to see your level, best streak, 2-week calendar and mood mix.',

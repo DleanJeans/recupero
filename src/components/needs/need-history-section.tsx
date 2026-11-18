@@ -44,6 +44,7 @@ export function NeedHistorySection({ needId, onEditLog }: NeedHistorySectionProp
   const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
   const behaviors = useBehaviorStore(state => state.behaviors);
   const checkIns = useNeedsStore(state => state.checkIns);
+  const removeCheckIn = useNeedsStore(state => state.removeCheckIn);
 
   // Fixed per range so the chart doesn't recompute every render, but moved on to now whenever a check-in
   // or top-up is saved so it shows at once.
@@ -180,6 +181,22 @@ export function NeedHistorySection({ needId, onEditLog }: NeedHistorySectionProp
               size={16}
               color={Colors.text.light}
             />
+          ) : selected.event.logId ? (
+            <Pressable
+              onPress={() => {
+                removeCheckIn(selected.event.logId as string);
+                setSelectedKey(undefined);
+              }}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Remove this entry"
+            >
+              <Ionicons
+                name="trash-outline"
+                size={16}
+                color={Colors.text.light}
+              />
+            </Pressable>
           ) : null}
         </Pressable>
       ) : null}

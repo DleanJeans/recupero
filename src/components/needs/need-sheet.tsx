@@ -248,7 +248,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                   const time = history.today
                     ? formatTime(entry.ts)
                     : `${formatCompactDate(entry.ts)} ${formatTime(entry.ts)} · ${formatElapsedNumeric(entry.ts, now)}`;
-                  if (entry.update) {
+                  if (entry.update || entry.checkIn) {
                     return (
                       <View
                         key={entry.logId}
@@ -259,15 +259,17 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                           style={styles.historyName}
                           numberOfLines={1}
                         >
-                          Updated without a log
+                          {entry.checkIn ? 'You checked in' : 'Updated without a log'}
                         </Text>
-                        <Text style={styles.historyAmount}>{entry.amountLabel}</Text>
+                        <Text style={[styles.historyAmount, entry.checkIn && styles.checkInAmount]}>
+                          {entry.amountLabel}
+                        </Text>
                         <Text style={styles.historyTime}>{time}</Text>
                         <Pressable
                           onPress={() => removeCheckIn(entry.logId)}
                           hitSlop={8}
                           accessibilityRole="button"
-                          accessibilityLabel="Undo update"
+                          accessibilityLabel={entry.checkIn ? 'Remove check-in' : 'Undo update'}
                         >
                           <Ionicons
                             name="close"
@@ -707,6 +709,9 @@ const styles = StyleSheet.create({
     color: Colors.type.desirable,
     fontSize: 12,
     fontWeight: '700',
+  },
+  checkInAmount: {
+    color: '#60a5fa',
   },
   historyTime: {
     color: Colors.text.faint,
