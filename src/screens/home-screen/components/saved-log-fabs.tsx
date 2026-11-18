@@ -15,7 +15,7 @@ interface SavedLogFabsProps {
   collapsed: boolean;
 }
 
-/** Stack of "saved for later" pills above the Add behavior button. Tap logs now; long-press edits or discards. */
+/** Stack of "saved for later" pills above the Add behavior button. Tap opens the log form (the pill stays if you go back); long-press logs now or discards. */
 export function SavedLogFabs({ collapsed }: SavedLogFabsProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const pendingLogs = usePendingLogsStore(s => s.pendingLogs);
@@ -28,17 +28,16 @@ export function SavedLogFabs({ collapsed }: SavedLogFabsProps) {
   );
   if (shown.length === 0) return null;
 
+  const openLog = (pending: PendingLog) =>
+    navigation.navigate('BehaviorLog', {
+      behaviorId: pending.behaviorId,
+      initialMode: 'log',
+      pendingLogId: pending.id,
+    });
+
   const openMenu = (pending: PendingLog, name: string) =>
     Alert.alert(name, 'Saved for later', [
-      {
-        text: 'Edit',
-        onPress: () =>
-          navigation.navigate('BehaviorLog', {
-            behaviorId: pending.behaviorId,
-            initialMode: 'log',
-            pendingLogId: pending.id,
-          }),
-      },
+      { text: 'Log now', onPress: () => completePendingLog(pending) },
       { text: 'Discard', style: 'destructive', onPress: () => removePending(pending.id) },
       { text: 'Cancel', style: 'cancel' },
     ]);
@@ -63,7 +62,7 @@ export function SavedLogFabs({ collapsed }: SavedLogFabsProps) {
             key={pending.id}
             behavior={behavior}
             collapsed={collapsed}
-            onPress={() => completePendingLog(pending)}
+            onPress={() => openLog(pending)}
             onLongPress={() => openMenu(pending, behavior.name)}
           />
         );

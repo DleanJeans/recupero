@@ -34,7 +34,7 @@ export function SavedLogFab({ behavior, collapsed, onPress, onLongPress }: Saved
       onPress={onPress}
       onLongPress={onLongPress}
       accessibilityRole="button"
-      accessibilityLabel={`Log ${behavior.name} now. Long press to edit or discard`}
+      accessibilityLabel={`Edit saved log for ${behavior.name}. Long press to log now or discard`}
       style={({ pressed }) => [styles.touch, pressed && styles.pressed]}
     >
       <Animated.View style={[styles.fab, { width }]}>
