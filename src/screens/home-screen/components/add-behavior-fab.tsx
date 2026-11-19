@@ -15,10 +15,22 @@ const FALLBACK_LABEL_WIDTH = 100;
 interface AddBehaviorFabProps {
   collapsed: boolean;
   onPress: () => void;
+  label?: string;
+  /** Ionicons name for the collapsed circle and the left of the label. */
+  icon?: React.ComponentProps<typeof Ionicons>['name'];
+  /** Secondary look (dark pill) so it does not compete with the primary Add behavior button. */
+  secondary?: boolean;
 }
 
 /** Floating "+ Add behavior" pill that shrinks to a circle while the list scrolls down. */
-export function AddBehaviorFab({ collapsed, onPress }: AddBehaviorFabProps) {
+export function AddBehaviorFab({
+  collapsed,
+  onPress,
+  label = 'Add behavior',
+  icon = 'add',
+  secondary,
+}: AddBehaviorFabProps) {
+  const fg = secondary ? Colors.text.primary : Colors.bg.black;
   const [labelWidth, setLabelWidth] = useState(FALLBACK_LABEL_WIDTH);
   const expandedWidth = LEFT_PAD + ICON_SIZE + LABEL_GAP + labelWidth + RIGHT_PAD;
   const progress = useRef(new Animated.Value(collapsed ? 1 : 0)).current;
@@ -37,21 +49,21 @@ export function AddBehaviorFab({ collapsed, onPress }: AddBehaviorFabProps) {
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel="Add behavior"
+      accessibilityLabel={label}
       style={({ pressed }) => [styles.touch, pressed && styles.pressed]}
     >
-      <Animated.View style={[styles.fab, { width }]}>
+      <Animated.View style={[styles.fab, secondary && styles.fabSecondary, { width }]}>
         <Ionicons
-          name="add"
+          name={icon}
           size={ICON_SIZE}
-          color={Colors.bg.black}
+          color={fg}
         />
         <AnimatedText
           numberOfLines={1}
           onLayout={e => setLabelWidth(Math.ceil(e.nativeEvent.layout.width))}
-          style={[styles.label, { opacity: labelOpacity }]}
+          style={[styles.label, { color: fg, opacity: labelOpacity }]}
         >
-          Add behavior
+          {label}
         </AnimatedText>
       </Animated.View>
     </Pressable>
@@ -74,6 +86,9 @@ const styles = StyleSheet.create({
     paddingLeft: LEFT_PAD,
     overflow: 'hidden',
     elevation: 4,
+  },
+  fabSecondary: {
+    backgroundColor: Colors.bg.elevated,
   },
   label: {
     color: Colors.bg.black,

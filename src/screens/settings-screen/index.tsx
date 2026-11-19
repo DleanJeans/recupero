@@ -5,6 +5,7 @@ import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { Colors } from '../../utils/colors';
 import { AppVersionSection } from './components/app-version-section';
+import { CookBatchSection } from './components/cook-batch-section';
 import { DataTransferSection } from './components/data-transfer-section';
 import { DayCutoffPicker } from './components/day-cutoff-picker';
 import { MoneyRewardsSection } from './components/money-rewards-section';
@@ -29,6 +30,7 @@ export function SettingsScreen() {
         <DayCutoffPicker />
         <MoneyRewardsSection />
         <ReminderToastSection />
+        <CookBatchSection />
         <PrivateBehaviorSection />
         <DataTransferSection />
         <AppVersionSection />

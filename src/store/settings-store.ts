@@ -30,6 +30,9 @@ interface SettingsStore {
   /** Minutes you must stay at a place before an "I enter" reminder fires. 0 = fire immediately. */
   placeDwellMin: number;
   setPlaceDwellMin: (v: number) => void;
+  /** Category ids whose Routines view shows the Cook a batch button. null = never chosen (default categories apply). */
+  cookBatchCategoryIds: string[] | null;
+  setCookBatchCategoryIds: (v: string[]) => void;
   /** Habit reminders that fire while the app is open show as a toast card instead of a system notification. */
   reminderToastEnabled: boolean;
   setReminderToastEnabled: (v: boolean) => void;
@@ -49,6 +52,7 @@ export const useSettingsStore = create<SettingsStore>()(
       behaviorHeaderExpanded: false,
       reminderRadiusM: GEOFENCE_MIN_RADIUS_M,
       placeDwellMin: DEFAULT_PLACE_DWELL_MIN,
+      cookBatchCategoryIds: null,
       reminderToastEnabled: true,
       reminderToastPosition: DEFAULT_TOAST_POSITION,
       setTimeFormat: format => set({ timeFormat: format }),
@@ -60,6 +64,7 @@ export const useSettingsStore = create<SettingsStore>()(
       setBehaviorHeaderExpanded: v => set({ behaviorHeaderExpanded: v }),
       setReminderRadiusM: v => set({ reminderRadiusM: v }),
       setPlaceDwellMin: v => set({ placeDwellMin: v }),
+      setCookBatchCategoryIds: v => set({ cookBatchCategoryIds: v }),
       setReminderToastEnabled: v => set({ reminderToastEnabled: v }),
       setReminderToastPosition: v => set({ reminderToastPosition: v }),
     }),

@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      'Cook a batch is now a button above Add behavior on Routines, shown only while the Food category is selected (it shrinks while you scroll, like Add behavior). Choose which categories show it in Settings > Cook a batch button. The chip on the New behavior screen is gone.',
       'Ingredients of a meal batch now get a log of their own (so "last time" works for them), without counting toward Hunger or daily totals. Tapping one opens the batch instead. Batches you already cooked got their ingredient logs too.',
       'The running-timer pill now always shows the full time (like 1:05:12) once it passes an hour. A long behavior name is shortened instead.',
       {

@@ -17,6 +17,7 @@ import type { RootStackParamList } from '../../types/navigation';
 import { getActiveBehaviors, getArchivedBehaviors, isArchivedCategoryFilterId } from '../../utils/archive-utils';
 import { capitalizeFirst, collapseBehaviorGroups, matchesBehaviorOrGroupName } from '../../utils/behavior-group-utils';
 import { Colors } from '../../utils/colors';
+import { shouldShowCookBatchButton } from '../../utils/cook-batch-utils';
 import { getCooldownBehaviors, isCooldownCategoryFilterId } from '../../utils/cooldown-filter';
 import { AddBehaviorFab } from './components/add-behavior-fab';
 import { BehaviorList } from './components/behavior-list';
@@ -40,6 +41,7 @@ export function HomeScreen() {
   const groupEmojis = useBehaviorStore(s => s.groupEmojis);
   const hidePrivate = useSettingsStore(s => s.hidePrivate);
   const showXp = useSettingsStore(s => s.showXp);
+  const cookBatchCategoryIds = useSettingsStore(s => s.cookBatchCategoryIds);
   const setShowXp = useSettingsStore(s => s.setShowXp);
   const homeSelectedCategoryId = useScreenUiStore(s => s.homeSelectedCategoryId);
   const setHomeSelectedCategoryId = useScreenUiStore(s => s.setHomeSelectedCategoryId);
@@ -128,6 +130,7 @@ export function HomeScreen() {
 
   const addBehaviorDefaultCategoryId =
     cooldownSelected || archivedSelected ? undefined : (selectedCategoryId ?? undefined);
+  const showCookBatch = shouldShowCookBatchButton(selectedCategoryId, categories, cookBatchCategoryIds);
   const motionEnabled = useAfterInteractionsFlag([behaviors, isSearching, searchQuery, showXp]);
 
   return (
@@ -228,6 +231,15 @@ export function HomeScreen() {
           />
         )}
         {!selecting && <SavedLogFabs collapsed={fabCollapsed} />}
+        {!selecting && showCookBatch && (
+          <AddBehaviorFab
+            secondary
+            label="Cook a batch"
+            icon="restaurant-outline"
+            collapsed={fabCollapsed}
+            onPress={() => navigation.navigate('MealBatchForm')}
+          />
+        )}
         {!selecting && (
           <AddBehaviorFab
             collapsed={fabCollapsed}
