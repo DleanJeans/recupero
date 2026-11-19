@@ -14,10 +14,10 @@ export function CookBatchSection() {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>COOK A BATCH BUTTON</Text>
+      <Text style={styles.sectionTitle}>COOK A MEAL BUTTON</Text>
       <View style={styles.card}>
         <Text style={styles.label}>
-          Show the Cook a batch button above Add behavior on Routines while one of these categories is selected.
+          Show the Cook a meal button above Add behavior on Routines while one of these categories is selected.
         </Text>
         <View style={styles.chips}>
           {categories.map(c => {

@@ -234,7 +234,7 @@ export function HomeScreen() {
         {!selecting && showCookBatch && (
           <AddBehaviorFab
             secondary
-            label="Cook a batch"
+            label="Cook a meal"
             icon="restaurant-outline"
             collapsed={fabCollapsed}
             onPress={() => navigation.navigate('MealBatchForm')}

@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      'The Cook a batch button is now called Cook a meal (the button on Routines, its Settings section and the screen title).',
       {
         text: 'New reminder on the Reminders tab, Add location in Saved places and Add item in the Shop are now round + buttons floating at the bottom right, like Add behavior and Add task. They shrink to a circle while you scroll down.',
         screen: 'Shop',

@@ -179,7 +179,7 @@ export function MealBatchFormScreen() {
       edges={['top', 'left', 'right']}
     >
       <CueScreenHeader
-        title={existing ? 'Edit batch' : 'Cook a batch'}
+        title={existing ? 'Edit batch' : 'Cook a meal'}
         showBalance={false}
       />
       <ScrollView
