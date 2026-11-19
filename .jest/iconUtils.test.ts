@@ -75,6 +75,11 @@ describe('parseIcon', () => {
     expect(parseIcon('🍕')).toEqual({ kind: 'emoji', emoji: '🍕' });
     expect(parseIcon('')).toEqual({ kind: 'none' });
     expect(parseIcon(undefined)).toEqual({ kind: 'none' });
+    // Installed apps' icons are saved as local files.
+    expect(parseIcon({ uri: 'file:///data/user/0/app/files/app-icons/com.spotify.music.png' })).toEqual({
+      kind: 'image',
+      uri: 'file:///data/user/0/app/files/app-icons/com.spotify.music.png',
+    });
     expect(parseIcon('https://x.test/a.png')).toEqual({ kind: 'image', uri: 'https://x.test/a.png' });
     expect(parseIcon({ uri: 'https://x.test/a.png' })).toEqual({ kind: 'image', uri: 'https://x.test/a.png' });
     expect(parseIcon(mixIcon('🍕', '🔥'))).toMatchObject({ kind: 'mix', left: '🍕', right: '🔥' });

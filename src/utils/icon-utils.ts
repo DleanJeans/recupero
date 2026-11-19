@@ -59,7 +59,7 @@ export const MAX_CROP_ZOOM = 3;
 /** `<url> crop:x,y,zoom[,rotation] clear:tolerance,none|rrggbb`; both parts are optional. (An older build also wrote a
  *  background colour after the rotation; it is read and ignored.) */
 const IMAGE_PATTERN =
-  /^(https?:\/\/\S+)(?:\s+crop:(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)(?:,(-?[\d.]+))?(?:,[0-9a-f]{6}(?:[0-9a-f]{2})?)?)?(?:\s+clear:(\d+),(none|[0-9a-f]{6}))?$/i;
+  /^((?:https?|file):\/\/\S+)(?:\s+crop:(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)(?:,(-?[\d.]+))?(?:,[0-9a-f]{6}(?:[0-9a-f]{2})?)?)?(?:\s+clear:(\d+),(none|[0-9a-f]{6}))?$/i;
 
 const MIX_PREFIX = 'mix:';
 const STACK_PREFIX = 'stack:';

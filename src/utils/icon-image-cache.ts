@@ -21,6 +21,7 @@ function getIconDirectory(): Directory {
 
 /** Local URI if the image is already on the device, without downloading. */
 export function getCachedIconUri(url: string): string | null {
+  if (url.startsWith('file://')) return url;
   const known = ready.get(url);
   if (known) return known;
   try {
@@ -41,6 +42,8 @@ export function hasIconFailed(url: string): boolean {
 
 /** Downloads the image once (concurrent callers share the download). Resolves to the local URI, or null on failure. */
 export function cacheIconImage(url: string): Promise<string | null> {
+  // Already on the device (an installed app's icon), nothing to download.
+  if (url.startsWith('file://')) return Promise.resolve(url);
   const cached = getCachedIconUri(url);
   if (cached) return Promise.resolve(cached);
   if (failed.has(url)) return Promise.resolve(null);
