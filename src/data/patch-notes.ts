@@ -37,6 +37,11 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      {
+        text: 'New reminder on the Reminders tab, Add location in Saved places and Add item in the Shop are now round + buttons floating at the bottom right, like Add behavior and Add task. They shrink to a circle while you scroll down.',
+        screen: 'Shop',
+        linkPhrase: 'Add item in the Shop',
+      },
       'App and site logs that are less than 3 minutes apart now join into one log, and the gap counts as time too (so tabbing out of Claude to test your app no longer makes a pile of 1% logs). Your existing logs were cleaned up the same way, except ones you edited. Change the 3 minutes in Settings > Join app logs closer than.',
       'Cook a batch is now a button above Add behavior on Routines, shown only while the Food category is selected (it shrinks while you scroll, like Add behavior). Choose which categories show it in Settings > Cook a batch button. The chip on the New behavior screen is gone.',
       'Tasks has 3 tabs now: Today, Shopping and Later. Tasks linked to a shopping app or behavior (like Shopee) moved to the Shopping tab by themselves.',

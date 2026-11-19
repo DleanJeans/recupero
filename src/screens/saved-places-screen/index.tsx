@@ -1,20 +1,22 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CueScreenHeader } from '../../components/cues/cue-screen-header';
 import { CueSectionLabel } from '../../components/cues/cue-section-label';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text } from '../../components/text';
+import { useFabCollapse } from '../../hooks/use-fab-collapse';
 import { useCuesStore } from '../../store/cues-store';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
+import { AddBehaviorFab } from '../home-screen/components/add-behavior-fab';
 import { SavedPlaceRow } from './components/saved-place-row';
 
 export function SavedPlacesScreen() {
   const insets = useSafeAreaInsets();
+  const { collapsed: fabCollapsed, onScroll } = useFabCollapse();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const places = useCuesStore(state => state.places);
   const sortedPlaces = useMemo(
@@ -32,7 +34,9 @@ export function SavedPlacesScreen() {
       <CueScreenHeader title="Saved places" />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={[styles.content, { paddingBottom: 32 + insets.bottom }]}
+        contentContainerStyle={[styles.content, { paddingBottom: 96 + insets.bottom }]}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       >
         {home && (
           <View style={styles.section}>
@@ -59,18 +63,17 @@ export function SavedPlacesScreen() {
             />
           ))}
         </View>
-        <Pressable
-          style={({ pressed }) => [styles.add, pressed && styles.pressed]}
-          onPress={() => navigation.navigate('LocationEdit')}
-        >
-          <Ionicons
-            name="add"
-            size={20}
-            color={Colors.cue.location}
-          />
-          <Text style={styles.addText}>Add location</Text>
-        </Pressable>
       </ScrollView>
+      <View
+        style={[styles.fab, { bottom: 12 + insets.bottom }]}
+        pointerEvents="box-none"
+      >
+        <AddBehaviorFab
+          label="Add location"
+          collapsed={fabCollapsed}
+          onPress={() => navigation.navigate('LocationEdit')}
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -89,7 +92,6 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { color: Colors.text.primary, fontSize: 15, fontWeight: '700' },
   emptyBody: { color: Colors.text.faint, fontSize: 12, lineHeight: 18 },
-  add: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 10 },
-  addText: { color: Colors.cue.location, fontSize: 14, fontWeight: '700' },
+  fab: { position: 'absolute', right: 16 },
   pressed: { opacity: 0.72 },
 });

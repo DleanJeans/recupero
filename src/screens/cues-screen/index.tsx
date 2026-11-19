@@ -3,7 +3,6 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Button } from '../../components/button';
 import { type AddCueOptionKind, AddCueOptionModal } from '../../components/cues/add-cue-option-modal';
 import { CheckInCard } from '../../components/cues/check-in/check-in-card';
 import { CueSectionLabel } from '../../components/cues/cue-section-label';
@@ -13,6 +12,7 @@ import { SafeAreaView } from '../../components/safe-area-view';
 import { TabHeader } from '../../components/tab-header';
 import { Text } from '../../components/text';
 import { useCustomCueOptions } from '../../hooks/use-custom-cue-options';
+import { useFabCollapse } from '../../hooks/use-fab-collapse';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useCuesStore } from '../../store/cues-store';
 import type { CueSourceKind, CueTriggerType } from '../../types/cue';
@@ -29,6 +29,7 @@ import {
   getRecentBodySensation,
 } from '../../utils/cue-utils';
 import { iconText } from '../../utils/icon-utils';
+import { AddBehaviorFab } from '../home-screen/components/add-behavior-fab';
 import { ActivityPreview } from './components/activity-preview';
 import { CueCard } from './components/cue-card';
 import { CueSourceRow } from './components/cue-source-row';
@@ -53,7 +54,9 @@ const TRIGGER_LABELS: Record<CueTriggerType, string> = {
 const EMPTY_STATS = { xp: 0, logCount: 0 };
 
 export function CuesScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [tab, setTab] = useState<CuesTab>('cues');
+  const { collapsed: fabCollapsed, onScroll } = useFabCollapse();
 
   return (
     <SafeAreaView
@@ -70,10 +73,24 @@ export function CuesScreen() {
       </View>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, tab === 'reminders' && styles.contentWithFab]}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       >
         {tab === 'cues' ? <CueSourcesTab /> : <RemindersTab />}
       </ScrollView>
+      {tab === 'reminders' && (
+        <View
+          style={styles.fab}
+          pointerEvents="box-none"
+        >
+          <AddBehaviorFab
+            label="New reminder"
+            collapsed={fabCollapsed}
+            onPress={() => navigation.navigate('CueForm')}
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -236,7 +253,6 @@ function SectionHeader({ label, detail, action, onAction }: SectionHeaderProps) 
 }
 
 function RemindersTab() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const cues = useCuesStore(state => state.cues);
   const groupedCues = useMemo(
     () => CUE_TRIGGER_TYPES.map(type => ({ type, cues: cues.filter(cue => cue.trigger.type === type) })),
@@ -275,13 +291,6 @@ function RemindersTab() {
       )}
 
       <ActivityPreview />
-      <Button
-        variant="primary"
-        style={styles.cta}
-        onPress={() => navigation.navigate('CueForm')}
-      >
-        New reminder
-      </Button>
     </>
   );
 }
@@ -374,8 +383,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
   },
-  cta: {
-    borderRadius: 999,
+  contentWithFab: {
+    paddingBottom: 96,
+  },
+  fab: {
+    position: 'absolute',
+    right: 16,
+    bottom: 12,
   },
   pressed: {
     opacity: 0.7,

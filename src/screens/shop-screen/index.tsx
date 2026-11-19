@@ -2,11 +2,12 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BackButton } from '../../components/back-button';
-import { Button } from '../../components/button';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { Text } from '../../components/text';
+import { useFabCollapse } from '../../hooks/use-fab-collapse';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useSettingsStore } from '../../store/settings-store';
 import { useShopStore } from '../../store/shop-store';
@@ -21,6 +22,7 @@ import {
   getTotalMoneySpent,
   parseVndInput,
 } from '../../utils/money-utils';
+import { AddBehaviorFab } from '../home-screen/components/add-behavior-fab';
 import { AddShopItemForm } from './components/add-shop-item-form';
 import { MoneyLogButton } from './components/money-log-button';
 import { PurchaseLogRow } from './components/purchase-log-row';
@@ -28,6 +30,8 @@ import { ShopItemRow } from './components/shop-item-row';
 
 export function ShopScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
+  const { collapsed: fabCollapsed, onScroll } = useFabCollapse();
   const behaviors = useBehaviorStore(state => state.behaviors);
   const tasks = useBehaviorStore(state => state.tasks);
   const items = useShopStore(state => state.items);
@@ -109,8 +113,10 @@ export function ShopScreen() {
 
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: 96 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       >
         <View style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>Available</Text>
@@ -131,20 +137,6 @@ export function ShopScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Items</Text>
-            {itemFormMode == null && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onPress={() => {
-                  setItemName('');
-                  setItemCost('');
-                  setItemOneTime(false);
-                  setItemFormMode('add');
-                }}
-              >
-                Add Item
-              </Button>
-            )}
           </View>
           {itemFormMode && (
             <AddShopItemForm
@@ -193,6 +185,23 @@ export function ShopScreen() {
           )}
         </View>
       </ScrollView>
+      {itemFormMode == null && (
+        <View
+          style={[styles.fab, { bottom: 12 + insets.bottom }]}
+          pointerEvents="box-none"
+        >
+          <AddBehaviorFab
+            label="Add item"
+            collapsed={fabCollapsed}
+            onPress={() => {
+              setItemName('');
+              setItemCost('');
+              setItemOneTime(false);
+              setItemFormMode('add');
+            }}
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -252,6 +261,10 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: 10,
+  },
+  fab: {
+    position: 'absolute',
+    right: 16,
   },
   sectionHeader: {
     flexDirection: 'row',
