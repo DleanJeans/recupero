@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      'The running-timer pill now always shows the full time (like 1:05:12) once it passes an hour. A long behavior name is shortened instead.',
       {
         text: 'In the icon picker, the Image tab now uses an image link from your clipboard if you copied one. Otherwise it opens Google Images search straight away.',
         screen: 'Settings',

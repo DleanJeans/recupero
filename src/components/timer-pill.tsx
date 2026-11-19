@@ -52,10 +52,16 @@ export function TimerPill({ session, onPress, style }: TimerPillProps) {
           color={isRunning ? Colors.typeText.desirable : Colors.text.secondary}
         />
         <Text
-          style={[styles.text, !isRunning && styles.textStopped]}
+          style={[styles.name, !isRunning && styles.textStopped]}
           numberOfLines={1}
         >
-          {behaviorName} · {elapsed}
+          {behaviorName}
+        </Text>
+        <Text
+          style={[styles.time, !isRunning && styles.textStopped]}
+          numberOfLines={1}
+        >
+          · {elapsed}
           {hint}
         </Text>
       </Pressable>
@@ -81,6 +87,8 @@ const styles = StyleSheet.create({
   pillStopped: { backgroundColor: Colors.bg.elevated },
   pressed: { opacity: 0.8 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: Colors.type.desirable },
-  text: { color: Colors.typeText.desirable, fontSize: 13, fontWeight: '600', flexShrink: 1 },
+  // The name gives way first, so the time (1:05:12, hint) is never cut off.
+  name: { color: Colors.typeText.desirable, fontSize: 13, fontWeight: '600', flexShrink: 1 },
+  time: { color: Colors.typeText.desirable, fontSize: 13, fontWeight: '600', flexShrink: 0 },
   textStopped: { color: Colors.text.secondary },
 });
