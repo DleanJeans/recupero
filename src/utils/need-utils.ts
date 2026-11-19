@@ -312,6 +312,32 @@ export function compareNeedEvents(a: NeedEvent, b: NeedEvent): number {
   return checkInA - checkInB || a.ts - b.ts;
 }
 
+/** Id of the stand-in log that a running timer adds, so it never matches a saved log. */
+export const TIMER_PREVIEW_LOG_ID = 'timer-preview';
+
+/**
+ * Adds the running timer as a log ending `end`, so needs the behaviour refills climb while it runs
+ * with the same maths as the saved log. Cancelling the timer removes it and the level goes back.
+ */
+export function withTimerLog(
+  behaviors: BehaviorEntry[],
+  timer: { timerBehaviorId: string; timerStart: number } | undefined,
+  end: number,
+): BehaviorEntry[] {
+  if (!timer || end <= timer.timerStart) return behaviors;
+  return behaviors.map(behavior =>
+    behavior.id === timer.timerBehaviorId
+      ? {
+          ...behavior,
+          logs: [
+            ...behavior.logs,
+            { id: TIMER_PREVIEW_LOG_ID, timestamp: timer.timerStart, endTimestamp: end, metadata: {} },
+          ],
+        }
+      : behavior,
+  );
+}
+
 /** Refills and check-ins for one need since `since`, oldest first. */
 export function getNeedEvents(
   needId: NeedId,
