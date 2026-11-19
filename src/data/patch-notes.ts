@@ -37,7 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
-      'The small timer chip on Routines is now a round dotted ring around the behavior icon (like the floating bubble), and the pill slides straight down and up when you scroll instead of swinging in a curve.',
+      'The small timer chip on Routines is now a round ring (solid track, green level arc) around the behavior icon, like the floating bubble, and the pill slides straight down and up when you scroll instead of swinging in a curve.',
       {
         text: 'After Check for update or the Update ready pill restarts the app, it opens Patch notes with a NEW tag on everything added since you last looked.',
         screen: 'PatchNotes',

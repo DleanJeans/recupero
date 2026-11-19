@@ -10,8 +10,8 @@ import { formatStopwatchDuration } from '../utils/stopwatch-utils';
 import { getTimerLevelProgress } from '../utils/timer-utils';
 import { getEffectiveXp, getTimerXp } from '../utils/xp-utils';
 import { BehaviorIcon } from './behavior-icon';
+import { ProgressRing } from './progress-ring';
 import { Text } from './text';
-import { ToastCountdownRing } from './toast-countdown-ring';
 
 interface TimerPillProps {
   session: TimerSession;
@@ -57,7 +57,7 @@ export function TimerPill({ session, onPress, style, compact = false }: TimerPil
   const icon = (
     <BehaviorIcon
       behavior={behavior}
-      size={14}
+      size={compact ? 20 : 14}
     />
   );
 
@@ -84,13 +84,14 @@ export function TimerPill({ session, onPress, style, compact = false }: TimerPil
             entering={FadeIn.duration(180)}
           >
             {level ? (
-              <ToastCountdownRing
+              <ProgressRing
                 share={level.now}
-                size={34}
-                litColor={isRunning ? Colors.type.desirable : Colors.text.secondary}
+                size={40}
+                thickness={4}
+                color={isRunning ? Colors.type.desirable : Colors.text.secondary}
               >
-                <View style={[styles.iconCircle, styles.ringDisc, !isRunning && styles.iconCircleStopped]}>{icon}</View>
-              </ToastCountdownRing>
+                {icon}
+              </ProgressRing>
             ) : (
               <View style={[styles.iconCircle, !isRunning && styles.iconCircleStopped]}>{icon}</View>
             )}
@@ -102,7 +103,7 @@ export function TimerPill({ session, onPress, style, compact = false }: TimerPil
               />
             )}
             <Text
-              style={[styles.time, { color: textColor }]}
+              style={[styles.time, styles.timeChip, { color: textColor }]}
               numberOfLines={1}
             >
               {elapsed}
@@ -209,6 +210,7 @@ const styles = StyleSheet.create({
   // The name gives way first, so the time (1:05:12) is never cut off.
   name: { fontSize: 13, fontWeight: '600', flexShrink: 1, flexGrow: 1 },
   time: { fontSize: 13, fontWeight: '600', flexShrink: 0, fontVariant: ['tabular-nums'] },
+  timeChip: { fontSize: 17, fontWeight: '700' },
   levelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 3 },
   sub: { fontSize: 11, fontWeight: '500', opacity: 0.85, flexShrink: 0 },
   subValue: { minWidth: 34, textAlign: 'right', fontVariant: ['tabular-nums'] },
