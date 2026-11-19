@@ -1,16 +1,25 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { Colors } from '../../../utils/colors';
 
 interface TaskCheckboxProps {
   checked: boolean;
+  onPress: () => void;
+  label: string;
 }
 
-/** Rounded-square tick box, the same look as the Routines checklist rows. */
-export function TaskCheckbox({ checked }: TaskCheckboxProps) {
+/** Rounded-square tick box, the same look as the Routines checklist rows. Only this box ticks the task. */
+export function TaskCheckbox({ checked, onPress, label }: TaskCheckboxProps) {
   return (
-    <View style={[styles.box, checked && styles.boxDone]}>
+    <Pressable
+      style={[styles.box, checked && styles.boxDone]}
+      onPress={onPress}
+      hitSlop={12}
+      accessibilityRole="checkbox"
+      accessibilityLabel={checked ? `Untick ${label}` : `Tick ${label}`}
+      accessibilityState={{ checked }}
+    >
       {checked && (
         <Ionicons
           name="checkmark"
@@ -18,7 +27,7 @@ export function TaskCheckbox({ checked }: TaskCheckboxProps) {
           color={Colors.bg.black}
         />
       )}
-    </View>
+    </Pressable>
   );
 }
 

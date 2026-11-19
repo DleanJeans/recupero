@@ -44,7 +44,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       'Every task now earns its stars and money, including tasks linked to a behavior (they used to earn nothing). Open tasks that had 0 stars got 1. The reward shows as a +★ chip on the right of each task.',
       "Long-press a task for its menu: Edit, add to Today's 3, move to Today, Shopping or Later, or Delete. The trash can on each row is gone.",
       'Shopping: tick an item when you have bought it. It moves to "Got it" with the date.',
-      'Task tick boxes are rounded squares now, like the ones on your Routines checklists.',
+      'Task tick boxes are rounded squares now, like the ones on your Routines checklists. Only the box ticks a task off; tapping anywhere else on the task opens its menu (same as long-press).',
       'Ingredients of a meal batch now get a log of their own (so "last time" works for them), without counting toward Hunger or daily totals. Tapping one opens the batch instead. Batches you already cooked got their ingredient logs too.',
       'The running-timer pill now always shows the full time (like 1:05:12) once it passes an hour. A long behavior name is shortened instead.',
       {

@@ -58,13 +58,17 @@ function TaskCardComponent({ task, behavior, place, complete, focused, note, onT
     >
       <Pressable
         style={[styles.taskMain, focused && styles.focusMain]}
-        onPress={() => onToggle(task)}
+        onPress={() => onLongPress(task)}
         onLongPress={() => onLongPress(task)}
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: complete }}
-        accessibilityHint="Long-press for more options"
+        accessibilityRole="button"
+        accessibilityLabel={task.title}
+        accessibilityHint="Opens the task menu"
       >
-        <TaskCheckbox checked={complete} />
+        <TaskCheckbox
+          checked={complete}
+          onPress={() => onToggle(task)}
+          label={task.title}
+        />
         <View style={styles.taskTextStack}>
           <View style={styles.taskTitleRow}>
             {behavior ? (
