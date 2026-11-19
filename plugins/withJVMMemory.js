@@ -1,3 +1,4 @@
+const fs = require('fs');
 const { withGradleProperties } = require('expo/config-plugins');
 
 /**
@@ -28,6 +29,14 @@ module.exports = function withJVMMemory(config) {
     // On fresh CI runners CMake is installed on first use; with parallel tasks the CMake configure tasks of
     // react-native-screens, worklets and expo-updates all started at once and failed together (2026-11-19).
     setGradleProperty('org.gradle.parallel', 'false');
+
+    // The CI runner image now defaults to a newer JDK whose "restricted method" warning, printed by the
+    // forked CMake worker JVMs, fails the CMake configure tasks. Run Gradle (and its workers) on JDK 21/17.
+    const jdk = [process.env.JAVA_HOME_21_X64, process.env.JAVA_HOME_17_X64].find(p => p && fs.existsSync(p));
+    if (jdk) {
+      console.log(`[withJVMMemory] Using JDK ${jdk} for Gradle`);
+      setGradleProperty('org.gradle.java.home', jdk);
+    }
 
     return config;
   });
