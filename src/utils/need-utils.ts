@@ -465,6 +465,17 @@ export function formatEmptyHours(emptyHours: number): string {
   return formatHoursMinutes(emptyHours * MS_PER_HOUR);
 }
 
+/** How long a running timer takes to fill the need to 100, when the behaviour refills by duration. */
+export function getTimerFullInMs(level: number | undefined, refill: NeedRefill | undefined): number | undefined {
+  if (level == null || !refill || refill.mode !== 'duration' || refill.fullMinutes <= 0) return undefined;
+  return Math.max(0, ((100 - level) / 100) * refill.fullMinutes * 60_000);
+}
+
+/** "Full now" or "Full in ~40 min", shown while a timer fills the need. */
+export function formatTimerFull(ms: number): string {
+  return ms < 30_000 ? 'Full now' : `Full in ~${formatHoursMinutes(ms)}`;
+}
+
 /** "Low now", "Low in ~40 min", "Low ~21:30", "Low tomorrow 09:10". */
 export function formatNextCraving(
   level: number | undefined,

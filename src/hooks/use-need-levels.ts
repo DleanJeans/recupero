@@ -4,9 +4,11 @@ import { useNeedsStore } from '../store/needs-store';
 import { useTimerStore } from '../store/timer-store';
 import type { NeedConfig, NeedId, NeedMetadataSource } from '../types/need';
 import {
+  getBehaviorRefill,
   getDecayPerHour,
   getNeedEvents,
   getNeedMetadataSource,
+  getTimerFullInMs,
   NEED_IDS,
   NEED_LOOKBACK_MS,
   type NeedState,
@@ -22,6 +24,8 @@ export interface NeedSnapshot extends NeedState {
   id: NeedId;
   config: NeedConfig;
   source?: NeedMetadataSource;
+  /** Set while a running timer fills this need by duration: time left until it is full. */
+  timerFullInMs?: number;
 }
 
 /** Current level of every enabled need, refreshed each minute. */
@@ -57,7 +61,13 @@ export function useNeedLevels(): { needs: NeedSnapshot[]; now: number } {
         source,
         now - NEED_LOOKBACK_MS,
       );
-      return { id, config, source, ...simulateNeed(events, getDecayPerHour(config), now) };
+      const state = simulateNeed(events, getDecayPerHour(config), now);
+      const timerBehavior = timerLog && behaviors.find(behavior => behavior.id === timerLog.timerBehaviorId);
+      const timerFullInMs =
+        timerBehavior && timerStop == null
+          ? getTimerFullInMs(state.level, getBehaviorRefill(config, timerBehavior, source))
+          : undefined;
+      return { id, config, source, timerFullInMs, ...state };
     });
     return { needs, now };
     // tick re-reads the clock each minute.

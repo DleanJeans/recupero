@@ -8,7 +8,7 @@ import { useSunlight } from '../../hooks/use-sunlight';
 import type { RootStackParamList } from '../../types/navigation';
 import type { NeedId } from '../../types/need';
 import { Colors } from '../../utils/colors';
-import { formatNextCraving } from '../../utils/need-utils';
+import { formatNextCraving, formatTimerFull } from '../../utils/need-utils';
 import { formatTime } from '../../utils/time-utils';
 import { CueSectionLabel } from '../cues/cue-section-label';
 import { Text } from '../text';
@@ -63,7 +63,11 @@ export function NeedsPanel() {
             needId={need.id}
             config={need.config}
             level={need.level}
-            detail={formatNextCraving(need.level, need.config, now, ts => formatTime(ts))}
+            detail={
+              need.timerFullInMs != null
+                ? formatTimerFull(need.timerFullInMs)
+                : formatNextCraving(need.level, need.config, now, ts => formatTime(ts))
+            }
             onPress={() => setOpenId(need.id)}
           />
         ))}
