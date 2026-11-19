@@ -212,3 +212,14 @@ export function getAutoTrackSite(
   const today = toDateString(new Date(now), dayCutoffHour);
   return { domain, syncedUntil: getDayStartTimestamp(today, dayCutoffHour) };
 }
+
+/** The behavior that already auto-tracks this app or site, if any, so picking it again doesn't make a copy. */
+export function findAutoTrackedBehavior<
+  T extends { archivedAt?: number; autoTrackApp?: AutoTrackApp; autoTrackSite?: AutoTrackSite },
+>(behaviors: T[], target: { packageName: string } | { domain: string }): T | undefined {
+  return behaviors.find(behavior => {
+    if (behavior.archivedAt != null) return false;
+    if ('packageName' in target) return behavior.autoTrackApp?.packageName === target.packageName;
+    return behavior.autoTrackSite?.domain === target.domain;
+  });
+}

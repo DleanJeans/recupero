@@ -14,6 +14,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      'Needs can now fill from app and website usage. Open a need (for example Fun) and tap "Fill Fun from an app or website", then pick an app like YouTube, or a site in Firefox. Time spent there fills the need when you open Recupero.',
       'Cardio and Sunlight now show progress as 0/30m on the right of the bar, with the unit kept on the same line.',
       'You can now run several timers at once. On the Timer screen tap Start another timer, and open any other running timer from the list below. Each running timer gets its own pill above the bottom bar, and needs fill from all of them together.',
       'Needs now fill up live while a behavior timer is running (for example Comfort while timing Lie in bed). Cancel the timer and the need goes back to its current level. While it runs, the need says "Full in …" instead of "Low in …", with a timer icon and the name of the behavior being timed.',

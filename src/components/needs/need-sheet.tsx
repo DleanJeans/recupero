@@ -4,6 +4,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppUsage } from '../../../modules/app-usage';
 import { useNeedLevels } from '../../hooks/use-need-levels';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useNeedsStore } from '../../store/needs-store';
@@ -38,6 +39,7 @@ import { FullScreenModal } from '../full-screen-modal';
 import { Text, TextInput } from '../text';
 import { FitbitConnectRow } from './fitbit-connect-row';
 import { NeedAmountDialog } from './need-amount-dialog';
+import { NeedAppSourceModal } from './need-app-source-modal';
 import { NEED_TONE_COLORS } from './need-bar-row';
 import { NeedHistorySection } from './need-history-section';
 import { NeedRateLearning } from './need-rate-learning';
@@ -66,6 +68,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
   const setRefill = useNeedsStore(state => state.setRefill);
   const setCategoryRefill = useNeedsStore(state => state.setCategoryRefill);
   const [adding, setAdding] = useState(false);
+  const [appSourceOpen, setAppSourceOpen] = useState(false);
   const [customDialog, setCustomDialog] = useState<'checkIn' | 'update'>();
   const [amountLog, setAmountLog] = useState<NeedRefillEntry>();
   const insets = useSafeAreaInsets();
@@ -489,10 +492,32 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
             </Pressable>
           )}
 
+          {AppUsage ? (
+            <Pressable
+              style={({ pressed }) => [styles.addRow, pressed && styles.pressed]}
+              onPress={() => setAppSourceOpen(true)}
+              accessibilityRole="button"
+            >
+              <Ionicons
+                name="phone-portrait-outline"
+                size={16}
+                color={Colors.text.muted}
+              />
+              <Text style={styles.addText}>Fill {info.label} from an app or website</Text>
+            </Pressable>
+          ) : null}
+
           <NeedRateLearning needId={need.id} />
           {need.id === 'energy' && <FitbitConnectRow />}
         </ScrollView>
       </View>
+      {appSourceOpen ? (
+        <NeedAppSourceModal
+          needId={need.id}
+          needLabel={info.label}
+          onClose={() => setAppSourceOpen(false)}
+        />
+      ) : null}
       {amountLog ? (
         <NeedAmountDialog
           title={`How much did ${behaviorById.get(amountLog.behaviorId ?? '')?.name ?? 'this log'} refill?`}
