@@ -3,6 +3,7 @@ import * as Updates from 'expo-updates';
 import React, { useEffect, useRef, useState } from 'react';
 import { AppState, Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Colors } from '../utils/colors';
+import { reloadIntoUpdate } from '../utils/update-utils';
 import { Text } from './text';
 
 /** Don't ask the update server more than once in this window when the app keeps coming back to the foreground. */
@@ -38,7 +39,7 @@ export function UpdateReadyPill({ style }: { style?: StyleProp<ViewStyle> }) {
   const reload = async () => {
     setIsReloading(true);
     try {
-      await Updates.reloadAsync();
+      await reloadIntoUpdate();
     } catch {
       setIsReloading(false);
     }

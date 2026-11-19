@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
+import { reloadIntoUpdate } from '../../../utils/update-utils';
 
 type Status = 'idle' | 'checking' | 'downloading' | 'restarting' | 'upToDate' | 'error';
 
@@ -50,7 +51,7 @@ export function CheckUpdateButton() {
         }
       }
       setStatus('restarting');
-      await Updates.reloadAsync();
+      await reloadIntoUpdate();
     } catch (error) {
       setStatus('error');
       setErrorMessage(error instanceof Error ? error.message : String(error));

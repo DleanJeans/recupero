@@ -63,6 +63,7 @@ import { useSunlightStore } from './src/store/sunlight-store';
 import { useTimerStore } from './src/store/timer-store';
 import type { RootStackParamList } from './src/types/navigation';
 import { Colors } from './src/utils/colors';
+import { consumeOpenPatchNotesFlag } from './src/utils/update-utils';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const BOTTOM_NAV_ROUTES = new Set<string>(['Cues', 'Cravings', 'Home', 'Day', 'Tasks']);
@@ -138,6 +139,10 @@ export default function App() {
     const routeName = navigationRef.getCurrentRoute()?.name;
     setActiveRouteName(routeName);
     completeNavigation(routeName);
+    // After a restart from an update button, show what changed.
+    consumeOpenPatchNotesFlag().then(shouldOpen => {
+      if (shouldOpen && navigationRef.isReady()) navigationRef.navigate('PatchNotes');
+    });
   }, [completeNavigation, navigationRef]);
 
   const handleBottomNavNavigate = useCallback(
