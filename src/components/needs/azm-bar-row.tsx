@@ -35,7 +35,10 @@ export function AzmBarRow({ now }: { now: number }) {
             <View style={[styles.fill, { width: `${Math.max(2, ratio * 100)}%`, backgroundColor: color }]} />
           )}
         </View>
-        <Text style={[styles.value, { color: minutes > 0 ? color : Colors.text.faint }]}>{`${minutes}/${goal}m`}</Text>
+        <Text
+          numberOfLines={1}
+          style={[styles.value, { color: minutes > 0 ? color : Colors.text.faint }]}
+        >{`${minutes}/${goal}m`}</Text>
       </View>
       <Text
         style={styles.detail}
@@ -83,7 +86,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   value: {
-    width: 40,
+    minWidth: 40,
+    flexShrink: 0,
     textAlign: 'right',
     fontSize: 13,
     fontWeight: '700',

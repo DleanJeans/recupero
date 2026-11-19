@@ -38,6 +38,7 @@ export function SunlightBarRow({ sunlight, onPress }: SunlightBarRowProps) {
           )}
         </View>
         <Text
+          numberOfLines={1}
           style={[styles.value, { color: today.minutes > 0 ? color : Colors.text.faint }]}
         >{`${today.minutes}/${goalMinutes}m`}</Text>
       </View>
@@ -95,7 +96,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   value: {
-    width: 40,
+    minWidth: 40,
+    flexShrink: 0,
     textAlign: 'right',
     fontSize: 13,
     fontWeight: '700',

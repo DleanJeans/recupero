@@ -87,7 +87,12 @@ export function NeedBarRow({ needId, config, level, detail, timerNames, onPress 
           {level != null && <Animated.View style={[styles.fill, { width, backgroundColor: color }]} />}
           <View style={[styles.tick, { left: `${config.cravingLine}%` }]} />
         </View>
-        <Text style={[styles.pct, { color }]}>{level == null ? '–' : `${shownPct}%`}</Text>
+        <Text
+          numberOfLines={1}
+          style={[styles.pct, { color }]}
+        >
+          {level == null ? '–' : `${shownPct}%`}
+        </Text>
       </View>
       {timerNames != null && timerNames.length > 0 ? (
         <View style={styles.timerDetail}>
@@ -156,7 +161,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.35)',
   },
   pct: {
-    width: 40,
+    minWidth: 40,
+    flexShrink: 0,
     textAlign: 'right',
     fontSize: 13,
     fontWeight: '700',

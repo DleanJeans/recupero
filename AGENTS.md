@@ -17,6 +17,7 @@
 9. Dialogs, sheets and modals that contain a text input must dock to the TOP of the screen while the keyboard is showing, so the keyboard does not cover them. Use `useKeyboardVisible()` (src/hooks/use-keyboard-visible.ts): when true, set the overlay to `justifyContent: 'flex-start'` (and for a bottom sheet use rounded bottom corners and a max height of about 55-60%, plus `useSafeAreaInsets().top` when the Modal uses `statusBarTranslucent`). When the keyboard is hidden keep the dialog's normal position. Apply this to every new dialog that needs the keyboard. Needs sheets and pickers use FullScreenModal (src/components/full-screen-modal.tsx). Exception: the icon picker is full screen (its search box stays at the top; only the bottom Use button may sit under the keyboard).
 
 10. Every user-facing change (new feature, visible fix, changed behavior) must append a plain-language bullet to the newest day in `src/data/patch-notes.ts` (add a new day at the top if today's is missing). Write for the app's user, not developers. Skip purely internal refactors and CI changes.
+11. Value/number text on a row (e.g. "0/30m" at the right of a need bar) must stay on ONE line: give it `numberOfLines={1}`, `flexShrink: 0` and a `minWidth` (never a fixed `width`), so the bar track shrinks instead of the unit wrapping onto a second line.
 
 When creating an icon Button, use variant="icon"
 
