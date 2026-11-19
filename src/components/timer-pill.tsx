@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
-import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, LinearTransition } from 'react-native-reanimated';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useSettingsStore } from '../store/settings-store';
 import type { TimerSession } from '../store/timer-store';
@@ -21,7 +21,8 @@ interface TimerPillProps {
   compact?: boolean;
 }
 
-const LAYOUT = LinearTransition.duration(220);
+// Same duration and easing as DockingPills' slide, so x/y/size all move on one curve (no clock-like arc).
+export const PILL_LAYOUT = LinearTransition.duration(220).easing(Easing.out(Easing.cubic));
 
 /**
  * One timer's pill: green while running, grey when paused or waiting to be logged.
@@ -64,7 +65,7 @@ export function TimerPill({ session, onPress, style, compact = false }: TimerPil
     <Animated.View
       style={[styles.wrap, style]}
       pointerEvents="box-none"
-      layout={LAYOUT}
+      layout={PILL_LAYOUT}
     >
       <Pressable
         style={({ pressed }) => [
@@ -85,10 +86,10 @@ export function TimerPill({ session, onPress, style, compact = false }: TimerPil
             {level ? (
               <ToastCountdownRing
                 share={level.now}
-                size={30}
+                size={34}
                 litColor={isRunning ? Colors.type.desirable : Colors.text.secondary}
               >
-                {icon}
+                <View style={[styles.iconCircle, styles.ringDisc, !isRunning && styles.iconCircleStopped]}>{icon}</View>
               </ToastCountdownRing>
             ) : (
               <View style={[styles.iconCircle, !isRunning && styles.iconCircleStopped]}>{icon}</View>
@@ -203,6 +204,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: 'rgba(0,0,0,0.28)',
   },
+  ringDisc: { width: 22, height: 22, borderRadius: 11 },
   iconCircleStopped: { opacity: 0.6 },
   // The name gives way first, so the time (1:05:12) is never cut off.
   name: { fontSize: 13, fontWeight: '600', flexShrink: 1, flexGrow: 1 },

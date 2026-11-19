@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      'The small timer chip on Routines is now a round dotted ring around the behavior icon (like the floating bubble), and the pill slides straight down and up when you scroll instead of swinging in a curve.',
       'The Cook a batch button is now called Cook a meal (the button on Routines, its Settings section and the screen title).',
       {
         text: 'New reminder on the Reminders tab, Add location in Saved places and Add item in the Shop are now round + buttons floating at the bottom right, like Add behavior and Add task. They shrink to a circle while you scroll down.',

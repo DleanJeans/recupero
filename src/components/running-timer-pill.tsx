@@ -1,8 +1,8 @@
 import React from 'react';
 import { type StyleProp, StyleSheet, type ViewStyle } from 'react-native';
-import Animated, { LinearTransition } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { isTimerSessionActive, useTimerStore } from '../store/timer-store';
-import { TimerPill } from './timer-pill';
+import { PILL_LAYOUT, TimerPill } from './timer-pill';
 
 interface RunningTimerPillProps {
   onPress: () => void;
@@ -35,7 +35,7 @@ export function RunningTimerPill({ onPress, style, compact = false }: RunningTim
     <Animated.View
       style={compact ? styles.row : styles.column}
       pointerEvents="box-none"
-      layout={LinearTransition.duration(220)}
+      layout={PILL_LAYOUT}
     >
       {current && (
         <TimerPill
