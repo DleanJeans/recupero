@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
-import { LayoutAnimation, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 import { AppIcon } from '../../../components/app-icon';
 import { CueSearchBox } from '../../../components/cues/cue-search-box';
 import { CueSegmentedControl } from '../../../components/cues/cue-segmented-control';
@@ -14,6 +15,8 @@ import { Colors } from '../../../utils/colors';
 import { CUE_LIST_MAX_HEIGHT, CUE_LIST_SEARCH_MIN, filterBySearch, getPlaceEmoji } from '../../../utils/cue-utils';
 import { PlaceMapPreview } from './place-map-preview';
 import { PlaceReminderOptions } from './place-reminder-options';
+
+const PLACE_ROW_LAYOUT = LinearTransition.duration(260);
 
 type LocationTrigger = Extract<CueTrigger, { type: 'location' }>;
 
@@ -62,28 +65,29 @@ export function LocationTriggerEditor({ value, onChange }: LocationTriggerEditor
         {visiblePlaces.map(place => {
           const selected = place.id === value.placeId;
           return (
-            <Pressable
+            <Animated.View
               key={place.id}
-              style={({ pressed }) => [styles.place, selected && styles.selectedPlace, pressed && styles.pressed]}
-              onPress={() => {
-                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                onChange({ ...value, placeId: place.id });
-              }}
+              layout={PLACE_ROW_LAYOUT}
             >
-              <AppIcon
-                value={getPlaceEmoji(place)}
-                style={styles.placeIcon}
-              />
-              <View style={styles.placeCopy}>
-                <Text style={styles.placeName}>{place.name}</Text>
-                <Text style={styles.placeDetail}>{place.address || `${place.radiusM} m radius`}</Text>
-              </View>
-              <Ionicons
-                name={selected ? 'checkmark-circle' : 'ellipse-outline'}
-                size={20}
-                color={selected ? Colors.cue.location : Colors.text.dim}
-              />
-            </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.place, selected && styles.selectedPlace, pressed && styles.pressed]}
+                onPress={() => onChange({ ...value, placeId: place.id })}
+              >
+                <AppIcon
+                  value={getPlaceEmoji(place)}
+                  style={styles.placeIcon}
+                />
+                <View style={styles.placeCopy}>
+                  <Text style={styles.placeName}>{place.name}</Text>
+                  <Text style={styles.placeDetail}>{place.address || `${place.radiusM} m radius`}</Text>
+                </View>
+                <Ionicons
+                  name={selected ? 'checkmark-circle' : 'ellipse-outline'}
+                  size={20}
+                  color={selected ? Colors.cue.location : Colors.text.dim}
+                />
+              </Pressable>
+            </Animated.View>
           );
         })}
       </ScrollView>
