@@ -16,6 +16,9 @@ import {
   getRefilledNeedIds,
   getSleepEnergyScore,
   getSleepQualityFactor,
+  getSourceFieldKeys,
+  getSourceForBehavior,
+  getSourceValue,
   getSuggestedRefillIds,
   isNeedNotificationData,
   learnEmptyHours,
@@ -58,10 +61,18 @@ describe('getNeedMetadataSource', () => {
       fullAmount: DEFAULT_HUNGER_FULL_KCAL,
     });
   });
+  it('adds up several fields per log and honours the category filter', () => {
+    const source = { fieldKey: 'a', fieldKeys: ['a', 'b'], fullAmount: 200, categoryFilter: ['food'] };
+    expect(getSourceValue(source, { a: 50, b: 50, c: 9 })).toBe(100);
+    expect(getSourceValue(source, { c: 9 })).toBeUndefined();
+    expect(getSourceForBehavior(source, { categoryId: 'food' })).toBe(source);
+    expect(getSourceForBehavior(source, { categoryId: 'other' })).toBeUndefined();
+    expect(getSourceFieldKeys({ fieldKey: 'x' })).toEqual(['x']);
+  });
   it('respects an explicit choice or off', () => {
     const custom = { fieldKey: 'field_protein', fullAmount: 50 };
     expect(getNeedMetadataSource('hunger', { ...DEFAULT_NEED_CONFIGS.hunger, metadataSource: custom }, [food])).toEqual(
-      { ...custom, categoryIds: ['food'] },
+      { ...custom, fieldKeys: ['field_protein'], categoryIds: ['food'] },
     );
     expect(
       getNeedMetadataSource('hunger', { ...DEFAULT_NEED_CONFIGS.hunger, metadataSource: null }, [food]),
