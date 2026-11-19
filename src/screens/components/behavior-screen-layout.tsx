@@ -14,6 +14,8 @@ interface Props {
   summaryStarMotionEnabled?: boolean;
   /** Override back button press. When omitted, defaults to goBack(). */
   onBack?: () => void;
+  /** Shows a Details button in the header. */
+  onOpenDetails?: () => void;
 }
 
 /** Shared layout for behavior detail/log screens.
@@ -27,6 +29,7 @@ export function BehaviorScreenLayout({
   showCurrentHabitXpLabel,
   summaryStarMotionEnabled,
   onBack,
+  onOpenDetails,
 }: Props) {
   return (
     <SafeAreaView style={styles.container}>
@@ -37,6 +40,7 @@ export function BehaviorScreenLayout({
         showCurrentHabitXpLabel={showCurrentHabitXpLabel}
         starMotionEnabled={summaryStarMotionEnabled}
         onBack={onBack}
+        onOpenDetails={onOpenDetails}
       />
 
       <View style={styles.body}>{children}</View>

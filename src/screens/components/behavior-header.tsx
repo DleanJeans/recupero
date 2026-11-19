@@ -30,6 +30,8 @@ interface Props {
   showCurrentHabitXpLabel?: boolean;
   starMotionEnabled?: boolean;
   onBack?: () => void;
+  /** When set, shows a Details button at the right of the title row. */
+  onOpenDetails?: () => void;
 }
 
 /** Behaviour screen header: back button, icon tile, name + category, and a
@@ -42,6 +44,7 @@ export function BehaviorHeader({
   showCurrentHabitXpLabel = false,
   starMotionEnabled = false,
   onBack,
+  onOpenDetails,
 }: Props) {
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const hideCategoryNames = useSettingsStore(s => s.hideCategoryNames);
@@ -109,6 +112,21 @@ export function BehaviorHeader({
             </Text>
           )}
         </View>
+        {onOpenDetails && (
+          <Pressable
+            onPress={onOpenDetails}
+            accessibilityRole="button"
+            accessibilityLabel="Open behavior details"
+            hitSlop={8}
+            style={styles.detailsButton}
+          >
+            <Ionicons
+              name="list-outline"
+              size={22}
+              color={Colors.text.light}
+            />
+          </Pressable>
+        )}
       </View>
 
       {hasStats && (
@@ -263,6 +281,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  detailsButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.bg.card,
   },
   iconTile: {
     backgroundColor: Colors.bg.card,

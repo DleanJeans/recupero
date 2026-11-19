@@ -148,6 +148,7 @@ export function BehaviorScreen() {
       showCurrentHabitXpLabel
       summaryStarMotionEnabled={mode === 'log'}
       onBack={handleBack}
+      onOpenDetails={mode === 'log' && !isEditing ? () => animate('details') : undefined}
     >
       {!isEditing && (
         <BehaviorGroupChips
