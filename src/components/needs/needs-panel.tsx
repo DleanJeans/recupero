@@ -1,14 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useNeedLevels } from '../../hooks/use-need-levels';
 import { useSunlight } from '../../hooks/use-sunlight';
+import { useHealthStore } from '../../store/health-store';
 import { useNeedsStore } from '../../store/needs-store';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
-import { formatNextCraving, formatTimerFull } from '../../utils/need-utils';
+import { toDateString } from '../../utils/date-utils';
+import { formatNextCraving, formatTimerFull, getPanelOrder, type PanelRowKey } from '../../utils/need-utils';
 import { formatTime } from '../../utils/time-utils';
 import { CueSectionLabel } from '../cues/cue-section-label';
 import { Text } from '../text';
@@ -20,9 +22,32 @@ import { SunlightBarRow } from './sunlight-bar-row';
 export function NeedsPanel() {
   const { needs, now } = useNeedLevels();
   const sunlight = useSunlight();
+  const needOrder = useNeedsStore(state => state.needOrder);
+  const azmConnected = useHealthStore(state => state.tokens != null);
+  const azmByDay = useHealthStore(state => state.azmByDay);
+  const azmGoal = useHealthStore(state => state.azmDailyGoal);
   const sortMode = useNeedsStore(state => state.needSortMode);
   const setSortMode = useNeedsStore(state => state.setNeedSortMode);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const rows = useMemo(() => {
+    const manual = getPanelOrder(needOrder);
+    const azmRatio = azmGoal > 0 ? (azmByDay[toDateString(new Date(now))] ?? 0) / azmGoal : 0;
+    const sunRatio = sunlight.goalMinutes > 0 ? sunlight.today.minutes / sunlight.goalMinutes : 0;
+    const ratioOf = (key: PanelRowKey) => {
+      if (key === 'azm') return azmRatio;
+      if (key === 'sunlight') return sunRatio;
+      return (needs.find(need => need.id === key)?.level ?? Number.POSITIVE_INFINITY) / 100;
+    };
+    const shown = manual.filter(
+      key =>
+        (key === 'azm' && azmConnected) ||
+        (key === 'sunlight' && sunlight.enabled) ||
+        needs.some(need => need.id === key),
+    );
+    // Manual keeps the settings order; otherwise the least filled bar (need level or goal progress) is first.
+    return sortMode === 'level' ? shown.sort((a, b) => ratioOf(a) - ratioOf(b)) : shown;
+  }, [needOrder, needs, now, azmConnected, azmByDay, azmGoal, sunlight, sortMode]);
+
   return (
     <View style={styles.group}>
       <View style={styles.header}>
@@ -68,28 +93,41 @@ export function NeedsPanel() {
         {needs.length === 0 && !sunlight.enabled && (
           <Text style={styles.empty}>All needs are off. Turn them on in settings.</Text>
         )}
-        {needs.map(need => (
-          <NeedBarRow
-            key={need.id}
-            needId={need.id}
-            config={need.config}
-            level={need.level}
-            detail={
-              need.timerFullInMs != null
-                ? formatTimerFull(need.timerFullInMs)
-                : formatNextCraving(need.level, need.config, now, ts => formatTime(ts))
-            }
-            timerNames={need.timerBehaviorNames}
-            onPress={() => navigation.navigate('Need', { needId: need.id })}
-          />
-        ))}
-        <AzmBarRow now={now} />
-        {sunlight.enabled && (
-          <SunlightBarRow
-            sunlight={sunlight}
-            onPress={() => navigation.navigate('Sunlight')}
-          />
-        )}
+        {rows.map(key => {
+          if (key === 'azm')
+            return (
+              <AzmBarRow
+                key={key}
+                now={now}
+              />
+            );
+          if (key === 'sunlight') {
+            return (
+              <SunlightBarRow
+                key={key}
+                sunlight={sunlight}
+                onPress={() => navigation.navigate('Sunlight')}
+              />
+            );
+          }
+          const need = needs.find(item => item.id === key);
+          if (!need) return null;
+          return (
+            <NeedBarRow
+              key={key}
+              needId={need.id}
+              config={need.config}
+              level={need.level}
+              detail={
+                need.timerFullInMs != null
+                  ? formatTimerFull(need.timerFullInMs)
+                  : formatNextCraving(need.level, need.config, now, ts => formatTime(ts))
+              }
+              timerNames={need.timerBehaviorNames}
+              onPress={() => navigation.navigate('Need', { needId: need.id })}
+            />
+          );
+        })}
       </View>
     </View>
   );

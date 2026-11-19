@@ -20,10 +20,12 @@ import {
   getDecayPerHour,
   getNeedEvents,
   getNeedMetadataSource,
+  getPanelOrder,
   learnEmptyHours,
   NEED_IDS,
   NEED_LOOKBACK_MS,
   NEED_UNKNOWN_START_LEVEL,
+  type PanelRowKey,
   registerCustomNeeds,
   simulateNeed,
 } from '../utils/need-utils';
@@ -41,7 +43,7 @@ export type NeedSortMode = 'manual' | 'level';
 function syncCustomNeeds(
   defs: readonly CustomNeedDef[],
   emojiOverrides?: Record<NeedId, string>,
-  needOrder?: readonly NeedId[],
+  needOrder?: readonly PanelRowKey[],
 ) {
   registerCustomNeeds(defs);
   applyNeedOrder(needOrder);
@@ -62,12 +64,12 @@ export interface NeedsStore {
   /** Icons picked for built-in needs, by need id. Missing = the original icon. */
   emojiOverrides: Record<NeedId, string>;
   /** The user's order of needs (ids). Empty = the default order. */
-  needOrder: NeedId[];
+  needOrder: PanelRowKey[];
   /** How needs are ordered where they are listed. */
   needSortMode: NeedSortMode;
   setNeedSortMode: (mode: NeedSortMode) => void;
   /** Moves a need one place up (-1) or down (1) in the list. */
-  moveNeed: (id: NeedId, direction: -1 | 1) => void;
+  moveNeed: (id: PanelRowKey, direction: -1 | 1) => void;
   /** Sets a built-in need's icon; an empty emoji restores the original. */
   setBuiltInEmoji: (id: NeedId, emoji: string) => void;
   /** Makes a need with the built-in model; returns its id. */
@@ -160,7 +162,7 @@ export const useNeedsStore = create<NeedsStore>()(
       setNeedSortMode: mode => set({ needSortMode: mode }),
       moveNeed: (id, direction) =>
         set(state => {
-          const order = [...NEED_IDS];
+          const order = getPanelOrder(state.needOrder);
           const from = order.indexOf(id);
           const to = from + direction;
           if (from === -1 || to < 0 || to >= order.length) return {};

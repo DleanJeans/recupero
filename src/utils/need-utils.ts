@@ -900,3 +900,24 @@ export function applyNeedOrder(order: readonly NeedId[] | undefined): void {
   const sorted = [...NEED_IDS].sort((a, b) => rank(a) - rank(b));
   NEED_IDS.splice(0, NEED_IDS.length, ...sorted);
 }
+
+/** A row of the Needs panel: a need, or the Cardio / Sunlight bars under it. */
+export type PanelRowKey = NeedId | 'azm' | 'sunlight';
+
+export const PANEL_EXTRA_ROWS = {
+  azm: { emoji: '🫀', label: 'Cardio' },
+  sunlight: { emoji: '☀️', label: 'Sunlight' },
+} as const;
+
+export const isPanelExtraRow = (key: PanelRowKey): key is 'azm' | 'sunlight' => key === 'azm' || key === 'sunlight';
+
+/** Every panel row in the user's manual order. Cardio and Sunlight not placed yet come last. */
+export function getPanelOrder(order: readonly string[] | undefined): PanelRowKey[] {
+  const base: PanelRowKey[] = [...NEED_IDS, 'azm', 'sunlight'];
+  if (!order?.length) return base;
+  const rank = (key: PanelRowKey) => {
+    const index = order.indexOf(key);
+    return index === -1 ? order.length : index;
+  };
+  return base.sort((a, b) => rank(a) - rank(b));
+}

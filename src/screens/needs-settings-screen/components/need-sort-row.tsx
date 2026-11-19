@@ -2,12 +2,11 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
 import { useNeedsStore } from '../../../store/needs-store';
-import type { NeedId } from '../../../types/need';
 import { Colors } from '../../../utils/colors';
-import { NEED_INFO } from '../../../utils/need-utils';
+import { isPanelExtraRow, NEED_INFO, PANEL_EXTRA_ROWS, type PanelRowKey } from '../../../utils/need-utils';
 
 interface NeedSortRowProps {
-  needId: NeedId;
+  needId: PanelRowKey;
   first: boolean;
   last: boolean;
 }
@@ -15,7 +14,7 @@ interface NeedSortRowProps {
 /** One need in sort mode: its icon and name with move up / move down buttons. */
 export function NeedSortRow({ needId, first, last }: NeedSortRowProps) {
   const moveNeed = useNeedsStore(state => state.moveNeed);
-  const info = NEED_INFO[needId];
+  const info = isPanelExtraRow(needId) ? PANEL_EXTRA_ROWS[needId] : NEED_INFO[needId];
 
   return (
     <View style={[styles.row, !first && styles.divider]}>

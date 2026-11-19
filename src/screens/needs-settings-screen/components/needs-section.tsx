@@ -4,7 +4,7 @@ import { Text } from '../../../components/text';
 import { useNeedsStore } from '../../../store/needs-store';
 import type { NeedId } from '../../../types/need';
 import { Colors } from '../../../utils/colors';
-import { NEED_IDS } from '../../../utils/need-utils';
+import { getPanelOrder, NEED_IDS } from '../../../utils/need-utils';
 import { CustomNeedModal } from './custom-need-modal';
 import { NeedSettingsRow } from './need-settings-row';
 import { NeedSortRow } from './need-sort-row';
@@ -20,9 +20,10 @@ interface NeedsSectionProps {
 
 export function NeedsSection({ focusNeedId, scrollRef }: NeedsSectionProps) {
   // Subscribes to the order: NEED_IDS is reordered in place, so a re-render is needed to show it.
-  useNeedsStore(state => state.needOrder);
+  const needOrder = useNeedsStore(state => state.needOrder);
   const sortMode = useNeedsStore(state => state.needSortMode);
   const setSortMode = useNeedsStore(state => state.setNeedSortMode);
+  const panelOrder = getPanelOrder(needOrder);
   const rowRefs = useRef<Record<string, View | null>>({});
   const [picking, setPicking] = useState<NeedId>();
   const [sorting, setSorting] = useState(false);
@@ -76,31 +77,31 @@ export function NeedsSection({ focusNeedId, scrollRef }: NeedsSectionProps) {
         <Text style={styles.hint}>Cues and Cravings show the lowest need first. Sort sets the Manual order.</Text>
       )}
       <View style={styles.card}>
-        {NEED_IDS.map((id, index) =>
-          sorting ? (
-            <NeedSortRow
-              key={id}
-              needId={id}
-              first={index === 0}
-              last={index === NEED_IDS.length - 1}
-            />
-          ) : (
-            <View
-              key={id}
-              ref={node => {
-                rowRefs.current[id] = node;
-              }}
-              collapsable={false}
-            >
-              <NeedSettingsRow
-                needId={id}
+        {sorting
+          ? panelOrder.map((key, index) => (
+              <NeedSortRow
+                key={key}
+                needId={key}
                 first={index === 0}
-                onPickSource={() => setPicking(id)}
-                onEdit={id.startsWith('custom:') ? () => setEditing({ needId: id }) : undefined}
+                last={index === panelOrder.length - 1}
               />
-            </View>
-          ),
-        )}
+            ))
+          : NEED_IDS.map((id, index) => (
+              <View
+                key={id}
+                ref={node => {
+                  rowRefs.current[id] = node;
+                }}
+                collapsable={false}
+              >
+                <NeedSettingsRow
+                  needId={id}
+                  first={index === 0}
+                  onPickSource={() => setPicking(id)}
+                  onEdit={id.startsWith('custom:') ? () => setEditing({ needId: id }) : undefined}
+                />
+              </View>
+            ))}
         {sorting ? null : <SunlightSettingsRow />}
       </View>
       <Pressable

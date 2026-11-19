@@ -38,7 +38,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-19',
     items: [
       {
-        text: 'Needs settings: the Sort arrows now really move needs, and the new Manual order / Lowest % first switch (also on the Needs panel header) lists the neediest need on top.',
+        text: 'Needs settings: the Sort arrows now really move needs, and the new Manual order / Lowest % first switch (also on the Needs panel header) lists the neediest need on top. Cardio and Sunlight are sorted too: by progress toward their goal, or in your Sort order.',
         screen: 'NeedsSettings',
         linkPhrase: 'Needs settings',
       },
