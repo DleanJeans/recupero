@@ -835,3 +835,14 @@ export function registerCustomNeeds(defs: readonly CustomNeedDef[]): void {
     NEED_UPDATE_QUESTIONS[def.id] = `Topped up ${name} without logging it?`;
   }
 }
+
+/** Puts NEED_IDS in the user's order. Needs missing from the order keep their place after the ones in it. */
+export function applyNeedOrder(order: readonly NeedId[] | undefined): void {
+  if (!order?.length) return;
+  const rank = (id: NeedId) => {
+    const index = order.indexOf(id);
+    return index === -1 ? order.length : index;
+  };
+  const sorted = [...NEED_IDS].sort((a, b) => rank(a) - rank(b));
+  NEED_IDS.splice(0, NEED_IDS.length, ...sorted);
+}

@@ -38,6 +38,14 @@ export function NeedSettingsRow({ needId, first, onPickSource, onEdit }: NeedSet
   const field = source ? findMetadataField(categories, source.fieldKey) : undefined;
   const [fullText, setFullText] = useState<string>();
 
+  const updateCustomNeed = useNeedsStore(state => state.updateCustomNeed);
+  const changeEmoji = (next: string) => {
+    const emoji = toPlainEmoji(next);
+    if (!emoji) return;
+    if (builtInEmoji) setBuiltInEmoji(needId, emoji === builtInEmoji ? '' : emoji);
+    else updateCustomNeed(needId, { emoji });
+  };
+
   const commitFull = () => {
     if (fullText == null || !source) return;
     const parsed = parseDecimalInput(fullText);
@@ -53,7 +61,11 @@ export function NeedSettingsRow({ needId, first, onPickSource, onEdit }: NeedSet
         accessibilityRole="switch"
         accessibilityState={{ checked: config.enabled }}
       >
-        <Text style={styles.emoji}>{info.emoji}</Text>
+        <EmojiPicker
+          value={info.emoji}
+          onChangeText={changeEmoji}
+          style={styles.iconBox}
+        />
         <View style={styles.labels}>
           <Text style={styles.label}>{info.label}</Text>
           <Text style={styles.hint}>
@@ -95,27 +107,15 @@ export function NeedSettingsRow({ needId, first, onPickSource, onEdit }: NeedSet
               </View>
             </View>
           ) : null}
-          {builtInEmoji ? (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Icon</Text>
-              <View style={styles.amount}>
-                {info.emoji !== builtInEmoji ? (
-                  <Pressable
-                    onPress={() => setBuiltInEmoji(needId, '')}
-                    accessibilityRole="button"
-                  >
-                    <Text style={styles.detailValue}>Reset</Text>
-                  </Pressable>
-                ) : null}
-                <EmojiPicker
-                  value={info.emoji}
-                  onChangeText={next =>
-                    setBuiltInEmoji(needId, toPlainEmoji(next) === builtInEmoji ? '' : toPlainEmoji(next))
-                  }
-                  style={styles.iconBox}
-                />
-              </View>
-            </View>
+          {builtInEmoji && info.emoji !== builtInEmoji ? (
+            <Pressable
+              style={({ pressed }) => [styles.detailRow, pressed && styles.pressed]}
+              onPress={() => setBuiltInEmoji(needId, '')}
+              accessibilityRole="button"
+            >
+              <Text style={styles.detailLabel}>Icon: back to {builtInEmoji}</Text>
+              <Text style={styles.detailValue}>Reset</Text>
+            </Pressable>
           ) : null}
           {onEdit ? (
             <Pressable
@@ -190,6 +190,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     fontSize: 13,
   },
-  iconBox: { width: 36, height: 36, borderRadius: 8 },
+  iconBox: { width: 32, height: 32, borderRadius: 8 },
   unit: { color: Colors.text.faint, fontSize: 12 },
 });

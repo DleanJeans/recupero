@@ -62,6 +62,8 @@ export function useNeedLevels(): { needs: NeedSnapshot[]; now: number } {
   const behaviors = useBehaviorStore(state => state.behaviors);
   const categories = useBehaviorStore(state => state.categories);
   const configs = useNeedsStore(state => state.needs);
+  const needOrder = useNeedsStore(state => state.needOrder);
+  const emojiOverrides = useNeedsStore(state => state.emojiOverrides);
   const checkIns = useNeedsStore(state => state.checkIns);
   const timerBehaviorId = useTimerStore(state => state.lockedBehaviorId);
   const timerStart = useTimerStore(state => state.startTimestamp);
@@ -103,5 +105,17 @@ export function useNeedLevels(): { needs: NeedSnapshot[]; now: number } {
     });
     return { needs, now };
     // tick re-reads the clock each minute.
-  }, [behaviors, categories, checkIns, configs, tick, timerBehaviorId, timerStart, timerStop, parkedTimers]);
+  }, [
+    behaviors,
+    categories,
+    checkIns,
+    configs,
+    needOrder,
+    emojiOverrides,
+    tick,
+    timerBehaviorId,
+    timerStart,
+    timerStop,
+    parkedTimers,
+  ]);
 }

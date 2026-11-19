@@ -44,6 +44,7 @@ export function NeedsHistoryScreen() {
   const display = useNeedsStore(state => state.historyDisplay);
   const setDisplay = useNeedsStore(state => state.setHistoryDisplay);
   const configs = useNeedsStore(state => state.needs);
+  const needOrder = useNeedsStore(state => state.needOrder);
   const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
 
   const { dayStarts, from, to } = useMemo(() => {
@@ -52,7 +53,7 @@ export function NeedsHistoryScreen() {
     const starts = getHistoryDayStarts(today, NEED_HISTORY_RANGE_DAYS[range], offset, addLocalDays);
     return { dayStarts: starts, from: starts[0], to: Math.min(now, starts[starts.length - 1]) };
   }, [dayCutoffHour, offset, range]);
-  const ids = useMemo(() => NEED_IDS.filter(id => configs[id].enabled), [configs]);
+  const ids = useMemo(() => NEED_IDS.filter(id => configs[id].enabled), [configs, needOrder]);
   const histories = useNeedHistory(ids, from, to, getChartStepMs(to - from));
 
   const periodLabel =

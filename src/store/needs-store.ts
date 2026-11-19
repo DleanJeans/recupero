@@ -14,6 +14,7 @@ import type {
 import { emptyRateHistory, NEED_CHART_COLORS, type NeedRatePoint } from '../utils/need-history-utils';
 import {
   applyBuiltInEmojis,
+  applyNeedOrder,
   clampLevel,
   DEFAULT_NEED_CONFIGS,
   getDecayPerHour,
@@ -34,8 +35,13 @@ const MAX_RATE_POINTS = 200;
 export type NeedHistoryDisplay = 'lanes' | 'overlay';
 
 /** Makes custom needs known to the lookup tables (and chart colours) before anything reads them. */
-function syncCustomNeeds(defs: readonly CustomNeedDef[], emojiOverrides?: Record<NeedId, string>) {
+function syncCustomNeeds(
+  defs: readonly CustomNeedDef[],
+  emojiOverrides?: Record<NeedId, string>,
+  needOrder?: readonly NeedId[],
+) {
   registerCustomNeeds(defs);
+  applyNeedOrder(needOrder);
   applyBuiltInEmojis(emojiOverrides);
   for (const def of defs) NEED_CHART_COLORS[def.id] = def.color;
 }
@@ -52,6 +58,10 @@ export interface NeedsStore {
   customNeeds: CustomNeedDef[];
   /** Icons picked for built-in needs, by need id. Missing = the original icon. */
   emojiOverrides: Record<NeedId, string>;
+  /** The user's order of needs (ids). Empty = the default order. */
+  needOrder: NeedId[];
+  /** Moves a need one place up (-1) or down (1) in the list. */
+  moveNeed: (id: NeedId, direction: -1 | 1) => void;
   /** Sets a built-in need's icon; an empty emoji restores the original. */
   setBuiltInEmoji: (id: NeedId, emoji: string) => void;
   /** Makes a need with the built-in model; returns its id. */
@@ -139,11 +149,22 @@ export const useNeedsStore = create<NeedsStore>()(
       needs: withDefaults(undefined),
       customNeeds: [],
       emojiOverrides: {},
+      needOrder: [],
+      moveNeed: (id, direction) =>
+        set(state => {
+          const order = [...NEED_IDS];
+          const from = order.indexOf(id);
+          const to = from + direction;
+          if (from === -1 || to < 0 || to >= order.length) return {};
+          [order[from], order[to]] = [order[to], order[from]];
+          syncCustomNeeds(state.customNeeds, state.emojiOverrides, order);
+          return { needOrder: order };
+        }),
       setBuiltInEmoji: (id, emoji) =>
         set(state => {
           const { [id]: _old, ...rest } = state.emojiOverrides;
           const emojiOverrides = emoji ? { ...rest, [id]: emoji } : rest;
-          syncCustomNeeds(state.customNeeds, emojiOverrides);
+          syncCustomNeeds(state.customNeeds, emojiOverrides, state.needOrder);
           return { emojiOverrides };
         }),
       addCustomNeed: input => {
@@ -151,7 +172,7 @@ export const useNeedsStore = create<NeedsStore>()(
         const def: CustomNeedDef = { id, ...input, label: input.label.trim() };
         set(state => {
           const customNeeds = [...state.customNeeds, def];
-          syncCustomNeeds(customNeeds, state.emojiOverrides);
+          syncCustomNeeds(customNeeds, state.emojiOverrides, state.needOrder);
           return {
             customNeeds,
             needs: { ...state.needs, [id]: { ...DEFAULT_NEED_CONFIGS[id], refills: {}, categoryRefills: {} } },
@@ -166,7 +187,7 @@ export const useNeedsStore = create<NeedsStore>()(
           if (!old) return {};
           const next = { ...old, ...patch, label: (patch.label ?? old.label).trim() };
           const customNeeds = state.customNeeds.map(def => (def.id === id ? next : def));
-          syncCustomNeeds(customNeeds, state.emojiOverrides);
+          syncCustomNeeds(customNeeds, state.emojiOverrides, state.needOrder);
           const config = state.needs[id];
           // Until a check-in has taught a rate, the typed decay time is the rate.
           const emptyHours = config.learnedFrom === 0 ? next.emptyHours : config.emptyHours;
@@ -175,7 +196,7 @@ export const useNeedsStore = create<NeedsStore>()(
       removeCustomNeed: id =>
         set(state => {
           const customNeeds = state.customNeeds.filter(def => def.id !== id);
-          syncCustomNeeds(customNeeds, state.emojiOverrides);
+          syncCustomNeeds(customNeeds, state.emojiOverrides, state.needOrder);
           const { [id]: _config, ...needs } = state.needs;
           const { [id]: _history, ...rateHistory } = state.rateHistory;
           return { customNeeds, needs, rateHistory, checkIns: state.checkIns.filter(entry => entry.needId !== id) };
@@ -271,12 +292,13 @@ export const useNeedsStore = create<NeedsStore>()(
       version: 2,
       migrate: persistedState => {
         const state = persistedState as Partial<NeedsStore>;
-        syncCustomNeeds(state.customNeeds ?? [], state.emojiOverrides);
+        syncCustomNeeds(state.customNeeds ?? [], state.emojiOverrides, state.needOrder);
         const needs = withDefaults(state.needs);
         return {
           ...state,
           customNeeds: state.customNeeds ?? [],
           emojiOverrides: state.emojiOverrides ?? {},
+          needOrder: state.needOrder ?? [],
           needs,
           checkIns: state.checkIns ?? [],
           rateHistory: withRateHistory(state.rateHistory, needs),
@@ -284,13 +306,14 @@ export const useNeedsStore = create<NeedsStore>()(
       },
       merge: (persisted, current) => {
         const state = persisted as Partial<NeedsStore> | undefined;
-        syncCustomNeeds(state?.customNeeds ?? [], state?.emojiOverrides);
+        syncCustomNeeds(state?.customNeeds ?? [], state?.emojiOverrides, state?.needOrder);
         const needs = withDefaults(state?.needs);
         return {
           ...current,
           ...state,
           customNeeds: state?.customNeeds ?? [],
           emojiOverrides: state?.emojiOverrides ?? {},
+          needOrder: state?.needOrder ?? [],
           needs,
           checkIns: state?.checkIns ?? [],
           rateHistory: withRateHistory(state?.rateHistory, needs),
