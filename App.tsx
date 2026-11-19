@@ -10,6 +10,7 @@ import { BOTTOM_NAV_HEIGHT, BottomNav, type BottomNavRoute } from './src/compone
 import { ConfettiOverlay } from './src/components/confetti-overlay';
 import { ImageClearHost } from './src/components/image-clear-host';
 import { NavFloatingPills } from './src/components/nav-floating-pills';
+import { NeedFillOverlayHost } from './src/components/need-fill-overlay-host';
 import { ReminderToastHost } from './src/components/reminder-toast-host';
 import { Text } from './src/components/text';
 import { useAppFonts } from './src/hooks/use-app-fonts';
@@ -317,6 +318,7 @@ export default function App() {
             </View>
           </NavigationContainer>
           <ConfettiOverlay />
+          <NeedFillOverlayHost active={activeRouteName === 'Home'} />
         </SafeAreaProvider>
       </KeyboardProvider>
     </GestureHandlerRootView>

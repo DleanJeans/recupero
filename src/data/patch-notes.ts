@@ -41,6 +41,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       'An app can now fill a need only while it is playing music or video in the background, e.g. Spotify filling Fun. Pick the app, tick "Only while it\'s playing" and turn on Notification access (needs the newest app install).',
       "The app picker now shows each app's icon (needs the newest app install).",
       'Websites you track can now have a friendly name like "Reddit" instead of "reddit.com". Recupero fetches the site name for you and you can edit it; existing sites named by their address are renamed too.',
+      "When you log something that fills a need (like a meal or a glass of water), a card now slides down from the top of the Routines screen showing that need's bar filling up with the percentage counting up.",
       'The Sunlight notification bar is now yellow with rounded ends, like the bar in the app (needs the newest app install).',
       'The Outside Mode notification now has a Stop button, so you can turn Outside Mode off without opening Recupero.',
       'Timed logs can now run past midnight, e.g. 9 PM to 5 AM. Set an End earlier than the Start and it ends the next day, with the day shown under End.',
