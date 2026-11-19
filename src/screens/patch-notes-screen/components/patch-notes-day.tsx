@@ -62,10 +62,10 @@ export function PatchNotesDay({ day }: { day: PatchNotesDayData }) {
 
 const styles = StyleSheet.create({
   day: { marginBottom: 20 },
-  date: { color: Colors.text.dim, fontSize: 14, fontWeight: '600', marginBottom: 6 },
+  date: { color: Colors.text.white, fontSize: 14, fontWeight: '600', marginBottom: 6 },
   itemRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 6 },
   checkRow: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  item: { flex: 1, color: Colors.text.faint, fontSize: 14, lineHeight: 22 },
+  item: { flex: 1, color: Colors.text.white, fontSize: 14, lineHeight: 22 },
   itemDone: { opacity: 0.5, textDecorationLine: 'line-through' },
   linkText: { color: '#5ab0ff', textDecorationLine: 'underline' },
 });
