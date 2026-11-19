@@ -4,6 +4,10 @@ import { AppState } from 'react-native';
 import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
 import type { SunlightTrailPoint } from '../types/sunlight';
+import {
+  dismissOutsideModeNotification,
+  presentOutsideModeNotification,
+} from './outside-mode-notification';
 import { hasBackgroundLocationPermission } from './reminder-geofencing';
 import { waitForHydration } from './store-hydration';
 import { syncSunlightNotification } from './sunlight-notification';
@@ -94,6 +98,7 @@ export async function syncPreciseTracking(): Promise<void> {
     const wanted = enabled && preciseTracking && (await hasBackgroundLocationPermission());
     if (!wanted) {
       if (running) await Location.stopLocationUpdatesAsync(SUNLIGHT_PRECISE_TASK);
+      await dismissOutsideModeNotification();
       return;
     }
     if (running) return;
@@ -104,9 +109,10 @@ export async function syncPreciseTracking(): Promise<void> {
       pausesUpdatesAutomatically: false,
       foregroundService: {
         notificationTitle: 'Sunlight: Outside Mode',
-        notificationBody: 'Following you closely while you move between places. Stop it in the Sunlight sheet.',
+        notificationBody: 'Following you closely while you move between places.',
       },
     });
+    await presentOutsideModeNotification();
   } catch (error) {
     console.warn('Sunlight precise tracking sync failed', error);
   }

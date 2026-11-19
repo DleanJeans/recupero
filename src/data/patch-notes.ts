@@ -14,6 +14,8 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      'The Sunlight notification bar is now yellow with rounded ends, like the bar in the app (needs the newest app install).',
+      'The Outside Mode notification now has a Stop button, so you can turn Outside Mode off without opening Recupero.',
       'Timed logs can now run past midnight, e.g. 9 PM to 5 AM. Set an End earlier than the Start and it ends the next day, with the day shown under End.',
       'Running timers now float over other apps and your browser while Recupero is in the background. Drag the pill to move it, swipe it up to dismiss it, tap it to come back to Recupero. A notification also shows the timer and, if the behavior fills a need, how full that need is, with a Show overlay button to bring the pill back. It needs "Display over other apps" turned on for Recupero and the newest app install.',
       'Apps and websites you add to a need now use their real icon (the app icon, or the site favicon) instead of the stopwatch. App icons need the newest app install; websites work right away. Existing ones get their icon next time you open Recupero.',

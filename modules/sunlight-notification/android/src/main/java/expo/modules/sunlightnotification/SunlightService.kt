@@ -8,12 +8,18 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.RectF
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.text.format.DateFormat
 import android.util.Log
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import org.json.JSONObject
 import java.text.NumberFormat
@@ -160,7 +166,6 @@ class SunlightService : Service() {
     private const val NOTIFICATION_ID = 0x5017
     private const val TICK_MS = 1000L
     private const val MS_PER_MINUTE = 60_000.0
-    private const val PROGRESS_MAX = 1000
 
     fun start(context: Context, json: String): Boolean {
       // Never launch the service with a plan it can't read: it would have to stop before startForeground.
@@ -215,6 +220,24 @@ class SunlightService : Service() {
       )
     }
 
+    /** The in-app look: a yellow fill with fully rounded ends over a faint rounded track. */
+    private fun progressBarBitmap(ratio: Double): Bitmap {
+      val width = 720
+      val height = 24
+      val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+      val canvas = Canvas(bitmap)
+      val radius = height / 2f
+      val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+      paint.color = Color.argb(70, 160, 160, 160)
+      canvas.drawRoundRect(RectF(0f, 0f, width.toFloat(), height.toFloat()), radius, radius, paint)
+      if (ratio > 0.0) {
+        paint.color = Color.parseColor("#FFC107")
+        val fillEnd = maxOf(height.toFloat(), (width * ratio).toFloat())
+        canvas.drawRoundRect(RectF(0f, 0f, fillEnd, height.toFloat()), radius, radius, paint)
+      }
+      return bitmap
+    }
+
     fun buildNotification(context: Context, plan: Plan, now: Long): Notification {
       val format = NumberFormat.getIntegerInstance(Locale.US)
       val dose = plan.luxMinutesAt(now)
@@ -234,13 +257,19 @@ class SunlightService : Service() {
       } else {
         "Counting while you're outside"
       }
+      val views = RemoteViews(context.packageName, R.layout.sunlight_notification)
+      views.setTextViewText(R.id.sunlight_title, title)
+      views.setTextViewText(R.id.sunlight_text, text)
+      views.setImageViewBitmap(R.id.sunlight_bar, progressBarBitmap(ratio))
       return NotificationCompat.Builder(context, CHANNEL_ID)
+        .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+        .setCustomContentView(views)
+        .setCustomBigContentView(views)
         // A pause symbol in the status bar and notification header while paused.
         .setSmallIcon(if (paused) android.R.drawable.ic_media_pause else smallIcon(context))
         .setContentTitle(title)
         .setContentText(text)
         .setSubText(subText)
-        .setProgress(PROGRESS_MAX, (ratio * PROGRESS_MAX).toInt(), false)
         .setWhen(plan.outSince)
         .setShowWhen(!paused)
         .setUsesChronometer(!paused)

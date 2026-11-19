@@ -3,10 +3,13 @@ import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useCuesStore } from '../store/cues-store';
+import { useSunlightStore } from '../store/sunlight-store';
 import { useTimerStore } from '../store/timer-store';
 import { getNextMoodXp, presentCheckInConfirmation } from './checkin-notifications';
 import { isCheckInNotificationData, parseCheckInAction } from './checkin-utils';
+import { isOutsideModeNotificationData, OUTSIDE_MODE_STOP_ACTION_ID } from './outside-mode-notification-utils';
 import { type NotificationActionInput, readTaskNotificationAction } from './notification-action-utils';
+import { syncPreciseTracking } from './sunlight-precise-tracking';
 import { snoozeReminder } from './reminder-notifications';
 import { isReminderNotificationData, parseReminderAction } from './reminder-utils';
 import { waitForHydration } from './store-hydration';
@@ -44,6 +47,7 @@ export function isBackgroundNotificationAction({
   actionIdentifier,
   data,
 }: Omit<NotificationActionInput, 'notificationId'>) {
+  if (isOutsideModeNotificationData(data)) return actionIdentifier === OUTSIDE_MODE_STOP_ACTION_ID;
   if (isTimerNotificationData(data)) return actionIdentifier === TIMER_STOP_ACTION_ID;
   if (isCheckInNotificationData(data)) return parseCheckInAction(actionIdentifier) !== undefined;
   if (!isReminderNotificationData(data)) return false;
@@ -88,6 +92,12 @@ export async function handleBackgroundNotificationAction(
 ): Promise<void> {
   if (!isBackgroundNotificationAction({ actionIdentifier, data })) return;
   if (!(await claimTap(`${notificationId}:${notificationDate ?? ''}:${actionIdentifier}`))) return;
+  if (isOutsideModeNotificationData(data)) {
+    await waitForHydration(useSunlightStore);
+    useSunlightStore.getState().setPreciseTracking(false);
+    await syncPreciseTracking();
+    return;
+  }
   if (isCheckInNotificationData(data)) {
     const mood = parseCheckInAction(actionIdentifier);
     if (!mood) return;
