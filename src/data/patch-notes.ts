@@ -37,6 +37,11 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      {
+        text: 'Needs settings: the Sort arrows now really move needs, and the new Manual order / Lowest % first switch (also on the Needs panel header) lists the neediest need on top.',
+        screen: 'NeedsSettings',
+        linkPhrase: 'Needs settings',
+      },
       'The small timer chip on Routines is now a round ring (solid track, green level arc) around the behavior icon, like the floating bubble, and the pill slides straight down and up when you scroll with no curve.',
       {
         text: 'After Check for update or the Update ready pill restarts the app, it opens Patch notes with a NEW tag on everything added since you last looked.',

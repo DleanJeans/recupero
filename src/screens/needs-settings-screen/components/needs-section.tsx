@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, type ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
+import { useNeedsStore } from '../../../store/needs-store';
 import type { NeedId } from '../../../types/need';
 import { Colors } from '../../../utils/colors';
 import { NEED_IDS } from '../../../utils/need-utils';
@@ -18,6 +19,10 @@ interface NeedsSectionProps {
 }
 
 export function NeedsSection({ focusNeedId, scrollRef }: NeedsSectionProps) {
+  // Subscribes to the order: NEED_IDS is reordered in place, so a re-render is needed to show it.
+  useNeedsStore(state => state.needOrder);
+  const sortMode = useNeedsStore(state => state.needSortMode);
+  const setSortMode = useNeedsStore(state => state.setNeedSortMode);
   const rowRefs = useRef<Record<string, View | null>>({});
   const [picking, setPicking] = useState<NeedId>();
   const [sorting, setSorting] = useState(false);
@@ -49,6 +54,27 @@ export function NeedsSection({ focusNeedId, scrollRef }: NeedsSectionProps) {
           <Text style={styles.sortText}>{sorting ? 'Done' : 'Sort'}</Text>
         </Pressable>
       </View>
+      <View style={styles.modeRow}>
+        {(['manual', 'level'] as const).map(mode => (
+          <Pressable
+            key={mode}
+            style={[styles.mode, sortMode === mode && styles.modeActive]}
+            onPress={() => setSortMode(mode)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: sortMode === mode }}
+          >
+            <Text
+              numberOfLines={1}
+              style={[styles.modeText, sortMode === mode && styles.modeTextActive]}
+            >
+              {mode === 'manual' ? 'Manual order' : 'Lowest % first'}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+      {sortMode === 'level' && (
+        <Text style={styles.hint}>Cues and Cravings show the lowest need first. Sort sets the Manual order.</Text>
+      )}
       <View style={styles.card}>
         {NEED_IDS.map((id, index) =>
           sorting ? (
@@ -115,6 +141,18 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   sortText: { color: Colors.status.success, fontSize: 13, fontWeight: '600' },
+  modeRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  mode: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: Colors.bg.card,
+  },
+  modeActive: { backgroundColor: Colors.status.success },
+  modeText: { color: Colors.text.secondary, fontSize: 13, fontWeight: '600' },
+  modeTextActive: { color: Colors.bg.card },
+  hint: { color: Colors.text.faint, fontSize: 12, marginBottom: 8, marginHorizontal: 4 },
   add: { alignItems: 'center', paddingVertical: 14 },
   pressed: { opacity: 0.7 },
   addText: { color: Colors.status.success, fontSize: 14, fontWeight: '600' },

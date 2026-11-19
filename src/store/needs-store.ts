@@ -34,6 +34,9 @@ const MAX_RATE_POINTS = 200;
 
 export type NeedHistoryDisplay = 'lanes' | 'overlay';
 
+/** Needs list order: the order set in settings, or the lowest level first. */
+export type NeedSortMode = 'manual' | 'level';
+
 /** Makes custom needs known to the lookup tables (and chart colours) before anything reads them. */
 function syncCustomNeeds(
   defs: readonly CustomNeedDef[],
@@ -60,6 +63,9 @@ export interface NeedsStore {
   emojiOverrides: Record<NeedId, string>;
   /** The user's order of needs (ids). Empty = the default order. */
   needOrder: NeedId[];
+  /** How needs are ordered where they are listed. */
+  needSortMode: NeedSortMode;
+  setNeedSortMode: (mode: NeedSortMode) => void;
   /** Moves a need one place up (-1) or down (1) in the list. */
   moveNeed: (id: NeedId, direction: -1 | 1) => void;
   /** Sets a built-in need's icon; an empty emoji restores the original. */
@@ -150,6 +156,8 @@ export const useNeedsStore = create<NeedsStore>()(
       customNeeds: [],
       emojiOverrides: {},
       needOrder: [],
+      needSortMode: 'manual',
+      setNeedSortMode: mode => set({ needSortMode: mode }),
       moveNeed: (id, direction) =>
         set(state => {
           const order = [...NEED_IDS];

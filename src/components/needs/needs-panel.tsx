@@ -5,6 +5,7 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useNeedLevels } from '../../hooks/use-need-levels';
 import { useSunlight } from '../../hooks/use-sunlight';
+import { useNeedsStore } from '../../store/needs-store';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import { formatNextCraving, formatTimerFull } from '../../utils/need-utils';
@@ -19,12 +20,27 @@ import { SunlightBarRow } from './sunlight-bar-row';
 export function NeedsPanel() {
   const { needs, now } = useNeedLevels();
   const sunlight = useSunlight();
+  const sortMode = useNeedsStore(state => state.needSortMode);
+  const setSortMode = useNeedsStore(state => state.setNeedSortMode);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   return (
     <View style={styles.group}>
       <View style={styles.header}>
         <CueSectionLabel>Needs</CueSectionLabel>
         <View style={styles.actions}>
+          <Pressable
+            onPress={() => setSortMode(sortMode === 'manual' ? 'level' : 'manual')}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Change need sort order"
+          >
+            <Text
+              numberOfLines={1}
+              style={[styles.action, styles.sortAction]}
+            >
+              {sortMode === 'manual' ? '↕ Manual' : '↕ By %'}
+            </Text>
+          </Pressable>
           {needs.length > 0 && (
             <Pressable
               onPress={() => navigation.navigate('NeedsHistory')}
@@ -99,6 +115,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     paddingVertical: 8,
   },
+  sortAction: { flexShrink: 0 },
   action: {
     color: Colors.text.light,
     fontSize: 12,
