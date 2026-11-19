@@ -22,8 +22,10 @@ import { Colors } from '../../utils/colors';
 import { parseDecimalInput } from '../../utils/metadata-calculation-utils';
 import { getDefaultRefill } from '../../utils/need-utils';
 import { Button } from '../button';
+import { CheckboxRow } from '../checkbox-row';
 import { FullScreenModal } from '../full-screen-modal';
 import { Text, TextInput } from '../text';
+import { FillRateFields } from './fill-rate-fields';
 
 interface NeedAppSourceModalProps {
   needId: NeedId;
@@ -34,10 +36,11 @@ interface NeedAppSourceModalProps {
 /** Picks an app or website whose screen time fills a need. Makes an auto-tracked behavior and points the need at it. */
 export function NeedAppSourceModal({ needId, needLabel, onClose }: NeedAppSourceModalProps) {
   const insets = useSafeAreaInsets();
-  const { usageAccess, siteTracking } = useAppUsagePermission();
+  const { usageAccess, siteTracking, mediaWatch } = useAppUsagePermission();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [app, setApp] = useState<LaunchableApp>();
   const [site, setSite] = useState('');
+  const [mediaOnly, setMediaOnly] = useState(false);
   const [siteName, setSiteName] = useState('');
   const [siteNameEdited, setSiteNameEdited] = useState(false);
   const defaultRefill = getDefaultRefill(needId);
@@ -74,9 +77,15 @@ export function NeedAppSourceModal({ needId, needLabel, onClose }: NeedAppSource
     if (kind === 'site') iconUri = getSiteFaviconUri(normalizedSite);
     const displayName = kind === 'site' ? siteName.trim() || normalizedSite : '';
     let id = findAutoTrackedBehavior(store.behaviors, target)?.id;
+    if (id && kind === 'app') {
+      const existing = store.behaviors.find(b => b.id === id)?.autoTrackApp;
+      if (existing && Boolean(existing.mediaOnly) !== mediaOnly)
+        store.updateBehavior(id, { autoTrackApp: { ...existing, mediaOnly: mediaOnly || undefined } });
+    }
     if (id && kind === 'site' && displayName) store.updateBehavior(id, { name: displayName });
     if (!id) {
-      const autoApp = kind === 'app' ? getAutoTrackApp(app, undefined, cutoff) : undefined;
+      const baseApp = kind === 'app' ? getAutoTrackApp(app, undefined, cutoff) : undefined;
+      const autoApp = baseApp && mediaOnly ? { ...baseApp, mediaOnly: true } : baseApp;
       const autoSite = kind === 'site' ? getAutoTrackSite(normalizedSite, undefined, cutoff) : undefined;
       store.addBehavior(
         kind === 'app' ? (app?.label ?? '') : displayName,
@@ -139,20 +148,14 @@ export function NeedAppSourceModal({ needId, needLabel, onClose }: NeedAppSource
         )}
 
         <Text style={styles.heading}>How fast it fills</Text>
-        <View style={styles.row}>
-          <TextInput
-            style={[styles.input, styles.minutes]}
-            value={minutesText}
-            onChangeText={setMinutesText}
-            keyboardType="numeric"
-          />
-          <Text
-            style={styles.label}
-            numberOfLines={1}
-          >
-            minutes of use fill {needLabel} to 100%
-          </Text>
-        </View>
+        <FillRateFields
+          minutesText={minutesText}
+          onMinutesTextChange={setMinutesText}
+        />
+        <Text style={styles.note}>
+          Minutes of use to fill {needLabel} from 0 to 100%, or the % it fills per minute. Changing one updates the
+          other.
+        </Text>
 
         <Text style={styles.heading}>An app</Text>
         <View style={styles.row}>
@@ -169,6 +172,31 @@ export function NeedAppSourceModal({ needId, needLabel, onClose }: NeedAppSource
             {app ? 'Change' : 'Choose app'}
           </Button>
         </View>
+        {AppUsage?.getMediaEvents && (
+          <View style={styles.block}>
+            <CheckboxRow
+              label="Only while it's playing"
+              hint="Counts music or video playing in the background, not time on screen"
+              checked={mediaOnly}
+              onToggle={() => setMediaOnly(value => !value)}
+            />
+            {mediaOnly && !mediaWatch && (
+              <>
+                <Text style={styles.note}>
+                  Turn on Notification access for Recupero. It only sees whether media is playing, never the
+                  notification text. If Android says the setting is restricted, open Recupero's App info, tap ⋮, then
+                  "Allow restricted settings".
+                </Text>
+                <Button
+                  size="sm"
+                  onPress={() => AppUsage?.openNotificationListenerSettings?.()}
+                >
+                  Open notification access
+                </Button>
+              </>
+            )}
+          </View>
+        )}
         <Button
           disabled={!app}
           onPress={() => addTracked('app')}
@@ -247,7 +275,6 @@ const styles = StyleSheet.create({
   placeholder: { color: Colors.text.faint },
   note: { color: Colors.text.muted, fontSize: 12 },
   error: { color: Colors.text.muted, fontSize: 12 },
-  minutes: { width: 80 },
   input: {
     color: Colors.text.primary,
     borderWidth: 1,

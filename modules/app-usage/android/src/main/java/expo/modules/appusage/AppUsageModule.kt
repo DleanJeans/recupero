@@ -84,6 +84,20 @@ class AppUsageModule : Module() {
       SiteMarks.read(context, start.toLong(), end.toLong())
     }
 
+    Function("isMediaWatchEnabled") {
+      MediaWatchService.isEnabled(context)
+    }
+
+    Function("openNotificationListenerSettings") {
+      val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      context.startActivity(intent)
+    }
+
+    // Play/pause changes of media apps between start and end (epoch ms) as { timestamp, packageName, playing }.
+    AsyncFunction("getMediaEvents") { start: Double, end: Double ->
+      MediaEvents.read(context, start.toLong(), end.toLong())
+    }
+
     Function("canDrawOverlays") {
       Settings.canDrawOverlays(context)
     }

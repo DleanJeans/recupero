@@ -6,6 +6,7 @@ import { Colors } from '../../utils/colors';
 import { parseDecimalInput } from '../../utils/metadata-calculation-utils';
 import { Button } from '../button';
 import { Text, TextInput } from '../text';
+import { FillRateFields } from './fill-rate-fields';
 
 interface NeedAmountDialogProps {
   title: string;
@@ -17,6 +18,8 @@ interface NeedAmountDialogProps {
   max: number;
   /** Shown after the number, e.g. "%". */
   suffix?: string;
+  /** Also show a linked "% per minute" field; `value` is then minutes to fill 0-100%. */
+  linkedRate?: boolean;
   /** When set, a button that clears the typed value. */
   onReset?: () => void;
   resetLabel?: string;
@@ -32,6 +35,7 @@ export function NeedAmountDialog({
   min,
   max,
   suffix = '%',
+  linkedRate,
   onReset,
   resetLabel = 'Reset',
   onSubmit,
@@ -39,7 +43,9 @@ export function NeedAmountDialog({
 }: NeedAmountDialogProps) {
   const keyboardUp = useKeyboardVisible();
   const insets = useSafeAreaInsets();
-  const [text, setText] = useState(initial != null ? String(Math.round(initial)) : '');
+  const [text, setText] = useState(
+    initial != null ? (linkedRate ? String(Number(initial.toFixed(2))) : String(Math.round(initial))) : '',
+  );
   const value = parseDecimalInput(text);
   const valid = value != null && value >= min && value <= max;
 
@@ -66,19 +72,27 @@ export function NeedAmountDialog({
         <View style={styles.sheet}>
           <Text style={styles.title}>{title}</Text>
           {hint ? <Text style={styles.hint}>{hint}</Text> : null}
-          <View style={styles.inputRow}>
-            <TextInput
-              style={styles.input}
-              value={text}
-              onChangeText={setText}
-              keyboardType="decimal-pad"
-              placeholder={`${min}-${max}`}
-              placeholderTextColor={Colors.text.faint}
-              selectTextOnFocus
+          {linkedRate ? (
+            <FillRateFields
+              minutesText={text}
+              onMinutesTextChange={setText}
               autoFocus
             />
-            <Text style={styles.suffix}>{suffix}</Text>
-          </View>
+          ) : (
+            <View style={styles.inputRow}>
+              <TextInput
+                style={styles.input}
+                value={text}
+                onChangeText={setText}
+                keyboardType="decimal-pad"
+                placeholder={`${min}-${max}`}
+                placeholderTextColor={Colors.text.faint}
+                selectTextOnFocus
+                autoFocus
+              />
+              <Text style={styles.suffix}>{suffix}</Text>
+            </View>
+          )}
           <View style={styles.actions}>
             {onReset ? <Button onPress={onReset}>{resetLabel}</Button> : null}
             <Button onPress={onClose}>Cancel</Button>

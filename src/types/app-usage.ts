@@ -24,3 +24,10 @@ export interface SiteSession {
   start: number;
   end: number;
 }
+
+/** An app started (`playing`) or stopped playing media. */
+export interface MediaEvent {
+  packageName: string;
+  playing: boolean;
+  timestamp: number;
+}

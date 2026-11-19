@@ -27,6 +27,16 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Floating timer shown over other apps while a timer runs" />
         </service>
+        <!-- Notices when media starts or stops playing (play/pause only) so background listening can fill a need. -->
+        <service
+            android:name="expo.modules.appusage.MediaWatchService"
+            android:exported="true"
+            android:label="@string/recupero_site_tracking_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
         <!-- Reads the site name in Firefox's address bar for website auto-tracking. Off until the user enables it. -->
         <service
             android:name="expo.modules.appusage.SiteTrackingService"

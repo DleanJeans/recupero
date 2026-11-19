@@ -4,6 +4,7 @@ import {
   APP_USAGE_LOOKBACK_MS,
   APP_USAGE_MAX_WINDOW_MS,
   buildAppSessions,
+  buildMediaSessions,
   buildSiteSessions,
   getAppUsageQueryStart,
   getAutoTrackApp,
@@ -220,5 +221,16 @@ describe('site display names', () => {
     expect(parseSiteName('<meta property="og:site_name" content="Reddit">')).toBe('Reddit');
     expect(parseSiteName('<meta content="Tom &amp; Co" property="og:site_name"/>')).toBe('Tom & Co');
     expect(parseSiteName('<title>x</title>')).toBe('');
+  });
+});
+
+describe('buildMediaSessions', () => {
+  it('pairs play and pause per app and drops a session still playing', () => {
+    const sessions = buildMediaSessions([
+      { packageName: 'a', playing: true, timestamp: 1000 },
+      { packageName: 'b', playing: true, timestamp: 2000 },
+      { packageName: 'a', playing: false, timestamp: 61_000 },
+    ]);
+    expect(sessions).toEqual([{ packageName: 'a', start: 1000, end: 61_000 }]);
   });
 });

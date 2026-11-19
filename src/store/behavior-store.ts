@@ -114,7 +114,12 @@ interface BehaviorStore {
     },
   ) => void;
   /** Turns app sessions and Firefox site visits into logs for behaviors that auto-track them, then marks them synced. */
-  applyAppUsageSessions: (appSessions: AppUsageSession[], siteSessions: SiteSession[], syncedUntil: number) => void;
+  applyAppUsageSessions: (
+    appSessions: AppUsageSession[],
+    siteSessions: SiteSession[],
+    syncedUntil: number,
+    mediaSessions?: AppUsageSession[],
+  ) => void;
   /** Logs synced sleeps to a behaviour (deduped by data point id). Returns the updated imported ids. */
   applyHealthSleeps: (behaviorId: string, sleeps: HealthSleep[], importedIds: string[]) => string[];
   logBehavior: (
@@ -283,14 +288,16 @@ export const useBehaviorStore = create<BehaviorStore>()(
         }));
         return logId;
       },
-      applyAppUsageSessions: (appSessions, siteSessions, syncedUntil) =>
+      applyAppUsageSessions: (appSessions, siteSessions, syncedUntil, mediaSessions = []) =>
         set(state => ({
           behaviors: state.behaviors.map(b => {
             const { autoTrackApp: app, autoTrackSite: site } = b;
             if (!app && !site) return b;
             let logs = b.logs;
             if (app) {
-              const sessions = appSessions.filter(session => session.packageName === app.packageName);
+              const sessions = (app.mediaOnly ? mediaSessions : appSessions).filter(
+                session => session.packageName === app.packageName,
+              );
               logs = mergeTrackedSessionsIntoLogs(logs, sessions, app.syncedUntil, uuidv4).logs;
             }
             if (site) {

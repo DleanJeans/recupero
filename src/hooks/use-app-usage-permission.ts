@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
-import { hasAppUsagePermission, isSiteTrackingEnabled } from '../utils/app-usage-sync';
+import { hasAppUsagePermission, isMediaWatchEnabled, isSiteTrackingEnabled } from '../utils/app-usage-sync';
 
 interface AppUsagePermissions {
   usageAccess: boolean;
   siteTracking: boolean;
+  mediaWatch: boolean;
 }
 
 function readPermissions(): AppUsagePermissions {
-  return { usageAccess: hasAppUsagePermission(), siteTracking: isSiteTrackingEnabled() };
+  return {
+    usageAccess: hasAppUsagePermission(),
+    siteTracking: isSiteTrackingEnabled(),
+    mediaWatch: isMediaWatchEnabled(),
+  };
 }
 
 /** Usage access and website tracking (accessibility) state, re-checked when the user returns from settings. */

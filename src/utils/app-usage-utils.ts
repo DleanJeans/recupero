@@ -1,4 +1,4 @@
-import type { AppUsageEvent, AppUsageSession, SiteMark, SiteSession } from '../types/app-usage';
+import type { AppUsageEvent, AppUsageSession, MediaEvent, SiteMark, SiteSession } from '../types/app-usage';
 import type { AutoTrackApp, AutoTrackSite, LogEntry, LogSource } from '../types/behavior';
 import { getDayStartTimestamp, toDateString } from './date-utils';
 
@@ -277,4 +277,24 @@ export async function fetchSiteName(domain: string, timeoutMs = 5000): Promise<s
   } finally {
     clearTimeout(timer);
   }
+}
+
+/**
+ * Turns play/pause changes into per-app listening sessions. A session still playing at the end of the
+ * events is dropped; the next sync picks it up once it stops.
+ */
+export function buildMediaSessions(events: MediaEvent[]): AppUsageSession[] {
+  const sorted = [...events].sort((a, b) => a.timestamp - b.timestamp);
+  const playingSince = new Map<string, number>();
+  const sessions: AppUsageSession[] = [];
+  for (const event of sorted) {
+    const since = playingSince.get(event.packageName);
+    if (event.playing && since == null) playingSince.set(event.packageName, event.timestamp);
+    if (!event.playing && since != null) {
+      playingSince.delete(event.packageName);
+      if (event.timestamp > since)
+        sessions.push({ packageName: event.packageName, start: since, end: event.timestamp });
+    }
+  }
+  return mergeAppSessions(sessions);
 }

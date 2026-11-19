@@ -1,5 +1,5 @@
 import { requireOptionalNativeModule } from 'expo';
-import type { AppUsageEvent, SiteMark } from '../../src/types/app-usage';
+import type { AppUsageEvent, MediaEvent, SiteMark } from '../../src/types/app-usage';
 
 export interface LaunchableApp {
   packageName: string;
@@ -22,6 +22,10 @@ interface AppUsageNativeModule {
   isSiteTrackingEnabled(): boolean;
   openAccessibilitySettings(): void;
   getSiteMarks(start: number, end: number): Promise<SiteMark[]>;
+  /** Notification access (to see media play/pause). Missing in builds made before media tracking. */
+  isMediaWatchEnabled?(): boolean;
+  openNotificationListenerSettings?(): void;
+  getMediaEvents?(start: number, end: number): Promise<MediaEvent[]>;
   /** JSON array of AppOpenWatch. Missing in builds made before app-open reminders. */
   setAppOpenWatches?(json: string): void;
 }

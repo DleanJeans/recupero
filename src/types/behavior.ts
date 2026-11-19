@@ -77,6 +77,8 @@ export interface AutoTrackApp {
   packageName: string;
   /** App name shown in the form, saved so it survives the app being uninstalled. */
   label: string;
+  /** Count only the time the app is playing media (needs Notification access), not time on screen. */
+  mediaOnly?: boolean;
   /** Usage that ended at or before this time has already been turned into logs. */
   syncedUntil: number;
 }

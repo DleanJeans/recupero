@@ -14,6 +14,8 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      'Fill rates now have a linked "% per min" field next to the minutes field; edit either one and the other updates.',
+      'An app can now fill a need only while it is playing music or video in the background, e.g. Spotify filling Fun. Pick the app, tick "Only while it\'s playing" and turn on Notification access (needs the newest app install).',
       "The app picker now shows each app's icon (needs the newest app install).",
       'Websites you track can now have a friendly name like "Reddit" instead of "reddit.com". Recupero fetches the site name for you and you can edit it; existing sites named by their address are renamed too.',
       'The Sunlight notification bar is now yellow with rounded ends, like the bar in the app (needs the newest app install).',

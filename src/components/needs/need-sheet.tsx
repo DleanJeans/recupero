@@ -526,6 +526,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
           min={1}
           max={1440}
           suffix="min"
+          linkedRate
           initial={rateEdit.minutes}
           onSubmit={value => {
             setRefill(need.id, rateEdit.behaviorId, { mode: 'duration', fullMinutes: value });

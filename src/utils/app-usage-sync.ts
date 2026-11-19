@@ -2,6 +2,7 @@ import { AppUsage } from '../../modules/app-usage';
 import { useBehaviorStore } from '../store/behavior-store';
 import {
   buildAppSessions,
+  buildMediaSessions,
   buildSiteSessions,
   fetchSiteName,
   getAppUsageQueryStart,
@@ -13,6 +14,14 @@ let syncInFlight: Promise<void> | null = null;
 
 export function isAppUsageAvailable(): boolean {
   return AppUsage != null;
+}
+
+export function isMediaWatchEnabled(): boolean {
+  try {
+    return AppUsage?.isMediaWatchEnabled?.() ?? false;
+  } catch {
+    return false;
+  }
 }
 
 export function hasAppUsagePermission(): boolean {
@@ -59,7 +68,8 @@ async function fillTrackedIcons(): Promise<void> {
 }
 
 async function runSync(): Promise<void> {
-  if (!AppUsage || !hasAppUsagePermission()) return;
+  // Without usage access the foreground query is empty, but media listening (notification access) still works.
+  if (!AppUsage) return;
   await fillTrackedIcons();
   const behaviors = useBehaviorStore.getState().behaviors;
   const syncedUntils = behaviors.flatMap(b => [b.autoTrackApp?.syncedUntil, b.autoTrackSite?.syncedUntil]);
@@ -74,7 +84,11 @@ async function runSync(): Promise<void> {
     const appSessions = buildAppSessions(events);
     // Read marks from a day earlier so the first Firefox session knows which site was open.
     const marks = tracksSites ? await AppUsage.getSiteMarks(start - MS_PER_DAY, now) : [];
-    useBehaviorStore.getState().applyAppUsageSessions(appSessions, buildSiteSessions(appSessions, marks), now);
+    const tracksMedia = behaviors.some(b => b.autoTrackApp?.mediaOnly);
+    const mediaEvents = tracksMedia ? ((await AppUsage.getMediaEvents?.(start - MS_PER_DAY, now)) ?? []) : [];
+    useBehaviorStore
+      .getState()
+      .applyAppUsageSessions(appSessions, buildSiteSessions(appSessions, marks), now, buildMediaSessions(mediaEvents));
   } catch (error) {
     console.warn('App usage sync failed', error);
   }
