@@ -127,7 +127,8 @@ class TimerOverlayService : Service() {
     for (index in timers.indices) {
       val label = view.getChildAt(index) as? TextView ?: continue
       val fill = timers[index].fill
-      val fillText = if (fill != null) "  ·  ${fill.emoji} ${Math.round(levelNow(fill, now))}%" else ""
+      // The need goes on its own line so it is never cut off; the name may wrap but never the time/percent.
+      val fillText = if (fill != null) "\n${fill.emoji} ${Math.round(levelNow(fill, now))}%" else ""
       label.text = "⏱ ${timers[index].name}  ${format(now - timers[index].start)}$fillText"
     }
     refreshNotification(now)
@@ -192,9 +193,9 @@ class TimerOverlayService : Service() {
     val text = TextView(this)
     text.setTextColor(Color.parseColor("#4ADE80"))
     text.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-    text.setSingleLine(true)
-    text.maxWidth = dp(260)
-    text.ellipsize = android.text.TextUtils.TruncateAt.END
+    text.isSingleLine = false
+    text.maxLines = 4
+    text.maxWidth = Math.min(dp(300), resources.displayMetrics.widthPixels - dp(56))
     text.text = "⏱ ${timer.name}"
     return text
   }
