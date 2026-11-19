@@ -5,6 +5,7 @@ import { useBehaviorStore } from '../store/behavior-store';
 import type { TimerSession } from '../store/timer-store';
 import { Colors } from '../utils/colors';
 import { formatStopwatchDuration } from '../utils/stopwatch-utils';
+import { BehaviorIcon } from './behavior-icon';
 import { Text } from './text';
 
 interface TimerPillProps {
@@ -16,7 +17,8 @@ interface TimerPillProps {
 /** One timer's pill: green while running, grey when paused or waiting to be logged. */
 export function TimerPill({ session, onPress, style }: TimerPillProps) {
   const { lockedBehaviorId, startTimestamp, stopTimestamp, pausedAt } = session;
-  const behaviorName = useBehaviorStore(s => s.behaviors.find(b => b.id === lockedBehaviorId)?.name);
+  const behavior = useBehaviorStore(s => s.behaviors.find(b => b.id === lockedBehaviorId));
+  const behaviorName = behavior?.name;
   const isRunning = startTimestamp != null && stopTimestamp == null;
   const [now, setNow] = useState(() => Date.now());
 
@@ -45,7 +47,14 @@ export function TimerPill({ session, onPress, style }: TimerPillProps) {
         accessibilityRole="button"
         accessibilityLabel={`Open timer for ${behaviorName}, ${elapsed}`}
       >
-        {isRunning && <View style={styles.dot} />}
+        {behavior && (
+          <View style={[styles.iconCircle, !isRunning && styles.iconCircleStopped]}>
+            <BehaviorIcon
+              behavior={behavior}
+              size={14}
+            />
+          </View>
+        )}
         <Ionicons
           name={isPaused ? 'pause' : 'stopwatch-outline'}
           size={15}
@@ -86,7 +95,18 @@ const styles = StyleSheet.create({
   },
   pillStopped: { backgroundColor: Colors.bg.elevated },
   pressed: { opacity: 0.8 },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: Colors.type.desirable },
+  // The behavior's icon in a circle, at the pill's left edge.
+  iconCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginLeft: -8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    backgroundColor: 'rgba(0,0,0,0.28)',
+  },
+  iconCircleStopped: { opacity: 0.6 },
   // The name gives way first, so the time (1:05:12, hint) is never cut off.
   name: { color: Colors.typeText.desirable, fontSize: 13, fontWeight: '600', flexShrink: 1 },
   time: { color: Colors.typeText.desirable, fontSize: 13, fontWeight: '600', flexShrink: 0 },
