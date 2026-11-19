@@ -9,8 +9,8 @@ import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-c
 import { BOTTOM_NAV_HEIGHT, BottomNav, type BottomNavRoute } from './src/components/bottom-nav';
 import { ConfettiOverlay } from './src/components/confetti-overlay';
 import { ImageClearHost } from './src/components/image-clear-host';
-import { ReminderToastHost } from './src/components/reminder-toast-host';
 import { NavFloatingPills } from './src/components/nav-floating-pills';
+import { ReminderToastHost } from './src/components/reminder-toast-host';
 import { Text } from './src/components/text';
 import { useAppFonts } from './src/hooks/use-app-fonts';
 import { useAppUsageSync } from './src/hooks/use-app-usage-sync';
