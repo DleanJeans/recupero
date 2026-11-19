@@ -49,8 +49,8 @@ export function SunlightLuxChart({ day, weather, now, isToday }: SunlightLuxChar
                 styles.bar,
                 {
                   height: Math.max(point.lux > 0 ? 2 : 0, (point.lux / max) * CHART_HEIGHT),
-                  backgroundColor: point.out ? SUNLIGHT_COLOR : Colors.border.light,
-                  opacity: nowIndex >= 0 && index > nowIndex ? 0.45 : 1,
+                  backgroundColor: SUNLIGHT_COLOR,
+                  opacity: (point.out ? 1 : 0.4) * (nowIndex >= 0 && index > nowIndex ? 0.6 : 1),
                 },
               ]}
             />
@@ -61,7 +61,7 @@ export function SunlightLuxChart({ day, weather, now, isToday }: SunlightLuxChar
         <Text style={styles.label}>{formatTime(day.sunrise)}</Text>
         <Text style={styles.label}>{formatTime(day.sunset)}</Text>
       </View>
-      <Text style={styles.legend}>Bright bars: time you were outside</Text>
+      <Text style={styles.legend}>Solid yellow: time you were outside</Text>
     </View>
   );
 }
