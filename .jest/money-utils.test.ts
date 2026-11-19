@@ -195,13 +195,15 @@ describe('money-utils', () => {
     expect(getBehaviorMoney(behavior)).toBe(-7 * MONEY_PER_MINUTE);
   });
 
-  it('rewards completed one-off tasks based on their stars', () => {
+  it('rewards completed tasks based on their stars, including tasks linked to a behavior', () => {
     const oneOff = makeTask({ stars: 3, completedDates: ['2024-01-01', '2024-01-02'] });
     const behaviorTask = makeTask({ source: 'behavior', behaviorId: 'behavior-1', completedDates: ['2024-01-01'] });
+    const oldBehaviorTask = makeTask({ stars: 0, behaviorId: 'behavior-1', completedDates: ['2024-01-01'] });
 
     expect(getTaskMoney(oneOff)).toBe(6 * MONEY_PER_TASK_STAR);
-    expect(getTaskMoney(behaviorTask)).toBe(0);
-    expect(getTotalMoneyEarned([], [oneOff, behaviorTask])).toBe(6 * MONEY_PER_TASK_STAR);
+    expect(getTaskMoney(behaviorTask)).toBe(MONEY_PER_TASK_STAR);
+    expect(getTaskMoney(oldBehaviorTask)).toBe(0);
+    expect(getTotalMoneyEarned([], [oneOff, behaviorTask])).toBe(7 * MONEY_PER_TASK_STAR);
     expect(getMoneyBalance([], [], [oneOff])).toBe(6 * MONEY_PER_TASK_STAR);
   });
 

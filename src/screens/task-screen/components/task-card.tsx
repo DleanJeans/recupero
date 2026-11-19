@@ -14,8 +14,7 @@ import type { RootStackParamList } from '../../../types/navigation';
 import type { TaskEntry } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
 import { getPlaceIconText } from '../../../utils/cue-utils';
-import { isTaskCompleteOnDate } from '../../../utils/task-utils';
-import { TaskStarRow } from './task-star-row';
+import { TaskRewardChip } from './task-reward-chip';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -25,20 +24,25 @@ interface TaskCardProps {
   task: TaskEntry;
   behavior: BehaviorEntry | undefined;
   place?: SavedPlace;
-  selectedDate: string;
-  onToggle: () => void;
-  onEdit: () => void;
-  onRemove: () => void;
+  complete: boolean;
+  /** Picked as one of "Today's 3": drawn bigger with a blue edge. */
+  focused?: boolean;
+  /** Extra text for the second line, e.g. "Got it Nov 18". */
+  note?: string;
+  onToggle: (task: TaskEntry) => void;
+  onLongPress: (task: TaskEntry) => void;
 }
 
-function TaskCardComponent({ task, behavior, place, selectedDate, onToggle, onEdit, onRemove }: TaskCardProps) {
+function TaskCardComponent({ task, behavior, place, complete, focused, note, onToggle, onLongPress }: TaskCardProps) {
   const navigation = useNavigation<NavigationProp>();
   const startTimer = useTimerStore(s => s.start);
-  const complete = isTaskCompleteOnDate(task, selectedDate);
-  const isBehaviorTask = task.source === 'behavior' || (!task.source && task.behaviorId);
-  const kindMeta = isBehaviorTask ? 'Behavior task' : behavior ? `One-off · ${behavior.name}` : 'One-off';
-  const taskMeta = place ? `${kindMeta} · ${getPlaceIconText(place)} ${place.name}` : kindMeta;
-  const canTrack = behavior?.xpEnabled === true && behavior.durationXpEnabled === true;
+  const showBehaviorName = behavior != null && behavior.name.trim() !== task.title.trim();
+  const metaParts = [
+    showBehaviorName ? behavior.name : undefined,
+    place ? `${getPlaceIconText(place)} ${place.name}` : undefined,
+    note,
+  ].filter((part): part is string => Boolean(part));
+  const canTrack = !complete && behavior?.xpEnabled === true && behavior.durationXpEnabled === true;
 
   const handlePlay = () => {
     if (!behavior || !canTrack) return;
@@ -49,16 +53,19 @@ function TaskCardComponent({ task, behavior, place, selectedDate, onToggle, onEd
   return (
     <Animated.View
       layout={TASK_CARD_LAYOUT}
-      style={[styles.taskCard, complete && styles.taskCardComplete]}
+      style={[styles.taskCard, focused && styles.focusCard, complete && styles.taskCardComplete]}
     >
       <Pressable
-        style={styles.taskMain}
-        onPress={onToggle}
-        onLongPress={onEdit}
+        style={[styles.taskMain, focused && styles.focusMain]}
+        onPress={() => onToggle(task)}
+        onLongPress={() => onLongPress(task)}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: complete }}
+        accessibilityHint="Long-press for more options"
       >
         <Ionicons
           name={complete ? 'checkmark-circle' : 'ellipse-outline'}
-          size={22}
+          size={focused ? 26 : 22}
           color={complete ? Colors.status.successLight : Colors.text.faint}
         />
         <View style={styles.taskTextStack}>
@@ -70,22 +77,27 @@ function TaskCardComponent({ task, behavior, place, selectedDate, onToggle, onEd
               />
             ) : null}
             <Text
-              style={[styles.taskTitle, complete && styles.taskTitleComplete]}
+              style={[styles.taskTitle, focused && styles.focusTitle, complete && styles.taskTitleComplete]}
               numberOfLines={2}
             >
               {task.title}
             </Text>
           </View>
-          <View style={styles.taskMetaRow}>
+          {metaParts.length > 0 && (
             <Text
               style={styles.taskMeta}
               numberOfLines={1}
             >
-              {taskMeta}
+              {metaParts.join(' · ')}
             </Text>
-            {task.stars > 0 && <TaskStarRow stars={task.stars} />}
-          </View>
+          )}
         </View>
+        {task.stars > 0 && (
+          <TaskRewardChip
+            stars={task.stars}
+            earned={complete}
+          />
+        )}
       </Pressable>
       {canTrack && (
         <Button
@@ -101,41 +113,28 @@ function TaskCardComponent({ task, behavior, place, selectedDate, onToggle, onEd
           />
         </Button>
       )}
-      <Button
-        variant="icon"
-        onPress={onRemove}
-        accessibilityLabel={`Remove ${task.title}`}
-        style={styles.removeButton}
-      >
-        <Ionicons
-          name="trash-outline"
-          size={18}
-          color={Colors.text.faint}
-        />
-      </Button>
     </Animated.View>
   );
 }
 
-export const TaskCard = React.memo(TaskCardComponent, (prev, next) => {
-  return (
-    prev.task === next.task &&
-    prev.behavior === next.behavior &&
-    prev.place === next.place &&
-    prev.selectedDate === next.selectedDate
-  );
-});
+export const TaskCard = React.memo(TaskCardComponent);
 
 const styles = StyleSheet.create({
   taskCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.bg.card,
-    borderRadius: 10,
+    borderRadius: 12,
     overflow: 'hidden',
+  },
+  focusCard: {
+    backgroundColor: '#1f2430',
+    borderWidth: 1,
+    borderColor: '#2f3b55',
   },
   taskCardComplete: {
     backgroundColor: Colors.bg.darker,
+    borderColor: Colors.bg.darker,
   },
   taskMain: {
     flex: 1,
@@ -143,7 +142,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     paddingHorizontal: 12,
-    paddingVertical: 9,
+    paddingVertical: 10,
+  },
+  focusMain: {
+    paddingVertical: 14,
   },
   taskTextStack: {
     flex: 1,
@@ -160,27 +162,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     flex: 1,
   },
+  focusTitle: {
+    fontSize: 16,
+  },
   taskTitleComplete: {
     color: Colors.text.muted,
     textDecorationLine: 'line-through',
-  },
-  taskMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
   },
   taskMeta: {
     color: Colors.text.faint,
     fontSize: 11,
     fontWeight: '600',
-    flexShrink: 1,
-  },
-  removeButton: {
-    alignSelf: 'stretch',
-    width: 42,
   },
   playButton: {
     alignSelf: 'stretch',
-    width: 42,
+    width: 44,
   },
 });

@@ -65,9 +65,9 @@ export function TaskComposer({
   canSubmit,
 }: TaskComposerProps) {
   const hasAttachedBehavior = selectedBehaviorId != null;
-  const shouldShowStarPicker = showStarPicker && !hasAttachedBehavior;
+  const shouldShowStarPicker = showStarPicker;
   const canAdd = canSubmit ?? (title.trim().length > 0 || hasAttachedBehavior);
-  const fullWidthSubmitButton = hasAttachedBehavior || (!showCancelButton && !shouldShowStarPicker);
+  const fullWidthSubmitButton = !showCancelButton && !shouldShowStarPicker;
 
   return (
     <View style={[styles.composer, showSubmitButton && { gap: 12 }]}>

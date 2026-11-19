@@ -1,5 +1,7 @@
 export type TaskStarValue = 0 | 1 | 2 | 3;
 export type TaskSource = 'oneOff' | 'behavior';
+/** Which Tasks tab the task lives on. Unset = derived (Shopping when linked to a shopping app/behavior, else Next up). */
+export type TaskList = 'next' | 'shopping' | 'someday';
 
 export interface TaskEntry {
   id: string;
@@ -12,6 +14,10 @@ export interface TaskEntry {
   placeId?: string;
   /** Minutes to stay at the place before the task ticks itself off. Unset means the default (5). */
   placeDwellMin?: number;
+  /** Tasks tab this task lives on. Unset means derived, see getTaskList. */
+  list?: TaskList;
+  /** Dates (yyyy-MM-dd) on which this task was picked as one of "Today's 3". */
+  focusDates?: string[];
   completedDates: string[];
   completedAtByDate?: Record<string, number>;
   completionLogIds?: Record<string, string>;
@@ -27,4 +33,5 @@ export interface AddTaskInput {
   behaviorId?: string;
   placeId?: string;
   placeDwellMin?: number;
+  list?: TaskList;
 }

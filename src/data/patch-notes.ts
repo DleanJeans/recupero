@@ -38,6 +38,11 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-19',
     items: [
       'Cook a batch is now a button above Add behavior on Routines, shown only while the Food category is selected (it shrinks while you scroll, like Add behavior). Choose which categories show it in Settings > Cook a batch button. The chip on the New behavior screen is gone.',
+      'Tasks has 3 tabs now: Today, Shopping and Later. Tasks linked to a shopping app or behavior (like Shopee) moved to the Shopping tab by themselves.',
+      "Today's 3: pick up to 3 tasks to focus on each day. Finish all 3 for +5 bonus stars and a day on your streak, shown at the top of Today.",
+      'Every task now earns its stars and money, including tasks linked to a behavior (they used to earn nothing). Open tasks that had 0 stars got 1. The reward shows as a +★ chip on the right of each task.',
+      "Long-press a task for its menu: Edit, add to Today's 3, move to Today, Shopping or Later, or Delete. The trash can on each row is gone.",
+      'Shopping: tick an item when you have bought it. It moves to "Got it" with the date.',
       'Ingredients of a meal batch now get a log of their own (so "last time" works for them), without counting toward Hunger or daily totals. Tapping one opens the batch instead. Batches you already cooked got their ingredient logs too.',
       'The running-timer pill now always shows the full time (like 1:05:12) once it passes an hour. A long behavior name is shortened instead.',
       {

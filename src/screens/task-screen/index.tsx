@@ -1,43 +1,63 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
-import Animated, { LinearTransition } from 'react-native-reanimated';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button } from '../../components/button';
+
 import { SafeAreaView } from '../../components/safe-area-view';
 import { TabHeader } from '../../components/tab-header';
 import { Text } from '../../components/text';
 import { useDeferredComputation } from '../../hooks/use-deferred-computation';
+import { useFabCollapse } from '../../hooks/use-fab-collapse';
 import { resyncReminders } from '../../hooks/use-reminder-engine';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useCuesStore } from '../../store/cues-store';
-import { useScreenUiStore } from '../../store/screen-ui-store';
+import { type TaskTab, useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
-import type { TaskEntry, TaskStarValue } from '../../types/task';
+import type { TaskEntry, TaskList, TaskStarValue } from '../../types/task';
 import { getActiveBehaviors } from '../../utils/archive-utils';
 import { getCalendarTaskCompletionMetrics } from '../../utils/calendar-metrics';
 import { Colors } from '../../utils/colors';
-import { toDateString } from '../../utils/date-utils';
+import { formatDateDisplay, toDateString } from '../../utils/date-utils';
 import { DEFAULT_PLACE_DWELL_MIN, getPlaceDwellMin } from '../../utils/place-task-utils';
 import { requestPlaceTaskPermissions } from '../../utils/reminder-permissions';
-import { getTaskStarsForDate, getTasksForDate, isTaskCompleteOnDate } from '../../utils/task-utils';
+import {
+  FOCUS_BONUS_STARS,
+  getFocusStreak,
+  getFocusTasksForDate,
+  getTaskList,
+  getTaskStarsForDate,
+  getTasksForDate,
+  hasFocusBonusOnDate,
+  isTaskCompleteOnDate,
+  isTaskFocusedOn,
+  isTaskVisibleOnDate,
+  TODAY_FOCUS_LIMIT,
+} from '../../utils/task-utils';
 import { DateNavigationRow } from '../components/date-navigation-row';
-import { SummaryRow } from '../components/summary-row';
+import { AddBehaviorFab } from '../home-screen/components/add-behavior-fab';
+import { FocusStreakStrip } from './components/focus-streak-strip';
+import { TaskActionSheet } from './components/task-action-sheet';
 import { TaskCard } from './components/task-card';
 import { TaskComposer } from './components/task-composer';
+import { TaskTabs } from './components/task-tabs';
+import { type TodayPickCandidate, TodayPickSheet } from './components/today-pick-sheet';
 
-const TASK_LIST_LAYOUT = LinearTransition.duration(240);
+const LIST_ORDER: Record<TaskList, number> = { next: 0, shopping: 1, someday: 2 };
+const GOT_IT_LIMIT = 20;
+const FAB_LABELS: Record<TaskTab, string> = { today: 'Add task', shopping: 'Add to buy', later: 'Add idea' };
+const TAB_LIST: Record<TaskTab, TaskList | undefined> = { today: undefined, shopping: 'shopping', later: 'someday' };
+
+function lastCompletedDate(task: TaskEntry): string | undefined {
+  return [...task.completedDates].sort().at(-1);
+}
 
 export function TaskScreen() {
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const todayStr = useMemo(() => toDateString(new Date(), dayCutoffHour), [dayCutoffHour]);
   const taskScreenSelectedDate = useScreenUiStore(s => s.taskScreenSelectedDate);
-  const setTaskScreenSelectedDate = useScreenUiStore(s => s.setTaskScreenSelectedDate);
+  const setSelectedDate = useScreenUiStore(s => s.setTaskScreenSelectedDate);
+  const tab = useScreenUiStore(s => s.taskScreenTab);
+  const setTab = useScreenUiStore(s => s.setTaskScreenTab);
   const selectedDate = taskScreenSelectedDate ?? todayStr;
-  const setSelectedDate = useCallback(
-    (date: string) => {
-      setTaskScreenSelectedDate(date);
-    },
-    [setTaskScreenSelectedDate],
-  );
   const [title, setTitle] = useState('');
   const [behaviorQuery, setBehaviorQuery] = useState('');
   const [stars, setStars] = useState<TaskStarValue>(1);
@@ -46,6 +66,9 @@ export function TaskScreen() {
   const [placeDwellMin, setPlaceDwellMin] = useState(DEFAULT_PLACE_DWELL_MIN);
   const [composerOpen, setComposerOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | undefined>();
+  const [menuTaskId, setMenuTaskId] = useState<string | undefined>();
+  const [pickOpen, setPickOpen] = useState(false);
+  const { collapsed: fabCollapsed, onScroll } = useFabCollapse();
 
   const behaviors = useBehaviorStore(s => s.behaviors);
   const tasks = useBehaviorStore(s => s.tasks);
@@ -53,6 +76,7 @@ export function TaskScreen() {
   const updateTask = useBehaviorStore(s => s.updateTask);
   const removeTask = useBehaviorStore(s => s.removeTask);
   const toggleTaskCompletion = useBehaviorStore(s => s.toggleTaskCompletion);
+  const toggleTaskFocus = useBehaviorStore(s => s.toggleTaskFocus);
   const hidePrivate = useSettingsStore(s => s.hidePrivate);
   const places = useCuesStore(s => s.places);
   const placeById = useMemo(() => new Map(places.map(place => [place.id, place])), [places]);
@@ -64,31 +88,80 @@ export function TaskScreen() {
     return [...visible].sort((a, b) => a.name.localeCompare(b.name));
   }, [behaviors, composerOpen, hidePrivate]);
   const behaviorById = useMemo(() => new Map(behaviors.map(behavior => [behavior.id, behavior])), [behaviors]);
+  const behaviorOf = useCallback(
+    (task: TaskEntry) => (task.behaviorId ? behaviorById.get(task.behaviorId) : undefined),
+    [behaviorById],
+  );
+  const listOf = useCallback((task: TaskEntry) => getTaskList(task, behaviorOf(task)), [behaviorOf]);
+
+  // Picks can be made for today and later days only, so a past day's bonus can't be earned after the fact.
+  const canPick = selectedDate >= todayStr;
+  const focusDate = canPick ? selectedDate : todayStr;
+
+  const focusTasks = useMemo(
+    () =>
+      getFocusTasksForDate(tasks, selectedDate).filter(task => isTaskVisibleOnDate(task, selectedDate, dayCutoffHour)),
+    [tasks, selectedDate, dayCutoffHour],
+  );
+  const nextUpTasks = useMemo(
+    () =>
+      getTasksForDate(tasks, selectedDate, dayCutoffHour).filter(
+        task => !isTaskFocusedOn(task, selectedDate) && listOf(task) === 'next',
+      ),
+    [tasks, selectedDate, dayCutoffHour, listOf],
+  );
+  const shoppingTasks = useMemo(
+    () => (tasks ?? []).filter(task => !task.archived && listOf(task) === 'shopping'),
+    [tasks, listOf],
+  );
+  const toBuyTasks = useMemo(
+    () => shoppingTasks.filter(task => task.completedDates.length === 0).sort((a, b) => a.createdAt - b.createdAt),
+    [shoppingTasks],
+  );
+  const gotItTasks = useMemo(
+    () =>
+      shoppingTasks
+        .filter(task => task.completedDates.length > 0)
+        .sort((a, b) => (lastCompletedDate(b) ?? '').localeCompare(lastCompletedDate(a) ?? ''))
+        .slice(0, GOT_IT_LIMIT),
+    [shoppingTasks],
+  );
+  const laterTasks = useMemo(
+    () =>
+      (tasks ?? [])
+        .filter(task => !task.archived && task.completedDates.length === 0 && listOf(task) === 'someday')
+        .sort((a, b) => a.createdAt - b.createdAt),
+    [tasks, listOf],
+  );
+
+  const focusDoneCount = focusTasks.filter(task => isTaskCompleteOnDate(task, selectedDate)).length;
+  const bonusEarned = useMemo(() => hasFocusBonusOnDate(tasks, selectedDate), [tasks, selectedDate]);
+  const streak = useMemo(() => getFocusStreak(tasks, todayStr), [tasks, todayStr]);
+  const starsOnDate = useMemo(() => getTaskStarsForDate(tasks, selectedDate), [tasks, selectedDate]);
+  const calendarDayMetrics = useDeferredComputation(() => getCalendarTaskCompletionMetrics(tasks), [tasks]);
+  const openNextUpCount = nextUpTasks.filter(task => !isTaskCompleteOnDate(task, selectedDate)).length;
+  const tabCounts: Record<TaskTab, number> = {
+    today: focusTasks.length > 0 ? focusTasks.length - focusDoneCount : openNextUpCount,
+    shopping: toBuyTasks.length,
+    later: laterTasks.length,
+  };
+
+  const pickCandidates = useMemo<TodayPickCandidate[]>(() => {
+    if (!pickOpen) return [];
+    return (tasks ?? [])
+      .filter(task => !task.archived && (isTaskFocusedOn(task, focusDate) || task.completedDates.length === 0))
+      .map(task => ({ task, list: listOf(task), picked: isTaskFocusedOn(task, focusDate) }))
+      .sort(
+        (a, b) =>
+          Number(b.picked) - Number(a.picked) ||
+          LIST_ORDER[a.list] - LIST_ORDER[b.list] ||
+          a.task.createdAt - b.task.createdAt,
+      );
+  }, [pickOpen, tasks, focusDate, listOf]);
+  const focusCountForPickDate = useMemo(() => getFocusTasksForDate(tasks, focusDate).length, [tasks, focusDate]);
 
   const selectedBehavior = selectedBehaviorId ? behaviorById.get(selectedBehaviorId) : undefined;
-  const dayTasks = useMemo(
-    () => getTasksForDate(tasks, selectedDate, dayCutoffHour),
-    [tasks, dayCutoffHour, selectedDate],
-  );
-  const completedCount = useMemo(
-    () => dayTasks.filter(task => isTaskCompleteOnDate(task, selectedDate)).length,
-    [dayTasks, selectedDate],
-  );
-  const taskStars = useMemo(() => getTaskStarsForDate(tasks, selectedDate), [tasks, selectedDate]);
-  const calendarDayMetrics = useDeferredComputation(() => getCalendarTaskCompletionMetrics(tasks), [tasks]);
-  const summaryItems = useMemo(
-    () => [
-      { label: 'done', value: completedCount },
-      { label: 'tasks', value: dayTasks.length },
-      {
-        label: 'stars',
-        value: taskStars,
-        icon: 'star' as const,
-        accessibilityLabel: `${taskStars} task stars on this date`,
-      },
-    ],
-    [completedCount, dayTasks.length, taskStars],
-  );
+  const menuTask = menuTaskId ? (tasks ?? []).find(task => task.id === menuTaskId) : undefined;
 
   const resetComposer = () => {
     setTitle('');
@@ -109,21 +182,24 @@ export function TaskScreen() {
     const taskTitle = trimmedTitle || selectedBehavior?.name.trim() || '';
     if (!taskTitle) return;
     const isBehaviorOnlyTask = !trimmedTitle && selectedBehavior != null;
-    const nextStars: TaskStarValue = selectedBehavior ? 0 : stars === 0 ? 1 : stars;
+    const hasPlace = selectedPlaceId != null && placeById.has(selectedPlaceId);
     const nextTask = {
       title: taskTitle,
-      scheduledDate: selectedDate,
-      stars: nextStars,
+      stars: stars === 0 ? (1 as const) : stars,
       source: isBehaviorOnlyTask ? ('behavior' as const) : ('oneOff' as const),
       behaviorId: selectedBehavior?.id,
-      placeId: selectedPlaceId && placeById.has(selectedPlaceId) ? selectedPlaceId : undefined,
-      placeDwellMin: selectedPlaceId && placeById.has(selectedPlaceId) ? placeDwellMin : undefined,
+      placeId: hasPlace ? selectedPlaceId : undefined,
+      placeDwellMin: hasPlace ? placeDwellMin : undefined,
     };
 
     if (editingTaskId) {
       updateTask(editingTaskId, nextTask);
     } else {
-      addTask(nextTask);
+      addTask({
+        ...nextTask,
+        scheduledDate: tab === 'today' ? selectedDate : todayStr,
+        list: TAB_LIST[tab],
+      });
     }
     closeComposer();
     if (nextTask.placeId) {
@@ -139,68 +215,131 @@ export function TaskScreen() {
     setComposerOpen(true);
   };
 
-  const openEditComposer = useCallback(
-    (task: TaskEntry) => {
-      const behavior = task.behaviorId ? behaviorById.get(task.behaviorId) : undefined;
-      setTitle(task.source === 'behavior' ? '' : task.title);
-      setBehaviorQuery(behavior?.name ?? '');
-      setStars(task.stars);
-      setSelectedBehaviorId(task.behaviorId);
-      setSelectedPlaceId(task.placeId);
-      setPlaceDwellMin(getPlaceDwellMin(task));
-      setEditingTaskId(task.id);
-      setComposerOpen(true);
-    },
-    [behaviorById],
-  );
+  const openEditComposer = (task: TaskEntry) => {
+    const behavior = behaviorOf(task);
+    setTitle(task.source === 'behavior' ? '' : task.title);
+    setBehaviorQuery(behavior?.name ?? '');
+    setStars(task.stars === 0 ? 1 : task.stars);
+    setSelectedBehaviorId(task.behaviorId);
+    setSelectedPlaceId(task.placeId);
+    setPlaceDwellMin(getPlaceDwellMin(task));
+    setEditingTaskId(task.id);
+    setComposerOpen(true);
+  };
 
-  const goToPrevDay = () => {
+  const shiftDay = (days: number) => {
     const d = new Date(`${selectedDate}T12:00:00`);
-    d.setDate(d.getDate() - 1);
+    d.setDate(d.getDate() + days);
     setSelectedDate(toDateString(d));
   };
 
-  const goToNextDay = () => {
-    const d = new Date(`${selectedDate}T12:00:00`);
-    d.setDate(d.getDate() + 1);
-    setSelectedDate(toDateString(d));
+  const confirmRemove = (task: TaskEntry) => {
+    Alert.alert('Remove Task', `Remove "${task.title}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () => removeTask(task.id),
+      },
+    ]);
   };
 
-  const confirmRemove = useCallback(
-    (task: TaskEntry) => {
-      Alert.alert('Remove Task', `Remove "${task.title}"?`, [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => removeTask(task.id),
-        },
-      ]);
-    },
-    [removeTask],
-  );
-  const handleToggleTask = useCallback(
-    (taskId: string) => {
-      toggleTaskCompletion(taskId, selectedDate);
-    },
+  const handleTodayToggle = useCallback(
+    (task: TaskEntry) => toggleTaskCompletion(task.id, selectedDate),
     [selectedDate, toggleTaskCompletion],
   );
-  const renderTask = useCallback(
-    ({ item: task }: { item: TaskEntry }) => {
-      const behavior = task.behaviorId ? behaviorById.get(task.behaviorId) : undefined;
-      return (
-        <TaskCard
-          task={task}
-          behavior={behavior}
-          place={task.placeId ? placeById.get(task.placeId) : undefined}
-          selectedDate={selectedDate}
-          onToggle={() => handleToggleTask(task.id)}
-          onEdit={() => openEditComposer(task)}
-          onRemove={() => confirmRemove(task)}
-        />
-      );
-    },
-    [behaviorById, confirmRemove, handleToggleTask, openEditComposer, placeById, selectedDate],
+  /** Shopping and Later items tick off today, and untick on the day they were done. */
+  const handleListToggle = useCallback(
+    (task: TaskEntry) => toggleTaskCompletion(task.id, lastCompletedDate(task) ?? todayStr),
+    [todayStr, toggleTaskCompletion],
+  );
+  const openMenu = useCallback((task: TaskEntry) => setMenuTaskId(task.id), []);
+
+  const renderCard = (
+    task: TaskEntry,
+    complete: boolean,
+    onToggle: (task: TaskEntry) => void,
+    options: { focused?: boolean; note?: string } = {},
+  ) => (
+    <TaskCard
+      key={task.id}
+      task={task}
+      behavior={behaviorOf(task)}
+      place={task.placeId ? placeById.get(task.placeId) : undefined}
+      complete={complete}
+      focused={options.focused}
+      note={options.note}
+      onToggle={onToggle}
+      onLongPress={openMenu}
+    />
+  );
+
+  const renderToday = () => (
+    <>
+      <SectionHeader
+        title={`Today's ${TODAY_FOCUS_LIMIT}`}
+        action={canPick ? (focusTasks.length > 0 ? 'Change' : 'Pick') : undefined}
+        onAction={() => setPickOpen(true)}
+      />
+      {focusTasks.length === 0 ? (
+        <View style={styles.pickCard}>
+          <Text style={styles.pickText}>
+            {canPick
+              ? `Pick up to ${TODAY_FOCUS_LIMIT} tasks to focus on. Finish all ${TODAY_FOCUS_LIMIT} for +${FOCUS_BONUS_STARS} stars and a day on your streak.`
+              : 'No tasks were picked on this day.'}
+          </Text>
+          {canPick && (
+            <Button
+              variant="primary"
+              size="sm"
+              onPress={() => setPickOpen(true)}
+            >
+              {`Pick today's ${TODAY_FOCUS_LIMIT}`}
+            </Button>
+          )}
+        </View>
+      ) : (
+        focusTasks.map(task =>
+          renderCard(task, isTaskCompleteOnDate(task, selectedDate), handleTodayToggle, { focused: true }),
+        )
+      )}
+      <SectionHeader title="Next up" />
+      {nextUpTasks.length === 0 ? (
+        <Text style={styles.empty}>Nothing else for this day.</Text>
+      ) : (
+        nextUpTasks.map(task => renderCard(task, isTaskCompleteOnDate(task, selectedDate), handleTodayToggle))
+      )}
+    </>
+  );
+
+  const renderShopping = () => (
+    <>
+      <SectionHeader title="To buy" />
+      {toBuyTasks.length === 0 ? (
+        <Text style={styles.empty}>Nothing to buy. Tap + to add something.</Text>
+      ) : (
+        toBuyTasks.map(task => renderCard(task, false, handleListToggle))
+      )}
+      {gotItTasks.length > 0 && <SectionHeader title="Got it" />}
+      {gotItTasks.map(task => {
+        const date = lastCompletedDate(task);
+        return renderCard(task, true, handleListToggle, {
+          note: date ? `Got it ${formatDateDisplay(date)}` : undefined,
+        });
+      })}
+    </>
+  );
+
+  const renderLater = () => (
+    <>
+      <SectionHeader title="Someday" />
+      <Text style={styles.hint}>Ideas for later. They never show up as due. Long-press one to move it to Today.</Text>
+      {laterTasks.length === 0 ? (
+        <Text style={styles.empty}>Nothing here yet.</Text>
+      ) : (
+        laterTasks.map(task => renderCard(task, false, handleListToggle))
+      )}
+    </>
   );
 
   return (
@@ -210,19 +349,38 @@ export function TaskScreen() {
     >
       <TabHeader title="Tasks" />
 
-      <DateNavigationRow
-        selectedDate={selectedDate}
-        dayMetrics={calendarDayMetrics}
-        dayMetricType="tasks"
-        onSelect={setSelectedDate}
-        onPrevious={goToPrevDay}
-        onNext={goToNextDay}
-      />
+      <View style={styles.tabs}>
+        <TaskTabs
+          active={tab}
+          counts={tabCounts}
+          onChange={setTab}
+        />
+      </View>
 
-      <SummaryRow items={summaryItems} />
+      {tab === 'today' && (
+        <>
+          <DateNavigationRow
+            selectedDate={selectedDate}
+            dayMetrics={calendarDayMetrics}
+            dayMetricType="tasks"
+            onSelect={setSelectedDate}
+            onPrevious={() => shiftDay(-1)}
+            onNext={() => shiftDay(1)}
+          />
+          <View style={styles.strip}>
+            <FocusStreakStrip
+              streak={streak}
+              pickedCount={focusTasks.length}
+              doneCount={focusDoneCount}
+              bonusEarned={bonusEarned}
+              starsToday={starsOnDate}
+            />
+          </View>
+        </>
+      )}
 
-      <View style={styles.content}>
-        {composerOpen && (
+      {composerOpen && (
+        <View style={styles.composer}>
           <TaskComposer
             title={title}
             behaviorQuery={behaviorQuery}
@@ -242,43 +400,102 @@ export function TaskScreen() {
             onCancel={closeComposer}
             submitLabel={editingTaskId ? 'Save' : 'Add'}
           />
-        )}
-
-        <View style={styles.listHeader}>
-          <Text style={styles.sectionTitle}>SCHEDULED</Text>
         </View>
+      )}
 
-        <Animated.FlatList
-          data={dayTasks}
-          keyExtractor={task => task.id}
-          style={styles.scheduledList}
-          contentContainerStyle={[styles.scheduledContent, dayTasks.length === 0 && styles.scheduledEmptyContent]}
-          keyboardShouldPersistTaps="handled"
-          contentInsetAdjustmentBehavior="automatic"
-          ItemSeparatorComponent={TaskSeparator}
-          itemLayoutAnimation={TASK_LIST_LAYOUT}
-          ListEmptyComponent={<Text style={styles.empty}>No tasks for this date.</Text>}
-          renderItem={renderTask}
-        />
-      </View>
+      <ScrollView
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+        keyboardShouldPersistTaps="handled"
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+      >
+        {tab === 'today' && renderToday()}
+        {tab === 'shopping' && renderShopping()}
+        {tab === 'later' && renderLater()}
+      </ScrollView>
 
       {!composerOpen && (
-        <View style={styles.bottomAction}>
-          <Button
-            variant="primary"
+        <View
+          style={styles.fab}
+          pointerEvents="box-none"
+        >
+          <AddBehaviorFab
+            label={FAB_LABELS[tab]}
+            collapsed={fabCollapsed}
             onPress={openAddComposer}
-            style={styles.openComposerButton}
-          >
-            + Add task
-          </Button>
+          />
         </View>
+      )}
+
+      {menuTask && (
+        <TaskActionSheet
+          task={menuTask}
+          list={listOf(menuTask)}
+          focused={isTaskFocusedOn(menuTask, focusDate)}
+          canFocus={focusCountForPickDate < TODAY_FOCUS_LIMIT}
+          onClose={() => setMenuTaskId(undefined)}
+          onEdit={() => {
+            setMenuTaskId(undefined);
+            openEditComposer(menuTask);
+          }}
+          onToggleFocus={() => {
+            setMenuTaskId(undefined);
+            toggleTaskFocus(menuTask.id, focusDate);
+          }}
+          onMove={list => {
+            setMenuTaskId(undefined);
+            updateTask(menuTask.id, { list });
+          }}
+          onDelete={() => {
+            setMenuTaskId(undefined);
+            confirmRemove(menuTask);
+          }}
+        />
+      )}
+
+      {pickOpen && (
+        <TodayPickSheet
+          candidates={pickCandidates}
+          onToggle={task => toggleTaskFocus(task.id, focusDate)}
+          onClose={() => setPickOpen(false)}
+        />
       )}
     </SafeAreaView>
   );
 }
 
-function TaskSeparator() {
-  return <View style={styles.taskSeparator} />;
+interface SectionHeaderProps {
+  title: string;
+  action?: string;
+  onAction?: () => void;
+}
+
+function SectionHeader({ title, action, onAction }: SectionHeaderProps) {
+  return (
+    <View style={styles.sectionHeader}>
+      <Text
+        style={styles.sectionTitle}
+        numberOfLines={1}
+      >
+        {title}
+      </Text>
+      {action && onAction && (
+        <Pressable
+          onPress={onAction}
+          hitSlop={10}
+          accessibilityRole="button"
+        >
+          <Text
+            style={styles.sectionAction}
+            numberOfLines={1}
+          >
+            {action}
+          </Text>
+        </Pressable>
+      )}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -286,31 +503,33 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bg.primary,
   },
-  content: {
-    flex: 1,
+  tabs: {
     paddingHorizontal: 16,
-    paddingTop: 4,
-    gap: 10,
+    paddingBottom: 10,
   },
-  bottomAction: {
+  strip: {
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 10,
   },
-  openComposerButton: {
-    alignSelf: 'stretch',
+  composer: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
   },
-  listHeader: {
-    paddingTop: 4,
-  },
-  scheduledList: {
+  list: {
     flex: 1,
   },
-  scheduledContent: {
-    paddingBottom: 14,
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 96,
+    gap: 6,
   },
-  scheduledEmptyContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 14,
+    paddingBottom: 2,
+    paddingHorizontal: 4,
   },
   sectionTitle: {
     color: Colors.text.faint,
@@ -318,15 +537,41 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginLeft: 4,
+    flexShrink: 1,
   },
-  taskSeparator: {
-    height: 6,
+  sectionAction: {
+    color: '#9cc2ff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  pickCard: {
+    backgroundColor: '#1f2430',
+    borderWidth: 1,
+    borderColor: '#2f3b55',
+    borderRadius: 12,
+    padding: 14,
+    gap: 12,
+  },
+  pickText: {
+    color: Colors.text.secondary,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  hint: {
+    color: Colors.text.muted,
+    fontSize: 13,
+    paddingHorizontal: 4,
+    paddingBottom: 4,
   },
   empty: {
     color: Colors.text.faint,
-    textAlign: 'center',
-    fontSize: 15,
-    padding: 24,
+    fontSize: 14,
+    paddingHorizontal: 4,
+    paddingVertical: 10,
+  },
+  fab: {
+    position: 'absolute',
+    right: 16,
+    bottom: 12,
   },
 });

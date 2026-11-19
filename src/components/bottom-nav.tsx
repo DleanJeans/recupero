@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -43,9 +43,11 @@ export function BottomNav({ activeRoute, onNavigate }: BottomNavProps) {
   const insets = useSafeAreaInsets();
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const tasks = useBehaviorStore(s => s.tasks);
+  const behaviors = useBehaviorStore(s => s.behaviors);
+  const behaviorById = useMemo(() => new Map(behaviors.map(behavior => [behavior.id, behavior])), [behaviors]);
   const [barWidth, setBarWidth] = useState(0);
   const todayStr = toDateString(new Date(), dayCutoffHour);
-  const uncompletedTaskCount = getUncompletedTaskCountForDate(tasks, todayStr, dayCutoffHour);
+  const uncompletedTaskCount = getUncompletedTaskCountForDate(tasks, todayStr, dayCutoffHour, behaviorById);
   const activeIndex = Math.max(
     0,
     ITEMS.findIndex(item => item.route === activeRoute),

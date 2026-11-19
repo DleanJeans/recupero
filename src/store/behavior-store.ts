@@ -156,9 +156,16 @@ interface BehaviorStore {
   addTask: (input: AddTaskInput) => void;
   updateTask: (
     taskId: string,
-    updates: Partial<Pick<TaskEntry, 'title' | 'stars' | 'scheduledDate' | 'source' | 'behaviorId'>>,
+    updates: Partial<
+      Pick<
+        TaskEntry,
+        'title' | 'stars' | 'scheduledDate' | 'source' | 'behaviorId' | 'placeId' | 'placeDwellMin' | 'list'
+      >
+    >,
   ) => void;
   toggleTaskCompletion: (taskId: string, dateStr: string) => void;
+  /** Pick or unpick a task as one of "Today's 3" for the date. */
+  toggleTaskFocus: (taskId: string, dateStr: string) => void;
   removeTask: (taskId: string) => void;
 }
 
@@ -485,6 +492,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               behaviorId: input.behaviorId,
               placeId: input.placeId,
               placeDwellMin: input.placeDwellMin,
+              list: input.list,
               completedDates: [],
               completedAtByDate: undefined,
               createdAt: Date.now(),
@@ -504,6 +512,17 @@ export const useBehaviorStore = create<BehaviorStore>()(
             ),
           };
         }),
+      toggleTaskFocus: (taskId, dateStr) =>
+        set(state => ({
+          tasks: (state.tasks ?? []).map(task => {
+            if (task.id !== taskId) return task;
+            const focusDates = task.focusDates ?? [];
+            const next = focusDates.includes(dateStr)
+              ? focusDates.filter(date => date !== dateStr)
+              : [...focusDates, dateStr];
+            return { ...task, focusDates: next.length > 0 ? next : undefined };
+          }),
+        })),
       toggleTaskCompletion: (taskId, dateStr) =>
         set(state => {
           const task = (state.tasks ?? []).find(t => t.id === taskId);
@@ -640,13 +659,14 @@ export const useBehaviorStore = create<BehaviorStore>()(
     {
       name: 'recupero-behaviors',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 6,
+      version: 7,
       // v0 → v1: rename `xp` field to `xpEnabled` and drop the old key.
       // v1 → v2: backfill `cooldownEnabled` from `cooldownMinutes` (old logs had no opt-in flag).
       // v2 → v3: add persisted tasks.
       // v3 → v4: opt existing behaviors into retrospective money effects.
       // v4 → v5: replace the legacy money opt-in with editable default rates.
       // v5 → v6: give the ingredients of existing meal batches a log each.
+      // v6 → v7: every task pays stars now, so open tasks that had 0 stars (linked to a behavior) get 1.
       migrate: (persistedState, version) => {
         let state = persistedState as BehaviorStore & { tasks?: TaskEntry[] };
         if (version < 1) {
@@ -704,6 +724,14 @@ export const useBehaviorStore = create<BehaviorStore>()(
             behaviors = syncBatchIngredientLogs(behaviors, state.categories ?? [], batchBehavior.id, uuidv4);
           }
           state = { ...state, behaviors };
+        }
+        if (version < 7) {
+          state = {
+            ...state,
+            tasks: (state.tasks ?? []).map(task =>
+              task.stars === 0 && task.completedDates.length === 0 ? { ...task, stars: 1 as const } : task,
+            ),
+          };
         }
         return state;
       },

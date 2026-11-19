@@ -3,7 +3,7 @@ import type { TaskEntry } from '../types/task';
 import { toDateString } from './date-utils';
 import { getLogDurationSeconds, getLogEndTimestamp, hasTimedLogRange } from './log-utils';
 import { getEarnedStars, getPeriodRange, getStarPeriod, getThresholds } from './star-utils';
-import { isOneOffTask, timestampForTaskDate } from './task-utils';
+import { FOCUS_BONUS_STARS, getFocusBonusDates, getFocusTasksForDate, timestampForTaskDate } from './task-utils';
 
 export const MONEY_PER_LOG = 5_000;
 export const MONEY_PER_MINUTE = 1_000;
@@ -145,9 +145,18 @@ export function getBehaviorMoney(behavior: BehaviorEntry, dayCutoffHour = 0): nu
   return behavior.type === 'undesirable' ? -total : total;
 }
 
+/** Every task pays its stars, including tasks linked to a behavior (they used to pay nothing). */
 export function getTaskMoney(task: TaskEntry): number {
-  if (!isOneOffTask(task)) return 0;
   return task.completedDates.length * task.stars * MONEY_PER_TASK_STAR;
+}
+
+/** Money from "Today's 3" bonuses (all 3 picks done on a day). */
+export function getFocusBonusMoney(tasks: ReadonlyArray<TaskEntry>): number {
+  return getFocusBonusDates(tasks).length * FOCUS_BONUS_STARS * MONEY_PER_TASK_STAR;
+}
+
+function getAllTaskMoney(tasks: ReadonlyArray<TaskEntry>): number {
+  return tasks.reduce((total, task) => total + getTaskMoney(task), 0) + getFocusBonusMoney(tasks);
 }
 
 export function getTotalMoneyEarned(
@@ -157,7 +166,7 @@ export function getTotalMoneyEarned(
 ): number {
   return (
     behaviors.reduce((total, behavior) => total + Math.max(0, getBehaviorMoney(behavior, dayCutoffHour)), 0) +
-    tasks.reduce((total, task) => total + getTaskMoney(task), 0)
+    getAllTaskMoney(tasks)
   );
 }
 
@@ -178,7 +187,7 @@ export function getMoneyBalance(
   tasks: ReadonlyArray<TaskEntry> = [],
   dayCutoffHour = 0,
 ): number {
-  let earned = tasks.reduce((total, task) => total + getTaskMoney(task), 0);
+  let earned = getAllTaskMoney(tasks);
   let penalties = 0;
   for (const behavior of behaviors) {
     const amount = getBehaviorMoney(behavior, dayCutoffHour);
@@ -235,7 +244,7 @@ export function getMoneyLogTransactions(
   }
 
   for (const task of tasks) {
-    if (!isOneOffTask(task)) continue;
+    if (task.stars <= 0) continue;
 
     for (const completedDate of task.completedDates) {
       const timestamp = task.completedAtByDate?.[completedDate] ?? timestampForTaskDate(completedDate, dayCutoffHour);
@@ -253,6 +262,27 @@ export function getMoneyLogTransactions(
         },
       });
     }
+  }
+
+  for (const date of getFocusBonusDates(tasks)) {
+    const completedTimes = getFocusTasksForDate(tasks, date).map(
+      task => task.completedAtByDate?.[date] ?? timestampForTaskDate(date, dayCutoffHour),
+    );
+    const timestamp = Math.max(...completedTimes);
+    const amount = FOCUS_BONUS_STARS * MONEY_PER_TASK_STAR;
+    events.push({
+      timestamp,
+      order: order++,
+      amount,
+      transaction: {
+        id: `task-focus-bonus:${date}`,
+        source: 'task',
+        taskId: `focus-bonus:${date}`,
+        taskTitle: "Today's 3 bonus",
+        completedAt: timestamp,
+        amount,
+      },
+    });
   }
 
   for (const purchase of purchases) {
