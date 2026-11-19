@@ -41,7 +41,7 @@ export function SavedLogFab({ behavior, collapsed, onPress, onLongPress }: Saved
         <View style={styles.iconBox}>
           <BehaviorIcon
             behavior={behavior}
-            size={22}
+            size={20}
           />
         </View>
         <Animated.Text
@@ -82,11 +82,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg.elevated,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 10,
+    paddingLeft: 8,
     overflow: 'hidden',
     elevation: 4,
   },
-  iconBox: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  iconBox: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
   label: { flex: 1, color: Colors.text.primary, fontSize: 14, fontWeight: '600', marginLeft: 8 },
   badge: { paddingHorizontal: 10 },
   badgeCollapsed: {
