@@ -32,6 +32,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      "Tap a behavior's name at the top of its Log or Details screen to rename it. Its history stays.",
       {
         text: 'Every need screen (Fun, Hunger, ...) now has a Settings cog in the top right corner that opens Needs settings, scrolled to that need.',
         screen: 'NeedsSettings',

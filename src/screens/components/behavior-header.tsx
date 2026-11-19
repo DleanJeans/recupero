@@ -6,6 +6,7 @@ import { BackButton } from '../../components/back-button';
 import { CooldownBar } from '../../components/cooldown-bar';
 import { DecayBar } from '../../components/decay-bar';
 import { EditableIconTile } from '../../components/editable-icon-tile';
+import { RenameBehaviorModal } from '../../components/rename-behavior-modal';
 import { StarRow } from '../../components/star-row';
 import { Text } from '../../components/text';
 import { XPBar } from '../../components/xp-bar';
@@ -55,6 +56,7 @@ export function BehaviorHeader({
     behavior.categoryId ? s.categories.find(c => c.id === behavior.categoryId) : undefined,
   );
   const [, setTick] = useState(0);
+  const [renaming, setRenaming] = useState(false);
 
   // Re-render every minute so cooldown / decay / elapsed stay current.
   useEffect(() => {
@@ -93,15 +95,22 @@ export function BehaviorHeader({
           onChange={icon => updateBehavior(behavior.id, { icon })}
         />
         <View style={styles.titleColumn}>
-          <Text
-            style={styles.title}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
+          <Pressable
+            onPress={titleOverride == null ? () => setRenaming(true) : undefined}
+            accessibilityRole="button"
+            accessibilityLabel="Rename behavior"
+            disabled={titleOverride != null}
           >
-            {name}
-            {!behavior.xpEnabled && <Text style={styles.logCount}> ×{behavior.logs.length}</Text>}
-          </Text>
+            <Text
+              style={styles.title}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              {name}
+              {!behavior.xpEnabled && <Text style={styles.logCount}> ×{behavior.logs.length}</Text>}
+            </Text>
+          </Pressable>
           {category && (
             <Text
               style={styles.subtitle}
@@ -128,6 +137,13 @@ export function BehaviorHeader({
           </Pressable>
         )}
       </View>
+
+      <RenameBehaviorModal
+        visible={renaming}
+        currentName={behavior.name}
+        onClose={() => setRenaming(false)}
+        onSave={next => updateBehavior(behavior.id, { name: next })}
+      />
 
       {hasStats && (
         <Animated.View
