@@ -33,7 +33,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-19',
     items: [
       {
-        text: 'Patch notes now have a checkbox on every line so you can tick off what you have tested (it is remembered), and some lines have an Open button that jumps straight to the screen that changed.',
+        text: 'Patch notes now have a checkbox on every line so you can tick off what you have tested (it is remembered), and some lines have an underlined link that jumps straight to the screen that changed.',
         screen: 'PatchNotes',
         linkLabel: 'Patch notes',
       },

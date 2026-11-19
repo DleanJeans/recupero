@@ -38,30 +38,21 @@ export function PatchNotesDay({ day }: { day: PatchNotesDayData }) {
                 size={22}
                 color={done ? Colors.text.primary : Colors.border.light}
               />
-              <Text style={[styles.item, done && styles.itemDone]}>{text}</Text>
+              <Text style={styles.item}>
+                <Text style={done && styles.itemDone}>{text}</Text>
+                {typeof item !== 'string' && (
+                  <Text
+                    style={styles.linkText}
+                    onPress={() =>
+                      (navigation.navigate as (screen: string, params?: object) => void)(item.screen, item.params)
+                    }
+                    accessibilityRole="link"
+                  >
+                    {` ${item.linkLabel ?? 'Open'}`}
+                  </Text>
+                )}
+              </Text>
             </Pressable>
-            {typeof item !== 'string' && (
-              <Pressable
-                onPress={() =>
-                  (navigation.navigate as (screen: string, params?: object) => void)(item.screen, item.params)
-                }
-                style={styles.link}
-                accessibilityRole="link"
-                accessibilityLabel={`Open ${item.linkLabel ?? item.screen}`}
-              >
-                <Text
-                  style={styles.linkText}
-                  numberOfLines={1}
-                >
-                  {item.linkLabel ?? 'Open'}
-                </Text>
-                <Ionicons
-                  name="open-outline"
-                  size={14}
-                  color={Colors.text.primary}
-                />
-              </Pressable>
-            )}
           </View>
         );
       })}
@@ -76,17 +67,5 @@ const styles = StyleSheet.create({
   checkRow: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   item: { flex: 1, color: Colors.text.faint, fontSize: 14, lineHeight: 22 },
   itemDone: { opacity: 0.5, textDecorationLine: 'line-through' },
-  link: {
-    flexShrink: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderWidth: 1,
-    borderColor: Colors.border.light,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    marginTop: 1,
-  },
-  linkText: { color: Colors.text.primary, fontSize: 12, fontWeight: '600' },
+  linkText: { color: '#5ab0ff', textDecorationLine: 'underline' },
 });
