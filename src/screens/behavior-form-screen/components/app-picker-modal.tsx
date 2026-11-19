@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { AppUsage, type LaunchableApp } from '../../../../modules/app-usage';
 import { Text, TextInput } from '../../../components/text';
 import { useKeyboardVisible } from '../../../hooks/use-keyboard-visible';
@@ -9,6 +9,36 @@ interface AppPickerModalProps {
   visible: boolean;
   onClose: () => void;
   onPick: (app: LaunchableApp) => void;
+}
+
+const iconCache = new Map<string, string | null>();
+
+/** The app's icon, loaded when its row scrolls into view. Blank until the icon arrives (or on older builds). */
+function AppRowIcon({ packageName }: { packageName: string }) {
+  const [uri, setUri] = useState<string | null>(iconCache.get(packageName) ?? null);
+
+  useEffect(() => {
+    if (iconCache.has(packageName) || !AppUsage?.getAppIcon) return;
+    let cancelled = false;
+    AppUsage.getAppIcon(packageName)
+      .catch(() => null)
+      .then(result => {
+        iconCache.set(packageName, result);
+        if (!cancelled) setUri(result);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [packageName]);
+
+  return uri ? (
+    <Image
+      source={{ uri }}
+      style={styles.icon}
+    />
+  ) : (
+    <View style={styles.icon} />
+  );
 }
 
 export function AppPickerModal({ visible, onClose, onPick }: AppPickerModalProps) {
@@ -65,8 +95,11 @@ export function AppPickerModal({ visible, onClose, onPick }: AppPickerModalProps
                   style={({ pressed }) => [styles.row, pressed && styles.pressed]}
                   onPress={() => onPick(item)}
                 >
-                  <Text style={styles.label}>{item.label}</Text>
-                  <Text style={styles.packageName}>{item.packageName}</Text>
+                  <AppRowIcon packageName={item.packageName} />
+                  <View style={styles.texts}>
+                    <Text style={styles.label}>{item.label}</Text>
+                    <Text style={styles.packageName}>{item.packageName}</Text>
+                  </View>
                 </Pressable>
               )}
               ListEmptyComponent={<Text style={styles.empty}>No apps found</Text>}
@@ -107,8 +140,12 @@ const styles = StyleSheet.create({
   row: {
     paddingVertical: 10,
     paddingHorizontal: 4,
-    gap: 2,
+    gap: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
+  icon: { width: 36, height: 36, borderRadius: 8 },
+  texts: { flex: 1, gap: 2 },
   pressed: {
     opacity: 0.6,
   },

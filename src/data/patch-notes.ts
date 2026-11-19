@@ -14,6 +14,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      "The app picker now shows each app's icon (needs the newest app install).",
       'Websites you track can now have a friendly name like "Reddit" instead of "reddit.com". Recupero fetches the site name for you and you can edit it; existing sites named by their address are renamed too.',
       'The Sunlight notification bar is now yellow with rounded ends, like the bar in the app (needs the newest app install).',
       'The Outside Mode notification now has a Stop button, so you can turn Outside Mode off without opening Recupero.',
