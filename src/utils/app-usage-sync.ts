@@ -10,6 +10,8 @@ import {
 } from './app-usage-utils';
 import { MS_PER_DAY } from './date-utils';
 
+const PLACEHOLDER_ICON = '⏱️';
+
 let syncInFlight: Promise<void> | null = null;
 
 export function isAppUsageAvailable(): boolean {
@@ -54,16 +56,23 @@ async function fillTrackedIcons(): Promise<void> {
   const store = useBehaviorStore.getState();
   for (const behavior of store.behaviors) {
     // A site still named by its bare domain gets the site's friendly name ("reddit.com" -> "Reddit").
-    if (behavior.autoTrackSite && behavior.archivedAt == null && behavior.name === behavior.autoTrackSite.domain) {
-      const name = await fetchSiteName(behavior.autoTrackSite.domain);
-      if (name && name !== behavior.name) store.updateBehavior(behavior.id, { name });
+    try {
+      if (behavior.autoTrackSite && behavior.archivedAt == null && behavior.name === behavior.autoTrackSite.domain) {
+        const name = await fetchSiteName(behavior.autoTrackSite.domain);
+        if (name && name !== behavior.name) store.updateBehavior(behavior.id, { name });
+      }
+      // The stopwatch is the placeholder older builds saved when the app's icon could not be read yet.
+      const hasRealIcon = Boolean(behavior.icon) && behavior.icon !== PLACEHOLDER_ICON;
+      if (hasRealIcon || behavior.archivedAt != null) continue;
+      let uri: string | null | undefined;
+      if (behavior.autoTrackSite) uri = getSiteFaviconUri(behavior.autoTrackSite.domain);
+      else if (behavior.autoTrackApp)
+        uri = await AppUsage?.getAppIcon?.(behavior.autoTrackApp.packageName).catch(() => null);
+      if (uri) store.updateBehavior(behavior.id, { icon: { uri } });
+    } catch (error) {
+      // One failing behaviour must not stop the others (or the usage sync) from getting their icon.
+      console.warn('Tracked icon fill failed', error);
     }
-    if (behavior.icon || behavior.archivedAt != null) continue;
-    let uri: string | null | undefined;
-    if (behavior.autoTrackSite) uri = getSiteFaviconUri(behavior.autoTrackSite.domain);
-    else if (behavior.autoTrackApp)
-      uri = await AppUsage?.getAppIcon?.(behavior.autoTrackApp.packageName).catch(() => null);
-    if (uri) store.updateBehavior(behavior.id, { icon: { uri } });
   }
 }
 
