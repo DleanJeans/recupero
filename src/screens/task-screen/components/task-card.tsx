@@ -14,6 +14,7 @@ import type { RootStackParamList } from '../../../types/navigation';
 import type { TaskEntry } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
 import { getPlaceIconText } from '../../../utils/cue-utils';
+import { TaskCheckbox } from './task-checkbox';
 import { TaskRewardChip } from './task-reward-chip';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -63,11 +64,7 @@ function TaskCardComponent({ task, behavior, place, complete, focused, note, onT
         accessibilityState={{ checked: complete }}
         accessibilityHint="Long-press for more options"
       >
-        <Ionicons
-          name={complete ? 'checkmark-circle' : 'ellipse-outline'}
-          size={focused ? 26 : 22}
-          color={complete ? Colors.status.successLight : Colors.text.faint}
-        />
+        <TaskCheckbox checked={complete} />
         <View style={styles.taskTextStack}>
           <View style={styles.taskTitleRow}>
             {behavior ? (
