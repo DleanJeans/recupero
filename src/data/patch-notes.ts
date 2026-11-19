@@ -14,6 +14,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      'Websites you track can now have a friendly name like "Reddit" instead of "reddit.com". Recupero fetches the site name for you and you can edit it; existing sites named by their address are renamed too.',
       'The Sunlight notification bar is now yellow with rounded ends, like the bar in the app (needs the newest app install).',
       'The Outside Mode notification now has a Stop button, so you can turn Outside Mode off without opening Recupero.',
       'Timed logs can now run past midnight, e.g. 9 PM to 5 AM. Set an End earlier than the Start and it ends the next day, with the day shown under End.',

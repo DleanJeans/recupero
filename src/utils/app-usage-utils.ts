@@ -228,3 +228,53 @@ export function findAutoTrackedBehavior<
 export function getSiteFaviconUri(domain: string): string {
   return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`;
 }
+
+const SECOND_LEVEL_SUFFIXES = new Set(['co', 'com', 'org', 'net', 'gov', 'edu', 'ac']);
+
+/** "reddit.com" -> "Reddit", "news.bbc.co.uk" -> "Bbc". The offline fallback for a site's display name. */
+export function getSiteFallbackName(domain: string): string {
+  const parts = domain.split('.').filter(Boolean);
+  while (parts.length > 2 && SECOND_LEVEL_SUFFIXES.has(parts[parts.length - 2])) parts.splice(parts.length - 2, 1);
+  const label = parts.length >= 2 ? parts[parts.length - 2] : (parts[0] ?? domain);
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function decodeEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .trim();
+}
+
+/** The site's own name from its home page HTML: og:site_name, then application-name. '' when it has neither. */
+export function parseSiteName(html: string): string {
+  for (const key of ['og:site_name', 'application-name']) {
+    for (const tag of html.match(/<meta\b[^>]*>/gi) ?? []) {
+      const keyMatch = tag.match(/(?:property|name)\s*=\s*["']([^"']+)["']/i);
+      if (keyMatch?.[1].toLowerCase() !== key) continue;
+      const content = tag.match(/content\s*=\s*["']([^"']*)["']/i)?.[1];
+      const name = content ? decodeEntities(content) : '';
+      if (name && name.length <= 40) return name;
+    }
+  }
+  return '';
+}
+
+/** Looks up a site's display name online; falls back to the capitalised domain when offline or unnamed. */
+export async function fetchSiteName(domain: string, timeoutMs = 5000): Promise<string> {
+  const fallback = getSiteFallbackName(domain);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(`https://${domain}`, { signal: controller.signal });
+    const html = (await response.text()).slice(0, 200_000);
+    return parseSiteName(html) || fallback;
+  } catch {
+    return fallback;
+  } finally {
+    clearTimeout(timer);
+  }
+}

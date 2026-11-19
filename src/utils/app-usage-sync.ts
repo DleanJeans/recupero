@@ -1,6 +1,12 @@
 import { AppUsage } from '../../modules/app-usage';
 import { useBehaviorStore } from '../store/behavior-store';
-import { buildAppSessions, buildSiteSessions, getAppUsageQueryStart, getSiteFaviconUri } from './app-usage-utils';
+import {
+  buildAppSessions,
+  buildSiteSessions,
+  fetchSiteName,
+  getAppUsageQueryStart,
+  getSiteFaviconUri,
+} from './app-usage-utils';
 import { MS_PER_DAY } from './date-utils';
 
 let syncInFlight: Promise<void> | null = null;
@@ -38,6 +44,11 @@ export function syncAppUsage(): Promise<void> {
 async function fillTrackedIcons(): Promise<void> {
   const store = useBehaviorStore.getState();
   for (const behavior of store.behaviors) {
+    // A site still named by its bare domain gets the site's friendly name ("reddit.com" -> "Reddit").
+    if (behavior.autoTrackSite && behavior.archivedAt == null && behavior.name === behavior.autoTrackSite.domain) {
+      const name = await fetchSiteName(behavior.autoTrackSite.domain);
+      if (name && name !== behavior.name) store.updateBehavior(behavior.id, { name });
+    }
     if (behavior.icon || behavior.archivedAt != null) continue;
     let uri: string | null | undefined;
     if (behavior.autoTrackSite) uri = getSiteFaviconUri(behavior.autoTrackSite.domain);

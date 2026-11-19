@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppUsage, type LaunchableApp } from '../../../modules/app-usage';
@@ -10,9 +10,11 @@ import { useSettingsStore } from '../../store/settings-store';
 import type { NeedId } from '../../types/need';
 import { syncAppUsage } from '../../utils/app-usage-sync';
 import {
+  fetchSiteName,
   findAutoTrackedBehavior,
   getAutoTrackApp,
   getAutoTrackSite,
+  getSiteFallbackName,
   getSiteFaviconUri,
   normalizeSiteDomain,
 } from '../../utils/app-usage-utils';
@@ -36,6 +38,8 @@ export function NeedAppSourceModal({ needId, needLabel, onClose }: NeedAppSource
   const [pickerOpen, setPickerOpen] = useState(false);
   const [app, setApp] = useState<LaunchableApp>();
   const [site, setSite] = useState('');
+  const [siteName, setSiteName] = useState('');
+  const [siteNameEdited, setSiteNameEdited] = useState(false);
   const defaultRefill = getDefaultRefill(needId);
   const [minutesText, setMinutesText] = useState(
     defaultRefill.mode === 'duration' ? String(defaultRefill.fullMinutes) : '120',
@@ -43,6 +47,21 @@ export function NeedAppSourceModal({ needId, needLabel, onClose }: NeedAppSource
   const fullMinutes = parseDecimalInput(minutesText);
   const normalizedSite = normalizeSiteDomain(site);
   const invalidSite = site.trim() !== '' && !normalizedSite;
+
+  useEffect(() => {
+    if (!normalizedSite || siteNameEdited) return;
+    setSiteName(getSiteFallbackName(normalizedSite));
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      fetchSiteName(normalizedSite).then(name => {
+        if (!cancelled) setSiteName(name);
+      });
+    }, 600);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [normalizedSite, siteNameEdited]);
 
   if (!AppUsage) return null;
 
@@ -53,12 +72,14 @@ export function NeedAppSourceModal({ needId, needLabel, onClose }: NeedAppSource
     let iconUri: string | null | undefined;
     if (kind === 'app' && app) iconUri = await AppUsage?.getAppIcon?.(app.packageName).catch(() => null);
     if (kind === 'site') iconUri = getSiteFaviconUri(normalizedSite);
+    const displayName = kind === 'site' ? siteName.trim() || normalizedSite : '';
     let id = findAutoTrackedBehavior(store.behaviors, target)?.id;
+    if (id && kind === 'site' && displayName) store.updateBehavior(id, { name: displayName });
     if (!id) {
       const autoApp = kind === 'app' ? getAutoTrackApp(app, undefined, cutoff) : undefined;
       const autoSite = kind === 'site' ? getAutoTrackSite(normalizedSite, undefined, cutoff) : undefined;
       store.addBehavior(
-        kind === 'app' ? (app?.label ?? '') : normalizedSite,
+        kind === 'app' ? (app?.label ?? '') : displayName,
         'neutral',
         iconUri ? { uri: iconUri } : undefined,
         0,
@@ -167,6 +188,21 @@ export function NeedAppSourceModal({ needId, needLabel, onClose }: NeedAppSource
           keyboardType="url"
         />
         {invalidSite && <Text style={styles.error}>Enter a site like youtube.com</Text>}
+        {normalizedSite !== '' && (
+          <View style={styles.row}>
+            <Text style={styles.note}>Show as</Text>
+            <TextInput
+              style={[styles.input, styles.label]}
+              value={siteName}
+              onChangeText={text => {
+                setSiteName(text);
+                setSiteNameEdited(true);
+              }}
+              placeholder={getSiteFallbackName(normalizedSite)}
+              placeholderTextColor={Colors.text.faint}
+            />
+          </View>
+        )}
         {!siteTracking && (
           <View style={styles.block}>
             <Text style={styles.note}>

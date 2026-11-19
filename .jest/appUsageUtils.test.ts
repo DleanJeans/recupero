@@ -8,8 +8,10 @@ import {
   getAppUsageQueryStart,
   getAutoTrackApp,
   getAutoTrackSite,
+  getSiteFallbackName,
   mergeTrackedSessionsIntoLogs,
   normalizeSiteDomain,
+  parseSiteName,
   siteMatchesDomain,
 } from '../src/utils/app-usage-utils';
 
@@ -205,5 +207,18 @@ describe('getAutoTrackSite', () => {
     const saved = { domain: 'youtube.com', syncedUntil: now };
     expect(getAutoTrackSite('youtube.com', saved, 0, now)).toBe(saved);
     expect(getAutoTrackSite(undefined, saved, 0, now)).toBeUndefined();
+  });
+});
+
+describe('site display names', () => {
+  it('capitalises the domain as a fallback', () => {
+    expect(getSiteFallbackName('reddit.com')).toBe('Reddit');
+    expect(getSiteFallbackName('news.bbc.co.uk')).toBe('Bbc');
+  });
+
+  it('reads og:site_name from the page', () => {
+    expect(parseSiteName('<meta property="og:site_name" content="Reddit">')).toBe('Reddit');
+    expect(parseSiteName('<meta content="Tom &amp; Co" property="og:site_name"/>')).toBe('Tom & Co');
+    expect(parseSiteName('<title>x</title>')).toBe('');
   });
 });
