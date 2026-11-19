@@ -39,6 +39,12 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     items: [
       'The running-timer pill now always shows the full time (like 1:05:12) once it passes an hour. A long behavior name is shortened instead.',
       {
+        text: 'In Needs settings, a need can now fill from several metadata fields at once (each log adds them up), and you can pick which categories they come from. The list of metadata shrinks to those categories. Needs you set up before keep working as they were.',
+        screen: 'NeedsSettings',
+        params: { needId: 'movement' },
+        linkPhrase: 'Needs settings',
+      },
+      {
         text: 'In the icon picker, the Image tab now uses an image link from your clipboard if you copied one. Otherwise it opens Google Images search straight away.',
         screen: 'Settings',
         linkLabel: 'Settings',

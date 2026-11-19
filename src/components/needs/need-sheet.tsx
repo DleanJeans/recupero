@@ -25,6 +25,8 @@ import {
   getNeedRefillHistory,
   getNextRefill,
   getRefillBehaviorIds,
+  getSharedUnit,
+  getSourceFieldKeys,
   getSuggestedRefillIds,
   NEED_INFO,
   NEED_UPDATE_AMOUNTS,
@@ -128,7 +130,10 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
   if (!need) return null;
 
   const info = NEED_INFO[need.id];
-  const sourceField = need.source ? findMetadataField(categories, need.source.fieldKey) : undefined;
+  const sourceFields = need.source
+    ? getSourceFieldKeys(need.source).flatMap(key => findMetadataField(categories, key) ?? [])
+    : [];
+  const sourceLabel = sourceFields.map(field => field.label.toLowerCase()).join(' + ') || 'metadata';
   const color =
     need.level == null ? Colors.text.faint : NEED_TONE_COLORS[getNeedLevelTone(need.level, need.config.cravingLine)];
   const emptyIn =
@@ -175,7 +180,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
   const refillDetail = (behavior: BehaviorEntry) => {
     if (need.config.refills[behavior.id]) return undefined;
     const viaCategory = behavior.categoryId ? need.config.categoryRefills?.[behavior.categoryId] : undefined;
-    if (sourceField) return `By ${sourceField.label.toLowerCase()}`;
+    if (sourceFields.length > 0) return `By ${sourceLabel}`;
     if (viaCategory) {
       const category = categories.find(item => item.id === behavior.categoryId);
       return `${formatRefill(viaCategory)} via ${category?.name ?? 'category'}`;
@@ -375,10 +380,10 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
           ) : null}
 
           <CueSectionLabel>What helps</CueSectionLabel>
-          {sourceField && need.source ? (
+          {sourceFields.length > 0 && need.source ? (
             <Text style={styles.hint}>
-              Any log with {sourceField.label} counts: {need.source.fullAmount}
-              {sourceField.unit ? ` ${sourceField.unit}` : ''} = full. Change it in Settings.
+              Any log with {sourceFields.map(field => field.label).join(' + ')} counts: {need.source.fullAmount}
+              {getSharedUnit(sourceFields) ? ` ${getSharedUnit(sourceFields)}` : ''} = full. Change it in Settings.
             </Text>
           ) : null}
           {totalRefillRows >= 4 ? (
@@ -407,11 +412,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                 emoji={category.emoji}
                 name={category.name}
                 count={behaviors.filter(b => b.categoryId === category.id && b.archivedAt == null).length}
-                amount={
-                  need.source?.categoryIds?.includes(category.id)
-                    ? `By ${sourceField?.label.toLowerCase() ?? 'metadata'}`
-                    : formatRefill(refill)
-                }
+                amount={need.source?.categoryIds?.includes(category.id) ? `By ${sourceLabel}` : formatRefill(refill)}
                 onAmountPress={
                   need.source?.categoryIds?.includes(category.id)
                     ? undefined

@@ -172,17 +172,55 @@ export function getNeedMetadataSource(
   categories: Category[],
 ): NeedMetadataSource | undefined {
   if (config.metadataSource === null) return undefined;
-  const withCategories = (fieldKey: string, fullAmount: number): NeedMetadataSource => ({
-    fieldKey,
+  const withCategories = (fieldKeys: string[], fullAmount: number, categoryFilter?: string[]): NeedMetadataSource => ({
+    fieldKey: fieldKeys[0],
+    fieldKeys,
     fullAmount,
+    ...(categoryFilter?.length ? { categoryFilter } : {}),
     categoryIds: categories
-      .filter(category => category.metadataFields?.some(field => field.key === fieldKey))
+      .filter(
+        category =>
+          (!categoryFilter?.length || categoryFilter.includes(category.id)) &&
+          category.metadataFields?.some(field => fieldKeys.includes(field.key)),
+      )
       .map(category => category.id),
   });
-  if (config.metadataSource) return withCategories(config.metadataSource.fieldKey, config.metadataSource.fullAmount);
-  if (needId !== 'hunger') return undefined;
+  const saved = config.metadataSource;
+  if (saved) {
+    const keys = getSourceFieldKeys(saved);
+    if (keys.length > 0) return withCategories(keys, saved.fullAmount, saved.categoryFilter);
+  }
+  if (saved !== undefined || needId !== 'hunger') return undefined;
   const field = findCalorieField(categories);
-  return field ? withCategories(field.key, DEFAULT_HUNGER_FULL_KCAL) : undefined;
+  return field ? withCategories([field.key], DEFAULT_HUNGER_FULL_KCAL) : undefined;
+}
+
+/** Every field key of a source. Sources saved with one field have only `fieldKey`. */
+export function getSourceFieldKeys(source: Pick<NeedMetadataSource, 'fieldKey' | 'fieldKeys'>): string[] {
+  const keys = source.fieldKeys?.length ? source.fieldKeys : source.fieldKey ? [source.fieldKey] : [];
+  return [...new Set(keys)];
+}
+
+/** Whether the source applies to this behaviour: no category filter, or the behaviour is in one of them. */
+export function getSourceForBehavior(
+  source: NeedMetadataSource | undefined,
+  behavior: Pick<BehaviorEntry, 'categoryId'>,
+): NeedMetadataSource | undefined {
+  if (!source?.categoryFilter?.length) return source;
+  return behavior.categoryId && source.categoryFilter.includes(behavior.categoryId) ? source : undefined;
+}
+
+/** A log's value for a source: its fields' positive numbers added up, or undefined when it has none. */
+export function getSourceValue(
+  source: NeedMetadataSource,
+  metadata: Record<string, unknown> | undefined,
+): number | undefined {
+  let total = 0;
+  for (const key of getSourceFieldKeys(source)) {
+    const value = metadata?.[key];
+    if (typeof value === 'number' && value > 0) total += value;
+  }
+  return total > 0 ? total : undefined;
 }
 
 /** `logId` is the refill's log, or the check-in's id for check-ins and updates. */
@@ -248,8 +286,8 @@ export function getRefillEvent(
   refill: NeedRefill | undefined,
   source: NeedMetadataSource | undefined,
 ): NeedEvent | undefined {
-  const fromMetadata = source ? log.metadata?.[source.fieldKey] : undefined;
-  if (source && typeof fromMetadata === 'number' && fromMetadata > 0 && source.fullAmount > 0) {
+  const fromMetadata = source ? getSourceValue(source, log.metadata) : undefined;
+  if (source && fromMetadata != null && source.fullAmount > 0) {
     return {
       ts: log.timestamp,
       kind: 'add',
@@ -353,12 +391,13 @@ export function getNeedEvents(
 ): NeedEvent[] {
   const events: NeedEvent[] = [];
   for (const behavior of behaviors) {
-    const refill = getBehaviorRefill(config, behavior, source);
-    if (!refill && !source) continue;
+    const behaviorSource = getSourceForBehavior(source, behavior);
+    const refill = getBehaviorRefill(config, behavior, behaviorSource);
+    if (!refill && !behaviorSource) continue;
     for (const log of behavior.logs) {
       const end = log.endTimestamp ?? log.timestamp;
       if (end < since) continue;
-      const event = applyLogAmount(getRefillEvent(behavior.id, log, refill, source), config);
+      const event = applyLogAmount(getRefillEvent(behavior.id, log, refill, behaviorSource), config);
       if (event) events.push(event);
     }
   }
@@ -530,11 +569,12 @@ export function getRefillBehaviorIds(
   const scored: Array<{ id: string; count: number; mapped: boolean }> = [];
   for (const behavior of behaviors) {
     if (behavior.archivedAt != null) continue;
-    const mapped = getBehaviorRefill(config, behavior, source) != null;
+    const behaviorSource = getSourceForBehavior(source, behavior);
+    const mapped = getBehaviorRefill(config, behavior, behaviorSource) != null;
     let count = 0;
     for (const log of behavior.logs) {
       if (log.timestamp < since) continue;
-      if (mapped || (source && typeof log.metadata?.[source.fieldKey] === 'number')) count++;
+      if (mapped || (behaviorSource && getSourceValue(behaviorSource, log.metadata) != null)) count++;
     }
     if (mapped || count > 0) scored.push({ id: behavior.id, count, mapped });
   }
@@ -593,10 +633,14 @@ export function getNextRefill(refill: NeedRefill): NeedRefill {
 }
 
 /** Every metadata field across categories, labelled with its category, for picking a need's source. */
-export function getMetadataFieldChoices(categories: Category[]): Array<{ field: MetadataField; categoryName: string }> {
+export function getMetadataFieldChoices(
+  categories: Category[],
+  categoryIds?: string[],
+): Array<{ field: MetadataField; categoryName: string }> {
   const seen = new Set<string>();
   const choices: Array<{ field: MetadataField; categoryName: string }> = [];
   for (const category of categories) {
+    if (categoryIds?.length && !categoryIds.includes(category.id)) continue;
     for (const field of category.metadataFields ?? []) {
       if (seen.has(field.key)) continue;
       seen.add(field.key);
@@ -604,6 +648,13 @@ export function getMetadataFieldChoices(categories: Category[]): Array<{ field: 
     }
   }
   return choices;
+}
+
+/** The unit all these fields share, or undefined when they differ or have none. */
+export function getSharedUnit(fields: MetadataField[]): string | undefined {
+  const units = new Set(fields.map(field => field.unit ?? ''));
+  const [unit] = [...units];
+  return units.size === 1 && unit ? unit : undefined;
 }
 
 export function findMetadataField(categories: Category[], key: string): MetadataField | undefined {
@@ -759,10 +810,11 @@ export function getNeedRefillHistory(
       amountLabel: (update.amount ?? 0) >= 100 ? 'Full' : `+${Math.round(update.amount ?? 0)}%`,
     }));
   for (const behavior of behaviors) {
-    const refill = getBehaviorRefill(config, behavior, source);
-    if (!refill && !source) continue;
+    const behaviorSource = getSourceForBehavior(source, behavior);
+    const refill = getBehaviorRefill(config, behavior, behaviorSource);
+    if (!refill && !behaviorSource) continue;
     for (const log of behavior.logs) {
-      const event = applyLogAmount(getRefillEvent(behavior.id, log, refill, source), config);
+      const event = applyLogAmount(getRefillEvent(behavior.id, log, refill, behaviorSource), config);
       if (!event) continue;
       all.push({
         behaviorId: behavior.id,

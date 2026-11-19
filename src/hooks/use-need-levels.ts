@@ -8,6 +8,7 @@ import {
   getDecayPerHour,
   getNeedEvents,
   getNeedMetadataSource,
+  getSourceForBehavior,
   getTimerFullInMs,
   NEED_IDS,
   NEED_LOOKBACK_MS,
@@ -93,7 +94,9 @@ export function useNeedLevels(): { needs: NeedSnapshot[]; now: number } {
         .filter(timer => timer.end >= now)
         .flatMap(timer => {
           const behavior = behaviors.find(candidate => candidate.id === timer.behaviorId);
-          const refill = behavior ? getBehaviorRefill(config, behavior, source) : undefined;
+          const refill = behavior
+            ? getBehaviorRefill(config, behavior, getSourceForBehavior(source, behavior))
+            : undefined;
           return behavior && refill?.mode === 'duration' ? [{ name: behavior.name, refill }] : [];
         });
       const timerFullInMs = getTimerFullInMs(

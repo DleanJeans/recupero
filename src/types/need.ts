@@ -22,8 +22,13 @@ export type NeedRefill =
 
 /** Refills a need from a metadata field on any log, e.g. kcal for Hunger. */
 export interface NeedMetadataSource {
+  /** The first (or only) field. Kept so needs saved before several fields were allowed still load. */
   fieldKey: string;
-  /** The field value that takes the need from 0% to 100%. */
+  /** All fields that fill the need; each log adds up the ones it has. Missing on older saves: then just `fieldKey`. */
+  fieldKeys?: string[];
+  /** Only behaviours in these categories fill the need by metadata. Empty or missing = every category. */
+  categoryFilter?: string[];
+  /** The summed field value that takes the need from 0% to 100%. */
   fullAmount: number;
   /**
    * Categories that have the field, filled in when the source is resolved (not saved). Their

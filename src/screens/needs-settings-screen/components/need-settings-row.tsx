@@ -13,6 +13,8 @@ import {
   formatEmptyHours,
   getBuiltInEmoji,
   getNeedMetadataSource,
+  getSharedUnit,
+  getSourceFieldKeys,
   NEED_INFO,
 } from '../../../utils/need-utils';
 
@@ -35,7 +37,11 @@ export function NeedSettingsRow({ needId, first, onPickSource, onEdit }: NeedSet
   const info = NEED_INFO[needId];
   const builtInEmoji = getBuiltInEmoji(needId);
   const source = getNeedMetadataSource(needId, config, categories);
-  const field = source ? findMetadataField(categories, source.fieldKey) : undefined;
+  const fields = source ? getSourceFieldKeys(source).flatMap(key => findMetadataField(categories, key) ?? []) : [];
+  const unit = getSharedUnit(fields);
+  const filterNames = (config.metadataSource?.categoryFilter ?? []).flatMap(
+    id => categories.find(category => category.id === id)?.name ?? [],
+  );
   const [fullText, setFullText] = useState<string>();
 
   const updateCustomNeed = useNeedsStore(state => state.updateCustomNeed);
@@ -49,7 +55,13 @@ export function NeedSettingsRow({ needId, first, onPickSource, onEdit }: NeedSet
   const commitFull = () => {
     if (fullText == null || !source) return;
     const parsed = parseDecimalInput(fullText);
-    if (parsed != null && parsed > 0) setMetadataSource(needId, { fieldKey: source.fieldKey, fullAmount: parsed });
+    if (parsed != null && parsed > 0)
+      setMetadataSource(needId, {
+        ...config.metadataSource,
+        fieldKey: source.fieldKey,
+        fieldKeys: source.fieldKeys,
+        fullAmount: parsed,
+      });
     setFullText(undefined);
   };
 
@@ -85,12 +97,41 @@ export function NeedSettingsRow({ needId, first, onPickSource, onEdit }: NeedSet
             onPress={onPickSource}
             accessibilityRole="button"
           >
-            <Text style={styles.detailLabel}>Fills from metadata</Text>
-            <Text style={styles.detailValue}>
-              {field ? `${field.label}${config.metadataSource === undefined ? ' (auto)' : ''}` : 'None'} ›
+            <Text
+              style={styles.detailLabel}
+              numberOfLines={1}
+            >
+              Fills from metadata
+            </Text>
+            <Text
+              style={[styles.detailValue, styles.detailValueShrink]}
+              numberOfLines={1}
+            >
+              {fields.length > 0
+                ? `${fields.map(field => field.label).join(' + ')}${config.metadataSource === undefined ? ' (auto)' : ''}`
+                : 'None'}{' '}
+              ›
             </Text>
           </Pressable>
-          {source && field ? (
+          <Pressable
+            style={({ pressed }) => [styles.detailRow, pressed && styles.pressed]}
+            onPress={onPickSource}
+            accessibilityRole="button"
+          >
+            <Text
+              style={styles.detailLabel}
+              numberOfLines={1}
+            >
+              From categories
+            </Text>
+            <Text
+              style={[styles.detailValue, styles.detailValueShrink]}
+              numberOfLines={1}
+            >
+              {filterNames.length > 0 ? filterNames.join(', ') : 'All'} ›
+            </Text>
+          </Pressable>
+          {source && fields.length > 0 ? (
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Amount for 0 → 100%</Text>
               <View style={styles.amount}>
@@ -103,7 +144,14 @@ export function NeedSettingsRow({ needId, first, onPickSource, onEdit }: NeedSet
                   keyboardType="decimal-pad"
                   selectTextOnFocus
                 />
-                {field.unit ? <Text style={styles.unit}>{field.unit}</Text> : null}
+                {unit ? (
+                  <Text
+                    style={styles.unit}
+                    numberOfLines={1}
+                  >
+                    {unit}
+                  </Text>
+                ) : null}
               </View>
             </View>
           ) : null}
@@ -177,8 +225,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     minHeight: 32,
   },
-  detailLabel: { color: Colors.text.muted, fontSize: 13 },
+  detailLabel: { color: Colors.text.muted, fontSize: 13, flexShrink: 0, marginRight: 12 },
   detailValue: { color: Colors.text.light, fontSize: 13, fontWeight: '600' },
+  detailValueShrink: { flexShrink: 1, textAlign: 'right' },
   amount: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   input: {
     minWidth: 64,
