@@ -6,11 +6,11 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button } from '../../components/button';
 import { type AddCueOptionKind, AddCueOptionModal } from '../../components/cues/add-cue-option-modal';
 import { CheckInCard } from '../../components/cues/check-in/check-in-card';
-import { CueScreenHeader } from '../../components/cues/cue-screen-header';
 import { CueSectionLabel } from '../../components/cues/cue-section-label';
 import { CueSegmentedControl } from '../../components/cues/cue-segmented-control';
 import { NeedsPanel } from '../../components/needs/needs-panel';
 import { SafeAreaView } from '../../components/safe-area-view';
+import { TabHeader } from '../../components/tab-header';
 import { Text } from '../../components/text';
 import { useCustomCueOptions } from '../../hooks/use-custom-cue-options';
 import { useBehaviorStore } from '../../store/behavior-store';
@@ -60,10 +60,7 @@ export function CuesScreen() {
       style={styles.container}
       edges={['top', 'left', 'right']}
     >
-      <CueScreenHeader
-        title="Cues"
-        showSettings
-      />
+      <TabHeader title="Cues" />
       <View style={styles.tabs}>
         <CueSegmentedControl
           value={tab}

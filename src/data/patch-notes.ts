@@ -14,6 +14,9 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      'Every main tab (Cues, Cravings, Routines, Daily, Tasks) now has the same header with a Settings cog in the top right corner. The Home tab is now titled Routines, so the title is no longer cut off.',
+      'Search is now a round button at the bottom left of Routines. Cook a batch moved to the top of the New behavior screen.',
+      'Cues and Cravings no longer show a Back arrow next to the title.',
       'Needs: tap the amount of a log in Logged today (for example +42%) to type how much it really refilled. Use usual puts the original amount back.',
       'Needs: a new Custom button next to the check-in choices (How hungry are you?) and the top-up choices (Ate something you did not log?) lets you type your own number.',
       'Needs: you can now remove a check-in. Check-ins show in the Logged today list with an X, and tapping a check-in dot on the chart has a bin button.',

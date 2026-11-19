@@ -30,6 +30,7 @@ import { ChecklistStrip } from './components/checklist-strip';
 import { HomeHeader } from './components/home-header';
 import { HomeSearchBar } from './components/home-search-bar';
 import { SavedLogFabs } from './components/saved-log-fabs';
+import { SearchFab } from './components/search-fab';
 
 export function HomeScreen() {
   useBackGuard();
@@ -141,15 +142,6 @@ export function HomeScreen() {
         <HomeHeader
           showXp={showXp}
           onToggleXp={() => setShowXp(!showXp)}
-          isSearching={isSearching}
-          onSearchPress={() => {
-            if (isSearching) {
-              setSearchQuery('');
-              setIsSearching(false);
-            } else {
-              setIsSearching(true);
-            }
-          }}
         />
       )}
 
@@ -222,6 +214,19 @@ export function HomeScreen() {
           style={styles.pill}
           onPress={() => navigation.navigate('Timer')}
         />
+        {!selecting && (
+          <SearchFab
+            active={isSearching}
+            onPress={() => {
+              if (isSearching) {
+                setSearchQuery('');
+                setIsSearching(false);
+              } else {
+                setIsSearching(true);
+              }
+            }}
+          />
+        )}
         {!selecting && <SavedLogFabs collapsed={fabCollapsed} />}
         {!selecting && (
           <AddBehaviorFab

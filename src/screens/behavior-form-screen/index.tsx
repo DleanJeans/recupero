@@ -474,6 +474,18 @@ export function BehaviorFormScreen() {
         <BackButton />
         <ScreenTitle>{isEdit ? 'Edit Behavior' : 'New Behavior'}</ScreenTitle>
       </View>
+      {!isEdit && (
+        <View style={styles.modeRow}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onPress={() => navigation.navigate('MealBatchForm')}
+            accessibilityLabel="Cook a batch"
+          >
+            🍲 Cook a batch
+          </Button>
+        </View>
+      )}
       {/* Save sits in normal flow under the scroll area; the SafeAreaView bottom padding keeps it above the system nav bar. */}
       <View style={styles.flex}>
         <KeyboardAvoidingView
@@ -730,6 +742,11 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
+  },
+  modeRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
   },
   header: {
     flexDirection: 'row',

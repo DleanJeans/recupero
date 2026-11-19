@@ -2,9 +2,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { MoneyBalance } from '../../components/money-balance';
 import { SafeAreaView } from '../../components/safe-area-view';
-import { ScreenTitle } from '../../components/screen-title';
+import { TabHeader } from '../../components/tab-header';
 import { useDeferredComputation } from '../../hooks/use-deferred-computation';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useCuesStore } from '../../store/cues-store';
@@ -151,10 +150,7 @@ export function DayScreen() {
       style={styles.container}
       edges={['top', 'left', 'right']}
     >
-      <View style={styles.header}>
-        <ScreenTitle style={styles.headerTitle}>Daily</ScreenTitle>
-        <MoneyBalance />
-      </View>
+      <TabHeader title="Daily" />
 
       <DateNavigationRow
         selectedDate={selectedDate}
@@ -204,17 +200,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.bg.primary,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 6,
-  },
-  headerTitle: {
-    fontSize: 24,
-    paddingHorizontal: 0,
   },
 });

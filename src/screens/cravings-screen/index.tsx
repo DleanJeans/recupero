@@ -5,10 +5,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { BehaviorActionSheet } from '../../components/behavior-action-sheet';
 import { BehaviorIcon } from '../../components/behavior-icon';
-import { CueScreenHeader } from '../../components/cues/cue-screen-header';
 import { CueSectionLabel } from '../../components/cues/cue-section-label';
 import { NeedsCravingStrip } from '../../components/needs/needs-craving-strip';
 import { SafeAreaView } from '../../components/safe-area-view';
+import { TabHeader } from '../../components/tab-header';
 import { Text, TextInput } from '../../components/text';
 import { useBehaviorActionSheetStore } from '../../store/behavior-action-sheet-store';
 import { useBehaviorStore } from '../../store/behavior-store';
@@ -85,7 +85,7 @@ export function CravingsScreen() {
       style={styles.container}
       edges={['top', 'left', 'right']}
     >
-      <CueScreenHeader title="Cravings" />
+      <TabHeader title="Cravings" />
       <BehaviorActionSheet />
       <ScrollView
         contentContainerStyle={styles.content}

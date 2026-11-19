@@ -2,9 +2,8 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { Button } from '../../components/button';
-import { MoneyBalance } from '../../components/money-balance';
 import { SafeAreaView } from '../../components/safe-area-view';
-import { ScreenTitle } from '../../components/screen-title';
+import { TabHeader } from '../../components/tab-header';
 import { Text } from '../../components/text';
 import { useDeferredComputation } from '../../hooks/use-deferred-computation';
 import { resyncReminders } from '../../hooks/use-reminder-engine';
@@ -209,10 +208,7 @@ export function TaskScreen() {
       style={styles.container}
       edges={['top', 'left', 'right']}
     >
-      <View style={styles.header}>
-        <ScreenTitle>Tasks</ScreenTitle>
-        <MoneyBalance />
-      </View>
+      <TabHeader title="Tasks" />
 
       <DateNavigationRow
         selectedDate={selectedDate}
@@ -289,14 +285,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.bg.primary,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 10,
   },
   content: {
     flex: 1,
