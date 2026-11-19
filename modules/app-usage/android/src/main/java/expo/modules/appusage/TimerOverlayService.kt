@@ -31,7 +31,11 @@ import org.json.JSONArray
  * says when to show or hide it. Drag to move, tap to open Recupero.
  */
 class TimerOverlayService : Service() {
-  private class Timer(val name: String, val start: Long)
+  /** A need the timer is filling: its level at `at`, and how long from `at` until it is full. */
+  private class Fill(val emoji: String, val label: String, val level: Double, val fullInMs: Double, val at: Long)
+
+  private class Timer(val name: String, val start: Long, val fill: Fill?)
+
 
   private val handler = Handler(Looper.getMainLooper())
   private var timers: List<Timer> = emptyList()
@@ -40,6 +44,8 @@ class TimerOverlayService : Service() {
   private var params: WindowManager.LayoutParams? = null
   private var wantVisible = false
   private var attached = false
+  private var dismissed = false
+  private var lastNotificationText = ""
   private var posX = 0
   private var posY = 0
 
@@ -61,13 +67,24 @@ class TimerOverlayService : Service() {
   }
 
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    if (intent?.action == ACTION_SHOW) {
+      dismissed = false
+      wantVisible = true
+      handler.post { render() }
+      return START_NOT_STICKY
+    }
     val json = intent?.getStringExtra(EXTRA_TIMERS)
     if (json == null) {
       stopSelf()
       return START_NOT_STICKY
     }
     timers = parse(json)
-    if (intent.hasExtra(EXTRA_VISIBLE)) wantVisible = intent.getBooleanExtra(EXTRA_VISIBLE, false)
+    if (intent.hasExtra(EXTRA_VISIBLE)) {
+      val visible = intent.getBooleanExtra(EXTRA_VISIBLE, false)
+      // Coming back to Recupero ends a swipe-dismiss; the pill is allowed again next time it leaves.
+      if (!visible) dismissed = false
+      wantVisible = visible
+    }
     if (timers.isEmpty()) {
       stopSelf()
       return START_NOT_STICKY
@@ -90,12 +107,13 @@ class TimerOverlayService : Service() {
   }
 
   fun setVisible(visible: Boolean) {
+    if (!visible) dismissed = false
     wantVisible = visible
     handler.post { render() }
   }
 
   private fun render() {
-    val show = wantVisible && timers.isNotEmpty() && Settings.canDrawOverlays(this)
+    val show = wantVisible && !dismissed && timers.isNotEmpty() && Settings.canDrawOverlays(this)
     if (!show) {
       detach()
       return
@@ -108,8 +126,11 @@ class TimerOverlayService : Service() {
     val now = System.currentTimeMillis()
     for (index in timers.indices) {
       val label = view.getChildAt(index) as? TextView ?: continue
-      label.text = "⏱ ${timers[index].name}  ${format(now - timers[index].start)}"
+      val fill = timers[index].fill
+      val fillText = if (fill != null) "  ·  ${fill.emoji} ${Math.round(levelNow(fill, now))}%" else ""
+      label.text = "⏱ ${timers[index].name}  ${format(now - timers[index].start)}$fillText"
     }
+    refreshNotification(now)
     if (!attached) {
       val layout = WindowManager.LayoutParams(
         WindowManager.LayoutParams.WRAP_CONTENT,
@@ -129,6 +150,28 @@ class TimerOverlayService : Service() {
         Log.w(TAG, "overlay refused", error)
       }
     }
+  }
+
+  private fun levelNow(fill: Fill, now: Long): Double {
+    if (fill.fullInMs <= 0) return 100.0
+    val progress = Math.min(1.0, Math.max(0.0, (now - fill.at) / fill.fullInMs))
+    return fill.level + (100.0 - fill.level) * progress
+  }
+
+  private fun notificationText(now: Long): String =
+    timers.mapNotNull { timer ->
+      timer.fill?.let { fill ->
+        val left = Math.max(0.0, fill.fullInMs - (now - fill.at))
+        val minutes = Math.round(left / 60000.0)
+        "${fill.emoji} ${fill.label} ${Math.round(levelNow(fill, now))}%" +
+          if (minutes > 0) " · full in ${minutes} min" else " · full"
+      }
+    }.joinToString("\n")
+
+  private fun refreshNotification(now: Long) {
+    val text = notificationText(now)
+    if (text == lastNotificationText) return
+    (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(NOTIFICATION_ID, buildNotification())
   }
 
   private fun buildView(): LinearLayout {
@@ -186,7 +229,11 @@ class TimerOverlayService : Service() {
           }
         }
         MotionEvent.ACTION_UP -> {
-          if (!moved) {
+          if (moved && startY - layout.y > dp(64)) {
+            // Swiped up: hide until Recupero is opened again or "Show overlay" is tapped.
+            dismissed = true
+            handler.post { render() }
+          } else if (!moved) {
             packageManager.getLaunchIntentForPackage(packageName)?.let {
               it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
               startActivity(it)
@@ -217,6 +264,12 @@ class TimerOverlayService : Service() {
         NotificationChannel(CHANNEL_ID, "Timer overlay", NotificationManager.IMPORTANCE_MIN),
       )
     }
+    val showIntent = android.app.PendingIntent.getService(
+      this,
+      1,
+      Intent(this, TimerOverlayService::class.java).setAction(ACTION_SHOW),
+      android.app.PendingIntent.FLAG_IMMUTABLE,
+    )
     val launch = packageManager.getLaunchIntentForPackage(packageName)
     val pending = launch?.let {
       android.app.PendingIntent.getActivity(this, 0, it, android.app.PendingIntent.FLAG_IMMUTABLE)
@@ -227,11 +280,21 @@ class TimerOverlayService : Service() {
       @Suppress("DEPRECATION")
       Notification.Builder(this)
     }
-    return builder
+    val now = System.currentTimeMillis()
+    val needs = notificationText(now)
+    lastNotificationText = needs
+    val title = "⏱ " + timers.joinToString(", ") { it.name }
+    builder
       .setSmallIcon(applicationInfo.icon)
-      .setContentTitle("Timer running")
-      .setContentText(timers.joinToString(", ") { it.name })
+      .setContentTitle(title)
+      .setContentText(if (needs.isEmpty()) "Timer running" else needs.lines().first())
+      .setWhen(timers.first().start)
+      .setUsesChronometer(true)
+      .setOnlyAlertOnce(true)
       .setOngoing(true)
+      .addAction(Notification.Action.Builder(null, "Show overlay", showIntent).build())
+    if (needs.isNotEmpty()) builder.setStyle(Notification.BigTextStyle().bigText(needs))
+    return builder
       .setContentIntent(pending)
       .build()
   }
@@ -259,13 +322,18 @@ class TimerOverlayService : Service() {
     val array = JSONArray(json)
     return (0 until array.length()).map {
       val item = array.getJSONObject(it)
-      Timer(item.getString("name"), item.getLong("start"))
+      val need = item.optJSONObject("need")
+      val fill = need?.let {
+        Fill(it.getString("emoji"), it.getString("label"), it.getDouble("level"), it.getDouble("fullInMs"), it.getLong("at"))
+      }
+      Timer(item.getString("name"), item.getLong("start"), fill)
     }
   }
 
   companion object {
     const val EXTRA_TIMERS = "timers"
     const val EXTRA_VISIBLE = "visible"
+    const val ACTION_SHOW = "expo.modules.appusage.SHOW_TIMER_OVERLAY"
     private const val CHANNEL_ID = "recupero-timer-overlay"
     private const val NOTIFICATION_ID = 7421
     private const val TAG = "TimerOverlay"

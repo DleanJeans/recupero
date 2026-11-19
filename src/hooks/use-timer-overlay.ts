@@ -3,7 +3,9 @@ import { AppState } from 'react-native';
 import { AppUsage } from '../../modules/app-usage';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useTimerStore } from '../store/timer-store';
+import { NEED_INFO } from '../utils/need-utils';
 import { getRunningOverlayTimers } from '../utils/timer-overlay-utils';
+import { useNeedLevels } from './use-need-levels';
 
 /**
  * Shows the running timers as a floating pill over other apps while Recupero is in the background.
@@ -15,12 +17,25 @@ export function useTimerOverlay(enabled: boolean) {
   const stopTimestamp = useTimerStore(s => s.stopTimestamp);
   const parked = useTimerStore(s => s.parked);
   const behaviors = useBehaviorStore(s => s.behaviors);
+  const { needs, now } = useNeedLevels();
 
   const timersJson = useMemo(() => {
     const sessions = [...(lockedBehaviorId ? [{ lockedBehaviorId, startTimestamp, stopTimestamp }] : []), ...parked];
     const names = new Map(behaviors.map(b => [b.id, b.name]));
-    return JSON.stringify(getRunningOverlayTimers(sessions, id => names.get(id)));
-  }, [lockedBehaviorId, startTimestamp, stopTimestamp, parked, behaviors]);
+    return JSON.stringify(
+      getRunningOverlayTimers(
+        sessions,
+        id => names.get(id),
+        name => {
+          const need = needs.find(n => n.timerBehaviorNames?.includes(name) && n.timerFullInMs != null);
+          const info = need ? NEED_INFO[need.id] : undefined;
+          return need && info
+            ? { emoji: info.emoji, label: info.label, level: need.level, fullInMs: need.timerFullInMs ?? 0, at: now }
+            : undefined;
+        },
+      ),
+    );
+  }, [lockedBehaviorId, startTimestamp, stopTimestamp, parked, behaviors, needs, now]);
 
   useEffect(() => {
     if (!enabled || !AppUsage?.startTimerOverlay) return;
