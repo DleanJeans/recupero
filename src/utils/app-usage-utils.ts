@@ -223,3 +223,8 @@ export function findAutoTrackedBehavior<
     return behavior.autoTrackSite?.domain === target.domain;
   });
 }
+
+/** Icon for a tracked website: its favicon. */
+export function getSiteFaviconUri(domain: string): string {
+  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`;
+}

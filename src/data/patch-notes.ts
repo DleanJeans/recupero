@@ -14,6 +14,8 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      'Apps and websites you add to a need now use their real icon (the app icon, or the site favicon) instead of the stopwatch. App icons need the newest app install; websites work right away. Existing ones get their icon next time you open Recupero.',
+      'You can set how many minutes of an app or website fill a need to 100%: type it when adding, or tap the "Full after …" pill on its row in the need to change it.',
       'Needs can now fill from app and website usage. Open a need (for example Fun) and tap "Fill Fun from an app or website", then pick an app like YouTube, or a site in Firefox. Time spent there fills the need when you open Recupero.',
       'Cardio and Sunlight now show progress as 0/30m on the right of the bar, with the unit kept on the same line.',
       'You can now run several timers at once. On the Timer screen tap Start another timer, and open any other running timer from the list below. Each running timer gets its own pill above the bottom bar, and needs fill from all of them together.',

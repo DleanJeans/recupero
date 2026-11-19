@@ -84,6 +84,26 @@ class AppUsageModule : Module() {
       SiteMarks.read(context, start.toLong(), end.toLong())
     }
 
+    // Saves the app's launcher icon as a PNG in the app's files and returns its file:// uri, or null.
+    AsyncFunction("getAppIcon") { packageName: String ->
+      try {
+        val file = java.io.File(context.filesDir, "app-icons/$packageName.png")
+        if (!file.exists()) {
+          file.parentFile?.mkdirs()
+          val drawable = context.packageManager.getApplicationIcon(packageName)
+          val size = 192
+          val bitmap = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+          val canvas = android.graphics.Canvas(bitmap)
+          drawable.setBounds(0, 0, size, size)
+          drawable.draw(canvas)
+          file.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+        }
+        "file://" + file.absolutePath
+      } catch (e: Exception) {
+        null
+      }
+    }
+
     AsyncFunction("getLaunchableApps") {
       val pm = context.packageManager
       val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)

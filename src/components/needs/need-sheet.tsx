@@ -69,6 +69,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
   const setCategoryRefill = useNeedsStore(state => state.setCategoryRefill);
   const [adding, setAdding] = useState(false);
   const [appSourceOpen, setAppSourceOpen] = useState(false);
+  const [rateEdit, setRateEdit] = useState<{ behaviorId: string; minutes: number }>();
   const [customDialog, setCustomDialog] = useState<'checkIn' | 'update'>();
   const [amountLog, setAmountLog] = useState<NeedRefillEntry>();
   const insets = useSafeAreaInsets();
@@ -413,7 +414,14 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                 behavior={behavior}
                 detail={refillDetail(behavior)}
                 amount={refill ? formatRefill(refill) : undefined}
-                onAmountPress={refill ? () => setRefill(need.id, id, getNextRefill(refill)) : undefined}
+                onAmountPress={
+                  refill
+                    ? () =>
+                        refill.mode === 'duration'
+                          ? setRateEdit({ behaviorId: id, minutes: refill.fullMinutes })
+                          : setRefill(need.id, id, getNextRefill(refill))
+                    : undefined
+                }
                 onRemove={refill ? () => setRefill(need.id, id, undefined) : undefined}
                 onPress={() => logBehavior(id)}
               />
@@ -511,6 +519,21 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
           {need.id === 'energy' && <FitbitConnectRow />}
         </ScrollView>
       </View>
+      {rateEdit ? (
+        <NeedAmountDialog
+          title={`Minutes to fill ${info.label}`}
+          hint={`How many minutes of ${behaviorById.get(rateEdit.behaviorId)?.name ?? 'this'} fill ${info.label} from 0 to 100%.`}
+          min={1}
+          max={1440}
+          suffix="min"
+          initial={rateEdit.minutes}
+          onSubmit={value => {
+            setRefill(need.id, rateEdit.behaviorId, { mode: 'duration', fullMinutes: value });
+            setRateEdit(undefined);
+          }}
+          onClose={() => setRateEdit(undefined)}
+        />
+      ) : null}
       {appSourceOpen ? (
         <NeedAppSourceModal
           needId={need.id}

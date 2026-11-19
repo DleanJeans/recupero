@@ -10,6 +10,8 @@ interface AppUsageNativeModule {
   hasPermission(): boolean;
   openPermissionSettings(): void;
   queryEvents(start: number, end: number): Promise<AppUsageEvent[]>;
+  /** file:// uri of the app's icon. Missing in builds made before app icons. */
+  getAppIcon?(packageName: string): Promise<string | null>;
   getLaunchableApps(): Promise<LaunchableApp[]>;
   isSiteTrackingEnabled(): boolean;
   openAccessibilitySettings(): void;

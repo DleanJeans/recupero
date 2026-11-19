@@ -13,9 +13,11 @@ import {
   findAutoTrackedBehavior,
   getAutoTrackApp,
   getAutoTrackSite,
+  getSiteFaviconUri,
   normalizeSiteDomain,
 } from '../../utils/app-usage-utils';
 import { Colors } from '../../utils/colors';
+import { parseDecimalInput } from '../../utils/metadata-calculation-utils';
 import { getDefaultRefill } from '../../utils/need-utils';
 import { Button } from '../button';
 import { FullScreenModal } from '../full-screen-modal';
@@ -34,15 +36,23 @@ export function NeedAppSourceModal({ needId, needLabel, onClose }: NeedAppSource
   const [pickerOpen, setPickerOpen] = useState(false);
   const [app, setApp] = useState<LaunchableApp>();
   const [site, setSite] = useState('');
+  const defaultRefill = getDefaultRefill(needId);
+  const [minutesText, setMinutesText] = useState(
+    defaultRefill.mode === 'duration' ? String(defaultRefill.fullMinutes) : '120',
+  );
+  const fullMinutes = parseDecimalInput(minutesText);
   const normalizedSite = normalizeSiteDomain(site);
   const invalidSite = site.trim() !== '' && !normalizedSite;
 
   if (!AppUsage) return null;
 
-  const addTracked = (kind: 'app' | 'site') => {
+  const addTracked = async (kind: 'app' | 'site') => {
     const store = useBehaviorStore.getState();
     const cutoff = useSettingsStore.getState().dayCutoffHour;
     const target = kind === 'app' && app ? { packageName: app.packageName } : { domain: normalizedSite };
+    let iconUri: string | null | undefined;
+    if (kind === 'app' && app) iconUri = await AppUsage?.getAppIcon?.(app.packageName).catch(() => null);
+    if (kind === 'site') iconUri = getSiteFaviconUri(normalizedSite);
     let id = findAutoTrackedBehavior(store.behaviors, target)?.id;
     if (!id) {
       const autoApp = kind === 'app' ? getAutoTrackApp(app, undefined, cutoff) : undefined;
@@ -50,7 +60,7 @@ export function NeedAppSourceModal({ needId, needLabel, onClose }: NeedAppSource
       store.addBehavior(
         kind === 'app' ? (app?.label ?? '') : normalizedSite,
         'neutral',
-        undefined,
+        iconUri ? { uri: iconUri } : undefined,
         0,
         'rest',
         undefined,
@@ -73,7 +83,14 @@ export function NeedAppSourceModal({ needId, needLabel, onClose }: NeedAppSource
       const behaviors = useBehaviorStore.getState().behaviors;
       id = behaviors[behaviors.length - 1]?.id;
     }
-    if (id) useNeedsStore.getState().setRefill(needId, id, getDefaultRefill(needId));
+    if (id)
+      useNeedsStore
+        .getState()
+        .setRefill(
+          needId,
+          id,
+          fullMinutes != null && fullMinutes > 0 ? { mode: 'duration', fullMinutes } : defaultRefill,
+        );
     syncAppUsage();
     onClose();
   };
@@ -99,6 +116,22 @@ export function NeedAppSourceModal({ needId, needLabel, onClose }: NeedAppSource
             </Button>
           </View>
         )}
+
+        <Text style={styles.heading}>How fast it fills</Text>
+        <View style={styles.row}>
+          <TextInput
+            style={[styles.input, styles.minutes]}
+            value={minutesText}
+            onChangeText={setMinutesText}
+            keyboardType="numeric"
+          />
+          <Text
+            style={styles.label}
+            numberOfLines={1}
+          >
+            minutes of use fill {needLabel} to 100%
+          </Text>
+        </View>
 
         <Text style={styles.heading}>An app</Text>
         <View style={styles.row}>
@@ -178,6 +211,7 @@ const styles = StyleSheet.create({
   placeholder: { color: Colors.text.faint },
   note: { color: Colors.text.muted, fontSize: 12 },
   error: { color: Colors.text.muted, fontSize: 12 },
+  minutes: { width: 80 },
   input: {
     color: Colors.text.primary,
     borderWidth: 1,

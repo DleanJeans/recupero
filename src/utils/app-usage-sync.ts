@@ -1,6 +1,6 @@
 import { AppUsage } from '../../modules/app-usage';
 import { useBehaviorStore } from '../store/behavior-store';
-import { buildAppSessions, buildSiteSessions, getAppUsageQueryStart } from './app-usage-utils';
+import { buildAppSessions, buildSiteSessions, getAppUsageQueryStart, getSiteFaviconUri } from './app-usage-utils';
 import { MS_PER_DAY } from './date-utils';
 
 let syncInFlight: Promise<void> | null = null;
@@ -34,8 +34,22 @@ export function syncAppUsage(): Promise<void> {
   return syncInFlight;
 }
 
+/** Gives tracked apps and sites that have no icon yet the app's icon or the site's favicon. */
+async function fillTrackedIcons(): Promise<void> {
+  const store = useBehaviorStore.getState();
+  for (const behavior of store.behaviors) {
+    if (behavior.icon || behavior.archivedAt != null) continue;
+    let uri: string | null | undefined;
+    if (behavior.autoTrackSite) uri = getSiteFaviconUri(behavior.autoTrackSite.domain);
+    else if (behavior.autoTrackApp)
+      uri = await AppUsage?.getAppIcon?.(behavior.autoTrackApp.packageName).catch(() => null);
+    if (uri) store.updateBehavior(behavior.id, { icon: { uri } });
+  }
+}
+
 async function runSync(): Promise<void> {
   if (!AppUsage || !hasAppUsagePermission()) return;
+  await fillTrackedIcons();
   const behaviors = useBehaviorStore.getState().behaviors;
   const syncedUntils = behaviors.flatMap(b => [b.autoTrackApp?.syncedUntil, b.autoTrackSite?.syncedUntil]);
   const tracked = syncedUntils.filter((value): value is number => value != null);
