@@ -76,10 +76,19 @@ export function PatchNotesDay({ day, newTexts }: { day: PatchNotesDayData; newTe
                 size={22}
                 color={done ? Colors.text.primary : Colors.border.light}
               />
-              <Text style={styles.item}>
-                {isNew ? <Text style={styles.newTag}>NEW </Text> : null}
-                {renderText(item, text, done)}
-              </Text>
+              <View style={styles.itemBody}>
+                {isNew ? (
+                  <View style={styles.newPill}>
+                    <Text
+                      style={styles.newPillText}
+                      numberOfLines={1}
+                    >
+                      NEW
+                    </Text>
+                  </View>
+                ) : null}
+                <Text style={styles.item}>{renderText(item, text, done)}</Text>
+              </View>
             </Pressable>
           </View>
         );
@@ -93,8 +102,16 @@ const styles = StyleSheet.create({
   date: { color: Colors.text.white, fontSize: 14, fontWeight: '600', marginBottom: 6 },
   itemRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 6 },
   checkRow: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  item: { flex: 1, color: Colors.text.white, fontSize: 14, lineHeight: 22 },
+  item: { color: Colors.text.white, fontSize: 14, lineHeight: 22 },
   itemDone: { opacity: 0.5, textDecorationLine: 'line-through' },
-  newTag: { color: Colors.text.primary, fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
+  itemBody: { flex: 1, gap: 3 },
+  newPill: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 1,
+    backgroundColor: Colors.status.success,
+  },
+  newPillText: { color: Colors.text.white, fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
   linkText: { color: '#5ab0ff', textDecorationLine: 'underline' },
 });
