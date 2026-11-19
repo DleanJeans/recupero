@@ -232,6 +232,7 @@ function sumFieldOnDate(
   let total = 0;
   for (const log of getLogsForDate(behavior, dateStr, dayCutoffHour)) {
     if (editLogId != null && log.id === editLogId) continue;
+    if (log.batchBehaviorId) continue;
     const value = log.metadata?.[fieldKey];
     if (typeof value === 'number' && Number.isFinite(value)) total += value;
   }

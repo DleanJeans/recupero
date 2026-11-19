@@ -1,7 +1,7 @@
 import type { RouteProp } from '@react-navigation/native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, BackHandler, LayoutAnimation, StyleSheet, View } from 'react-native';
 import { BackButton } from '../../components/back-button';
 import { BehaviorGroupChips } from '../../components/behavior-group-chips';
@@ -57,12 +57,32 @@ export function BehaviorScreen() {
     animate('log');
   }, []);
 
-  /** Open the log form pre-filled for editing an existing entry. */
-  const handleEditLog = useCallback((logId: string) => {
-    setEditLogId(logId);
-    setFormKey(k => k + 1);
-    animate('log');
+  /** Ingredient logs of a meal batch have nothing to edit: open the batch's own screen instead. */
+  const openBatchOf = useCallback(
+    (logId: string) => {
+      const batchBehaviorId = behavior?.logs.find(log => log.id === logId)?.batchBehaviorId;
+      if (!batchBehaviorId) return false;
+      navigation.replace('BehaviorLog', { behaviorId: batchBehaviorId, initialMode: 'details' });
+      return true;
+    },
+    [behavior, navigation],
+  );
+
+  useEffect(() => {
+    if (logId) openBatchOf(logId);
+    // Only on first open from a deep link such as the needs sheet.
   }, []);
+
+  /** Open the log form pre-filled for editing an existing entry. */
+  const handleEditLog = useCallback(
+    (logId: string) => {
+      if (openBatchOf(logId)) return;
+      setEditLogId(logId);
+      setFormKey(k => k + 1);
+      animate('log');
+    },
+    [openBatchOf],
+  );
 
   const handleBack = useCallback(() => {
     if (mode === 'log') {

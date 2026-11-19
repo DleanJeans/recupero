@@ -20,6 +20,7 @@ import { mergeTrackedSessionsIntoLogs, siteMatchesDomain } from '../utils/app-us
 import { getGroupKey } from '../utils/behavior-group-utils';
 import { mergeSleepIntoLogs } from '../utils/google-health-utils';
 import { getLogEndTimestamp } from '../utils/log-utils';
+import { syncBatchIngredientLogs } from '../utils/meal-batch-utils';
 import {
   getLoggableDefaultMetadata,
   getMetadataRateBasis,
@@ -161,6 +162,49 @@ interface BehaviorStore {
   removeTask: (taskId: string) => void;
 }
 
+function applyBehaviorUpdates(
+  state: Pick<BehaviorStore, 'behaviors' | 'categories'>,
+  behaviorId: string,
+  updates: Parameters<BehaviorStore['updateBehavior']>[1],
+): BehaviorEntry[] {
+  return state.behaviors.map(b => {
+    if (b.id !== behaviorId) return b;
+
+    const nextBehavior = { ...b, ...updates };
+    const rateBasisChanged =
+      Object.prototype.hasOwnProperty.call(updates, 'metadataRateBasis') &&
+      getMetadataRateBasis(updates) !== getMetadataRateBasis(b);
+    if (!Object.prototype.hasOwnProperty.call(updates, 'defaultMetadata') && !rateBasisChanged) return nextBehavior;
+
+    const categoryId = Object.prototype.hasOwnProperty.call(updates, 'categoryId') ? updates.categoryId : b.categoryId;
+    const category = categoryId ? state.categories.find(c => c.id === categoryId) : undefined;
+    const fields = category?.metadataFields ?? [];
+    const amountFieldKey = Object.prototype.hasOwnProperty.call(updates, 'metadataAmountFieldKey')
+      ? updates.metadataAmountFieldKey
+      : b.metadataAmountFieldKey;
+    const amountField = getSelectedAmountMetadataField(fields, amountFieldKey, b.metadataQuantityUnit);
+
+    return {
+      ...nextBehavior,
+      logs: b.logs.map(log =>
+        log.batchBehaviorId
+          ? log
+          : {
+              ...log,
+              metadata: syncBehaviorLogMetadata({
+                metadata: log.metadata,
+                fields,
+                previousDefaultMetadata: b.defaultMetadata,
+                defaultMetadata: nextBehavior.defaultMetadata,
+                amountField,
+                rateBasis: nextBehavior.metadataRateBasis,
+              }),
+            },
+      ),
+    };
+  });
+}
+
 export const useBehaviorStore = create<BehaviorStore>()(
   persist(
     (set, get) => ({
@@ -178,24 +222,29 @@ export const useBehaviorStore = create<BehaviorStore>()(
       addBatchBehavior: input => {
         const id = uuidv4();
         set(state => ({
-          behaviors: [
-            ...state.behaviors,
-            {
-              id,
-              name: input.name,
-              type: input.type,
-              icon: input.icon,
-              categoryId: input.categoryId,
-              lastTimestamp: null,
-              metadata: {},
-              defaultMetadata: input.defaultMetadata,
-              metadataAmountFieldKey: input.metadataAmountFieldKey,
-              logs: [],
-              cooldownMinutes: 0,
-              cooldownType: 'rest',
-              batch: input.batch,
-            },
-          ],
+          behaviors: syncBatchIngredientLogs(
+            [
+              ...state.behaviors,
+              {
+                id,
+                name: input.name,
+                type: input.type,
+                icon: input.icon,
+                categoryId: input.categoryId,
+                lastTimestamp: null,
+                metadata: {},
+                defaultMetadata: input.defaultMetadata,
+                metadataAmountFieldKey: input.metadataAmountFieldKey,
+                logs: [],
+                cooldownMinutes: 0,
+                cooldownType: 'rest',
+                batch: input.batch,
+              },
+            ],
+            state.categories,
+            id,
+            uuidv4,
+          ),
         }));
         return id;
       },
@@ -386,43 +435,12 @@ export const useBehaviorStore = create<BehaviorStore>()(
           ),
         })),
       updateBehavior: (behaviorId, updates) =>
-        set(state => ({
-          behaviors: state.behaviors.map(b => {
-            if (b.id !== behaviorId) return b;
-
-            const nextBehavior = { ...b, ...updates };
-            const rateBasisChanged =
-              Object.prototype.hasOwnProperty.call(updates, 'metadataRateBasis') &&
-              getMetadataRateBasis(updates) !== getMetadataRateBasis(b);
-            if (!Object.prototype.hasOwnProperty.call(updates, 'defaultMetadata') && !rateBasisChanged)
-              return nextBehavior;
-
-            const categoryId = Object.prototype.hasOwnProperty.call(updates, 'categoryId')
-              ? updates.categoryId
-              : b.categoryId;
-            const category = categoryId ? state.categories.find(c => c.id === categoryId) : undefined;
-            const fields = category?.metadataFields ?? [];
-            const amountFieldKey = Object.prototype.hasOwnProperty.call(updates, 'metadataAmountFieldKey')
-              ? updates.metadataAmountFieldKey
-              : b.metadataAmountFieldKey;
-            const amountField = getSelectedAmountMetadataField(fields, amountFieldKey, b.metadataQuantityUnit);
-
-            return {
-              ...nextBehavior,
-              logs: b.logs.map(log => ({
-                ...log,
-                metadata: syncBehaviorLogMetadata({
-                  metadata: log.metadata,
-                  fields,
-                  previousDefaultMetadata: b.defaultMetadata,
-                  defaultMetadata: nextBehavior.defaultMetadata,
-                  amountField,
-                  rateBasis: nextBehavior.metadataRateBasis,
-                }),
-              })),
-            };
-          }),
-        })),
+        set(state => {
+          const updated = applyBehaviorUpdates(state, behaviorId, updates);
+          return {
+            behaviors: updates.batch ? syncBatchIngredientLogs(updated, state.categories, behaviorId, uuidv4) : updated,
+          };
+        }),
       addCategory: (name, emoji, metadataFields) =>
         set(state => ({
           categories: [
@@ -622,12 +640,13 @@ export const useBehaviorStore = create<BehaviorStore>()(
     {
       name: 'recupero-behaviors',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 5,
+      version: 6,
       // v0 → v1: rename `xp` field to `xpEnabled` and drop the old key.
       // v1 → v2: backfill `cooldownEnabled` from `cooldownMinutes` (old logs had no opt-in flag).
       // v2 → v3: add persisted tasks.
       // v3 → v4: opt existing behaviors into retrospective money effects.
       // v4 → v5: replace the legacy money opt-in with editable default rates.
+      // v5 → v6: give the ingredients of existing meal batches a log each.
       migrate: (persistedState, version) => {
         let state = persistedState as BehaviorStore & { tasks?: TaskEntry[] };
         if (version < 1) {
@@ -678,6 +697,13 @@ export const useBehaviorStore = create<BehaviorStore>()(
                 : b,
             ),
           };
+        }
+        if (version < 6) {
+          let behaviors = state.behaviors ?? [];
+          for (const batchBehavior of behaviors.filter(b => b.batch)) {
+            behaviors = syncBatchIngredientLogs(behaviors, state.categories ?? [], batchBehavior.id, uuidv4);
+          }
+          state = { ...state, behaviors };
         }
         return state;
       },

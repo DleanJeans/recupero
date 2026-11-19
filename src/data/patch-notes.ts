@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      'Ingredients of a meal batch now get a log of their own (so "last time" works for them), without counting toward Hunger or daily totals. Tapping one opens the batch instead. Batches you already cooked got their ingredient logs too.',
       'The running-timer pill now always shows the full time (like 1:05:12) once it passes an hour. A long behavior name is shortened instead.',
       {
         text: 'In Needs settings, a need can now fill from several metadata fields at once (each log adds them up), and you can pick which categories they come from. The list of metadata shrinks to those categories. Needs you set up before keep working as they were.',

@@ -286,6 +286,8 @@ export function getRefillEvent(
   refill: NeedRefill | undefined,
   source: NeedMetadataSource | undefined,
 ): NeedEvent | undefined {
+  // Ingredient logs of a meal batch never fill a need; the batch's own portions do.
+  if (log.batchBehaviorId) return undefined;
   const fromMetadata = source ? getSourceValue(source, log.metadata) : undefined;
   if (source && fromMetadata != null && source.fullAmount > 0) {
     return {

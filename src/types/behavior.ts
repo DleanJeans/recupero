@@ -35,6 +35,9 @@ export interface LogEntry {
   cues?: CueRef[];
   /** Shared by logs saved together with habit stacking. Undefined for logs saved on their own. */
   stackId?: string;
+  /** Set on logs made for an ingredient when its meal batch was cooked: the id of the batch behaviour. They never
+   *  fill needs or add to daily totals, and editing one opens the batch's log instead. */
+  batchBehaviorId?: string;
   /** Id of the record this log was imported from (e.g. a Google Health sleep data point), used to dedupe syncs. */
   externalId?: string;
   /** Sleep details from a wearable. Energy refills by `asleepMinutes`, scaled by the deep + REM share. */

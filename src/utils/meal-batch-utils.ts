@@ -167,3 +167,39 @@ export function getLeftoverAdjustment(
   );
   return { cookedAmount, defaultMetadata };
 }
+
+/**
+ * Gives every ingredient of a batch one log (at the cooked time) that points back to the batch behaviour, replacing
+ * the ones made earlier for it. They carry only the raw amount weighed, so they never fill needs or add macros
+ * (the portions of the batch carry those). Safe to run repeatedly. Ingredients that no longer exist are skipped.
+ */
+export function syncBatchIngredientLogs(
+  behaviors: BehaviorEntry[],
+  categories: Category[],
+  batchBehaviorId: string,
+  makeId: () => string,
+): BehaviorEntry[] {
+  const batchBehavior = behaviors.find(behavior => behavior.id === batchBehaviorId);
+  const batch = batchBehavior?.batch;
+  if (!batch) return behaviors;
+  const amounts = new Map<string, number>();
+  for (const ingredient of batch.ingredients) {
+    amounts.set(ingredient.behaviorId, (amounts.get(ingredient.behaviorId) ?? 0) + ingredient.amount);
+  }
+  return behaviors.map(behavior => {
+    const kept = behavior.logs.filter(log => log.batchBehaviorId !== batchBehaviorId);
+    const amount = amounts.get(behavior.id);
+    if (amount == null || behavior.id === batchBehaviorId) {
+      return kept.length === behavior.logs.length ? behavior : { ...behavior, logs: kept };
+    }
+    const amountField = getBehaviorAmountField(behavior, getBehaviorMetadataFields(behavior, categories));
+    const log = {
+      id: makeId(),
+      timestamp: batch.cookedAt,
+      batchBehaviorId,
+      ...(amountField ? { metadata: { [amountField.key]: amount } } : {}),
+    };
+    const logs = [...kept, log].sort((a, b) => a.timestamp - b.timestamp);
+    return { ...behavior, logs, lastTimestamp: Math.max(behavior.lastTimestamp ?? 0, batch.cookedAt) };
+  });
+}

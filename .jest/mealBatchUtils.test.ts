@@ -8,6 +8,7 @@ import {
   getSuggestedPortionAmount,
   stripBatchNameDate,
   sumBatchTotals,
+  syncBatchIngredientLogs,
 } from '../src/utils/meal-batch-utils';
 
 const fields = [
@@ -95,5 +96,27 @@ describe('meal batch maths', () => {
     expect(adjusted?.defaultMetadata.kcal).toBeCloseTo(111.1111, 3);
     expect(adjusted?.defaultMetadata.amt).toBe(400);
     expect(getLeftoverAdjustment(batch, categories, -1)).toBeNull();
+  });
+});
+
+describe('syncBatchIngredientLogs', () => {
+  const batch = food('pot', 100, 10, undefined, {
+    batch: { ingredients: [{ behaviorId: 'rice', name: 'rice', amount: 200 }], cookedAmount: 500, cookedAt: 1000 },
+  });
+  let n = 0;
+  const makeId = () => `id${n++}`;
+
+  it('gives each ingredient one amount-only log, and is idempotent', () => {
+    const once = syncBatchIngredientLogs(
+      [food('rice', 130, 3, undefined, { metadataAmountFieldKey: 'amt' }), batch],
+      categories,
+      'pot',
+      makeId,
+    );
+    const twice = syncBatchIngredientLogs(once, categories, 'pot', makeId);
+    const rice = twice.find(b => b.id === 'rice');
+    expect(rice?.logs).toHaveLength(1);
+    expect(rice?.logs[0]).toMatchObject({ batchBehaviorId: 'pot', timestamp: 1000, metadata: { amt: 200 } });
+    expect(twice.find(b => b.id === 'pot')?.logs).toHaveLength(0);
   });
 });
