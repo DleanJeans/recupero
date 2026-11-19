@@ -10,6 +10,8 @@ interface FullScreenModalProps {
   title?: string;
   /** Replaces `title` with custom content (e.g. an icon and a title) beside the back button. */
   headerContent?: React.ReactNode;
+  /** Shown at the right end of the top bar, e.g. a settings cog. */
+  rightContent?: React.ReactNode;
   onClose: () => void;
   children: React.ReactNode;
 }
@@ -18,7 +20,7 @@ interface FullScreenModalProps {
  * Full-screen dialog with a back button at the top. The top bar stays above the keyboard, and content
  * below it should pad its bottom by the safe-area inset (AGENTS.md rule 8).
  */
-export function FullScreenModal({ title, headerContent, onClose, children }: FullScreenModalProps) {
+export function FullScreenModal({ title, headerContent, rightContent, onClose, children }: FullScreenModalProps) {
   const insets = useSafeAreaInsets();
   return (
     <Modal
@@ -49,7 +51,10 @@ export function FullScreenModal({ title, headerContent, onClose, children }: Ful
             >
               {title}
             </Text>
-          ) : null}
+          ) : (
+            <View style={styles.spacer} />
+          )}
+          {rightContent}
         </View>
         {children}
       </View>
@@ -61,5 +66,6 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg.card },
   bar: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, height: 48 },
   headerContent: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  spacer: { flex: 1 },
   title: { flex: 1, color: Colors.text.primary, fontSize: 17, fontWeight: '700' },
 });

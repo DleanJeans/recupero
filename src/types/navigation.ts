@@ -1,5 +1,6 @@
 import type { BehaviorType } from './behavior';
 import type { CueRef } from './cue';
+import type { NeedId } from './need';
 
 export type RootStackParamList = {
   Home: undefined;
@@ -41,7 +42,7 @@ export type RootStackParamList = {
   Settings: undefined;
   PatchNotes: undefined;
   NeedsHistory: undefined;
-  NeedsSettings: undefined;
+  NeedsSettings: { needId?: NeedId } | undefined;
   Cues: undefined;
   CueForm: { cueId?: string } | undefined;
   CueActivity: undefined;

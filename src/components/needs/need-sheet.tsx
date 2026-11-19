@@ -34,6 +34,7 @@ import {
 import { formatCompactDate, formatElapsedNumeric, formatTime } from '../../utils/time-utils';
 import { AppIcon } from '../app-icon';
 import { BehaviorIcon } from '../behavior-icon';
+import { Button } from '../button';
 import { CueSectionLabel } from '../cues/cue-section-label';
 import { FullScreenModal } from '../full-screen-modal';
 import { Text, TextInput } from '../text';
@@ -185,6 +186,22 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
   return (
     <FullScreenModal
       onClose={close}
+      rightContent={
+        <Button
+          variant="icon"
+          onPress={() => {
+            close();
+            navigation.navigate('NeedsSettings', { needId: need.id });
+          }}
+          accessibilityLabel="Needs settings"
+        >
+          <Ionicons
+            name="settings-outline"
+            size={22}
+            color={Colors.text.secondary}
+          />
+        </Button>
+      }
       headerContent={
         <>
           <Text style={styles.headerEmoji}>{info.emoji}</Text>

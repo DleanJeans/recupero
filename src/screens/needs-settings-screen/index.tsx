@@ -1,14 +1,18 @@
-import React from 'react';
+import { type RouteProp, useRoute } from '@react-navigation/native';
+import React, { useRef } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { BackButton } from '../../components/back-button';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
+import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import { GoogleHealthSection } from './components/google-health-section';
 import { NeedsSection } from './components/needs-section';
 
 /** Needs settings, opened from the Needs panel on the Cues tab: each need's toggle, rate and fill source, plus Fitbit (fills Energy). */
 export function NeedsSettingsScreen() {
+  const focusNeedId = useRoute<RouteProp<RootStackParamList, 'NeedsSettings'>>().params?.needId;
+  const scrollRef = useRef<ScrollView>(null);
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -17,10 +21,14 @@ export function NeedsSettingsScreen() {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        <NeedsSection />
+        <NeedsSection
+          focusNeedId={focusNeedId}
+          scrollRef={scrollRef}
+        />
         <GoogleHealthSection />
       </ScrollView>
     </SafeAreaView>
