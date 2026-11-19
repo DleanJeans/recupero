@@ -56,6 +56,7 @@ export function syncAppUsage(): Promise<void> {
 /** Gives tracked apps and sites that have no icon yet the app's icon or the site's favicon. */
 async function fillTrackedIcons(): Promise<void> {
   const store = useBehaviorStore.getState();
+  let launchable: { packageName: string; label: string }[] | null = null;
   for (const behavior of store.behaviors) {
     // A site still named by its bare domain gets the site's friendly name ("reddit.com" -> "Reddit").
     try {
@@ -70,6 +71,13 @@ async function fillTrackedIcons(): Promise<void> {
       if (behavior.autoTrackSite) uri = getSiteFaviconUri(behavior.autoTrackSite.domain);
       else if (behavior.autoTrackApp)
         uri = await AppUsage?.getAppIcon?.(behavior.autoTrackApp.packageName).catch(() => null);
+      else {
+        // Not tracked, but named exactly like an installed app ("YouTube"): use that app's icon.
+        launchable ??= (await AppUsage?.getLaunchableApps?.().catch(() => null)) ?? [];
+        const wanted = behavior.name.trim().toLowerCase();
+        const match = wanted ? launchable.find(app => app.label.trim().toLowerCase() === wanted) : undefined;
+        if (match) uri = await AppUsage?.getAppIcon?.(match.packageName).catch(() => null);
+      }
       if (uri) store.updateBehavior(behavior.id, { icon: { uri } });
     } catch (error) {
       // One failing behaviour must not stop the others (or the usage sync) from getting their icon.
