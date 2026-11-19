@@ -242,12 +242,12 @@ export default function App() {
                   <Stack.Screen
                     name="Need"
                     component={NeedScreen}
-                    options={{ animation: 'slide_from_bottom' }}
+                    options={{ animation: 'none' }}
                   />
                   <Stack.Screen
                     name="Sunlight"
                     component={SunlightScreen}
-                    options={{ animation: 'slide_from_bottom' }}
+                    options={{ animation: 'none' }}
                   />
                   <Stack.Screen
                     name="Cues"

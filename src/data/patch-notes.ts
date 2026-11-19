@@ -44,7 +44,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
         linkPhrase: 'Patch notes',
       },
       {
-        text: 'Needs (Hunger, Thirst, Sunlight and the rest) now open as real screens instead of pull-up dialogs. Open a behavior from a need, press Back, and you land on that need again instead of the Cues screen.',
+        text: 'Needs (Hunger, Thirst, Sunlight and the rest) now open as real screens instead of pull-up dialogs. Open a behavior from a need, press Back, and you land on that need again instead of the Cues screen. They slide up twice as fast as before.',
         screen: 'Sunlight',
         linkPhrase: 'Sunlight',
       },

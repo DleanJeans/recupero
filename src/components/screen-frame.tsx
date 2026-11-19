@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Dimensions, Easing, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../utils/colors';
 import { Button } from './button';
@@ -22,8 +23,38 @@ interface ScreenFrameProps {
  */
 export function ScreenFrame({ title, headerContent, rightContent, onClose, children }: ScreenFrameProps) {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+  const slide = useRef(new Animated.Value(Dimensions.get('window').height)).current;
+  const leaving = useRef(false);
+
+  // The route uses animation 'none': the native slide is fixed at ~400 ms on Android, so slide here instead.
+  useEffect(() => {
+    Animated.timing(slide, {
+      toValue: 0,
+      duration: SLIDE_MS,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [slide]);
+
+  useEffect(
+    () =>
+      navigation.addListener('beforeRemove', event => {
+        if (leaving.current) return;
+        event.preventDefault();
+        leaving.current = true;
+        Animated.timing(slide, {
+          toValue: Dimensions.get('window').height,
+          duration: SLIDE_MS,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }).start(() => navigation.dispatch(event.data.action));
+      }),
+    [navigation, slide],
+  );
+
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
+    <Animated.View style={[styles.screen, { paddingTop: insets.top, transform: [{ translateY: slide }] }]}>
       <View style={styles.bar}>
         <Button
           variant="icon"
@@ -51,9 +82,12 @@ export function ScreenFrame({ title, headerContent, rightContent, onClose, child
         {rightContent}
       </View>
       {children}
-    </View>
+    </Animated.View>
   );
 }
+
+/** Half of the old ~400 ms native slide. */
+const SLIDE_MS = 200;
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.bg.card },
