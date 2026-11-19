@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
@@ -21,11 +22,13 @@ interface NeedBarRowProps {
   config: NeedConfig;
   level?: number;
   detail: string;
+  /** Behaviors whose running timers are filling this need; shown with a timer icon before `detail`. */
+  timerNames?: string[];
   onPress: () => void;
 }
 
 /** One Sims-style need: name, level bar with a tick at the craving line, and when it next craves. */
-export function NeedBarRow({ needId, config, level, detail, onPress }: NeedBarRowProps) {
+export function NeedBarRow({ needId, config, level, detail, timerNames, onPress }: NeedBarRowProps) {
   const info = NEED_INFO[needId];
   const tone = level == null ? undefined : getNeedLevelTone(level, config.cravingLine);
   const color = tone ? NEED_TONE_COLORS[tone] : Colors.text.faint;
@@ -86,7 +89,23 @@ export function NeedBarRow({ needId, config, level, detail, onPress }: NeedBarRo
         </View>
         <Text style={[styles.pct, { color }]}>{level == null ? '–' : `${shownPct}%`}</Text>
       </View>
-      <Text style={[styles.detail, tone === 'craving' && { color }]}>{detail}</Text>
+      {timerNames != null && timerNames.length > 0 ? (
+        <View style={styles.timerDetail}>
+          <Ionicons
+            name="stopwatch-outline"
+            size={12}
+            color={Colors.typeText.desirable}
+          />
+          <Text
+            style={[styles.detail, styles.timerText]}
+            numberOfLines={1}
+          >
+            {timerNames.join(', ')} · {detail}
+          </Text>
+        </View>
+      ) : (
+        <Text style={[styles.detail, tone === 'craving' && { color }]}>{detail}</Text>
+      )}
     </Pressable>
   );
 }
@@ -142,6 +161,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
+  timerDetail: { flexDirection: 'row', alignItems: 'center', gap: 4, marginLeft: 30 },
+  timerText: { flexShrink: 1, marginLeft: 0, color: Colors.typeText.desirable },
   detail: {
     color: Colors.text.faint,
     fontSize: 11,

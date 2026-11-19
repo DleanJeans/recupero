@@ -68,6 +68,7 @@ export function NeedsPanel() {
                 ? formatTimerFull(need.timerFullInMs)
                 : formatNextCraving(need.level, need.config, now, ts => formatTime(ts))
             }
+            timerNames={need.timerBehaviorNames}
             onPress={() => setOpenId(need.id)}
           />
         ))}

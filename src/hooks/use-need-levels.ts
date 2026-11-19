@@ -53,6 +53,8 @@ export interface NeedSnapshot extends NeedState {
   source?: NeedMetadataSource;
   /** Set while a running timer fills this need by duration: time left until it is full. */
   timerFullInMs?: number;
+  /** Names of the running timers that fill this need by duration. */
+  timerBehaviorNames?: string[];
 }
 
 /** Current level of every enabled need, refreshed each minute. */
@@ -85,15 +87,19 @@ export function useNeedLevels(): { needs: NeedSnapshot[]; now: number } {
       const source = getNeedMetadataSource(id, config, categories);
       const events = getNeedEvents(id, config, logged, checkIns, source, now - NEED_LOOKBACK_MS);
       const state = simulateNeed(events, getDecayPerHour(config), now);
-      const filling = timers.filter(timer => timer.end >= now);
+      const filling = timers
+        .filter(timer => timer.end >= now)
+        .flatMap(timer => {
+          const behavior = behaviors.find(candidate => candidate.id === timer.behaviorId);
+          const refill = behavior ? getBehaviorRefill(config, behavior, source) : undefined;
+          return behavior && refill?.mode === 'duration' ? [{ name: behavior.name, refill }] : [];
+        });
       const timerFullInMs = getTimerFullInMs(
         state.level,
-        filling.map(timer => {
-          const behavior = behaviors.find(candidate => candidate.id === timer.behaviorId);
-          return behavior ? getBehaviorRefill(config, behavior, source) : undefined;
-        }),
+        filling.map(item => item.refill),
       );
-      return { id, config, source, timerFullInMs, ...state };
+      const timerBehaviorNames = timerFullInMs == null ? undefined : filling.map(item => item.name);
+      return { id, config, source, timerFullInMs, timerBehaviorNames, ...state };
     });
     return { needs, now };
     // tick re-reads the clock each minute.
