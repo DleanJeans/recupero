@@ -15,14 +15,17 @@ import type { CueRef } from '../../../types/cue';
 import type { RootStackParamList } from '../../../types/navigation';
 import { switchMemberMetadataValues } from '../../../utils/behavior-group-utils';
 import { placeCueRef } from '../../../utils/cue-utils';
-import { toDateString } from '../../../utils/date-utils';
+import { timestampForDateTime, toDateString } from '../../../utils/date-utils';
 import { findPlaceAtPoint } from '../../../utils/geofence-utils';
 import { getCurrentPointIfPermitted } from '../../../utils/location-utils';
 import {
+  formatEndDateLabel,
   getDayMaxTimestamp,
   getDefaultTimedLogStartTimestamp,
   getLogFormTimestamp,
+  getOvernightEndTimestamp,
   getTimeOfDaySeconds,
+  getTimeRangeDurationMs,
 } from '../../../utils/log-utils';
 import {
   buildCalculatedMetadata,
@@ -122,7 +125,7 @@ export function useBehaviorLogForm({
 
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [startSeconds, setStartSeconds] = useState(initialStartSeconds);
-  const [endSeconds, setEndSeconds] = useState(Math.max(initialStartSeconds, initialEndSeconds));
+  const [endSeconds, setEndSeconds] = useState(initialEndSeconds);
   const showTimeRange =
     hasTimerRange || existingLog?.endTimestamp != null || (!existingLog && behavior.durationXpEnabled === true);
   const notesRef = useRef<import('react-native').TextInput>(null);
@@ -302,7 +305,7 @@ export function useBehaviorLogForm({
       setEndSeconds(clampedEndSeconds);
     }
 
-    const clampedStartSeconds = Math.min(startSeconds, clampedEndSeconds);
+    const clampedStartSeconds = Math.min(startSeconds, maxTimeSeconds);
     if (clampedStartSeconds !== startSeconds) {
       setStartSeconds(clampedStartSeconds);
     }
@@ -329,22 +332,16 @@ export function useBehaviorLogForm({
     (nextSeconds: number) => {
       const clampedSeconds = Math.min(nextSeconds, maxTimeSeconds);
       setStartSeconds(clampedSeconds);
-      if (clampedSeconds > endSeconds) {
-        setEndSeconds(clampedSeconds);
-      }
     },
-    [endSeconds, maxTimeSeconds],
+    [maxTimeSeconds],
   );
 
   const applyEndSeconds = useCallback(
     (nextSeconds: number) => {
       const clampedSeconds = Math.min(nextSeconds, maxTimeSeconds);
       setEndSeconds(clampedSeconds);
-      if (clampedSeconds < startSeconds) {
-        setStartSeconds(clampedSeconds);
-      }
     },
-    [maxTimeSeconds, startSeconds],
+    [maxTimeSeconds],
   );
 
   const startHour = Math.floor(startSeconds / 3600);
@@ -353,7 +350,16 @@ export function useBehaviorLogForm({
   const endHour = Math.floor(endSeconds / 3600);
   const endMinute = Math.floor((endSeconds % 3600) / 60);
   const endSecond = endSeconds % 60;
-  const durationMs = Math.max(0, (endSeconds - startSeconds) * 1000);
+  // An end time earlier than the start time means the log runs past midnight into the next day.
+  const endsNextDay = showTimeRange && endSeconds < startSeconds;
+  const durationMs = getTimeRangeDurationMs(startSeconds, endSeconds);
+  const endDateLabel = useMemo(() => {
+    if (!endsNextDay) return '';
+    const startTs = timestampForDateTime(selectedDate, startHour, startMinute, dayCutoffHour);
+    return formatEndDateLabel(
+      getOvernightEndTimestamp(startTs, timestampForDateTime(selectedDate, endHour, endMinute, dayCutoffHour)),
+    );
+  }, [dayCutoffHour, endHour, endMinute, endsNextDay, selectedDate, startHour, startMinute]);
   const rewardHour = showTimeRange ? startHour : endHour;
   const rewardMinute = showTimeRange ? startMinute : endMinute;
   const rewardSecond = showSeconds && showTimeRange ? startSecond : 0;
@@ -438,7 +444,11 @@ export function useBehaviorLogForm({
       maxTimestampForDate,
       showSeconds ? endSecond : 0,
     );
-    const endTimestamp = Math.min(rawEndTimestamp, maxTimestampForDate);
+    const overnightEndTimestamp = showTimeRange
+      ? getOvernightEndTimestamp(rawStartTimestamp, rawEndTimestamp)
+      : rawEndTimestamp;
+    const endLimit = endsNextDay ? Math.max(maxTimestampForDate, nowRef.current.getTime()) : maxTimestampForDate;
+    const endTimestamp = Math.min(overnightEndTimestamp, endLimit);
     const startTimestamp = Math.min(rawStartTimestamp, endTimestamp);
     const saveEndTimestamp = showTimeRange ? endTimestamp : undefined;
 
@@ -519,6 +529,7 @@ export function useBehaviorLogForm({
     endHour,
     endMinute,
     endSecond,
+    endsNextDay,
     dayCutoffHour,
     logBehavior,
     maxTimestampForDate,
@@ -604,6 +615,8 @@ export function useBehaviorLogForm({
     visibleMetadataFields,
     durationMs,
     editLogId,
+    endDateLabel,
+    endsNextDay,
     endHour,
     endMinute,
     endSecond,

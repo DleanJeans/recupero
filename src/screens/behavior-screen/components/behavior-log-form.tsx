@@ -28,6 +28,8 @@ export function BehaviorLogForm({ form }: Props) {
     calculatedMetadataValues,
     durationMs,
     editLogId,
+    endDateLabel,
+    endsNextDay,
     endHour,
     endMinute,
     endSecond,
@@ -79,6 +81,16 @@ export function BehaviorLogForm({ form }: Props) {
 
               <View style={styles.timePickerColumn}>
                 {renderTimePicker('End', endHour, endMinute, endSecond, applyEndSeconds)}
+                {endsNextDay && (
+                  <Text
+                    style={styles.nextDayLabel}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
+                    {`Next day · ${endDateLabel}`}
+                  </Text>
+                )}
               </View>
             </View>
           ) : (
@@ -277,6 +289,12 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     minWidth: 0,
     marginBottom: 0,
+  },
+  nextDayLabel: {
+    color: Colors.text.light,
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 4,
   },
   durationCard: {
     alignItems: 'center',

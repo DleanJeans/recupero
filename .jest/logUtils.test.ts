@@ -1,4 +1,10 @@
-import { getLogDurationMinutes, getLogDurationSeconds, getLogFormTimestamp } from '../src/utils/log-utils';
+import {
+  getLogDurationMinutes,
+  getLogDurationSeconds,
+  getLogFormTimestamp,
+  getOvernightEndTimestamp,
+  getTimeRangeDurationMs,
+} from '../src/utils/log-utils';
 import { getTimerXp } from '../src/utils/xp-utils';
 
 describe('log duration precision', () => {
@@ -43,5 +49,20 @@ describe('getLogFormTimestamp', () => {
     expect(getLogFormTimestamp('2026-06-30', 9, 5, 0, maxTimestamp, 30)).toBe(
       new Date(2026, 5, 30, 9, 5, 30).getTime(),
     );
+  });
+});
+
+describe('overnight time ranges', () => {
+  it('computes a 9 PM to 5 AM duration as 8 hours', () => {
+    expect(getTimeRangeDurationMs(21 * 3600, 5 * 3600)).toBe(8 * 3600 * 1000);
+    expect(getTimeRangeDurationMs(10 * 3600, 11 * 3600)).toBe(3600 * 1000);
+    expect(getTimeRangeDurationMs(3600, 3600)).toBe(0);
+  });
+
+  it('rolls an end before the start to the next day', () => {
+    const start = new Date(2026, 10, 17, 21, 0).getTime();
+    const end = new Date(2026, 10, 17, 5, 0).getTime();
+    expect(getOvernightEndTimestamp(start, end)).toBe(new Date(2026, 10, 18, 5, 0).getTime());
+    expect(getOvernightEndTimestamp(end, start)).toBe(start);
   });
 });
