@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
-import Animated, { Easing, FadeIn, LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useSettingsStore } from '../store/settings-store';
 import type { TimerSession } from '../store/timer-store';
@@ -20,9 +20,6 @@ interface TimerPillProps {
   /** Small chip (level ring around the icon + time), e.g. while the Routines list is scrolled down. */
   compact?: boolean;
 }
-
-// Same duration and easing as DockingPills' slide, so x/y/size all move on one curve (no clock-like arc).
-export const PILL_LAYOUT = LinearTransition.duration(220).easing(Easing.out(Easing.cubic));
 
 /**
  * One timer's pill: green while running, grey when paused or waiting to be logged.
@@ -65,7 +62,6 @@ export function TimerPill({ session, onPress, style, compact = false }: TimerPil
     <Animated.View
       style={[styles.wrap, style]}
       pointerEvents="box-none"
-      layout={PILL_LAYOUT}
     >
       <Pressable
         style={({ pressed }) => [
