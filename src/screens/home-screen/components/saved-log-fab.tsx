@@ -1,12 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { BehaviorIcon } from '../../../components/behavior-icon';
 import type { BehaviorEntry } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 
 const HEIGHT = 44;
-const EXPANDED_WIDTH = 164;
+/** Space after the name for the bookmark: 14px icon + 10px padding each side. */
+const BADGE_WIDTH = 34;
+const MAX_EXPANDED_WIDTH = 220;
 
 interface SavedLogFabProps {
   behavior: BehaviorEntry;
@@ -26,7 +28,10 @@ export function SavedLogFab({ behavior, collapsed, onPress, onLongPress }: Saved
       useNativeDriver: false,
     }).start();
   }, [collapsed, progress]);
-  const width = progress.interpolate({ inputRange: [0, 1], outputRange: [EXPANDED_WIDTH, HEIGHT] });
+  // Measure the name off-screen so the pill is just wide enough for icon + name + bookmark.
+  const [labelWidth, setLabelWidth] = useState(0);
+  const expandedWidth = Math.min(MAX_EXPANDED_WIDTH, HEIGHT + Math.ceil(labelWidth) + BADGE_WIDTH);
+  const width = progress.interpolate({ inputRange: [0, 1], outputRange: [expandedWidth, HEIGHT] });
   const labelOpacity = progress.interpolate({ inputRange: [0, 0.6], outputRange: [1, 0], extrapolate: 'clamp' });
 
   return (
@@ -37,6 +42,13 @@ export function SavedLogFab({ behavior, collapsed, onPress, onLongPress }: Saved
       accessibilityLabel={`Edit saved log for ${behavior.name}. Long press to log now or discard`}
       style={({ pressed }) => [styles.touch, pressed && styles.pressed]}
     >
+      <Text
+        style={[styles.label, styles.measure]}
+        onLayout={e => setLabelWidth(e.nativeEvent.layout.width)}
+        accessible={false}
+      >
+        {behavior.name}
+      </Text>
       <Animated.View style={[styles.fab, { width }]}>
         <View style={styles.iconBox}>
           <BehaviorIcon
@@ -87,6 +99,7 @@ const styles = StyleSheet.create({
   },
   /** A full circle-sized slot, so the icon stays centred in the collapsed circle whatever its glyph width. */
   iconBox: { width: HEIGHT, height: HEIGHT, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  measure: { position: 'absolute', opacity: 0, left: 0, top: 0 },
   label: { flex: 1, color: Colors.text.primary, fontSize: 14, fontWeight: '600' },
   badge: { paddingHorizontal: 10 },
   badgeCollapsed: {
