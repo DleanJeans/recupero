@@ -7,7 +7,10 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
@@ -34,13 +37,20 @@ class TimerOverlayService : Service() {
   /** A need the timer is filling: its level at `at`, and how long from `at` until it is full. */
   private class Fill(val emoji: String, val label: String, val level: Double, val fullInMs: Double, val at: Long)
 
-  private class Timer(val name: String, val start: Long, val fill: Fill?)
+  /** The behavior's level before this timer started: XP into the level and the level's size (1 XP per timer minute). */
+  private class Level(val inLevel: Double, val forLevel: Double)
+
+  private class Timer(val name: String, val start: Long, val fill: Fill?, val icon: String?, val level: Level?)
+
+  /** One timer's bubble: a ring (need fill, else level) around the icon, the time, and the name underneath. */
+  private class Bubble(val root: LinearLayout, val ring: RingView, val time: TextView, val name: TextView)
 
 
   private val handler = Handler(Looper.getMainLooper())
   private var timers: List<Timer> = emptyList()
   private var windowManager: WindowManager? = null
   private var container: LinearLayout? = null
+  private val bubbles = mutableListOf<Bubble>()
   private var params: WindowManager.LayoutParams? = null
   private var wantVisible = false
   private var attached = false
@@ -119,17 +129,26 @@ class TimerOverlayService : Service() {
       return
     }
     val view = container ?: buildView().also { container = it }
-    if (view.childCount != timers.size) {
+    if (bubbles.size != timers.size) {
       view.removeAllViews()
-      for (timer in timers) view.addView(label(timer))
+      bubbles.clear()
+      for (index in timers.indices) {
+        val bubble = bubble()
+        if (index > 0) (bubble.root.layoutParams as LinearLayout.LayoutParams).topMargin = dp(6)
+        view.addView(bubble.root)
+        bubbles.add(bubble)
+      }
     }
     val now = System.currentTimeMillis()
     for (index in timers.indices) {
-      val label = view.getChildAt(index) as? TextView ?: continue
-      val fill = timers[index].fill
-      // The need goes on its own line so it is never cut off; the name may wrap but never the time/percent.
-      val fillText = if (fill != null) "\n${fill.emoji} ${Math.round(levelNow(fill, now))}%" else ""
-      label.text = "⏱ ${timers[index].name}  ${format(now - timers[index].start)}$fillText"
+      val timer = timers[index]
+      val bubble = bubbles[index]
+      val elapsed = now - timer.start
+      bubble.ring.emoji = timer.icon ?: timer.fill?.emoji ?: "⏱"
+      bubble.ring.share = ringShare(timer, now, elapsed)
+      bubble.ring.invalidate()
+      bubble.time.text = format(elapsed)
+      bubble.name.text = timer.name
     }
     refreshNotification(now)
     if (!attached) {
@@ -159,6 +178,15 @@ class TimerOverlayService : Service() {
     return fill.level + (100.0 - fill.level) * progress
   }
 
+  /** The need's level while it fills; without a need, progress through the behavior's current level. */
+  private fun ringShare(timer: Timer, now: Long, elapsedMs: Long): Float {
+    timer.fill?.let { return (levelNow(it, now) / 100.0).toFloat() }
+    val level = timer.level ?: return 0f
+    if (level.forLevel <= 0) return 0f
+    val xp = level.inLevel + Math.max(0L, elapsedMs) / 60000.0
+    return ((xp % level.forLevel) / level.forLevel).toFloat()
+  }
+
   private fun notificationText(now: Long): String =
     timers.mapNotNull { timer ->
       timer.fill?.let { fill ->
@@ -178,26 +206,89 @@ class TimerOverlayService : Service() {
   private fun buildView(): LinearLayout {
     val view = LinearLayout(this)
     view.orientation = LinearLayout.VERTICAL
-    view.setPadding(dp(12), dp(8), dp(12), dp(8))
-    val background = GradientDrawable()
-    background.setColor(Color.parseColor("#E61E1E1E"))
-    background.cornerRadius = dp(20).toFloat()
-    background.setStroke(dp(1), Color.parseColor("#4ADE80"))
-    view.background = background
-    for (timer in timers) view.addView(label(timer))
     view.setOnTouchListener(DragListener())
     return view
   }
 
-  private fun label(timer: Timer): TextView {
-    val text = TextView(this)
-    text.setTextColor(Color.parseColor("#4ADE80"))
-    text.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-    text.isSingleLine = false
-    text.maxLines = 4
-    text.maxWidth = Math.min(dp(300), resources.displayMetrics.widthPixels - dp(56))
-    text.text = "⏱ ${timer.name}"
-    return text
+  private fun bubble(): Bubble {
+    val root = LinearLayout(this)
+    root.orientation = LinearLayout.HORIZONTAL
+    root.gravity = Gravity.CENTER_VERTICAL
+    root.setPadding(dp(4), dp(4), dp(12), dp(4))
+    val background = GradientDrawable()
+    background.setColor(Color.parseColor("#E61E1E1E"))
+    background.cornerRadius = dp(24).toFloat()
+    background.setStroke(dp(1), GREEN)
+    root.background = background
+    root.layoutParams = LinearLayout.LayoutParams(
+      LinearLayout.LayoutParams.WRAP_CONTENT,
+      LinearLayout.LayoutParams.WRAP_CONTENT,
+    )
+
+    val ring = RingView(this)
+    root.addView(ring, LinearLayout.LayoutParams(dp(36), dp(36)))
+
+    val texts = LinearLayout(this)
+    texts.orientation = LinearLayout.VERTICAL
+    val textsParams = LinearLayout.LayoutParams(
+      LinearLayout.LayoutParams.WRAP_CONTENT,
+      LinearLayout.LayoutParams.WRAP_CONTENT,
+    )
+    textsParams.leftMargin = dp(8)
+    root.addView(texts, textsParams)
+
+    val time = TextView(this)
+    time.setTextColor(GREEN)
+    time.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+    time.typeface = android.graphics.Typeface.DEFAULT_BOLD
+    time.fontFeatureSettings = "tnum"
+    time.setSingleLine(true)
+    texts.addView(time)
+
+    val name = TextView(this)
+    name.setTextColor(Color.parseColor("#9FD8B0"))
+    name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+    name.setSingleLine(true)
+    name.maxWidth = dp(160)
+    name.ellipsize = android.text.TextUtils.TruncateAt.END
+    texts.addView(name)
+
+    return Bubble(root, ring, time, name)
+  }
+
+  /** A progress ring around an emoji, filling clockwise from the top. */
+  private class RingView(context: Context) : View(context) {
+    var share = 0f
+    var emoji = "⏱"
+    private val density = context.resources.displayMetrics.density
+    private val stroke = 3f * density
+    private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+      style = Paint.Style.STROKE
+      strokeWidth = stroke
+      color = Color.parseColor("#33FFFFFF")
+    }
+    private val arc = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+      style = Paint.Style.STROKE
+      strokeWidth = stroke
+      strokeCap = Paint.Cap.ROUND
+      color = GREEN
+    }
+    private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+      textAlign = Paint.Align.CENTER
+      textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 17f, context.resources.displayMetrics)
+    }
+    private val bounds = RectF()
+
+    override fun onDraw(canvas: Canvas) {
+      super.onDraw(canvas)
+      val inset = stroke / 2 + density
+      bounds.set(inset, inset, width - inset, height - inset)
+      canvas.drawOval(bounds, track)
+      val sweep = 360f * share.coerceIn(0f, 1f)
+      if (sweep > 0f) canvas.drawArc(bounds, -90f, sweep, false, arc)
+      val baseline = height / 2f - (text.descent() + text.ascent()) / 2f
+      canvas.drawText(emoji, width / 2f, baseline, text)
+    }
   }
 
   private inner class DragListener : View.OnTouchListener {
@@ -304,6 +395,7 @@ class TimerOverlayService : Service() {
     handler.removeCallbacks(tick)
     detach()
     container = null
+    bubbles.clear()
     if (instance === this) instance = null
     super.onDestroy()
   }
@@ -327,11 +419,14 @@ class TimerOverlayService : Service() {
       val fill = need?.let {
         Fill(it.getString("emoji"), it.getString("label"), it.getDouble("level"), it.getDouble("fullInMs"), it.getLong("at"))
       }
-      Timer(item.getString("name"), item.getLong("start"), fill)
+      val level = item.optJSONObject("level")?.let { Level(it.optDouble("inLevel", 0.0), it.optDouble("forLevel", 0.0)) }
+      val icon = item.optString("icon", "").ifEmpty { null }
+      Timer(item.getString("name"), item.getLong("start"), fill, icon, level)
     }
   }
 
   companion object {
+    private val GREEN = Color.parseColor("#4ADE80")
     const val EXTRA_TIMERS = "timers"
     const val EXTRA_VISIBLE = "visible"
     const val ACTION_SHOW = "expo.modules.appusage.SHOW_TIMER_OVERLAY"

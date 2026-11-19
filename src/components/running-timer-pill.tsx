@@ -1,19 +1,23 @@
 import React from 'react';
-import type { StyleProp, ViewStyle } from 'react-native';
+import { type StyleProp, StyleSheet, type ViewStyle } from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 import { isTimerSessionActive, useTimerStore } from '../store/timer-store';
 import { TimerPill } from './timer-pill';
 
 interface RunningTimerPillProps {
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
+  /** Small chips side by side instead of full pills (Routines while scrolled down). */
+  compact?: boolean;
 }
 
 /**
  * One pill per timer (the open one first, the others stacked below), floating above the bottom nav while a timer
  * is running or waiting to be logged, since Timer has no tab. Tapping another timer's pill opens it.
- * On Routines it sits above the Add behavior button instead (see DockingPills).
+ * On Routines it sits above the Add behavior button instead (see DockingPills), and shrinks to small chips while the
+ * list is scrolled down.
  */
-export function RunningTimerPill({ onPress, style }: RunningTimerPillProps) {
+export function RunningTimerPill({ onPress, style, compact = false }: RunningTimerPillProps) {
   const lockedBehaviorId = useTimerStore(s => s.lockedBehaviorId);
   const startTimestamp = useTimerStore(s => s.startTimestamp);
   const stopTimestamp = useTimerStore(s => s.stopTimestamp);
@@ -26,26 +30,38 @@ export function RunningTimerPill({ onPress, style }: RunningTimerPillProps) {
     lockedBehaviorId != null && isTimerSessionActive({ startTimestamp, pausedAt })
       ? { lockedBehaviorId, startTimestamp, stopTimestamp, pendingLogBehaviorLogCount, pausedAt, initialNotes }
       : undefined;
+  if (!current && parked.length === 0) return null;
   return (
-    <>
+    <Animated.View
+      style={compact ? styles.row : styles.column}
+      pointerEvents="box-none"
+      layout={LinearTransition.duration(220)}
+    >
       {current && (
         <TimerPill
           session={current}
           onPress={onPress}
-          style={style}
+          style={compact ? undefined : style}
+          compact={compact}
         />
       )}
       {parked.map(session => (
         <TimerPill
           key={session.lockedBehaviorId}
           session={session}
-          style={style}
+          style={compact ? undefined : style}
+          compact={compact}
           onPress={() => {
             switchTo(session.lockedBehaviorId);
             onPress();
           }}
         />
       ))}
-    </>
+    </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  column: { gap: 8 },
+  row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },
+});

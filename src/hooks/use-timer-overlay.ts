@@ -2,9 +2,12 @@ import { useEffect, useMemo } from 'react';
 import { AppState } from 'react-native';
 import { AppUsage } from '../../modules/app-usage';
 import { useBehaviorStore } from '../store/behavior-store';
+import { useSettingsStore } from '../store/settings-store';
 import { useTimerStore } from '../store/timer-store';
+import { iconText } from '../utils/icon-utils';
 import { NEED_INFO } from '../utils/need-utils';
 import { getRunningOverlayTimers } from '../utils/timer-overlay-utils';
+import { getEffectiveXp, getLevel, getLevelXp, xpRequiredForLevel } from '../utils/xp-utils';
 import { useNeedLevels } from './use-need-levels';
 
 /**
@@ -17,10 +20,12 @@ export function useTimerOverlay(enabled: boolean) {
   const stopTimestamp = useTimerStore(s => s.stopTimestamp);
   const parked = useTimerStore(s => s.parked);
   const behaviors = useBehaviorStore(s => s.behaviors);
+  const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const { needs, now } = useNeedLevels();
 
   const timersJson = useMemo(() => {
     const sessions = [...(lockedBehaviorId ? [{ lockedBehaviorId, startTimestamp, stopTimestamp }] : []), ...parked];
+    const byId = new Map(behaviors.map(b => [b.id, b]));
     const names = new Map(behaviors.map(b => [b.id, b.name]));
     return JSON.stringify(
       getRunningOverlayTimers(
@@ -39,9 +44,19 @@ export function useTimerOverlay(enabled: boolean) {
               }
             : undefined;
         },
+        id => {
+          const behavior = byId.get(id);
+          if (!behavior) return undefined;
+          // XP logged so far; the pill adds 1 XP per minute on the clock itself.
+          const xp = behavior.xpEnabled ? getEffectiveXp(behavior, now, dayCutoffHour) : undefined;
+          return {
+            icon: iconText(behavior.icon) || undefined,
+            level: xp == null ? undefined : { inLevel: getLevelXp(xp), forLevel: xpRequiredForLevel(getLevel(xp)) },
+          };
+        },
       ),
     );
-  }, [lockedBehaviorId, startTimestamp, stopTimestamp, parked, behaviors, needs, now]);
+  }, [lockedBehaviorId, startTimestamp, stopTimestamp, parked, behaviors, needs, now, dayCutoffHour]);
 
   useEffect(() => {
     if (!enabled || !AppUsage?.startTimerOverlay) return;

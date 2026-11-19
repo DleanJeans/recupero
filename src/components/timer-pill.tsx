@@ -1,24 +1,37 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
+import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 import { useBehaviorStore } from '../store/behavior-store';
+import { useSettingsStore } from '../store/settings-store';
 import type { TimerSession } from '../store/timer-store';
 import { Colors } from '../utils/colors';
 import { formatStopwatchDuration } from '../utils/stopwatch-utils';
+import { getTimerLevelProgress } from '../utils/timer-utils';
+import { getEffectiveXp, getTimerXp } from '../utils/xp-utils';
 import { BehaviorIcon } from './behavior-icon';
 import { Text } from './text';
+import { ToastCountdownRing } from './toast-countdown-ring';
 
 interface TimerPillProps {
   session: TimerSession;
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
+  /** Small chip (level ring around the icon + time), e.g. while the Routines list is scrolled down. */
+  compact?: boolean;
 }
 
-/** One timer's pill: green while running, grey when paused or waiting to be logged. */
-export function TimerPill({ session, onPress, style }: TimerPillProps) {
+const LAYOUT = LinearTransition.duration(220);
+
+/**
+ * One timer's pill: green while running, grey when paused or waiting to be logged.
+ * Full: icon circle, name and time, then the behavior's level XP filling live underneath.
+ * Compact: the level shown as a ring around the icon, next to the time.
+ */
+export function TimerPill({ session, onPress, style, compact = false }: TimerPillProps) {
   const { lockedBehaviorId, startTimestamp, stopTimestamp, pausedAt } = session;
   const behavior = useBehaviorStore(s => s.behaviors.find(b => b.id === lockedBehaviorId));
-  const behaviorName = behavior?.name;
+  const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const isRunning = startTimestamp != null && stopTimestamp == null;
   const [now, setNow] = useState(() => Date.now());
 
@@ -30,51 +43,128 @@ export function TimerPill({ session, onPress, style }: TimerPillProps) {
   }, [isRunning]);
 
   const isPaused = pausedAt != null && startTimestamp == null;
-  if ((startTimestamp == null && !isPaused) || behaviorName == null) return null;
+  if ((startTimestamp == null && !isPaused) || behavior == null) return null;
 
-  const elapsed =
-    startTimestamp == null ? 'paused' : formatStopwatchDuration(Math.max(0, (stopTimestamp ?? now) - startTimestamp));
-  const hint = isRunning ? '' : isPaused ? ' · tap to resume' : ' · tap to log';
+  const elapsedMs = startTimestamp == null ? 0 : Math.max(0, (stopTimestamp ?? now) - startTimestamp);
+  const elapsed = startTimestamp == null ? 'paused' : formatStopwatchDuration(elapsedMs);
+  const hint = isRunning ? undefined : isPaused ? 'Tap to resume' : 'Tap to log';
+  // Logged segments are already in the behavior's XP; only the one on the clock is added on top.
+  const level = behavior.xpEnabled
+    ? getTimerLevelProgress(getEffectiveXp(behavior, now, dayCutoffHour), getTimerXp(elapsedMs))
+    : undefined;
+  const textColor = isRunning ? Colors.typeText.desirable : Colors.text.secondary;
+  const icon = (
+    <BehaviorIcon
+      behavior={behavior}
+      size={14}
+    />
+  );
 
   return (
-    <View
+    <Animated.View
       style={[styles.wrap, style]}
       pointerEvents="box-none"
+      layout={LAYOUT}
     >
       <Pressable
-        style={({ pressed }) => [styles.pill, !isRunning && styles.pillStopped, pressed && styles.pressed]}
+        style={({ pressed }) => [
+          compact ? styles.chip : styles.pill,
+          !isRunning && styles.pillStopped,
+          pressed && styles.pressed,
+        ]}
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={`Open timer for ${behaviorName}, ${elapsed}`}
+        accessibilityLabel={`Open timer for ${behavior.name}, ${elapsed}${hint ? `, ${hint}` : ''}`}
       >
-        {behavior && (
-          <View style={[styles.iconCircle, !isRunning && styles.iconCircleStopped]}>
-            <BehaviorIcon
-              behavior={behavior}
-              size={14}
-            />
-          </View>
+        {compact ? (
+          <Animated.View
+            key="compact"
+            style={styles.row}
+            entering={FadeIn.duration(180)}
+          >
+            {level ? (
+              <ToastCountdownRing
+                share={level.now}
+                size={30}
+                litColor={isRunning ? Colors.type.desirable : Colors.text.secondary}
+              >
+                {icon}
+              </ToastCountdownRing>
+            ) : (
+              <View style={[styles.iconCircle, !isRunning && styles.iconCircleStopped]}>{icon}</View>
+            )}
+            {isPaused && (
+              <Ionicons
+                name="pause"
+                size={13}
+                color={textColor}
+              />
+            )}
+            <Text
+              style={[styles.time, { color: textColor }]}
+              numberOfLines={1}
+            >
+              {elapsed}
+            </Text>
+          </Animated.View>
+        ) : (
+          <Animated.View
+            key="full"
+            style={styles.full}
+            entering={FadeIn.duration(180)}
+          >
+            <View style={styles.row}>
+              <View style={[styles.iconCircle, !isRunning && styles.iconCircleStopped]}>{icon}</View>
+              {isPaused && (
+                <Ionicons
+                  name="pause"
+                  size={13}
+                  color={textColor}
+                />
+              )}
+              <Text
+                style={[styles.name, { color: textColor }]}
+                numberOfLines={1}
+              >
+                {behavior.name}
+              </Text>
+              <Text
+                style={[styles.time, { color: textColor }]}
+                numberOfLines={1}
+              >
+                {elapsed}
+              </Text>
+            </View>
+            {hint ? (
+              <Text
+                style={[styles.sub, { color: textColor }]}
+                numberOfLines={1}
+              >
+                {hint}
+              </Text>
+            ) : level ? (
+              <View style={styles.levelRow}>
+                <Text
+                  style={[styles.sub, { color: textColor }]}
+                  numberOfLines={1}
+                >
+                  Lv{level.level}
+                </Text>
+                <View style={styles.track}>
+                  <View style={[styles.fill, { width: `${Math.round(level.now * 100)}%` }]} />
+                </View>
+                <Text
+                  style={[styles.sub, styles.subValue, { color: textColor }]}
+                  numberOfLines={1}
+                >
+                  {Math.floor(level.xpInLevel)}/{level.xpForLevel}
+                </Text>
+              </View>
+            ) : null}
+          </Animated.View>
         )}
-        <Ionicons
-          name={isPaused ? 'pause' : 'stopwatch-outline'}
-          size={15}
-          color={isRunning ? Colors.typeText.desirable : Colors.text.secondary}
-        />
-        <Text
-          style={[styles.name, !isRunning && styles.textStopped]}
-          numberOfLines={1}
-        >
-          {behaviorName}
-        </Text>
-        <Text
-          style={[styles.time, !isRunning && styles.textStopped]}
-          numberOfLines={1}
-        >
-          · {elapsed}
-          {hint}
-        </Text>
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -84,31 +174,48 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
   pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
+    minWidth: 240,
     maxWidth: '86%',
-    borderRadius: 999,
-    paddingHorizontal: 14,
+    borderRadius: 18,
+    paddingLeft: 8,
+    paddingRight: 14,
     paddingVertical: 7,
+    backgroundColor: Colors.typeBtn.desirable,
+  },
+  chip: {
+    borderRadius: 999,
+    paddingLeft: 3,
+    paddingRight: 12,
+    paddingVertical: 3,
     backgroundColor: Colors.typeBtn.desirable,
   },
   pillStopped: { backgroundColor: Colors.bg.elevated },
   pressed: { opacity: 0.8 },
+  full: { gap: 4 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   // The behavior's icon in a circle, at the pill's left edge.
   iconCircle: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    marginLeft: -8,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
     backgroundColor: 'rgba(0,0,0,0.28)',
   },
   iconCircleStopped: { opacity: 0.6 },
-  // The name gives way first, so the time (1:05:12, hint) is never cut off.
-  name: { color: Colors.typeText.desirable, fontSize: 13, fontWeight: '600', flexShrink: 1 },
-  time: { color: Colors.typeText.desirable, fontSize: 13, fontWeight: '600', flexShrink: 0 },
-  textStopped: { color: Colors.text.secondary },
+  // The name gives way first, so the time (1:05:12) is never cut off.
+  name: { fontSize: 13, fontWeight: '600', flexShrink: 1, flexGrow: 1 },
+  time: { fontSize: 13, fontWeight: '600', flexShrink: 0, fontVariant: ['tabular-nums'] },
+  levelRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 3 },
+  sub: { fontSize: 11, fontWeight: '500', opacity: 0.85, flexShrink: 0 },
+  subValue: { minWidth: 34, textAlign: 'right', fontVariant: ['tabular-nums'] },
+  track: {
+    flex: 1,
+    height: 5,
+    borderRadius: 3,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  fill: { height: '100%', borderRadius: 3, backgroundColor: Colors.type.desirable },
 });

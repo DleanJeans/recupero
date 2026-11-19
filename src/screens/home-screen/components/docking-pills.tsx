@@ -37,6 +37,7 @@ export function DockingPills({ barHeight, bottomPadding, docked, onTimerPress }:
       <UpdateReadyPill style={styles.pill} />
       <RunningTimerPill
         style={styles.pill}
+        compact={docked}
         onPress={onTimerPress}
       />
     </Animated.View>

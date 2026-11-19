@@ -10,11 +10,13 @@ interface Props {
   /** Share (0..1) of the time still left; the ring drains clockwise. */
   share: number;
   size?: number;
+  /** Colour of the lit ticks. Defaults to green. */
+  litColor?: string;
   children?: React.ReactNode;
 }
 
 /** A ring of small ticks that switch off one by one as time runs out, with content in the middle. */
-export function ToastCountdownRing({ share, size = 46, children }: Props) {
+export function ToastCountdownRing({ share, size = 46, litColor, children }: Props) {
   const lit = Math.ceil(share * SEGMENTS);
   return (
     <View style={{ width: size, height: size }}>
@@ -26,7 +28,13 @@ export function ToastCountdownRing({ share, size = 46, children }: Props) {
             { width: size, height: size, transform: [{ rotate: `${(index * 360) / SEGMENTS}deg` }] },
           ]}
         >
-          <View style={[styles.tick, index < lit && styles.tickLit]} />
+          <View
+            style={[
+              styles.tick,
+              index < lit && styles.tickLit,
+              index < lit && litColor != null && { backgroundColor: litColor },
+            ]}
+          />
         </View>
       ))}
       <View style={styles.center}>{children}</View>
