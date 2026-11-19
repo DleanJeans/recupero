@@ -1,19 +1,42 @@
+import type { RootStackParamList } from '../types/navigation';
+
+/** A bullet that can open the screen it changed, so it is quick to test. */
+export interface PatchNotesLinkedItem {
+  text: string;
+  /** Stack screen to open from the bullet's "Open" button. */
+  screen: keyof RootStackParamList;
+  /** Route params, e.g. { behaviorId } for BehaviorLog. Omit for screens without params. */
+  params?: object;
+  /** Button label. Defaults to "Open". Keep it short, e.g. "Needs". */
+  linkLabel?: string;
+}
+
+/** A plain string, or an object when the bullet should link to a screen. */
+export type PatchNotesItem = string | PatchNotesLinkedItem;
+
 export interface PatchNotesDay {
   /** Local calendar date, yyyy-MM-dd. */
   date: string;
   /** Plain-language, user-facing changes made that day. */
-  items: string[];
+  items: PatchNotesItem[];
 }
 
 /**
  * Patch notes shown at the bottom of Settings. Newest day first.
  * Add an entry (or a bullet to today's day) with every user-facing change.
  * Write for the app's user, not for developers.
+ * When a bullet changed a screen that can be opened directly, use { text, screen, params?, linkLabel? } so
+ * the bullet gets an Open button that jumps there for testing. Plain strings still work.
  */
 export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      {
+        text: 'Patch notes now have a checkbox on every line so you can tick off what you have tested (it is remembered), and some lines have an Open button that jumps straight to the screen that changed.',
+        screen: 'PatchNotes',
+        linkLabel: 'Patch notes',
+      },
       'Fill rates now have a linked "% per min" field next to the minutes field; edit either one and the other updates.',
       'An app can now fill a need only while it is playing music or video in the background, e.g. Spotify filling Fun. Pick the app, tick "Only while it\'s playing" and turn on Notification access (needs the newest app install).',
       "The app picker now shows each app's icon (needs the newest app install).",
@@ -26,10 +49,18 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       'You can set how many minutes of an app or website fill a need to 100%: type it when adding, or tap the "Full after …" pill on its row in the need to change it.',
       'Needs can now fill from app and website usage. Open a need (for example Fun) and tap "Fill Fun from an app or website", then pick an app like YouTube, or a site in Firefox. Time spent there fills the need when you open Recupero.',
       'Cardio and Sunlight now show progress as 0/30m on the right of the bar, with the unit kept on the same line.',
-      'You can now run several timers at once. On the Timer screen tap Start another timer, and open any other running timer from the list below. Each running timer gets its own pill above the bottom bar, and needs fill from all of them together.',
+      {
+        text: 'You can now run several timers at once. On the Timer screen tap Start another timer, and open any other running timer from the list below. Each running timer gets its own pill above the bottom bar, and needs fill from all of them together.',
+        screen: 'Timer',
+        linkLabel: 'Timer',
+      },
       'Needs now fill up live while a behavior timer is running (for example Comfort while timing Lie in bed). Cancel the timer and the need goes back to its current level. While it runs, the need says "Full in …" instead of "Low in …", with a timer icon and the name of the behavior being timed.',
       "You can now change the icon of any need, including the built-in ones: Settings > Needs, tap the icon next to the need's name. Needs with a changed built-in icon show a Reset option.",
-      'Settings > Needs has a Sort button to put your needs in the order you want (Cues, history and settings follow it).',
+      {
+        text: 'Settings > Needs has a Sort button to put your needs in the order you want (Cues, history and settings follow it).',
+        screen: 'NeedsSettings',
+        linkLabel: 'Needs settings',
+      },
       'Every main tab (Cues, Cravings, Routines, Daily, Tasks) now has the same header with a Settings cog in the top right corner. The Home tab is now titled Routines, so the title is no longer cut off.',
       'Search is now a round button at the bottom left of Routines. Cook a batch moved to the top of the New behavior screen.',
       'Cues and Cravings no longer show a Back arrow next to the title.',
@@ -38,7 +69,11 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       'Needs: you can now remove a check-in. Check-ins show in the Logged today list with an X, and tapping a check-in dot on the chart has a bin button.',
       'Needs: the need screen now shows its icon and title right next to the Back button, so there is more room for the chart.',
       'Cues: a new Check-in card at the top shows your current mood and body as two squares. Tap one to log how you feel in one tap, with an Undo. A square turns amber when the last log is a few hours old.',
-      'Check-in streak and XP: logging a mood (+5 XP) or a body sensation (+3 XP, first 4 logs a day) now levels up Check-in and keeps a daily streak. Tap the card header to see your level, best streak, 2-week calendar and mood mix.',
+      {
+        text: 'Check-in streak and XP: logging a mood (+5 XP) or a body sensation (+3 XP, first 4 logs a day) now levels up Check-in and keeps a daily streak. Tap the card header to see your level, best streak, 2-week calendar and mood mix.',
+        screen: 'CheckIn',
+        linkLabel: 'Check in',
+      },
       'Check-in nudges (off by default, turn on from the Check in screen): a notification at times you pick, with mood buttons you can tap without opening the app, plus an optional streak-saver at 21:00.',
     ],
   },

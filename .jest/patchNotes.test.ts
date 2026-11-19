@@ -1,5 +1,5 @@
 import { PATCH_NOTES } from '../src/data/patch-notes';
-import { formatPatchNotesDate } from '../src/utils/patch-notes-utils';
+import { formatPatchNotesDate, patchNotesItemText } from '../src/utils/patch-notes-utils';
 
 describe('patch notes', () => {
   it('lists days newest first with valid unique dates and no empty days', () => {
@@ -8,6 +8,8 @@ describe('patch notes', () => {
     expect(new Set(dates).size).toBe(dates.length);
     expect([...dates].sort().reverse()).toEqual(dates);
     PATCH_NOTES.forEach(day => expect(day.items.length).toBeGreaterThan(0));
+    const texts = PATCH_NOTES.flatMap(day => day.items.map(patchNotesItemText));
+    expect(new Set(texts).size).toBe(texts.length);
   });
 
   it('formats dates in local calendar terms', () => {
