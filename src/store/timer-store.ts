@@ -2,7 +2,25 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+/** One timer's state. The store's top-level fields are the timer open on the Timer screen; others wait in `parked`. */
+export interface TimerSession {
+  lockedBehaviorId: string;
+  initialNotes: string | undefined;
+  startTimestamp: number | undefined;
+  stopTimestamp: number | undefined;
+  pendingLogBehaviorLogCount: number | undefined;
+  pausedAt: number | undefined;
+}
+
 interface TimerStore {
+  /** Other timers running (or paused/waiting to be logged) next to the one above. Each is for a different behavior. */
+  parked: TimerSession[];
+  /** Move the current timer aside, so the Timer screen is free to start another one. */
+  parkCurrent: () => void;
+  /** Open the parked timer of `behaviorId` on the Timer screen, parking the current one. */
+  switchTo: (behaviorId: string) => void;
+  /** Drop parked timers whose behavior no longer exists. */
+  pruneParked: (existingBehaviorIds: Set<string>) => void;
   /** Behavior locked in for the current timer session, if any. */
   lockedBehaviorId: string | undefined;
   /** Notes to prefill when logging the current timer session. */
@@ -33,16 +51,67 @@ interface TimerStore {
   reset: () => void;
 }
 
+const EMPTY_CURRENT = {
+  lockedBehaviorId: undefined,
+  initialNotes: undefined,
+  startTimestamp: undefined,
+  stopTimestamp: undefined,
+  pendingLogBehaviorLogCount: undefined,
+  pausedAt: undefined,
+};
+
+/** A timer that has started or is paused; a behavior merely picked on the Timer screen is not worth keeping. */
+export function isTimerSessionActive(timer: Pick<TimerSession, 'startTimestamp' | 'pausedAt'> | undefined): boolean {
+  return timer != null && (timer.startTimestamp != null || timer.pausedAt != null);
+}
+
+function currentSession(state: TimerStore): TimerSession | undefined {
+  if (state.lockedBehaviorId == null || !isTimerSessionActive(state)) return undefined;
+  return {
+    lockedBehaviorId: state.lockedBehaviorId,
+    initialNotes: state.initialNotes,
+    startTimestamp: state.startTimestamp,
+    stopTimestamp: state.stopTimestamp,
+    pendingLogBehaviorLogCount: state.pendingLogBehaviorLogCount,
+    pausedAt: state.pausedAt,
+  };
+}
+
 export const useTimerStore = create<TimerStore>()(
   persist(
-    set => ({
+    (set, get) => ({
+      parked: [],
+      parkCurrent: () => {
+        const session = currentSession(get());
+        set({ ...EMPTY_CURRENT, parked: session ? [...get().parked, session] : get().parked });
+      },
+      switchTo: behaviorId => {
+        const state = get();
+        const target = state.parked.find(session => session.lockedBehaviorId === behaviorId);
+        if (!target) return;
+        const current = currentSession(state);
+        const rest = state.parked.filter(session => session !== target);
+        set({ ...target, parked: current ? [...rest, current] : rest });
+      },
+      pruneParked: existing => {
+        const parked = get().parked.filter(session => existing.has(session.lockedBehaviorId));
+        if (parked.length !== get().parked.length) set({ parked });
+      },
       lockedBehaviorId: undefined,
       initialNotes: undefined,
       startTimestamp: undefined,
       stopTimestamp: undefined,
       pendingLogBehaviorLogCount: undefined,
       pausedAt: undefined,
-      start: (behaviorId, timestamp = Date.now(), initialNotes) =>
+      start: (behaviorId, timestamp = Date.now(), initialNotes) => {
+        const state = get();
+        // Already open in the background: bring it forward instead of starting it twice.
+        if (state.parked.some(session => session.lockedBehaviorId === behaviorId)) {
+          state.switchTo(behaviorId);
+          return;
+        }
+        // A timer for another behavior keeps running next to the new one.
+        const current = state.lockedBehaviorId !== behaviorId ? currentSession(state) : undefined;
         set({
           lockedBehaviorId: behaviorId,
           initialNotes,
@@ -50,7 +119,9 @@ export const useTimerStore = create<TimerStore>()(
           stopTimestamp: undefined,
           pendingLogBehaviorLogCount: undefined,
           pausedAt: undefined,
-        }),
+          parked: current ? [...state.parked, current] : state.parked,
+        });
+      },
       setLockedBehavior: behaviorId => set({ lockedBehaviorId: behaviorId }),
       setStart: timestamp => set({ startTimestamp: timestamp, stopTimestamp: undefined, pausedAt: undefined }),
       rewindStartMinute: () =>

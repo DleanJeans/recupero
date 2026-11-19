@@ -16,11 +16,7 @@ import {
   isTimerRunning,
   TIMER_STOP_ACTION_ID,
 } from './timer-notification-utils';
-import {
-  presentTimerBusyNotification,
-  presentTimerRunningNotification,
-  presentTimerStoppedNotification,
-} from './timer-notifications';
+import { presentTimerRunningNotification, presentTimerStoppedNotification } from './timer-notifications';
 
 export const NOTIFICATION_ACTION_TASK = 'recupero-notification-actions';
 
@@ -62,11 +58,8 @@ function behaviorName(behaviorId: string | undefined): string {
 async function startTimer(behaviorId: string, now: number): Promise<void> {
   const timer = useTimerStore.getState();
   const decision = getTimerStartDecision(timer, behaviorId);
-  if (decision === 'busy') {
-    await presentTimerBusyNotification(behaviorName(timer.lockedBehaviorId), behaviorName(behaviorId));
-    return;
-  }
-  if (decision === 'start') timer.start(behaviorId, now);
+  // A timer for another behavior keeps running; the new one starts next to it.
+  if (decision === 'start' || decision === 'busy') timer.start(behaviorId, now);
   const startedAt = useTimerStore.getState().startTimestamp ?? now;
   await presentTimerRunningNotification(behaviorId, behaviorName(behaviorId), startedAt);
 }

@@ -14,6 +14,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      'You can now run several timers at once. On the Timer screen tap Start another timer, and open any other running timer from the list below. Each running timer gets its own pill above the bottom bar, and needs fill from all of them together.',
       'Needs now fill up live while a behavior timer is running (for example Comfort while timing Lie in bed). Cancel the timer and the need goes back to its current level. While it runs, the need says "Full in …" instead of "Low in …".',
       'You can now change the icon of any need, including the built-in ones (Hunger, Thirst and so on): Settings > Needs, open a need and tap its Icon. Reset brings the original back.',
       'Every main tab (Cues, Cravings, Routines, Daily, Tasks) now has the same header with a Settings cog in the top right corner. The Home tab is now titled Routines, so the title is no longer cut off.',

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useNeedsStore } from '../store/needs-store';
-import { useTimerStore } from '../store/timer-store';
+import { type TimerSession, useTimerStore } from '../store/timer-store';
 import type { NeedConfig, NeedId, NeedMetadataSource } from '../types/need';
 import {
   getBehaviorRefill,
@@ -12,9 +12,36 @@ import {
   NEED_IDS,
   NEED_LOOKBACK_MS,
   type NeedState,
+  type RunningTimerSpan,
   simulateNeed,
-  withTimerLog,
+  withTimerLogs,
 } from '../utils/need-utils';
+
+function isRunning(session: TimerSession): boolean {
+  return session.startTimestamp != null && session.stopTimestamp == null;
+}
+
+/** Every timer that has started: the open one and the parked ones. A stopped one counts up to its stop time. */
+function getRunningTimers(
+  behaviorId: string | undefined,
+  start: number | undefined,
+  stop: number | undefined,
+  parked: TimerSession[],
+  now: number,
+): RunningTimerSpan[] {
+  const timers: RunningTimerSpan[] = [];
+  if (behaviorId != null && start != null) timers.push({ behaviorId, start, end: stop ?? now });
+  for (const session of parked) {
+    if (session.startTimestamp != null) {
+      timers.push({
+        behaviorId: session.lockedBehaviorId,
+        start: session.startTimestamp,
+        end: session.stopTimestamp ?? now,
+      });
+    }
+  }
+  return timers;
+}
 
 const TICK_MS = 60_000;
 /** Faster refresh while a timer runs, so the refilling need visibly climbs. */
@@ -37,7 +64,9 @@ export function useNeedLevels(): { needs: NeedSnapshot[]; now: number } {
   const timerBehaviorId = useTimerStore(state => state.lockedBehaviorId);
   const timerStart = useTimerStore(state => state.startTimestamp);
   const timerStop = useTimerStore(state => state.stopTimestamp);
-  const timerRunning = timerBehaviorId != null && timerStart != null && timerStop == null;
+  const parkedTimers = useTimerStore(state => state.parked);
+  const timerRunning =
+    (timerBehaviorId != null && timerStart != null && timerStop == null) || parkedTimers.some(isRunning);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -49,27 +78,24 @@ export function useNeedLevels(): { needs: NeedSnapshot[]; now: number } {
   // (timestamped after the last tick) shows straight away instead of after the next tick.
   return useMemo(() => {
     const now = Date.now();
-    const timerLog = timerBehaviorId != null && timerStart != null ? { timerBehaviorId, timerStart } : undefined;
+    const timers = getRunningTimers(timerBehaviorId, timerStart, timerStop, parkedTimers, now);
+    const logged = withTimerLogs(behaviors, timers);
     const needs = NEED_IDS.filter(id => configs[id].enabled).map(id => {
       const config = configs[id];
       const source = getNeedMetadataSource(id, config, categories);
-      const events = getNeedEvents(
-        id,
-        config,
-        withTimerLog(behaviors, timerLog, timerStop ?? now),
-        checkIns,
-        source,
-        now - NEED_LOOKBACK_MS,
-      );
+      const events = getNeedEvents(id, config, logged, checkIns, source, now - NEED_LOOKBACK_MS);
       const state = simulateNeed(events, getDecayPerHour(config), now);
-      const timerBehavior = timerLog && behaviors.find(behavior => behavior.id === timerLog.timerBehaviorId);
-      const timerFullInMs =
-        timerBehavior && timerStop == null
-          ? getTimerFullInMs(state.level, getBehaviorRefill(config, timerBehavior, source))
-          : undefined;
+      const filling = timers.filter(timer => timer.end >= now);
+      const timerFullInMs = getTimerFullInMs(
+        state.level,
+        filling.map(timer => {
+          const behavior = behaviors.find(candidate => candidate.id === timer.behaviorId);
+          return behavior ? getBehaviorRefill(config, behavior, source) : undefined;
+        }),
+      );
       return { id, config, source, timerFullInMs, ...state };
     });
     return { needs, now };
     // tick re-reads the clock each minute.
-  }, [behaviors, categories, checkIns, configs, tick, timerBehaviorId, timerStart, timerStop]);
+  }, [behaviors, categories, checkIns, configs, tick, timerBehaviorId, timerStart, timerStop, parkedTimers]);
 }

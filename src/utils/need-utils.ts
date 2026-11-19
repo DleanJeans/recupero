@@ -315,27 +315,31 @@ export function compareNeedEvents(a: NeedEvent, b: NeedEvent): number {
 /** Id of the stand-in log that a running timer adds, so it never matches a saved log. */
 export const TIMER_PREVIEW_LOG_ID = 'timer-preview';
 
+export interface RunningTimerSpan {
+  behaviorId: string;
+  start: number;
+  /** When the timer stopped, or now while it runs. */
+  end: number;
+}
+
 /**
- * Adds the running timer as a log ending `end`, so needs the behaviour refills climb while it runs
- * with the same maths as the saved log. Cancelling the timer removes it and the level goes back.
+ * Adds each running timer as a log ending at its `end`, so needs the behaviours refill climb while they run
+ * with the same maths as the saved logs. Cancelling a timer removes its log and the level goes back.
  */
-export function withTimerLog(
-  behaviors: BehaviorEntry[],
-  timer: { timerBehaviorId: string; timerStart: number } | undefined,
-  end: number,
-): BehaviorEntry[] {
-  if (!timer || end <= timer.timerStart) return behaviors;
-  return behaviors.map(behavior =>
-    behavior.id === timer.timerBehaviorId
-      ? {
-          ...behavior,
-          logs: [
-            ...behavior.logs,
-            { id: TIMER_PREVIEW_LOG_ID, timestamp: timer.timerStart, endTimestamp: end, metadata: {} },
-          ],
-        }
-      : behavior,
-  );
+export function withTimerLogs(behaviors: BehaviorEntry[], timers: RunningTimerSpan[]): BehaviorEntry[] {
+  const spans = timers.filter(timer => timer.end > timer.start);
+  if (spans.length === 0) return behaviors;
+  return behaviors.map(behavior => {
+    const own = spans.filter(span => span.behaviorId === behavior.id);
+    if (own.length === 0) return behavior;
+    const logs = own.map(span => ({
+      id: TIMER_PREVIEW_LOG_ID,
+      timestamp: span.start,
+      endTimestamp: span.end,
+      metadata: {},
+    }));
+    return { ...behavior, logs: [...behavior.logs, ...logs] };
+  });
 }
 
 /** Refills and check-ins for one need since `since`, oldest first. */
@@ -465,10 +469,21 @@ export function formatEmptyHours(emptyHours: number): string {
   return formatHoursMinutes(emptyHours * MS_PER_HOUR);
 }
 
-/** How long a running timer takes to fill the need to 100, when the behaviour refills by duration. */
-export function getTimerFullInMs(level: number | undefined, refill: NeedRefill | undefined): number | undefined {
-  if (level == null || !refill || refill.mode !== 'duration' || refill.fullMinutes <= 0) return undefined;
-  return Math.max(0, ((100 - level) / 100) * refill.fullMinutes * 60_000);
+/**
+ * How long the running timers take to fill the need to 100: each timer that refills it by duration adds
+ * 100 / fullMinutes points a minute, so several together fill it faster.
+ */
+export function getTimerFullInMs(
+  level: number | undefined,
+  refills: Array<NeedRefill | undefined>,
+): number | undefined {
+  if (level == null) return undefined;
+  let pointsPerMinute = 0;
+  for (const refill of refills) {
+    if (refill?.mode === 'duration' && refill.fullMinutes > 0) pointsPerMinute += 100 / refill.fullMinutes;
+  }
+  if (pointsPerMinute <= 0) return undefined;
+  return Math.max(0, ((100 - level) / pointsPerMinute) * 60_000);
 }
 
 /** "Full now" or "Full in ~40 min", shown while a timer fills the need. */

@@ -14,6 +14,7 @@ import { isArchived } from '../../utils/archive-utils';
 import { buildQuickLogMetadata } from '../../utils/checklist-utils';
 import { Colors } from '../../utils/colors';
 import { shouldLogTimerSegment } from '../../utils/timer-utils';
+import { TimerOtherTimers } from './components/timer-other-timers';
 import { TimerPicker } from './components/timer-picker';
 import { TimerRunningPanel } from './components/timer-running-panel';
 
@@ -37,6 +38,8 @@ export function TimerScreen() {
   const pauseTimer = useTimerStore(state => state.pause);
   const resumeTimer = useTimerStore(state => state.resume);
   const resetTimer = useTimerStore(state => state.reset);
+  const parked = useTimerStore(state => state.parked);
+  const pruneParked = useTimerStore(state => state.pruneParked);
   const [behaviorQuery, setBehaviorQuery] = useState('');
   const [selectedBehaviorId, setSelectedBehaviorId] = useState<string | undefined>();
   const [nowTick, setNowTick] = useState(() => Date.now());
@@ -52,11 +55,15 @@ export function TimerScreen() {
       behavior => behavior.xpEnabled === true && behavior.durationXpEnabled === true && !isArchived(behavior),
     );
     const visibleBehaviors = hidePrivate ? timerBehaviors.filter(behavior => !behavior.private) : timerBehaviors;
-    return [...visibleBehaviors].sort((a, b) => {
-      const timestampDiff = (b.lastTimestamp ?? -Infinity) - (a.lastTimestamp ?? -Infinity);
-      return timestampDiff || a.name.localeCompare(b.name);
-    });
-  }, [behaviors, hidePrivate]);
+    // Behaviors that already have a timer open in the background can't be started again.
+    const parkedIds = new Set(parked.map(session => session.lockedBehaviorId));
+    return visibleBehaviors
+      .filter(behavior => !parkedIds.has(behavior.id))
+      .sort((a, b) => {
+        const timestampDiff = (b.lastTimestamp ?? -Infinity) - (a.lastTimestamp ?? -Infinity);
+        return timestampDiff || a.name.localeCompare(b.name);
+      });
+  }, [behaviors, hidePrivate, parked]);
   const behaviorById = useMemo(() => new Map(behaviors.map(behavior => [behavior.id, behavior])), [behaviors]);
   const lockedBehavior = lockedBehaviorId ? behaviorById.get(lockedBehaviorId) : undefined;
   const isRunning = startTimestamp != null && stopTimestamp == null;
@@ -77,6 +84,10 @@ export function TimerScreen() {
       resetTimer();
     }
   }, [behaviorById, lockedBehaviorId, resetTimer]);
+
+  useEffect(() => {
+    pruneParked(new Set(behaviors.map(behavior => behavior.id)));
+  }, [behaviors, pruneParked]);
 
   // When the screen regains focus after the user was on the log form, check
   // whether the pending session was actually saved by comparing the locked
@@ -244,6 +255,7 @@ export function TimerScreen() {
             />
           </>
         )}
+        <TimerOtherTimers />
       </ScrollView>
     </SafeAreaView>
   );
