@@ -1,5 +1,5 @@
 import { PATCH_NOTES } from '../src/data/patch-notes';
-import { formatPatchNotesDate, patchNotesItemText } from '../src/utils/patch-notes-utils';
+import { formatPatchNotesDate, patchNotesItemText, splitAtPhrase } from '../src/utils/patch-notes-utils';
 
 describe('patch notes', () => {
   it('lists days newest first with valid unique dates and no empty days', () => {
@@ -14,5 +14,23 @@ describe('patch notes', () => {
 
   it('formats dates in local calendar terms', () => {
     expect(formatPatchNotesDate('2026-11-15')).toBe('Sun, Nov 15, 2026');
+  });
+});
+
+describe('splitAtPhrase', () => {
+  it('splits around the first match and returns null when missing', () => {
+    expect(splitAtPhrase('Open Needs settings now', 'Needs settings')).toEqual({
+      before: 'Open ',
+      match: 'Needs settings',
+      after: ' now',
+    });
+    expect(splitAtPhrase('Nothing here', 'Needs settings')).toBeNull();
+    expect(splitAtPhrase('Nothing here')).toBeNull();
+  });
+
+  it('every linkPhrase appears in its bullet text', () => {
+    PATCH_NOTES.flatMap(day => day.items).forEach(item => {
+      if (typeof item !== 'string' && item.linkPhrase) expect(item.text).toContain(item.linkPhrase);
+    });
   });
 });

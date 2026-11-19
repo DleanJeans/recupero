@@ -4,16 +4,53 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
-import type { PatchNotesDay as PatchNotesDayData } from '../../../data/patch-notes';
+import type {
+  PatchNotesDay as PatchNotesDayData,
+  PatchNotesItem,
+  PatchNotesLinkedItem,
+} from '../../../data/patch-notes';
 import { usePatchNotesStore } from '../../../store/patch-notes-store';
 import type { RootStackParamList } from '../../../types/navigation';
 import { Colors } from '../../../utils/colors';
-import { formatPatchNotesDate, patchNotesItemText } from '../../../utils/patch-notes-utils';
+import { formatPatchNotesDate, patchNotesItemText, splitAtPhrase } from '../../../utils/patch-notes-utils';
 
 export function PatchNotesDay({ day }: { day: PatchNotesDayData }) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const checked = usePatchNotesStore(state => state.checked);
   const toggle = usePatchNotesStore(state => state.toggle);
+
+  const open = (item: PatchNotesLinkedItem) =>
+    (navigation.navigate as (screen: string, params?: object) => void)(item.screen, item.params);
+
+  const renderText = (item: PatchNotesItem, text: string, done: boolean) => {
+    const textStyle = done ? styles.itemDone : undefined;
+    if (typeof item === 'string') return <Text style={textStyle}>{text}</Text>;
+    const link = (label: string) => (
+      <Text
+        style={styles.linkText}
+        onPress={() => open(item)}
+        accessibilityRole="link"
+      >
+        {label}
+      </Text>
+    );
+    const parts = splitAtPhrase(text, item.linkPhrase);
+    if (parts) {
+      return (
+        <>
+          <Text style={textStyle}>{parts.before}</Text>
+          {link(parts.match)}
+          <Text style={textStyle}>{parts.after}</Text>
+        </>
+      );
+    }
+    return (
+      <>
+        <Text style={textStyle}>{text} </Text>
+        {link(item.linkLabel ?? 'Open')}
+      </>
+    );
+  };
 
   return (
     <View style={styles.day}>
@@ -38,20 +75,7 @@ export function PatchNotesDay({ day }: { day: PatchNotesDayData }) {
                 size={22}
                 color={done ? Colors.text.primary : Colors.border.light}
               />
-              <Text style={styles.item}>
-                <Text style={done && styles.itemDone}>{text}</Text>
-                {typeof item !== 'string' && (
-                  <Text
-                    style={styles.linkText}
-                    onPress={() =>
-                      (navigation.navigate as (screen: string, params?: object) => void)(item.screen, item.params)
-                    }
-                    accessibilityRole="link"
-                  >
-                    {` ${item.linkLabel ?? 'Open'}`}
-                  </Text>
-                )}
-              </Text>
+              <Text style={styles.item}>{renderText(item, text, done)}</Text>
             </Pressable>
           </View>
         );

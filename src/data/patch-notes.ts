@@ -7,7 +7,12 @@ export interface PatchNotesLinkedItem {
   screen: keyof RootStackParamList;
   /** Route params, e.g. { behaviorId } for BehaviorLog. Omit for screens without params. */
   params?: object;
-  /** Button label. Defaults to "Open". Keep it short, e.g. "Needs". */
+  /**
+   * Words that already appear in `text` (exact, first occurrence) to underline and link, e.g. "Needs settings".
+   * Prefer this: the sentence stays natural and no extra word is added.
+   */
+  linkPhrase?: string;
+  /** Fallback when no phrase in the sentence fits: this label (default "Open") is added underlined at the end. */
   linkLabel?: string;
 }
 
@@ -42,12 +47,12 @@ export const PATCH_NOTES: PatchNotesDay[] = [
         text: 'Every need screen (Fun, Hunger, ...) now has a Settings cog in the top right corner that opens Needs settings, scrolled to that need.',
         screen: 'NeedsSettings',
         params: { needId: 'fun' },
-        linkLabel: 'Needs settings',
+        linkPhrase: 'Needs settings',
       },
       {
         text: 'Patch notes now have a checkbox on every line so you can tick off what you have tested (it is remembered), and some lines have an underlined link that jumps straight to the screen that changed.',
         screen: 'PatchNotes',
-        linkLabel: 'Patch notes',
+        linkPhrase: 'Patch notes',
       },
       'Fill rates now have a linked "% per min" field next to the minutes field; edit either one and the other updates.',
       'An app can now fill a need only while it is playing music or video in the background, e.g. Spotify filling Fun. Pick the app, tick "Only while it\'s playing" and turn on Notification access (needs the newest app install).',
@@ -65,14 +70,14 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       {
         text: 'You can now run several timers at once. On the Timer screen tap Start another timer, and open any other running timer from the list below. Each running timer gets its own pill above the bottom bar, and needs fill from all of them together.',
         screen: 'Timer',
-        linkLabel: 'Timer',
+        linkPhrase: 'Timer screen',
       },
       'Needs now fill up live while a behavior timer is running (for example Comfort while timing Lie in bed). Cancel the timer and the need goes back to its current level. While it runs, the need says "Full in …" instead of "Low in …", with a timer icon and the name of the behavior being timed.',
       "You can now change the icon of any need, including the built-in ones: Settings > Needs, tap the icon next to the need's name. Needs with a changed built-in icon show a Reset option.",
       {
         text: 'Settings > Needs has a Sort button to put your needs in the order you want (Cues, history and settings follow it).',
         screen: 'NeedsSettings',
-        linkLabel: 'Needs settings',
+        linkPhrase: 'Settings > Needs',
       },
       'Every main tab (Cues, Cravings, Routines, Daily, Tasks) now has the same header with a Settings cog in the top right corner. The Home tab is now titled Routines, so the title is no longer cut off.',
       'Search is now a round button at the bottom left of Routines. Cook a batch moved to the top of the New behavior screen.',
@@ -85,7 +90,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       {
         text: 'Check-in streak and XP: logging a mood (+5 XP) or a body sensation (+3 XP, first 4 logs a day) now levels up Check-in and keeps a daily streak. Tap the card header to see your level, best streak, 2-week calendar and mood mix.',
         screen: 'CheckIn',
-        linkLabel: 'Check in',
+        linkPhrase: 'Check-in',
       },
       'Check-in nudges (off by default, turn on from the Check in screen): a notification at times you pick, with mood buttons you can tap without opening the app, plus an optional streak-saver at 21:00.',
     ],
