@@ -19,6 +19,8 @@ interface AppUsageNativeModule {
   setTimerOverlayVisible?(visible: boolean): void;
   stopTimerOverlay?(): void;
   getLaunchableApps(): Promise<LaunchableApp[]>;
+  /** Opens an app by package name; false if it can't be opened. Missing in builds made before the Shopping timer app setting. */
+  launchApp?(packageName: string): boolean;
   isSiteTrackingEnabled(): boolean;
   openAccessibilitySettings(): void;
   getSiteMarks(start: number, end: number): Promise<SiteMark[]>;

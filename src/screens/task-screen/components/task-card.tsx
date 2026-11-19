@@ -14,6 +14,7 @@ import type { RootStackParamList } from '../../../types/navigation';
 import type { TaskEntry } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
 import { getPlaceIconText } from '../../../utils/cue-utils';
+import { launchApp } from '../../../utils/launch-app';
 import { TaskCheckbox } from './task-checkbox';
 import { TaskRewardChip } from './task-reward-chip';
 
@@ -28,13 +29,25 @@ interface TaskCardProps {
   complete: boolean;
   /** Picked as one of "Today's 3": drawn bigger with a blue edge. */
   focused?: boolean;
+  /** Shopping tab: app to open right after the timer starts (the Shopping timer app setting). */
+  openAppPackage?: string;
   /** Extra text for the second line, e.g. "Got it Nov 18". */
   note?: string;
   onToggle: (task: TaskEntry) => void;
   onLongPress: (task: TaskEntry) => void;
 }
 
-function TaskCardComponent({ task, behavior, place, complete, focused, note, onToggle, onLongPress }: TaskCardProps) {
+function TaskCardComponent({
+  task,
+  behavior,
+  place,
+  complete,
+  focused,
+  note,
+  openAppPackage,
+  onToggle,
+  onLongPress,
+}: TaskCardProps) {
   const navigation = useNavigation<NavigationProp>();
   const startTimer = useTimerStore(s => s.start);
   const showBehaviorName = behavior != null && behavior.name.trim() !== task.title.trim();
@@ -49,6 +62,7 @@ function TaskCardComponent({ task, behavior, place, complete, focused, note, onT
     if (!behavior || !canTrack) return;
     startTimer(behavior.id, Date.now(), task.title);
     navigation.navigate('Timer');
+    if (openAppPackage) launchApp(openAppPackage);
   };
 
   return (

@@ -40,7 +40,7 @@ class TimerOverlayService : Service() {
   /** The behavior's level before this timer started: XP into the level and the level's size (1 XP per timer minute). */
   private class Level(val inLevel: Double, val forLevel: Double)
 
-  private class Timer(val name: String, val start: Long, val fill: Fill?, val icon: String?, val level: Level?)
+  private class Timer(val name: String, val start: Long, val fill: Fill?, val icon: String?, val level: Level?, val note: String?)
 
   /** One timer's bubble: a ring (need fill, else level) around the icon, the time, and the name underneath. */
   private class Bubble(val root: LinearLayout, val ring: RingView, val time: TextView, val name: TextView)
@@ -148,7 +148,8 @@ class TimerOverlayService : Service() {
       bubble.ring.share = ringShare(timer, now, elapsed)
       bubble.ring.invalidate()
       bubble.time.text = format(elapsed)
-      bubble.name.text = timer.name
+      // The item being worked on (a Shopping task) beats the behavior's name.
+      bubble.name.text = timer.note ?: timer.name
     }
     refreshNotification(now)
     if (!attached) {
@@ -249,7 +250,7 @@ class TimerOverlayService : Service() {
     name.setTextColor(Color.parseColor("#9FD8B0"))
     name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
     name.setSingleLine(true)
-    name.maxWidth = dp(160)
+    name.maxWidth = dp(220)
     name.ellipsize = android.text.TextUtils.TruncateAt.END
     texts.addView(name)
 
@@ -375,7 +376,7 @@ class TimerOverlayService : Service() {
     val now = System.currentTimeMillis()
     val needs = notificationText(now)
     lastNotificationText = needs
-    val title = "⏱ " + timers.joinToString(", ") { it.name }
+    val title = "⏱ " + timers.joinToString(", ") { it.note ?: it.name }
     builder
       .setSmallIcon(applicationInfo.icon)
       .setContentTitle(title)
@@ -421,7 +422,8 @@ class TimerOverlayService : Service() {
       }
       val level = item.optJSONObject("level")?.let { Level(it.optDouble("inLevel", 0.0), it.optDouble("forLevel", 0.0)) }
       val icon = item.optString("icon", "").ifEmpty { null }
-      Timer(item.getString("name"), item.getLong("start"), fill, icon, level)
+      val note = item.optString("note", "").ifEmpty { null }
+      Timer(item.getString("name"), item.getLong("start"), fill, icon, level, note)
     }
   }
 

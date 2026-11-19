@@ -16,6 +16,7 @@ import { useNeedLevels } from './use-need-levels';
  */
 export function useTimerOverlay(enabled: boolean) {
   const lockedBehaviorId = useTimerStore(s => s.lockedBehaviorId);
+  const initialNotes = useTimerStore(s => s.initialNotes);
   const startTimestamp = useTimerStore(s => s.startTimestamp);
   const stopTimestamp = useTimerStore(s => s.stopTimestamp);
   const parked = useTimerStore(s => s.parked);
@@ -24,7 +25,10 @@ export function useTimerOverlay(enabled: boolean) {
   const { needs, now } = useNeedLevels();
 
   const timersJson = useMemo(() => {
-    const sessions = [...(lockedBehaviorId ? [{ lockedBehaviorId, startTimestamp, stopTimestamp }] : []), ...parked];
+    const sessions = [
+      ...(lockedBehaviorId ? [{ lockedBehaviorId, initialNotes, startTimestamp, stopTimestamp }] : []),
+      ...parked,
+    ];
     const byId = new Map(behaviors.map(b => [b.id, b]));
     const names = new Map(behaviors.map(b => [b.id, b.name]));
     return JSON.stringify(
@@ -56,7 +60,7 @@ export function useTimerOverlay(enabled: boolean) {
         },
       ),
     );
-  }, [lockedBehaviorId, startTimestamp, stopTimestamp, parked, behaviors, needs, now, dayCutoffHour]);
+  }, [lockedBehaviorId, initialNotes, startTimestamp, stopTimestamp, parked, behaviors, needs, now, dayCutoffHour]);
 
   useEffect(() => {
     if (!enabled || !AppUsage?.startTimerOverlay) return;

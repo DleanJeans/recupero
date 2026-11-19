@@ -15,6 +15,20 @@ describe('getRunningOverlayTimers', () => {
     expect(result).toEqual([{ name: 'YouTube', start: 100 }]);
   });
 
+  it('carries the timer note (the current item) when there is one', () => {
+    const result = getRunningOverlayTimers(
+      [
+        { lockedBehaviorId: 'a', initialNotes: '  Buy MacBook case ', startTimestamp: 100, stopTimestamp: undefined },
+        { lockedBehaviorId: 'b', initialNotes: '   ', startTimestamp: 200, stopTimestamp: undefined },
+      ],
+      id => names[id],
+    );
+    expect(result).toEqual([
+      { name: 'YouTube', start: 100, note: 'Buy MacBook case' },
+      { name: 'Reading', start: 200 },
+    ]);
+  });
+
   it('skips timers whose behavior is gone', () => {
     expect(
       getRunningOverlayTimers(

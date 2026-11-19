@@ -37,6 +37,9 @@ interface SettingsStore {
   /** Category ids whose Routines view shows the Cook a batch button. null = never chosen (default categories apply). */
   cookBatchCategoryIds: string[] | null;
   setCookBatchCategoryIds: (v: string[]) => void;
+  /** App opened by the play button on Shopping tab tasks (after the timer starts). null = just start the timer. */
+  shoppingTimerApp: { packageName: string; label: string } | null;
+  setShoppingTimerApp: (app: { packageName: string; label: string } | null) => void;
   /** Habit reminders that fire while the app is open show as a toast card instead of a system notification. */
   reminderToastEnabled: boolean;
   setReminderToastEnabled: (v: boolean) => void;
@@ -59,6 +62,7 @@ export const useSettingsStore = create<SettingsStore>()(
       reminderRadiusM: GEOFENCE_MIN_RADIUS_M,
       placeDwellMin: DEFAULT_PLACE_DWELL_MIN,
       cookBatchCategoryIds: null,
+      shoppingTimerApp: null,
       reminderToastEnabled: true,
       reminderToastPosition: DEFAULT_TOAST_POSITION,
       setTimeFormat: format => set({ timeFormat: format }),
@@ -71,6 +75,7 @@ export const useSettingsStore = create<SettingsStore>()(
       setReminderRadiusM: v => set({ reminderRadiusM: v }),
       setPlaceDwellMin: v => set({ placeDwellMin: v }),
       setCookBatchCategoryIds: v => set({ cookBatchCategoryIds: v }),
+      setShoppingTimerApp: app => set({ shoppingTimerApp: app }),
       setReminderToastEnabled: v => set({ reminderToastEnabled: v }),
       setReminderToastPosition: v => set({ reminderToastPosition: v }),
     }),

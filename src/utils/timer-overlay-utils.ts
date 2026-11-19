@@ -24,12 +24,17 @@ export interface OverlayExtras {
 export interface OverlayTimer extends OverlayExtras {
   name: string;
   start: number;
+  /** The item being worked on (e.g. the Shopping task "Buy MacBook case"). The pill shows it instead of the name. */
+  note?: string;
   need?: OverlayNeed;
 }
 
 /** Timers that are counting right now (started and not stopped or paused), named for the floating pill. */
 export function getRunningOverlayTimers(
-  sessions: Array<Pick<TimerSession, 'lockedBehaviorId' | 'startTimestamp' | 'stopTimestamp'>>,
+  sessions: Array<
+    Pick<TimerSession, 'lockedBehaviorId' | 'startTimestamp' | 'stopTimestamp'> &
+      Partial<Pick<TimerSession, 'initialNotes'>>
+  >,
   getName: (behaviorId: string) => string | undefined,
   getNeed?: (behaviorName: string) => OverlayNeed | undefined,
   getExtras?: (behaviorId: string) => OverlayExtras | undefined,
@@ -39,9 +44,11 @@ export function getRunningOverlayTimers(
     if (session.startTimestamp == null || session.stopTimestamp != null) continue;
     const name = getName(session.lockedBehaviorId);
     if (name) {
+      const note = session.initialNotes?.trim();
       timers.push({
         name,
         start: session.startTimestamp,
+        ...(note ? { note } : {}),
         need: getNeed?.(name),
         ...getExtras?.(session.lockedBehaviorId),
       });

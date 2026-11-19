@@ -108,6 +108,18 @@ class AppUsageModule : Module() {
       context.startActivity(intent)
     }
 
+    // Opens another app by package name. Returns false when it is not installed or has no launcher activity.
+    Function("launchApp") { packageName: String ->
+      val intent = context.packageManager.getLaunchIntentForPackage(packageName)
+      if (intent == null) {
+        false
+      } else {
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+        true
+      }
+    }
+
     // Starts or updates the floating timer pill. timersJson is [{ name, start }] for the running timers.
     Function("startTimerOverlay") { timersJson: String, visible: Boolean ->
       val intent = Intent(context, TimerOverlayService::class.java)

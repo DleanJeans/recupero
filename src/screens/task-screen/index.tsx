@@ -78,6 +78,7 @@ export function TaskScreen() {
   const toggleTaskCompletion = useBehaviorStore(s => s.toggleTaskCompletion);
   const toggleTaskFocus = useBehaviorStore(s => s.toggleTaskFocus);
   const hidePrivate = useSettingsStore(s => s.hidePrivate);
+  const shoppingTimerApp = useSettingsStore(s => s.shoppingTimerApp);
   const places = useCuesStore(s => s.places);
   const placeById = useMemo(() => new Map(places.map(place => [place.id, place])), [places]);
 
@@ -259,7 +260,7 @@ export function TaskScreen() {
     task: TaskEntry,
     complete: boolean,
     onToggle: (task: TaskEntry) => void,
-    options: { focused?: boolean; note?: string } = {},
+    options: { focused?: boolean; note?: string; openAppPackage?: string } = {},
   ) => (
     <TaskCard
       key={task.id}
@@ -269,6 +270,7 @@ export function TaskScreen() {
       complete={complete}
       focused={options.focused}
       note={options.note}
+      openAppPackage={options.openAppPackage}
       onToggle={onToggle}
       onLongPress={openMenu}
     />
@@ -318,7 +320,9 @@ export function TaskScreen() {
       {toBuyTasks.length === 0 ? (
         <Text style={styles.empty}>Nothing to buy. Tap + to add something.</Text>
       ) : (
-        toBuyTasks.map(task => renderCard(task, false, handleListToggle))
+        toBuyTasks.map(task =>
+          renderCard(task, false, handleListToggle, { openAppPackage: shoppingTimerApp?.packageName }),
+        )
       )}
       {gotItTasks.length > 0 && <SectionHeader title="Got it" />}
       {gotItTasks.map(task => {
