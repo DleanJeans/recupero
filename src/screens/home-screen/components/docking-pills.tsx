@@ -46,5 +46,5 @@ export function DockingPills({ barHeight, bottomPadding, docked, onTimerPress }:
 const styles = StyleSheet.create({
   wrap: { gap: 8 },
   empty: { marginBottom: -8 },
-  pill: { paddingTop: 0, backgroundColor: 'transparent', maxWidth: '62%' },
+  pill: { paddingTop: 0, backgroundColor: 'transparent', maxWidth: '62%', alignSelf: 'center' },
 });
