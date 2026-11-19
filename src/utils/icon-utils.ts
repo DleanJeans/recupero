@@ -343,3 +343,12 @@ export function getIconTileBox(value: IconValue, side: number, drawnScale?: numb
   if ((kind === 'mix' || kind === 'stack') && drawnScale != null) return Math.round(side * drawnScale);
   return undefined;
 }
+
+/** Needs draw their icon as text, so a mix, stack or image falls back to one emoji ('' if none). */
+export function toPlainEmoji(value: string): string {
+  const icon = parseIcon(value);
+  if (icon.kind === 'emoji') return icon.emoji;
+  if (icon.kind === 'mix') return icon.left;
+  if (icon.kind === 'stack') return icon.layers[0]?.emoji ?? '';
+  return '';
+}

@@ -755,6 +755,18 @@ export function getNeedRefillHistory(
 
 const BUILT_IN_NEED_COUNT = NEED_IDS.length;
 const registeredCustomIds = new Set<NeedId>();
+const BUILT_IN_EMOJIS: Record<NeedId, string> = Object.fromEntries(NEED_IDS.map(id => [id, NEED_INFO[id].emoji]));
+
+/** Gives built-in needs the icon the user picked, or their original one when none was picked. */
+export function applyBuiltInEmojis(overrides: Record<NeedId, string> | undefined): void {
+  for (const [id, original] of Object.entries(BUILT_IN_EMOJIS)) {
+    if (NEED_INFO[id]) NEED_INFO[id].emoji = overrides?.[id] || original;
+  }
+}
+
+export function getBuiltInEmoji(id: NeedId): string | undefined {
+  return BUILT_IN_EMOJIS[id];
+}
 
 /** Colours offered when making a custom need. */
 export const CUSTOM_NEED_COLORS = ['#f472b6', '#c084fc', '#fb923c', '#38bdf8', '#4ade80', '#facc15', '#f87171'];

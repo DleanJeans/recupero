@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { EmojiPicker } from '../../../components/emoji-picker';
 import { Text, TextInput } from '../../../components/text';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { useNeedsStore } from '../../../store/needs-store';
 import type { NeedId } from '../../../types/need';
 import { Colors } from '../../../utils/colors';
+import { toPlainEmoji } from '../../../utils/icon-utils';
 import { parseDecimalInput } from '../../../utils/metadata-calculation-utils';
-import { findMetadataField, formatEmptyHours, getNeedMetadataSource, NEED_INFO } from '../../../utils/need-utils';
+import {
+  findMetadataField,
+  formatEmptyHours,
+  getBuiltInEmoji,
+  getNeedMetadataSource,
+  NEED_INFO,
+} from '../../../utils/need-utils';
 
 interface NeedSettingsRowProps {
   needId: NeedId;
@@ -22,7 +30,10 @@ export function NeedSettingsRow({ needId, first, onPickSource, onEdit }: NeedSet
   const setMetadataSource = useNeedsStore(state => state.setMetadataSource);
   const resetLearning = useNeedsStore(state => state.resetLearning);
   const categories = useBehaviorStore(state => state.categories);
+  const setBuiltInEmoji = useNeedsStore(state => state.setBuiltInEmoji);
+  useNeedsStore(state => state.emojiOverrides[needId]);
   const info = NEED_INFO[needId];
+  const builtInEmoji = getBuiltInEmoji(needId);
   const source = getNeedMetadataSource(needId, config, categories);
   const field = source ? findMetadataField(categories, source.fieldKey) : undefined;
   const [fullText, setFullText] = useState<string>();
@@ -81,6 +92,28 @@ export function NeedSettingsRow({ needId, first, onPickSource, onEdit }: NeedSet
                   selectTextOnFocus
                 />
                 {field.unit ? <Text style={styles.unit}>{field.unit}</Text> : null}
+              </View>
+            </View>
+          ) : null}
+          {builtInEmoji ? (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Icon</Text>
+              <View style={styles.amount}>
+                {info.emoji !== builtInEmoji ? (
+                  <Pressable
+                    onPress={() => setBuiltInEmoji(needId, '')}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.detailValue}>Reset</Text>
+                  </Pressable>
+                ) : null}
+                <EmojiPicker
+                  value={info.emoji}
+                  onChangeText={next =>
+                    setBuiltInEmoji(needId, toPlainEmoji(next) === builtInEmoji ? '' : toPlainEmoji(next))
+                  }
+                  style={styles.iconBox}
+                />
               </View>
             </View>
           ) : null}
@@ -157,5 +190,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     fontSize: 13,
   },
+  iconBox: { width: 36, height: 36, borderRadius: 8 },
   unit: { color: Colors.text.faint, fontSize: 12 },
 });

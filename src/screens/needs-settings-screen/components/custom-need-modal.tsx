@@ -8,20 +8,11 @@ import { useNeedsStore } from '../../../store/needs-store';
 import type { NeedId } from '../../../types/need';
 import { Colors } from '../../../utils/colors';
 import { findEmojiByKeyword } from '../../../utils/emoji-data';
-import { parseIcon } from '../../../utils/icon-utils';
+import { toPlainEmoji } from '../../../utils/icon-utils';
 import { parseDecimalInput } from '../../../utils/metadata-calculation-utils';
 import { CUSTOM_NEED_COLORS, formatEmptyHours, NEED_INFO } from '../../../utils/need-utils';
 
 const DEFAULT_HOURS = 24;
-
-/** Needs draw their icon as text, so a mix, stack or image picked here falls back to one emoji. */
-function toPlainEmoji(value: string): string {
-  const icon = parseIcon(value);
-  if (icon.kind === 'emoji') return icon.emoji;
-  if (icon.kind === 'mix') return icon.left;
-  if (icon.kind === 'stack') return icon.layers[0]?.emoji ?? '';
-  return '';
-}
 
 interface CustomNeedModalProps {
   visible: boolean;
