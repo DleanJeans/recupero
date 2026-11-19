@@ -1,5 +1,7 @@
 import { AppUsage } from '../../modules/app-usage';
 import { useBehaviorStore } from '../store/behavior-store';
+import { useNeedsStore } from '../store/needs-store';
+import { useSettingsStore } from '../store/settings-store';
 import {
   buildAppSessions,
   buildMediaSessions,
@@ -101,4 +103,14 @@ async function runSync(): Promise<void> {
   } catch (error) {
     console.warn('App usage sync failed', error);
   }
+}
+
+/** Joins existing back-to-back app/site logs closer than the merge gap. Safe to repeat; skips logs with a manual need amount. */
+export function cleanUpSmallAppUsageLogs(): void {
+  const protectedIds = new Set<string>();
+  for (const need of Object.values(useNeedsStore.getState().needs)) {
+    for (const logId of Object.keys(need.logAmounts ?? {})) protectedIds.add(logId);
+  }
+  const gapMs = useSettingsStore.getState().appLogMergeGapMin * 60_000;
+  useBehaviorStore.getState().mergeCloseAppUsageLogs(gapMs, protectedIds);
 }

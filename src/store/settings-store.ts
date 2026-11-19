@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { DEFAULT_APP_LOG_MERGE_GAP_MIN } from '../utils/app-usage-utils';
 import { normalizeDayCutoffHour } from '../utils/date-utils';
 import { DEFAULT_TOAST_POSITION, type ReminderToastPosition } from '../utils/reminder-toast-utils';
 import { DEFAULT_PLACE_DWELL_MIN, GEOFENCE_MIN_RADIUS_M } from '../utils/reminder-utils';
@@ -8,6 +9,9 @@ import { DEFAULT_PLACE_DWELL_MIN, GEOFENCE_MIN_RADIUS_M } from '../utils/reminde
 export type TimeFormat = '12h' | '24h';
 
 interface SettingsStore {
+  /** Minutes: app/site logs closer than this join into one log. */
+  appLogMergeGapMin: number;
+  setAppLogMergeGapMin: (v: number) => void;
   timeFormat: TimeFormat;
   setTimeFormat: (format: TimeFormat) => void;
   dayCutoffHour: number;
@@ -43,6 +47,8 @@ interface SettingsStore {
 export const useSettingsStore = create<SettingsStore>()(
   persist(
     set => ({
+      appLogMergeGapMin: DEFAULT_APP_LOG_MERGE_GAP_MIN,
+      setAppLogMergeGapMin: v => set({ appLogMergeGapMin: v }),
       timeFormat: '12h',
       dayCutoffHour: 0,
       hidePrivate: false,

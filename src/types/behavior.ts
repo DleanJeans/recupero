@@ -31,6 +31,8 @@ export interface LogEntry {
   metadata?: Record<string, string | number>;
   /** Set on logs created by automatic tracking. Undefined for manual logs. */
   source?: LogSource;
+  /** Set when the user edited this log by hand, so automatic clean-ups leave it alone. */
+  editedAt?: number;
   /** Cues (place, mood, body sensation) that led to this log. Undefined when none were picked. */
   cues?: CueRef[];
   /** Shared by logs saved together with habit stacking. Undefined for logs saved on their own. */

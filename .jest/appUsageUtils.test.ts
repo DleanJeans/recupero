@@ -10,6 +10,7 @@ import {
   getAutoTrackApp,
   getAutoTrackSite,
   getSiteFallbackName,
+  mergeCloseAutoLogs,
   mergeTrackedSessionsIntoLogs,
   normalizeSiteDomain,
   parseSiteName,
@@ -232,5 +233,42 @@ describe('buildMediaSessions', () => {
       { packageName: 'a', playing: false, timestamp: 61_000 },
     ]);
     expect(sessions).toEqual([{ packageName: 'a', start: 1000, end: 61_000 }]);
+  });
+});
+
+describe('mergeCloseAutoLogs', () => {
+  const auto = (id: string, startMin: number, endMin: number, extra: Partial<LogEntry> = {}): LogEntry => ({
+    id,
+    timestamp: startMin * MIN,
+    endTimestamp: endMin * MIN,
+    metadata: {},
+    source: 'app-usage',
+    ...extra,
+  });
+
+  it('joins logs closer than the gap, counting the gap, and is idempotent', () => {
+    const { logs, changed } = mergeCloseAutoLogs(
+      [auto('a', 0, 1), auto('b', 2, 3), auto('c', 5, 6), auto('d', 20, 21)],
+      3 * MIN,
+    );
+    expect(changed).toBe(true);
+    expect(logs.map(l => [l.id, l.timestamp / MIN, (l.endTimestamp ?? 0) / MIN])).toEqual([
+      ['a', 0, 6],
+      ['d', 20, 21],
+    ]);
+    expect(mergeCloseAutoLogs(logs, 3 * MIN).changed).toBe(false);
+  });
+
+  it('leaves edited, manual, annotated and protected logs alone', () => {
+    const input = [
+      auto('a', 0, 1),
+      auto('b', 2, 3, { editedAt: 1 }),
+      { id: 'm', timestamp: 4 * MIN, endTimestamp: 5 * MIN, metadata: {} },
+      auto('c', 6, 7, { cues: [{ type: 'place', id: 'x' } as never] }),
+      auto('d', 8, 9),
+      auto('e', 10, 11),
+    ];
+    const { logs } = mergeCloseAutoLogs(input, 3 * MIN, new Set(['e']));
+    expect(logs).toHaveLength(6);
   });
 });

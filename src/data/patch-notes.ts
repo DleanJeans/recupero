@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      'App and site logs that are less than 3 minutes apart now join into one log, and the gap counts as time too (so tabbing out of Claude to test your app no longer makes a pile of 1% logs). Your existing logs were cleaned up the same way, except ones you edited. Change the 3 minutes in Settings > Join app logs closer than.',
       'Cook a batch is now a button above Add behavior on Routines, shown only while the Food category is selected (it shrinks while you scroll, like Add behavior). Choose which categories show it in Settings > Cook a batch button. The chip on the New behavior screen is gone.',
       'Tasks has 3 tabs now: Today, Shopping and Later. Tasks linked to a shopping app or behavior (like Shopee) moved to the Shopping tab by themselves.',
       "Today's 3: pick up to 3 tasks to focus on each day. Finish all 3 for +5 bonus stars and a day on your streak, shown at the top of Today.",

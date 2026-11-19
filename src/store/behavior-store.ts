@@ -16,7 +16,7 @@ import type {
 import type { CueRef } from '../types/cue';
 import type { HealthSleep } from '../types/health';
 import type { AddTaskInput, TaskEntry } from '../types/task';
-import { mergeTrackedSessionsIntoLogs, siteMatchesDomain } from '../utils/app-usage-utils';
+import { mergeCloseAutoLogs, mergeTrackedSessionsIntoLogs, siteMatchesDomain } from '../utils/app-usage-utils';
 import { getGroupKey } from '../utils/behavior-group-utils';
 import { mergeSleepIntoLogs } from '../utils/google-health-utils';
 import { getLogEndTimestamp } from '../utils/log-utils';
@@ -121,6 +121,8 @@ interface BehaviorStore {
     syncedUntil: number,
     mediaSessions?: AppUsageSession[],
   ) => void;
+  /** One-time (and repeatable) clean-up: joins back-to-back auto logs closer than `gapMs`. */
+  mergeCloseAppUsageLogs: (gapMs: number, protectedIds?: ReadonlySet<string>) => void;
   /** Logs synced sleeps to a behaviour (deduped by data point id). Returns the updated imported ids. */
   applyHealthSleeps: (behaviorId: string, sleeps: HealthSleep[], importedIds: string[]) => string[];
   logBehavior: (
@@ -344,7 +346,8 @@ export const useBehaviorStore = create<BehaviorStore>()(
         }));
         return logId;
       },
-      applyAppUsageSessions: (appSessions, siteSessions, syncedUntil, mediaSessions = []) =>
+      applyAppUsageSessions: (appSessions, siteSessions, syncedUntil, mediaSessions = []) => {
+        const mergeGapMs = useSettingsStore.getState().appLogMergeGapMin * 60_000;
         set(state => ({
           behaviors: state.behaviors.map(b => {
             const { autoTrackApp: app, autoTrackSite: site } = b;
@@ -354,12 +357,13 @@ export const useBehaviorStore = create<BehaviorStore>()(
               const sessions = (app.mediaOnly ? mediaSessions : appSessions).filter(
                 session => session.packageName === app.packageName,
               );
-              logs = mergeTrackedSessionsIntoLogs(logs, sessions, app.syncedUntil, uuidv4).logs;
+              logs = mergeTrackedSessionsIntoLogs(logs, sessions, app.syncedUntil, uuidv4, { gapMs: mergeGapMs }).logs;
             }
             if (site) {
               const sessions = siteSessions.filter(session => siteMatchesDomain(session.host, site.domain));
               logs = mergeTrackedSessionsIntoLogs(logs, sessions, site.syncedUntil, uuidv4, {
                 source: 'site-visit',
+                gapMs: mergeGapMs,
               }).logs;
             }
             return {
@@ -373,7 +377,20 @@ export const useBehaviorStore = create<BehaviorStore>()(
               autoTrackSite: site && { ...site, syncedUntil: Math.max(site.syncedUntil, syncedUntil) },
             };
           }),
-        })),
+        }));
+      },
+      mergeCloseAppUsageLogs: (gapMs, protectedIds) =>
+        set(state => {
+          let changed = false;
+          const behaviors = state.behaviors.map(b => {
+            if (!b.autoTrackApp && !b.autoTrackSite) return b;
+            const result = mergeCloseAutoLogs(b.logs, gapMs, protectedIds);
+            if (!result.changed) return b;
+            changed = true;
+            return { ...b, logs: result.logs };
+          });
+          return changed ? { behaviors } : state;
+        }),
       applyHealthSleeps: (behaviorId, sleeps, importedIds) => {
         const behavior = get().behaviors.find(b => b.id === behaviorId);
         if (!behavior) return importedIds;
@@ -639,6 +656,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
                           ...log,
                           timestamp,
                           endTimestamp,
+                          ...(log.source ? { editedAt: Date.now() } : {}),
                           metadata: metadata ?? log.metadata,
                           cues: cues === undefined ? log.cues : cues.length > 0 ? cues : undefined,
                         }

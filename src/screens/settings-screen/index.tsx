@@ -4,6 +4,7 @@ import { BackButton } from '../../components/back-button';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { Colors } from '../../utils/colors';
+import { AppLogMergeGap } from './components/app-log-merge-gap';
 import { AppVersionSection } from './components/app-version-section';
 import { CookBatchSection } from './components/cook-batch-section';
 import { DataTransferSection } from './components/data-transfer-section';
@@ -28,6 +29,7 @@ export function SettingsScreen() {
       >
         <TimeFormatPicker />
         <DayCutoffPicker />
+        <AppLogMergeGap />
         <MoneyRewardsSection />
         <ReminderToastSection />
         <CookBatchSection />

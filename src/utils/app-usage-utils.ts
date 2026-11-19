@@ -4,6 +4,10 @@ import { getDayStartTimestamp, toDateString } from './date-utils';
 
 /** Same-app sessions closer than this are one session (switching activities, a quick glance at a notification). */
 export const APP_SESSION_MERGE_GAP_MS = 60_000;
+/** Auto logs of one behaviour closer than this (default, minutes) are one log: tabbing out to test another app. */
+export const DEFAULT_APP_LOG_MERGE_GAP_MIN = 3;
+export const MIN_APP_LOG_MERGE_GAP_MIN = 1;
+export const MAX_APP_LOG_MERGE_GAP_MIN = 10;
 /** Sessions shorter than this are not logged. */
 export const APP_SESSION_MIN_MS = 60_000;
 /** How far before the last sync to re-read events, so sessions that straddle it are rebuilt in full. */
@@ -297,4 +301,45 @@ export function buildMediaSessions(events: MediaEvent[]): AppUsageSession[] {
     }
   }
   return mergeAppSessions(sessions);
+}
+
+/**
+ * Joins back-to-back auto logs (app use or site visits) of one behaviour whose gap is under `gapMs` into one log
+ * from the first start to the last end, so the gaps count as time too. Logs the user touched (edited, with metadata,
+ * cues or a manual need amount) and manual logs are left alone. Running it again changes nothing.
+ */
+export function mergeCloseAutoLogs(
+  logs: LogEntry[],
+  gapMs: number,
+  protectedIds: ReadonlySet<string> = new Set(),
+): { logs: LogEntry[]; changed: boolean } {
+  const isMergeable = (log: LogEntry) =>
+    (log.source === 'app-usage' || log.source === 'site-visit') &&
+    log.endTimestamp != null &&
+    log.editedAt == null &&
+    !log.cues?.length &&
+    !log.stackId &&
+    Object.keys(log.metadata ?? {}).length === 0 &&
+    !protectedIds.has(log.id);
+
+  const sorted = [...logs].sort((a, b) => a.timestamp - b.timestamp);
+  const result: LogEntry[] = [];
+  let changed = false;
+  for (const log of sorted) {
+    // Only the newest same-source log before this one is a candidate, and only when it directly precedes it.
+    const prev = result[result.length - 1];
+    if (
+      prev &&
+      isMergeable(prev) &&
+      isMergeable(log) &&
+      prev.source === log.source &&
+      log.timestamp - (prev.endTimestamp ?? 0) < gapMs
+    ) {
+      result[result.length - 1] = { ...prev, endTimestamp: Math.max(prev.endTimestamp ?? 0, log.endTimestamp ?? 0) };
+      changed = true;
+    } else {
+      result.push(log);
+    }
+  }
+  return changed ? { logs: result, changed } : { logs, changed };
 }
