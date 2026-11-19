@@ -35,13 +35,13 @@ export function AzmBarRow({ now }: { now: number }) {
             <View style={[styles.fill, { width: `${Math.max(2, ratio * 100)}%`, backgroundColor: color }]} />
           )}
         </View>
-        <Text style={[styles.value, { color: minutes > 0 ? color : Colors.text.faint }]}>{minutes}m</Text>
+        <Text style={[styles.value, { color: minutes > 0 ? color : Colors.text.faint }]}>{`${minutes}/${goal}m`}</Text>
       </View>
       <Text
         style={styles.detail}
         numberOfLines={1}
       >
-        {`Active Zone Minutes · of ${goal}${met ? ' ✓' : ''} · ${week} in 7 days · met ${daysMet} of 7`}
+        {`Active Zone Minutes${met ? ' ✓' : ''} · ${week} in 7 days · met ${daysMet} of 7`}
       </Text>
     </View>
   );

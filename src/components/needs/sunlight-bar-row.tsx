@@ -37,7 +37,7 @@ export function SunlightBarRow({ sunlight, onPress }: SunlightBarRowProps) {
             <View style={[styles.fill, { width: `${Math.max(2, ratio * 100)}%`, backgroundColor: color }]} />
           )}
         </View>
-        <Text style={[styles.value, { color: today.minutes > 0 ? color : Colors.text.faint }]}>{today.minutes}m</Text>
+        <Text style={[styles.value, { color: today.minutes > 0 ? color : Colors.text.faint }]}>{`${today.minutes}/${goalMinutes}m`}</Text>
       </View>
       <View style={styles.detailRow}>
         <SunlightStatusDot kind={status.kind} />
@@ -47,7 +47,6 @@ export function SunlightBarRow({ sunlight, onPress }: SunlightBarRowProps) {
         >
           <Text style={{ color: SUNLIGHT_STATUS_COLORS[status.kind] }}>{status.label}</Text>
           {luxNow != null ? ` · ${formatLux(luxNow)} now` : ''}
-          {` · of ${goalMinutes} min`}
           {sunEvent ? ` · ${sunEvent}` : ''}
         </Text>
       </View>
