@@ -75,7 +75,7 @@ export const NEED_INFO: Record<NeedId, NeedInfo> = {
     emoji: '🎮',
     label: 'Fun',
     question: 'How entertained are you?',
-    checkIns: checkInLevels(['Bored stiff', 'Meh', 'Okay', 'Enjoying', 'Blast']),
+    checkIns: checkInLevels(['Bored', 'Meh', 'Okay', 'Enjoying', 'Blast']),
     bodySensations: [],
     suggest: /game|gaming|movie|film|show|music|guitar|play|hobby|draw|read|fun|party|karaoke/i,
   },

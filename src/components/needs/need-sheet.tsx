@@ -224,7 +224,9 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
                 }}
                 accessibilityRole="button"
               >
-                <Text style={styles.checkInLabel}>{choice.label}</Text>
+                <Text style={styles.checkInLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+                  {choice.label}
+                </Text>
                 <Text style={styles.checkInLevel}>{choice.level}%</Text>
               </Pressable>
             ))}
@@ -710,6 +712,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   checkInLabel: {
+    alignSelf: 'stretch',
+    textAlign: 'center',
+    paddingHorizontal: 4,
     color: Colors.text.secondary,
     fontSize: 11,
     fontWeight: '600',
