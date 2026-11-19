@@ -21,6 +21,7 @@ import { useGoogleHealthSync } from './src/hooks/use-google-health-sync';
 import { useNeedNudges } from './src/hooks/use-need-nudges';
 import { useReminderEngine } from './src/hooks/use-reminder-engine';
 import { useSunlightTracking } from './src/hooks/use-sunlight-tracking';
+import { useTimerOverlay } from './src/hooks/use-timer-overlay';
 import { BehaviorFormScreen } from './src/screens/behavior-form-screen';
 import { BehaviorScreen } from './src/screens/behavior-screen';
 import { BodyLogScreen } from './src/screens/body-log-screen';
@@ -117,6 +118,7 @@ export default function App() {
   const [activeRouteName, setActiveRouteName] = useState<string | undefined>();
   const { pendingRouteName, deferNavigation, completeNavigation } = useDeferredBottomNavNavigation<BottomNavRoute>();
   useAppUsageSync(storesReady);
+  useTimerOverlay(storesReady);
   useGoogleHealthSync(storesReady);
   useReminderEngine(storesReady, navigationRef);
   useNeedNudges(storesReady, navigationRef);

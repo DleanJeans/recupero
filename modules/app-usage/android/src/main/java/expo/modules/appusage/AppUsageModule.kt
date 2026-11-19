@@ -84,6 +84,32 @@ class AppUsageModule : Module() {
       SiteMarks.read(context, start.toLong(), end.toLong())
     }
 
+    Function("canDrawOverlays") {
+      Settings.canDrawOverlays(context)
+    }
+
+    Function("openOverlaySettings") {
+      val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:${context.packageName}"))
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      context.startActivity(intent)
+    }
+
+    // Starts or updates the floating timer pill. timersJson is [{ name, start }] for the running timers.
+    Function("startTimerOverlay") { timersJson: String, visible: Boolean ->
+      val intent = Intent(context, TimerOverlayService::class.java)
+        .putExtra(TimerOverlayService.EXTRA_TIMERS, timersJson)
+        .putExtra(TimerOverlayService.EXTRA_VISIBLE, visible)
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) context.startForegroundService(intent) else context.startService(intent)
+    }
+
+    Function("setTimerOverlayVisible") { visible: Boolean ->
+      TimerOverlayService.instance?.setVisible(visible)
+    }
+
+    Function("stopTimerOverlay") {
+      context.stopService(Intent(context, TimerOverlayService::class.java))
+    }
+
     // Saves the app's launcher icon as a PNG in the app's files and returns its file:// uri, or null.
     AsyncFunction("getAppIcon") { packageName: String ->
       try {

@@ -14,6 +14,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      'Running timers now float over other apps and your browser while Recupero is in the background. Drag the pill to move it, tap it to come back to Recupero. It needs "Display over other apps" turned on for Recupero and the newest app install.',
       'Apps and websites you add to a need now use their real icon (the app icon, or the site favicon) instead of the stopwatch. App icons need the newest app install; websites work right away. Existing ones get their icon next time you open Recupero.',
       'You can set how many minutes of an app or website fill a need to 100%: type it when adding, or tap the "Full after …" pill on its row in the need to change it.',
       'Needs can now fill from app and website usage. Open a need (for example Fun) and tap "Fill Fun from an app or website", then pick an app like YouTube, or a site in Firefox. Time spent there fills the need when you open Recupero.',

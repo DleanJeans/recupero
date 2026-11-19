@@ -5,6 +5,11 @@
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
 
+    <!-- Floating timer pill over other apps (the user grants "Display over other apps" in system settings). -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
     <!-- Lets the app picker list launchable apps on Android 11+ package visibility. -->
     <queries>
         <intent>
@@ -14,6 +19,14 @@
     </queries>
 
     <application>
+        <service
+            android:name="expo.modules.appusage.TimerOverlayService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Floating timer shown over other apps while a timer runs" />
+        </service>
         <!-- Reads the site name in Firefox's address bar for website auto-tracking. Off until the user enables it. -->
         <service
             android:name="expo.modules.appusage.SiteTrackingService"

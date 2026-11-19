@@ -12,6 +12,12 @@ interface AppUsageNativeModule {
   queryEvents(start: number, end: number): Promise<AppUsageEvent[]>;
   /** file:// uri of the app's icon. Missing in builds made before app icons. */
   getAppIcon?(packageName: string): Promise<string | null>;
+  /** Missing in builds made before the timer overlay. */
+  canDrawOverlays?(): boolean;
+  openOverlaySettings?(): void;
+  startTimerOverlay?(timersJson: string, visible: boolean): void;
+  setTimerOverlayVisible?(visible: boolean): void;
+  stopTimerOverlay?(): void;
   getLaunchableApps(): Promise<LaunchableApp[]>;
   isSiteTrackingEnabled(): boolean;
   openAccessibilitySettings(): void;
