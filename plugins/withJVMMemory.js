@@ -20,11 +20,14 @@ module.exports = function withJVMMemory(config) {
 
     setGradleProperty(
       'org.gradle.jvmargs',
-      '-Xmx3g -XX:MaxMetaspaceSize=2g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8',
+      '-Xmx3g -XX:MaxMetaspaceSize=2g -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8 --enable-native-access=ALL-UNNAMED',
     );
     // Disable the Gradle daemon to prevent zombie daemon processes from hanging
     // the build after an OutOfMemoryError failure
     setGradleProperty('org.gradle.daemon', 'false');
+    // On fresh CI runners CMake is installed on first use; with parallel tasks the CMake configure tasks of
+    // react-native-screens, worklets and expo-updates all started at once and failed together (2026-11-19).
+    setGradleProperty('org.gradle.parallel', 'false');
 
     return config;
   });
