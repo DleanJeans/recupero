@@ -4,10 +4,7 @@ import { AppState } from 'react-native';
 import { useCuesStore } from '../store/cues-store';
 import { useSunlightStore } from '../store/sunlight-store';
 import type { SunlightTrailPoint } from '../types/sunlight';
-import {
-  dismissOutsideModeNotification,
-  presentOutsideModeNotification,
-} from './outside-mode-notification';
+import { dismissOutsideModeNotification, presentOutsideModeNotification } from './outside-mode-notification';
 import { hasBackgroundLocationPermission } from './reminder-geofencing';
 import { waitForHydration } from './store-hydration';
 import { syncSunlightNotification } from './sunlight-notification';

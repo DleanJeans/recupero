@@ -9,5 +9,9 @@ export interface OutsideModeNotificationData {
 }
 
 export function isOutsideModeNotificationData(data: unknown): data is OutsideModeNotificationData {
-  return typeof data === 'object' && data !== null && (data as { kind?: unknown }).kind === OUTSIDE_MODE_NOTIFICATION_KIND;
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    (data as { kind?: unknown }).kind === OUTSIDE_MODE_NOTIFICATION_KIND
+  );
 }
