@@ -71,8 +71,7 @@ export function RunningTimerPill({ onPress, style }: RunningTimerPillProps) {
 const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
-    paddingTop: 6,
-    backgroundColor: Colors.bg.primary,
+    paddingTop: 0,
   },
   pill: {
     flexDirection: 'row',

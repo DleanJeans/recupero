@@ -3,10 +3,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { BehaviorActionSheet } from '../../components/behavior-action-sheet';
-import { RunningTimerPill } from '../../components/running-timer-pill';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text } from '../../components/text';
-import { UpdateReadyPill } from '../../components/update-ready-pill';
 import { useAfterInteractionsFlag } from '../../hooks/use-after-interactions-flag';
 import { useBackGuard } from '../../hooks/use-back-guard';
 import { useDeferredCategorySelection } from '../../hooks/use-deferred-category-selection';
@@ -27,6 +25,7 @@ import { CategoriesFilter } from './components/categories-filter';
 import { CategoryXPBar } from './components/category-xp-bar';
 import { ChecklistSelectionBar } from './components/checklist-selection-bar';
 import { ChecklistStrip } from './components/checklist-strip';
+import { DockingPills } from './components/docking-pills';
 import { HomeHeader } from './components/home-header';
 import { HomeSearchBar } from './components/home-search-bar';
 import { SavedLogFabs } from './components/saved-log-fabs';
@@ -209,10 +208,11 @@ export function HomeScreen() {
         pointerEvents="box-none"
         onLayout={e => setBottomBarHeight(e.nativeEvent.layout.height)}
       >
-        <UpdateReadyPill style={styles.pill} />
-        <RunningTimerPill
-          style={styles.pill}
-          onPress={() => navigation.navigate('Timer')}
+        <DockingPills
+          barHeight={bottomBarHeight}
+          bottomPadding={BOTTOM_BAR_PADDING}
+          docked={fabCollapsed}
+          onTimerPress={() => navigation.navigate('Timer')}
         />
         {!selecting && (
           <SearchFab
@@ -247,6 +247,8 @@ export function HomeScreen() {
   );
 }
 
+const BOTTOM_BAR_PADDING = 12;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -257,12 +259,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 16,
     right: 16,
-    paddingBottom: 12,
+    paddingBottom: BOTTOM_BAR_PADDING,
     gap: 8,
-  },
-  pill: {
-    paddingTop: 0,
-    backgroundColor: 'transparent',
   },
   listLoading: {
     flex: 1,

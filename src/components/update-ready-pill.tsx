@@ -70,8 +70,7 @@ export function UpdateReadyPill({ style }: { style?: StyleProp<ViewStyle> }) {
 const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
-    paddingTop: 6,
-    backgroundColor: Colors.bg.primary,
+    paddingTop: 0,
   },
   pill: {
     flexDirection: 'row',

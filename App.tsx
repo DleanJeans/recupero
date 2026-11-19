@@ -10,9 +10,8 @@ import { BOTTOM_NAV_HEIGHT, BottomNav, type BottomNavRoute } from './src/compone
 import { ConfettiOverlay } from './src/components/confetti-overlay';
 import { ImageClearHost } from './src/components/image-clear-host';
 import { ReminderToastHost } from './src/components/reminder-toast-host';
-import { RunningTimerPill } from './src/components/running-timer-pill';
+import { NavFloatingPills } from './src/components/nav-floating-pills';
 import { Text } from './src/components/text';
-import { UpdateReadyPill } from './src/components/update-ready-pill';
 import { useAppFonts } from './src/hooks/use-app-fonts';
 import { useAppUsageSync } from './src/hooks/use-app-usage-sync';
 import { useCheckInNudges } from './src/hooks/use-checkin-nudges';
@@ -304,9 +303,8 @@ export default function App() {
                 bottomOffset={isBottomNavRoute(activeRouteName) ? BOTTOM_NAV_HEIGHT : 0}
               />
               {/* Routines shows these above its Add behavior button instead. */}
-              {isBottomNavRoute(activeRouteName) && activeRouteName !== 'Home' && <UpdateReadyPill />}
               {isBottomNavRoute(activeRouteName) && activeRouteName !== 'Home' && (
-                <RunningTimerPill onPress={() => navigationRef.isReady() && navigationRef.navigate('Timer')} />
+                <NavFloatingPills onTimerPress={() => navigationRef.isReady() && navigationRef.navigate('Timer')} />
               )}
               {isBottomNavRoute(activeRouteName) && (
                 <BottomNav
