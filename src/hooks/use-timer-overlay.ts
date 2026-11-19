@@ -30,7 +30,13 @@ export function useTimerOverlay(enabled: boolean) {
           const need = needs.find(n => n.timerBehaviorNames?.includes(name) && n.timerFullInMs != null);
           const info = need ? NEED_INFO[need.id] : undefined;
           return need && info
-            ? { emoji: info.emoji, label: info.label, level: need.level ?? 0, fullInMs: need.timerFullInMs ?? 0, at: now }
+            ? {
+                emoji: info.emoji,
+                label: info.label,
+                level: need.level ?? 0,
+                fullInMs: need.timerFullInMs ?? 0,
+                at: now,
+              }
             : undefined;
         },
       ),
