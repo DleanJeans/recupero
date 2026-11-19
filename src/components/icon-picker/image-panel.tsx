@@ -25,6 +25,16 @@ interface Props {
 /** Wait for typing to pause before previewing, so half-typed links aren't fetched. */
 const PREVIEW_DELAY_MS = 600;
 
+/** Reads the clipboard text. Resolves to '' when it is empty or this build lacks the clipboard module. */
+async function readClipboardText(): Promise<string> {
+  try {
+    const Clipboard: typeof import('expo-clipboard') = require('expo-clipboard');
+    return (await Clipboard.getStringAsync()).trim();
+  } catch {
+    return '';
+  }
+}
+
 /** An image as the icon: search Google Images or paste a link, then crop. Downloaded once and kept on the phone. */
 export function ImagePanel({ value, nameHint, onUse }: Props) {
   const [initial] = useState(() => {
@@ -36,6 +46,24 @@ export function ImagePanel({ value, nameHint, onUse }: Props) {
   const [clear, setClear] = useState<ImageClear | undefined>(initial?.clear);
   const [preview, setPreview] = useState(url);
   const [searching, setSearching] = useState(false);
+
+  // Opening the tab with no picture yet: use a copied image link, otherwise start Google Images.
+  useEffect(() => {
+    if (initial) return;
+    let cancelled = false;
+    readClipboardText().then(text => {
+      if (cancelled) return;
+      if (isImageUrl(text)) {
+        setUrl(text);
+        setPreview(text);
+      } else {
+        setSearching(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [initial]);
 
   useEffect(() => {
     const timer = setTimeout(() => setPreview(url.trim()), PREVIEW_DELAY_MS);
