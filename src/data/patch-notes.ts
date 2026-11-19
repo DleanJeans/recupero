@@ -33,14 +33,13 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-19',
     items: [
       {
-        text: 'Patch notes now have a checkbox on every line so you can tick off what you have tested (it is remembered), and some lines have an underlined link that jumps straight to the screen that changed.',
         text: 'Every need screen (Fun, Hunger, ...) now has a Settings cog in the top right corner that opens Needs settings, scrolled to that need.',
         screen: 'NeedsSettings',
         params: { needId: 'fun' },
         linkLabel: 'Needs settings',
       },
       {
-        text: 'Patch notes now have a checkbox on every line so you can tick off what you have tested (it is remembered), and some lines have an Open button that jumps straight to the screen that changed.',
+        text: 'Patch notes now have a checkbox on every line so you can tick off what you have tested (it is remembered), and some lines have an underlined link that jumps straight to the screen that changed.',
         screen: 'PatchNotes',
         linkLabel: 'Patch notes',
       },
