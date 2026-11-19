@@ -25,6 +25,9 @@ interface Props {
 /** Wait for typing to pause before previewing, so half-typed links aren't fetched. */
 const PREVIEW_DELAY_MS = 600;
 
+/** Let the picker's slide-in animation finish before opening Google Images on top of it. */
+const OPEN_SEARCH_DELAY_MS = 600;
+
 /** Reads the clipboard text. Resolves to '' when it is empty or this build lacks the clipboard module. */
 async function readClipboardText(): Promise<string> {
   try {
@@ -51,17 +54,20 @@ export function ImagePanel({ value, nameHint, onUse }: Props) {
   useEffect(() => {
     if (initial) return;
     let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     readClipboardText().then(text => {
       if (cancelled) return;
       if (isImageUrl(text)) {
         setUrl(text);
         setPreview(text);
       } else {
-        setSearching(true);
+        // A Modal opened while the picker is still sliding in comes up as a blank gray screen.
+        timer = setTimeout(() => setSearching(true), OPEN_SEARCH_DELAY_MS);
       }
     });
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
   }, [initial]);
 
