@@ -510,6 +510,7 @@ const styles = StyleSheet.create({
   strip: {
     paddingHorizontal: 16,
     paddingTop: 10,
+    paddingBottom: 12,
   },
   composer: {
     paddingHorizontal: 16,
