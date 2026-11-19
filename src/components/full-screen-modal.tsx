@@ -1,10 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Modal, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '../utils/colors';
-import { Button } from './button';
-import { Text } from './text';
+import { Modal } from 'react-native';
+import { ScreenFrame } from './screen-frame';
 
 interface FullScreenModalProps {
   title?: string;
@@ -16,12 +12,8 @@ interface FullScreenModalProps {
   children: React.ReactNode;
 }
 
-/**
- * Full-screen dialog with a back button at the top. The top bar stays above the keyboard, and content
- * below it should pad its bottom by the safe-area inset (AGENTS.md rule 8).
- */
+/** Full-screen dialog with a back button at the top, for small pickers that stay on their screen. */
 export function FullScreenModal({ title, headerContent, rightContent, onClose, children }: FullScreenModalProps) {
-  const insets = useSafeAreaInsets();
   return (
     <Modal
       visible
@@ -29,43 +21,14 @@ export function FullScreenModal({ title, headerContent, rightContent, onClose, c
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <View style={[styles.screen, { paddingTop: insets.top }]}>
-        <View style={styles.bar}>
-          <Button
-            variant="icon"
-            onPress={onClose}
-            accessibilityLabel="Close"
-          >
-            <Ionicons
-              name="chevron-back"
-              size={28}
-              color={Colors.text.primary}
-            />
-          </Button>
-          {headerContent ? (
-            <View style={styles.headerContent}>{headerContent}</View>
-          ) : title ? (
-            <Text
-              style={styles.title}
-              numberOfLines={1}
-            >
-              {title}
-            </Text>
-          ) : (
-            <View style={styles.spacer} />
-          )}
-          {rightContent}
-        </View>
+      <ScreenFrame
+        title={title}
+        headerContent={headerContent}
+        rightContent={rightContent}
+        onClose={onClose}
+      >
         {children}
-      </View>
+      </ScreenFrame>
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: Colors.bg.card },
-  bar: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, height: 48 },
-  headerContent: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  spacer: { flex: 1 },
-  title: { flex: 1, color: Colors.text.primary, fontSize: 17, fontWeight: '700' },
-});

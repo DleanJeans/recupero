@@ -1,10 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { type RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppUsage } from '../../../modules/app-usage';
+import { AppIcon } from '../../components/app-icon';
+import { BehaviorIcon } from '../../components/behavior-icon';
+import { Button } from '../../components/button';
+import { CueSectionLabel } from '../../components/cues/cue-section-label';
+import { FitbitConnectRow } from '../../components/needs/fitbit-connect-row';
+import { NeedAmountDialog } from '../../components/needs/need-amount-dialog';
+import { NeedAppSourceModal } from '../../components/needs/need-app-source-modal';
+import { NEED_TONE_COLORS } from '../../components/needs/need-bar-row';
+import { NeedHistorySection } from '../../components/needs/need-history-section';
+import { NeedRateLearning } from '../../components/needs/need-rate-learning';
+import { ScreenFrame } from '../../components/screen-frame';
+import { Text, TextInput } from '../../components/text';
 import { useNeedLevels } from '../../hooks/use-need-levels';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useNeedsStore } from '../../store/needs-store';
@@ -34,30 +46,13 @@ import {
   type NeedRefillEntry,
 } from '../../utils/need-utils';
 import { formatCompactDate, formatElapsedNumeric, formatTime } from '../../utils/time-utils';
-import { AppIcon } from '../app-icon';
-import { BehaviorIcon } from '../behavior-icon';
-import { Button } from '../button';
-import { CueSectionLabel } from '../cues/cue-section-label';
-import { FullScreenModal } from '../full-screen-modal';
-import { Text, TextInput } from '../text';
-import { FitbitConnectRow } from './fitbit-connect-row';
-import { NeedAmountDialog } from './need-amount-dialog';
-import { NeedAppSourceModal } from './need-app-source-modal';
-import { NEED_TONE_COLORS } from './need-bar-row';
-import { NeedHistorySection } from './need-history-section';
-import { NeedRateLearning } from './need-rate-learning';
-
-interface NeedSheetProps {
-  /** The need to show; the sheet is hidden while this is undefined. */
-  needId?: NeedId;
-  onClose: () => void;
-}
 
 const MAX_SEARCH_RESULTS = 6;
 
-/** Bottom sheet for one need: what refills it, a one-tap check-in, and how fast it empties. */
-export function NeedSheet({ needId, onClose }: NeedSheetProps) {
+/** Screen for one need: what refills it, a one-tap check-in, and how fast it empties. */
+export function NeedScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { needId } = useRoute<RouteProp<RootStackParamList, 'Need'>>().params;
   const { needs, now } = useNeedLevels();
   const behaviors = useBehaviorStore(state => state.behaviors);
   const categories = useBehaviorStore(state => state.categories);
@@ -120,12 +115,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
       .slice(0, MAX_SEARCH_RESULTS);
   }, [behaviors, hidePrivate, need, query]);
 
-  const close = () => {
-    setAdding(false);
-    setQuery('');
-    setFilter('');
-    onClose();
-  };
+  const close = () => navigation.goBack();
 
   if (!need) return null;
 
@@ -144,12 +134,10 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
         : `Empty in ~${formatEmptyHours(need.level / getDecayPerHour(need.config))} · `;
 
   const logBehavior = (behaviorId: string) => {
-    close();
     navigation.navigate('BehaviorLog', { behaviorId, initialMode: 'log' });
   };
 
   const editLog = (behaviorId: string, logId: string) => {
-    close();
     navigation.navigate('BehaviorLog', { behaviorId, initialMode: 'log', logId });
   };
 
@@ -189,13 +177,12 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
   };
 
   return (
-    <FullScreenModal
+    <ScreenFrame
       onClose={close}
       rightContent={
         <Button
           variant="icon"
           onPress={() => {
-            close();
             navigation.navigate('NeedsSettings', { needId: need.id });
           }}
           accessibilityLabel="Needs settings"
@@ -612,7 +599,7 @@ export function NeedSheet({ needId, onClose }: NeedSheetProps) {
           onClose={() => setCustomDialog(undefined)}
         />
       ) : null}
-    </FullScreenModal>
+    </ScreenFrame>
   );
 }
 

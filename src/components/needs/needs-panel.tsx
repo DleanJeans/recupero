@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useState } from 'react';
+import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useNeedLevels } from '../../hooks/use-need-levels';
 import { useSunlight } from '../../hooks/use-sunlight';
 import type { RootStackParamList } from '../../types/navigation';
-import type { NeedId } from '../../types/need';
 import { Colors } from '../../utils/colors';
 import { formatNextCraving, formatTimerFull } from '../../utils/need-utils';
 import { formatTime } from '../../utils/time-utils';
@@ -14,16 +13,12 @@ import { CueSectionLabel } from '../cues/cue-section-label';
 import { Text } from '../text';
 import { AzmBarRow } from './azm-bar-row';
 import { NeedBarRow } from './need-bar-row';
-import { NeedSheet } from './need-sheet';
 import { SunlightBarRow } from './sunlight-bar-row';
-import { SunlightSheet } from './sunlight-sheet';
 
 /** Hunger, Thirst, Hygiene and Energy bars (plus today's sunlight) at the top of the Cues tab. */
 export function NeedsPanel() {
   const { needs, now } = useNeedLevels();
   const sunlight = useSunlight();
-  const [openId, setOpenId] = useState<NeedId>();
-  const [sunlightOpen, setSunlightOpen] = useState(false);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   return (
     <View style={styles.group}>
@@ -69,25 +64,17 @@ export function NeedsPanel() {
                 : formatNextCraving(need.level, need.config, now, ts => formatTime(ts))
             }
             timerNames={need.timerBehaviorNames}
-            onPress={() => setOpenId(need.id)}
+            onPress={() => navigation.navigate('Need', { needId: need.id })}
           />
         ))}
         <AzmBarRow now={now} />
         {sunlight.enabled && (
           <SunlightBarRow
             sunlight={sunlight}
-            onPress={() => setSunlightOpen(true)}
+            onPress={() => navigation.navigate('Sunlight')}
           />
         )}
       </View>
-      <SunlightSheet
-        visible={sunlightOpen}
-        onClose={() => setSunlightOpen(false)}
-      />
-      <NeedSheet
-        needId={openId}
-        onClose={() => setOpenId(undefined)}
-      />
     </View>
   );
 }

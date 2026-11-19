@@ -43,6 +43,10 @@ export type RootStackParamList = {
   PatchNotes: undefined;
   NeedsHistory: undefined;
   NeedsSettings: { needId?: NeedId } | undefined;
+  /** One need (Hunger, Thirst...): refills, check-ins, history. */
+  Need: { needId: NeedId };
+  /** Outdoor sunlight time: status, today's route, week, settings. */
+  Sunlight: undefined;
   Cues: undefined;
   CueForm: { cueId?: string } | undefined;
   CueActivity: undefined;

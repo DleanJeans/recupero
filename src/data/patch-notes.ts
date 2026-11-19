@@ -43,6 +43,11 @@ export const PATCH_NOTES: PatchNotesDay[] = [
         screen: 'PatchNotes',
         linkPhrase: 'Patch notes',
       },
+      {
+        text: 'Needs (Hunger, Thirst, Sunlight and the rest) now open as real screens instead of pull-up dialogs. Open a behavior from a need, press Back, and you land on that need again instead of the Cues screen.',
+        screen: 'Sunlight',
+        linkPhrase: 'Sunlight',
+      },
       'The Cook a batch button is now called Cook a meal (the button on Routines, its Settings section and the screen title).',
       {
         text: 'New reminder on the Reminders tab, Add location in Saved places and Add item in the Shop are now round + buttons floating at the bottom right, like Add behavior and Add task. They shrink to a circle while you scroll down.',

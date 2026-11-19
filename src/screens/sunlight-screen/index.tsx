@@ -1,6 +1,20 @@
+import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CueSectionLabel } from '../../components/cues/cue-section-label';
+import { ExpandableMap } from '../../components/expandable-map';
+import { SunlightActions } from '../../components/needs/sunlight-actions';
+import { SUNLIGHT_COLOR } from '../../components/needs/sunlight-bar-row';
+import { SunlightLuxChart } from '../../components/needs/sunlight-lux-chart';
+import { SunlightNowCard } from '../../components/needs/sunlight-now-card';
+import { SunlightPlacesMapView } from '../../components/needs/sunlight-places-map-view';
+import { SunlightSessionEditor } from '../../components/needs/sunlight-session-editor';
+import { SunlightSettings } from '../../components/needs/sunlight-settings';
+import { SunlightTimeline } from '../../components/needs/sunlight-timeline';
+import { SunlightWeekChart } from '../../components/needs/sunlight-week-chart';
+import { ScreenFrame } from '../../components/screen-frame';
+import { Text } from '../../components/text';
 import { resyncReminders } from '../../hooks/use-reminder-engine';
 import { useSunlight } from '../../hooks/use-sunlight';
 import { useSunlightTimeline } from '../../hooks/use-sunlight-timeline';
@@ -11,27 +25,10 @@ import { requestBackgroundLocationPermission } from '../../utils/reminder-geofen
 import { syncSunlight } from '../../utils/sunlight-sync';
 import { formatLux, formatSunlightMinutes } from '../../utils/sunlight-utils';
 import { formatTime } from '../../utils/time-utils';
-import { CueSectionLabel } from '../cues/cue-section-label';
-import { ExpandableMap } from '../expandable-map';
-import { FullScreenModal } from '../full-screen-modal';
-import { Text } from '../text';
-import { SunlightActions } from './sunlight-actions';
-import { SUNLIGHT_COLOR } from './sunlight-bar-row';
-import { SunlightLuxChart } from './sunlight-lux-chart';
-import { SunlightNowCard } from './sunlight-now-card';
-import { SunlightPlacesMapView } from './sunlight-places-map-view';
-import { SunlightSessionEditor } from './sunlight-session-editor';
-import { SunlightSettings } from './sunlight-settings';
-import { SunlightTimeline } from './sunlight-timeline';
-import { SunlightWeekChart } from './sunlight-week-chart';
-
-interface SunlightSheetProps {
-  visible: boolean;
-  onClose: () => void;
-}
 
 /** Sunlight in four sections: Now (status, minutes, light dose, actions), Today (route + timeline), week, Settings. */
-export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
+export function SunlightScreen() {
+  const navigation = useNavigation();
   const sunlight = useSunlight();
   const [pickedDay, setPickedDay] = useState<number | undefined>(undefined);
   const scrollRef = useRef<ScrollView>(null);
@@ -47,16 +44,13 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
   const locationAllowed = sunlight.locationAllowed || justAllowed;
 
   useEffect(() => {
-    if (visible) void syncSunlight(true);
-    else setPickedDay(undefined);
-  }, [visible]);
+    void syncSunlight(true);
+  }, []);
 
   const pickDay = (dayStart: number) => {
     setPickedDay(dayStart === sunlight.today.dayStart ? undefined : dayStart);
     scrollRef.current?.scrollTo({ y: Math.max(0, todaySectionY.current - 8), animated: true });
   };
-
-  if (!visible) return null;
 
   const { today, goalMinutes, days } = sunlight;
   // A stretch out that's too short to count yet still shows, so it never looks like nothing is running.
@@ -101,7 +95,7 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
   };
 
   return (
-    <FullScreenModal onClose={onClose}>
+    <ScreenFrame onClose={() => navigation.goBack()}>
       <View style={styles.sheet}>
         <ScrollView
           ref={scrollRef}
@@ -213,7 +207,7 @@ export function SunlightSheet({ visible, onClose }: SunlightSheetProps) {
           }}
         />
       )}
-    </FullScreenModal>
+    </ScreenFrame>
   );
 }
 

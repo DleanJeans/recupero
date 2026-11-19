@@ -1,16 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { BackButton } from '../../components/back-button';
 import { CueSegmentedControl } from '../../components/cues/cue-segmented-control';
-import { NeedSheet } from '../../components/needs/need-sheet';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { Text } from '../../components/text';
 import { useNeedHistory } from '../../hooks/use-need-history';
 import { type NeedHistoryDisplay, useNeedsStore } from '../../store/needs-store';
 import { useSettingsStore } from '../../store/settings-store';
-import type { NeedId } from '../../types/need';
+import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
 import { getDayStartTimestamp, toDateString } from '../../utils/date-utils';
 import {
@@ -38,9 +39,9 @@ const DISPLAYS: ReadonlyArray<{ value: NeedHistoryDisplay; label: string }> = [
 
 /** History of all needs over a day, week or month: stacked charts or one combined chart. */
 export function NeedsHistoryScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [range, setRange] = useState<NeedHistoryRange>('day');
   const [offset, setOffset] = useState(0);
-  const [openId, setOpenId] = useState<NeedId>();
   const display = useNeedsStore(state => state.historyDisplay);
   const setDisplay = useNeedsStore(state => state.setHistoryDisplay);
   const configs = useNeedsStore(state => state.needs);
@@ -128,7 +129,7 @@ export function NeedsHistoryScreen() {
             from={from}
             to={to}
             dayStarts={dayStarts}
-            onOpen={setOpenId}
+            onOpen={needId => navigation.navigate('Need', { needId })}
           />
         ) : (
           <NeedsOverlay
@@ -140,10 +141,6 @@ export function NeedsHistoryScreen() {
           />
         )}
       </ScrollView>
-      <NeedSheet
-        needId={openId}
-        onClose={() => setOpenId(undefined)}
-      />
     </SafeAreaView>
   );
 }

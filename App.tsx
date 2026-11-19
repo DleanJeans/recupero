@@ -41,6 +41,7 @@ import { LocationEditScreen } from './src/screens/location-edit-screen';
 import { MealBatchFormScreen } from './src/screens/meal-batch-form-screen';
 import { MoneyLogScreen } from './src/screens/money-log-screen';
 import { MoodLogScreen } from './src/screens/mood-log-screen';
+import { NeedScreen } from './src/screens/need-screen';
 import { NeedsHistoryScreen } from './src/screens/needs-history-screen';
 import { NeedsSettingsScreen } from './src/screens/needs-settings-screen';
 import { PatchNotesScreen } from './src/screens/patch-notes-screen';
@@ -48,6 +49,7 @@ import { RideItOutScreen } from './src/screens/ride-it-out-screen';
 import { SavedPlacesScreen } from './src/screens/saved-places-screen';
 import { SettingsScreen } from './src/screens/settings-screen';
 import { ShopScreen } from './src/screens/shop-screen';
+import { SunlightScreen } from './src/screens/sunlight-screen';
 import { TaskScreen } from './src/screens/task-screen';
 import { TimerScreen } from './src/screens/timer-screen';
 import { useBehaviorStore } from './src/store/behavior-store';
@@ -236,6 +238,16 @@ export default function App() {
                   <Stack.Screen
                     name="NeedsSettings"
                     component={NeedsSettingsScreen}
+                  />
+                  <Stack.Screen
+                    name="Need"
+                    component={NeedScreen}
+                    options={{ animation: 'slide_from_bottom' }}
+                  />
+                  <Stack.Screen
+                    name="Sunlight"
+                    component={SunlightScreen}
+                    options={{ animation: 'slide_from_bottom' }}
                   />
                   <Stack.Screen
                     name="Cues"
