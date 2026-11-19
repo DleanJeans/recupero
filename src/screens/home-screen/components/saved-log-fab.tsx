@@ -82,12 +82,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg.elevated,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 8,
     overflow: 'hidden',
     elevation: 4,
   },
-  iconBox: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-  label: { flex: 1, color: Colors.text.primary, fontSize: 14, fontWeight: '600', marginLeft: 8 },
+  /** A full circle-sized slot, so the icon stays centred in the collapsed circle whatever its glyph width. */
+  iconBox: { width: HEIGHT, height: HEIGHT, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  label: { flex: 1, color: Colors.text.primary, fontSize: 14, fontWeight: '600' },
   badge: { paddingHorizontal: 10 },
   badgeCollapsed: {
     position: 'absolute',
