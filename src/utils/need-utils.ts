@@ -780,6 +780,9 @@ export interface NeedRefillEntry {
   /** The amount was typed in by the user instead of the usual refill. */
   custom?: boolean;
   ts: number;
+  /** Start and end of a timed log (e.g. app usage). Undefined for instant logs and updates. */
+  startTs?: number;
+  endTs?: number;
   /** "+45%", "Full" or "Check-in 70%". */
   amountLabel: string;
 }
@@ -823,6 +826,9 @@ export function getNeedRefillHistory(
         logId: log.id,
         ...(config.logAmounts?.[log.id] != null ? { custom: true } : {}),
         ts: event.ts,
+        ...(log.endTimestamp != null && log.endTimestamp > log.timestamp
+          ? { startTs: log.timestamp, endTs: log.endTimestamp }
+          : {}),
         amountLabel: event.kind === 'add' ? `+${Math.round(event.amount)}%` : 'Full',
       });
     }

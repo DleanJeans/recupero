@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-20',
     items: [
+      'In the Logged today list on a need, timed logs (like app usage) now show how long they lasted under the name and their start - end time on the right.',
       'New reminder: "After logging" can now pick a whole behaviour group (e.g. Omachi) from the top of the list, so logging any flavour triggers it.',
       'Reminders set to fire after a behaviour is logged now also start when you use "Save for later" on its log.',
     ],

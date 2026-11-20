@@ -18,6 +18,11 @@ export function formatTime(timestamp: number, hour12?: boolean, showSeconds = fa
   });
 }
 
+/** Short length of a session for list rows: "6m", "1h 12m"; "<1m" under a minute. */
+export function formatSessionLength(ms: number): string {
+  return ms < 60_000 ? '<1m' : formatDuration(ms);
+}
+
 export function formatTimeRange(
   startTimestamp: number,
   endTimestamp?: number,

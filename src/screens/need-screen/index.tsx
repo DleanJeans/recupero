@@ -46,7 +46,13 @@ import {
   NEED_UPDATE_QUESTIONS,
   type NeedRefillEntry,
 } from '../../utils/need-utils';
-import { formatCompactDate, formatElapsedNumeric, formatTime } from '../../utils/time-utils';
+import {
+  formatCompactDate,
+  formatElapsedNumeric,
+  formatSessionLength,
+  formatTime,
+  formatTimeRange,
+} from '../../utils/time-utils';
 
 const MAX_SEARCH_RESULTS = 6;
 
@@ -303,9 +309,11 @@ export function NeedScreen() {
               <CueSectionLabel>{history.today ? 'Logged today' : 'Last logged'}</CueSectionLabel>
               <View style={styles.history}>
                 {history.entries.map(entry => {
+                  const timed = entry.startTs != null && entry.endTs != null;
+                  const clock = timed ? formatTimeRange(entry.startTs ?? entry.ts, entry.endTs) : formatTime(entry.ts);
                   const time = history.today
-                    ? formatTime(entry.ts)
-                    : `${formatCompactDate(entry.ts)} ${formatTime(entry.ts)} · ${formatElapsedNumeric(entry.ts, now)}`;
+                    ? clock
+                    : `${formatCompactDate(entry.ts)} ${clock} · ${formatElapsedNumeric(entry.ts, now)}`;
                   if (entry.update || entry.checkIn) {
                     return (
                       <View
@@ -352,12 +360,22 @@ export function NeedScreen() {
                         behavior={behavior}
                         size={20}
                       />
-                      <Text
-                        style={styles.historyName}
-                        numberOfLines={1}
-                      >
-                        {behavior.name}
-                      </Text>
+                      <View style={styles.historyNameColumn}>
+                        <Text
+                          style={styles.historyNameText}
+                          numberOfLines={1}
+                        >
+                          {behavior.name}
+                        </Text>
+                        {timed ? (
+                          <Text
+                            style={styles.historyLength}
+                            numberOfLines={1}
+                          >
+                            {formatSessionLength((entry.endTs ?? 0) - (entry.startTs ?? 0))}
+                          </Text>
+                        ) : null}
+                      </View>
                       <Pressable
                         style={({ pressed }) => [styles.amount, pressed && styles.pressed]}
                         onPress={() => setAmountLog(entry)}
@@ -370,7 +388,12 @@ export function NeedScreen() {
                           {entry.custom ? ' ✎' : ''}
                         </Text>
                       </Pressable>
-                      <Text style={styles.historyTime}>{time}</Text>
+                      <Text
+                        style={styles.historyTime}
+                        numberOfLines={1}
+                      >
+                        {time}
+                      </Text>
                     </Pressable>
                   );
                 })}
@@ -881,6 +904,18 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     fontSize: 13,
   },
+  historyNameColumn: {
+    flex: 1,
+    minWidth: 0,
+  },
+  historyNameText: {
+    color: Colors.text.secondary,
+    fontSize: 13,
+  },
+  historyLength: {
+    color: Colors.text.faint,
+    fontSize: 11,
+  },
   historyAmount: {
     color: Colors.type.desirable,
     fontSize: 12,
@@ -892,6 +927,7 @@ const styles = StyleSheet.create({
   historyTime: {
     color: Colors.text.faint,
     fontSize: 12,
+    flexShrink: 0,
   },
   search: {
     flexDirection: 'row',
