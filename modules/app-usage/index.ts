@@ -24,6 +24,8 @@ interface AppUsageNativeModule {
   isSiteTrackingEnabled(): boolean;
   openAccessibilitySettings(): void;
   getSiteMarks(start: number, end: number): Promise<SiteMark[]>;
+  /** JSON of the last address bar read by the watcher. Missing in builds made before the site debug view. */
+  getSiteDebug?(): string;
   /** Notification access (to see media play/pause). Missing in builds made before media tracking. */
   isMediaWatchEnabled?(): boolean;
   openNotificationListenerSettings?(): void;

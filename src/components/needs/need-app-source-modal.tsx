@@ -24,6 +24,7 @@ import { AppPickerModal } from '../app-picker-modal';
 import { Button } from '../button';
 import { CheckboxRow } from '../checkbox-row';
 import { FullScreenModal } from '../full-screen-modal';
+import { SiteWatcherDebug } from '../site-watcher-debug';
 import { Text, TextInput } from '../text';
 import { FillRateFields } from './fill-rate-fields';
 
@@ -241,6 +242,7 @@ export function NeedAppSourceModal({ needId, needLabel, onClose }: NeedAppSource
             </Button>
           </View>
         )}
+        <SiteWatcherDebug />
         <Button
           disabled={!normalizedSite}
           onPress={() => addTracked('site')}

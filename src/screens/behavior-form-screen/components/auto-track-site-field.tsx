@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { AppUsage } from '../../../../modules/app-usage';
 import { Button } from '../../../components/button';
 import { CheckboxRow } from '../../../components/checkbox-row';
+import { SiteWatcherDebug } from '../../../components/site-watcher-debug';
 import { Text, TextInput } from '../../../components/text';
 import { useAppUsagePermission } from '../../../hooks/use-app-usage-permission';
 import { normalizeSiteDomain } from '../../../utils/app-usage-utils';
@@ -72,6 +73,7 @@ export function AutoTrackSiteField({ enabled, domain, onToggle, onDomainChange }
               </Button>
             </>
           )}
+          <SiteWatcherDebug />
           <Text style={styles.note}>Visits of a minute or more are logged when you open Recupero.</Text>
         </View>
       )}

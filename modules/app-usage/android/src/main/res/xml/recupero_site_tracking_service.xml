@@ -6,4 +6,4 @@
     android:canRetrieveWindowContent="true"
     android:description="@string/recupero_site_tracking_description"
     android:notificationTimeout="500"
-    android:packageNames="org.mozilla.firefox,org.mozilla.firefox_beta,org.mozilla.fenix" />
+    android:packageNames="org.mozilla.firefox,org.mozilla.firefox_beta,org.mozilla.fenix,org.mozilla.fennec_fdroid,io.github.forkmaintainers.iceraven,us.spotco.fennec_dos,io.gitlab.librewolf,io.gitlab.librewolf_community,org.torproject.torbrowser" />

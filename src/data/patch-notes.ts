@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-21',
     items: [
+      'Website tracking in Firefox is more tolerant: it finds the address bar in newer Firefox versions and Firefox forks (Iceraven, Fennec, Mull, LibreWolf, Tor). New "What does the watcher see?" button next to the website field shows what the watcher last read, so you can tell why a site isn\'t counted. Needs a new app install to take effect.',
       'Adding or editing a task now opens a dialog over the Tasks screen instead of pushing the list down. Behavior, App and Place are rows that each open their own full-screen picker.',
       'Tasks can have an app: the ▶ button opens it with a timer. The first time you pick an app, Recupero makes a behavior that tracks its screen time; if Needs (e.g. Fun) already tracks that app, the task reuses that behavior instead.',
       'New "Time it" checkbox on tasks: adds a ▶ timer button (and turns on duration XP for the app\'s behavior). Ticking the task while its timer runs logs the time it took.',

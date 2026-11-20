@@ -84,6 +84,11 @@ class AppUsageModule : Module() {
       SiteMarks.read(context, start.toLong(), end.toLong())
     }
 
+    // JSON of the last address bar read (or the toolbar's text nodes when none was found); "" if never.
+    Function("getSiteDebug") {
+      SiteDebug.read(context)
+    }
+
     Function("isMediaWatchEnabled") {
       MediaWatchService.isEnabled(context)
     }

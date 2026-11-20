@@ -156,7 +156,17 @@ export function getAutoTrackApp(
   };
 }
 
-export const FIREFOX_PACKAGES = ['org.mozilla.firefox', 'org.mozilla.firefox_beta', 'org.mozilla.fenix'];
+export const FIREFOX_PACKAGES = [
+  'org.mozilla.firefox',
+  'org.mozilla.firefox_beta',
+  'org.mozilla.fenix',
+  'org.mozilla.fennec_fdroid',
+  'io.github.forkmaintainers.iceraven',
+  'us.spotco.fennec_dos',
+  'io.gitlab.librewolf',
+  'io.gitlab.librewolf_community',
+  'org.torproject.torbrowser',
+];
 
 const HOST_PATTERN = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/;
 
@@ -351,4 +361,28 @@ export function sumAppUsage(sessions: AppUsageSession[]): Map<string, number> {
     totals.set(session.packageName, (totals.get(session.packageName) ?? 0) + (session.end - session.start));
   }
   return totals;
+}
+
+/** Plain-language report of the watcher's last address bar read (JSON from the native module). */
+export function formatSiteDebug(json: string, now = Date.now()): string {
+  if (!json) return 'Nothing yet. Open Firefox, visit a site, then come back and tap again.';
+  try {
+    const data = JSON.parse(json) as {
+      time: number;
+      package: string;
+      source: string | null;
+      text: string | null;
+      host: string | null;
+      candidates: string | null;
+    };
+    const ago = Math.max(0, Math.round((now - data.time) / 1000));
+    const when = `${ago < 90 ? `${ago}s` : `${Math.round(ago / 60)} min`} ago`;
+    if (data.source == null) {
+      return `Seen ${when} in ${data.package}, but no address bar found. Text on screen:\n${data.candidates || '(none)'}`;
+    }
+    const counted = data.host ? `counts as ${data.host}` : 'not a site (ignored)';
+    return `Seen ${when} in ${data.package}: "${data.text}" (${data.source}) ${counted}.`;
+  } catch {
+    return 'Could not read the watcher report.';
+  }
 }

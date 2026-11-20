@@ -63,19 +63,81 @@ class SiteTrackingService : AccessibilityService() {
     val root = rootInActiveWindow ?: return
     val packageName = root.packageName?.toString() ?: return
     if (packageName !in FIREFOX_PACKAGES) return
-    val urlText = findUrlText(root, packageName) ?: return
-    SiteMarks.record(this, now, hostFromUrlText(urlText), force = isWindowChange)
+    val found = findUrlText(root, packageName)
+    if (found == null) {
+      SiteDebug.record(this, now, packageName, null, null, null, dumpCandidates(root))
+      return
+    }
+    val host = hostFromUrlText(found.text)
+    SiteDebug.record(this, now, packageName, found.source, found.text, host, null)
+    SiteMarks.record(this, now, host, force = isWindowChange)
   }
 
   override fun onInterrupt() = Unit
 
-  private fun findUrlText(root: AccessibilityNodeInfo, packageName: String): String? {
+  private class UrlFound(val text: String, val source: String)
+
+  private fun findUrlText(root: AccessibilityNodeInfo, packageName: String): UrlFound? {
     for (id in URL_VIEW_IDS) {
       val nodes = root.findAccessibilityNodeInfosByViewId("$packageName:id/$id")
       val text = nodes.firstOrNull()?.text?.toString()
-      if (text != null) return text
+      if (text != null) return UrlFound(text, id)
     }
-    return null
+    // Newer Firefox (and forks) renamed or rebuilt the toolbar: look for any toolbar-ish node showing a site.
+    var result: UrlFound? = null
+    walk(root) { node, _ ->
+      if (result != null) return@walk true
+      val id = node.viewIdResourceName?.substringAfter(":id/").orEmpty()
+      val label = (node.text ?: node.contentDescription)?.toString()?.trim().orEmpty()
+      if (label.isEmpty() || label.length > 300 || label.contains(' ')) return@walk true
+      val idLooksLikeUrl = URL_ID_HINTS.any { id.contains(it, ignoreCase = true) }
+      if (idLooksLikeUrl && hostFromUrlText(label).isNotEmpty()) {
+        result = UrlFound(label, id.ifEmpty { "(fallback)" })
+      } else if (id.isEmpty() && !node.isEditable && hostFromUrlText(label).isNotEmpty() && looksLikeUrlText(label)) {
+        result = UrlFound(label, "(text scan)")
+      }
+      true
+    }
+    return result
+  }
+
+  /** Bare "reddit.com" or a full URL. Rejects things like "file.txt" or "1.5" that happen to match a host. */
+  private fun looksLikeUrlText(label: String): Boolean {
+    if (label.contains("://")) return true
+    val host = hostFromUrlText(label)
+    val tld = host.substringAfterLast('.')
+    return tld.length in 2..24 && tld.all { it.isLetter() }
+  }
+
+  /** Depth-first walk over the window, skipping web page content. Stops after [MAX_NODES]. */
+  private fun walk(root: AccessibilityNodeInfo, visit: (AccessibilityNodeInfo, Int) -> Boolean) {
+    var count = 0
+    fun step(node: AccessibilityNodeInfo, depth: Int) {
+      if (count++ >= MAX_NODES || depth > 25) return
+      val cls = node.className?.toString().orEmpty()
+      if (cls.contains("GeckoView") || cls.contains("WebView") || cls.contains("SurfaceView")) return
+      if (!visit(node, depth)) return
+      for (i in 0 until node.childCount) {
+        val child = node.getChild(i) ?: continue
+        step(child, depth + 1)
+      }
+    }
+    step(root, 0)
+  }
+
+  /** What the toolbar looks like when no URL was found: text-bearing nodes outside the web page, for the debug view. */
+  private fun dumpCandidates(root: AccessibilityNodeInfo): String {
+    val lines = mutableListOf<String>()
+    walk(root) { node, depth ->
+      val label = (node.text ?: node.contentDescription)?.toString()?.trim().orEmpty()
+      if (label.isNotEmpty() && lines.size < 25) {
+        val id = node.viewIdResourceName?.substringAfter(":id/") ?: "-"
+        val cls = node.className?.toString()?.substringAfterLast('.') ?: "?"
+        lines.add("$id | $cls | ${label.take(80)}")
+      }
+      true
+    }
+    return lines.joinToString("\n")
   }
 
   companion object {
@@ -86,10 +148,28 @@ class SiteTrackingService : AccessibilityService() {
       instance?.applyPackageFilter()
     }
 
-    val FIREFOX_PACKAGES = setOf("org.mozilla.firefox", "org.mozilla.firefox_beta", "org.mozilla.fenix")
+    val FIREFOX_PACKAGES = setOf(
+      "org.mozilla.firefox",
+      "org.mozilla.firefox_beta",
+      "org.mozilla.fenix",
+      "org.mozilla.fennec_fdroid",
+      "io.github.forkmaintainers.iceraven",
+      "us.spotco.fennec_dos",
+      "io.gitlab.librewolf",
+      "io.gitlab.librewolf_community",
+      "org.torproject.torbrowser",
+    )
 
-    // Display (not edit) views of the toolbar; Firefox has used both over the years.
-    private val URL_VIEW_IDS = listOf("mozac_browser_toolbar_url_view", "url_bar_title")
+    private const val MAX_NODES = 600
+
+    // Display (not edit) views of the toolbar; Firefox has used several names over the years.
+    private val URL_VIEW_IDS = listOf(
+      "mozac_browser_toolbar_url_view",
+      "mozac_browser_toolbar_origin_view",
+      "url_bar_title",
+      "toolbar_url",
+    )
+    private val URL_ID_HINTS = listOf("url", "origin", "address")
 
     private val HOST_PATTERN = Regex("^[a-z0-9-]+(\\.[a-z0-9-]+)+$")
 
@@ -111,6 +191,34 @@ class SiteTrackingService : AccessibilityService() {
       return enabled.split(':').any { ComponentName.unflattenFromString(it) == component }
     }
   }
+}
+
+/** The last thing the watcher read from Firefox, so the app can show why a site was or wasn't seen. */
+object SiteDebug {
+  private const val PREFS = "recupero_site_debug"
+
+  fun record(
+    context: Context,
+    timestamp: Long,
+    packageName: String,
+    source: String?,
+    rawText: String?,
+    host: String?,
+    candidates: String?,
+  ) {
+    val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    val json = JSONObject()
+      .put("time", timestamp)
+      .put("package", packageName)
+      .put("source", source ?: JSONObject.NULL)
+      .put("text", rawText ?: JSONObject.NULL)
+      .put("host", host ?: JSONObject.NULL)
+      .put("candidates", candidates ?: JSONObject.NULL)
+    prefs.edit().putString("last", json.toString()).apply()
+  }
+
+  fun read(context: Context): String =
+    context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("last", "") ?: ""
 }
 
 /** Site marks kept in SharedPreferences for about a week, matching Android's usage event retention. */
