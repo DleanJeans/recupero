@@ -56,3 +56,14 @@ export function getTodayTimedLogs(behavior: BehaviorEntry, now: number, dayCutof
 export function getTotalLogDurationMs(logs: LogEntry[]): number {
   return logs.reduce((total, log) => total + getLogDurationMs(log), 0);
 }
+
+/**
+ * Start time for a picked clock time: same day as the current start, but never in the future
+ * (a time later than now means yesterday, e.g. picking 11:50 PM at 12:10 AM).
+ */
+export function resolveTimerStart(currentStart: number, hours: number, minutes: number, now: number): number {
+  const date = new Date(currentStart);
+  date.setHours(hours, minutes, 0, 0);
+  if (date.getTime() > now) date.setDate(date.getDate() - 1);
+  return date.getTime();
+}

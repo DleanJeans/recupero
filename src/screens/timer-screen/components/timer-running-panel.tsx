@@ -34,7 +34,7 @@ interface TimerRunningPanelProps {
   onPause: () => void;
   onResume: () => void;
   onDone: () => void;
-  onRewindStart: () => void;
+  onChangeStart: (timestamp: number) => void;
 }
 
 export function TimerRunningPanel({
@@ -53,7 +53,7 @@ export function TimerRunningPanel({
   onPause,
   onResume,
   onDone,
-  onRewindStart,
+  onChangeStart,
 }: TimerRunningPanelProps) {
   const category = useBehaviorStore(state =>
     behavior.categoryId ? state.categories.find(item => item.id === behavior.categoryId) : undefined,
@@ -122,7 +122,7 @@ export function TimerRunningPanel({
           elapsedMs={elapsedMs}
           startTimestamp={startTimestamp}
           paused={isPaused}
-          onRewindStart={onRewindStart}
+          onChangeStart={onChangeStart}
         />
 
         {(rewardXp != null || rewardMoney != null) && (

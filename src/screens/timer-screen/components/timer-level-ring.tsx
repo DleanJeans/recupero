@@ -1,11 +1,10 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button } from '../../../components/button';
 import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 import { formatStopwatchDuration } from '../../../utils/stopwatch-utils';
-import { formatTime } from '../../../utils/time-utils';
 import { formatLevelEta, type TimerLevelProgress } from '../../../utils/timer-utils';
+import { TimerStartTime } from './timer-start-time';
 
 const RING_SIZE = 250;
 const TICK_COUNT = 60;
@@ -18,11 +17,11 @@ interface TimerLevelRingProps {
   /** Start of the running (or stopped) segment. Undefined when ready or paused. */
   startTimestamp: number | undefined;
   paused: boolean;
-  onRewindStart: () => void;
+  onChangeStart: (timestamp: number) => void;
 }
 
 /** Ring of ticks for the behaviour's level: dim = XP from before this segment, bright = this segment, grey = to go. */
-export function TimerLevelRing({ progress, elapsedMs, startTimestamp, paused, onRewindStart }: TimerLevelRingProps) {
+export function TimerLevelRing({ progress, elapsedMs, startTimestamp, paused, onChangeStart }: TimerLevelRingProps) {
   return (
     <View
       style={styles.ring}
@@ -56,15 +55,10 @@ export function TimerLevelRing({ progress, elapsedMs, startTimestamp, paused, on
         </Text>
         {startTimestamp != null && (
           <View style={styles.startedRow}>
-            <Text style={styles.startedAt}>since {formatTime(startTimestamp)}</Text>
-            <Button
-              variant="secondary"
-              onPress={onRewindStart}
-              accessibilityLabel="Move start time back 1 minute"
-              style={styles.rewindButton}
-            >
-              <Text style={styles.rewindText}>-1 min</Text>
-            </Button>
+            <TimerStartTime
+              startTimestamp={startTimestamp}
+              onChange={onChangeStart}
+            />
           </View>
         )}
       </View>
@@ -117,25 +111,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   startedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
     marginTop: 2,
-  },
-  startedAt: {
-    color: Colors.text.muted,
-    fontSize: 12,
-    fontWeight: '600',
-    fontVariant: ['tabular-nums'],
-  },
-  rewindButton: {
-    borderRadius: 9,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  rewindText: {
-    color: Colors.text.muted,
-    fontSize: 11,
-    fontWeight: '700',
   },
 });

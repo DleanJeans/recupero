@@ -46,7 +46,8 @@ interface TimerStore {
   start: (behaviorId: string, timestamp?: number, initialNotes?: string, appPackage?: string) => void;
   setLockedBehavior: (behaviorId: string) => void;
   setStart: (timestamp: number) => void;
-  rewindStartMinute: () => void;
+  /** Moves the start of the running segment (keeps a pending stop). */
+  moveStart: (timestamp: number) => void;
   setStop: (timestamp: number) => void;
   /** Pause after the running segment was logged: no segment runs until `resume`. */
   pause: (timestamp: number) => void;
@@ -152,8 +153,7 @@ export const useTimerStore = create<TimerStore>()(
           state.lockedBehaviorId === behaviorId ? {} : { lockedBehaviorId: behaviorId, appPackage: undefined },
         ),
       setStart: timestamp => set({ startTimestamp: timestamp, stopTimestamp: undefined, pausedAt: undefined }),
-      rewindStartMinute: () =>
-        set(state => (state.startTimestamp == null ? {} : { startTimestamp: state.startTimestamp - 60_000 })),
+      moveStart: timestamp => set(state => (state.startTimestamp == null ? {} : { startTimestamp: timestamp })),
       setStop: timestamp => set({ stopTimestamp: timestamp }),
       pause: timestamp =>
         set({

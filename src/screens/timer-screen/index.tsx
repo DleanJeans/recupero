@@ -31,7 +31,7 @@ export function TimerScreen() {
   const pausedAt = useTimerStore(state => state.pausedAt);
   const setLockedBehavior = useTimerStore(state => state.setLockedBehavior);
   const setStart = useTimerStore(state => state.setStart);
-  const rewindStartMinute = useTimerStore(state => state.rewindStartMinute);
+  const moveStart = useTimerStore(state => state.moveStart);
   const setStop = useTimerStore(state => state.setStop);
   const markLogPending = useTimerStore(state => state.markLogPending);
   const clearPendingLog = useTimerStore(state => state.clearPendingLog);
@@ -172,8 +172,8 @@ export function TimerScreen() {
     setNowTick(resumedAt);
   };
 
-  const handleRewindStart = () => {
-    rewindStartMinute();
+  const handleChangeStart = (timestamp: number) => {
+    moveStart(timestamp);
     setNowTick(Date.now());
   };
 
@@ -200,7 +200,7 @@ export function TimerScreen() {
   return (
     <SafeAreaView
       style={styles.container}
-      edges={['top', 'left', 'right']}
+      edges={['top', 'bottom', 'left', 'right']}
     >
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
@@ -224,7 +224,7 @@ export function TimerScreen() {
             onPause={handlePause}
             onResume={handleResume}
             onDone={handleDone}
-            onRewindStart={handleRewindStart}
+            onChangeStart={handleChangeStart}
           />
         ) : (
           <>
