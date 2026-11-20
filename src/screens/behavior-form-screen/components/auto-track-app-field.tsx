@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { AppUsage, type LaunchableApp } from '../../../../modules/app-usage';
+import { AppPickerModal } from '../../../components/app-picker-modal';
 import { Button } from '../../../components/button';
 import { CheckboxRow } from '../../../components/checkbox-row';
 import { Text } from '../../../components/text';
 import { useAppUsagePermission } from '../../../hooks/use-app-usage-permission';
 import { Colors } from '../../../utils/colors';
-import { AppPickerModal } from './app-picker-modal';
 
 interface AutoTrackAppFieldProps {
   enabled: boolean;

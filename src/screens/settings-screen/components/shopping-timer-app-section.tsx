@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
+import { AppPickerModal } from '../../../components/app-picker-modal';
 import { Button } from '../../../components/button';
 import { Text } from '../../../components/text';
 import { useSettingsStore } from '../../../store/settings-store';
@@ -10,7 +11,6 @@ import {
   hasTimerOverlay,
   openTimerOverlaySettings,
 } from '../../../utils/launch-app';
-import { AppPickerModal } from '../../behavior-form-screen/components/app-picker-modal';
 
 export function ShoppingTimerAppSection() {
   const app = useSettingsStore(s => s.shoppingTimerApp);

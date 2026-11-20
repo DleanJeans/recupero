@@ -29,7 +29,7 @@ interface TaskCardProps {
   complete: boolean;
   /** Picked as one of "Today's 3": drawn bigger with a blue edge. */
   focused?: boolean;
-  /** Shopping tab: app to open right after the timer starts (the Shopping timer app setting). */
+  /** App to open right after the timer starts: the task's own app, else (Shopping tab) the Shopping timer app setting. */
   openAppPackage?: string;
   /** Extra text for the second line, e.g. "Got it Nov 18". */
   note?: string;
@@ -53,10 +53,14 @@ function TaskCardComponent({
   const showBehaviorName = behavior != null && behavior.name.trim() !== task.title.trim();
   const metaParts = [
     showBehaviorName ? behavior.name : undefined,
+    task.appLabel && task.appLabel !== behavior?.name && task.appLabel !== task.title ? task.appLabel : undefined,
     place ? `${getPlaceIconText(place)} ${place.name}` : undefined,
     note,
   ].filter((part): part is string => Boolean(part));
-  const canTrack = !complete && behavior?.xpEnabled === true && behavior.durationXpEnabled === true;
+  const canTrack =
+    !complete &&
+    behavior != null &&
+    (task.timed === true || (behavior.xpEnabled === true && behavior.durationXpEnabled === true));
 
   const handlePlay = () => {
     if (!behavior || !canTrack) return;

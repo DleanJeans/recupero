@@ -19,6 +19,8 @@ interface TimerStore {
   parkCurrent: () => void;
   /** Open the parked timer of `behaviorId` on the Timer screen, parking the current one. */
   switchTo: (behaviorId: string) => void;
+  /** Stop and drop the running timer for `behaviorId` (on screen or parked), returning the time it ran. Paused or missing: undefined. */
+  takeRunning: (behaviorId: string, now: number) => { start: number; end: number } | undefined;
   /** Drop parked timers whose behavior no longer exists. */
   pruneParked: (existingBehaviorIds: Set<string>) => void;
   /** Behavior locked in for the current timer session, if any. */
@@ -92,6 +94,20 @@ export const useTimerStore = create<TimerStore>()(
         const current = currentSession(state);
         const rest = state.parked.filter(session => session !== target);
         set({ ...target, parked: current ? [...rest, current] : rest });
+      },
+      takeRunning: (behaviorId, now) => {
+        const state = get();
+        if (state.lockedBehaviorId === behaviorId && state.startTimestamp != null) {
+          const range = { start: state.startTimestamp, end: now };
+          set({ ...EMPTY_CURRENT });
+          return range;
+        }
+        const parked = state.parked.find(
+          session => session.lockedBehaviorId === behaviorId && session.startTimestamp != null,
+        );
+        if (!parked || parked.startTimestamp == null) return undefined;
+        set({ parked: state.parked.filter(session => session !== parked) });
+        return { start: parked.startTimestamp, end: now };
       },
       pruneParked: existing => {
         const parked = get().parked.filter(session => existing.has(session.lockedBehaviorId));

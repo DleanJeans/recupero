@@ -81,3 +81,31 @@ describe('timer store with several timers', () => {
     expect(useTimerStore.getState().parked).toHaveLength(0);
   });
 });
+
+describe('takeRunning', () => {
+  beforeEach(() => {
+    useTimerStore.setState({ parked: [] });
+    useTimerStore.getState().reset();
+  });
+
+  it('stops the on-screen timer and returns its span', () => {
+    useTimerStore.getState().start('a', 1_000);
+    expect(useTimerStore.getState().takeRunning('a', 61_000)).toEqual({ start: 1_000, end: 61_000 });
+    expect(useTimerStore.getState().lockedBehaviorId).toBeUndefined();
+  });
+
+  it('takes a parked timer and leaves the on-screen one', () => {
+    useTimerStore.getState().start('a', 1_000);
+    useTimerStore.getState().start('b', 2_000);
+    expect(useTimerStore.getState().takeRunning('a', 9_000)).toEqual({ start: 1_000, end: 9_000 });
+    expect(useTimerStore.getState().parked).toHaveLength(0);
+    expect(useTimerStore.getState().lockedBehaviorId).toBe('b');
+  });
+
+  it('returns undefined for a paused or missing timer', () => {
+    useTimerStore.getState().start('a', 1_000);
+    useTimerStore.getState().pause(5_000);
+    expect(useTimerStore.getState().takeRunning('a', 9_000)).toBeUndefined();
+    expect(useTimerStore.getState().takeRunning('z', 9_000)).toBeUndefined();
+  });
+});

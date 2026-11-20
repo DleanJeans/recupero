@@ -14,6 +14,12 @@ export interface TaskEntry {
   placeId?: string;
   /** Minutes to stay at the place before the task ticks itself off. Unset means the default (5). */
   placeDwellMin?: number;
+  /** App opened when the task's timer starts. Its auto-tracked behavior is the task's behavior unless one was picked. */
+  appPackage?: string;
+  /** App name, kept so it shows even if the app is uninstalled. */
+  appLabel?: string;
+  /** "Time it": the task shows a ▶ timer button, and ticking it while that timer runs logs the time. */
+  timed?: true;
   /** Tasks tab this task lives on. Unset means derived, see getTaskList. */
   list?: TaskList;
   /** Dates (yyyy-MM-dd) on which this task was picked as one of "Today's 3". */
@@ -33,5 +39,8 @@ export interface AddTaskInput {
   behaviorId?: string;
   placeId?: string;
   placeDwellMin?: number;
+  appPackage?: string;
+  appLabel?: string;
+  timed?: true;
   list?: TaskList;
 }

@@ -1,0 +1,368 @@
+import { Ionicons } from '@expo/vector-icons';
+import React, { type ReactNode, useState } from 'react';
+import { Keyboard, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppUsage, type LaunchableApp } from '../../../../modules/app-usage';
+import { AppIcon } from '../../../components/app-icon';
+import { AppPickerModal } from '../../../components/app-picker-modal';
+import { BehaviorIcon } from '../../../components/behavior-icon';
+import { Button } from '../../../components/button';
+import { CheckboxRow } from '../../../components/checkbox-row';
+import { Text, TextInput } from '../../../components/text';
+import { useKeyboardVisible } from '../../../hooks/use-keyboard-visible';
+import { useBehaviorStore } from '../../../store/behavior-store';
+import type { BehaviorEntry } from '../../../types/behavior';
+import type { SavedPlace } from '../../../types/cue';
+import type { TaskStarValue } from '../../../types/task';
+import { findAutoTrackedBehavior } from '../../../utils/app-usage-utils';
+import { Colors } from '../../../utils/colors';
+import { getPlaceEmoji } from '../../../utils/cue-utils';
+import { formatPlaceDwell } from '../../../utils/place-task-utils';
+import { StarPicker } from './star-picker';
+import { TaskBehaviorPicker } from './task-behavior-picker';
+import { TaskPlaceScreen } from './task-place-screen';
+
+interface TaskEditorDialogProps {
+  editing: boolean;
+  title: string;
+  onTitleChange: (title: string) => void;
+  stars: TaskStarValue;
+  onStarsChange: (stars: TaskStarValue) => void;
+  behaviors: BehaviorEntry[];
+  selectedBehavior: BehaviorEntry | undefined;
+  onBehaviorSelect: (behaviorId: string | undefined) => void;
+  app: LaunchableApp | undefined;
+  onAppChange: (app: LaunchableApp | undefined) => void;
+  places: SavedPlace[];
+  selectedPlace: SavedPlace | undefined;
+  onPlaceSelect: (placeId: string | undefined) => void;
+  placeDwellMin: number;
+  onPlaceDwellChange: (minutes: number) => void;
+  timed: boolean;
+  onTimedChange: (timed: boolean) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+}
+
+type Picker = 'behavior' | 'app' | 'place';
+
+/** Add / edit a task in a dialog over the Tasks screen. Centred; docks to the top only while the keyboard is up. */
+export function TaskEditorDialog({
+  editing,
+  title,
+  onTitleChange,
+  stars,
+  onStarsChange,
+  behaviors,
+  selectedBehavior,
+  onBehaviorSelect,
+  app,
+  onAppChange,
+  places,
+  selectedPlace,
+  onPlaceSelect,
+  placeDwellMin,
+  onPlaceDwellChange,
+  timed,
+  onTimedChange,
+  onSubmit,
+  onCancel,
+}: TaskEditorDialogProps) {
+  const keyboardUp = useKeyboardVisible();
+  const insets = useSafeAreaInsets();
+  const allBehaviors = useBehaviorStore(s => s.behaviors);
+  const [picker, setPicker] = useState<Picker>();
+  const canSubmit = title.trim().length > 0 || selectedBehavior != null || app != null;
+  const canTime = selectedBehavior != null || app != null;
+  const appIsNew = app != null && !findAutoTrackedBehavior(allBehaviors, { packageName: app.packageName });
+  const timedTarget = app?.label ?? selectedBehavior?.name;
+
+  return (
+    <Modal
+      visible
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={onCancel}
+    >
+      <View
+        style={[
+          styles.overlay,
+          keyboardUp && styles.overlayTop,
+          { paddingTop: 16 + (keyboardUp ? insets.top : 0), paddingBottom: 16 + insets.bottom },
+        ]}
+      >
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={Keyboard.dismiss}
+          accessible={false}
+        />
+        <View style={styles.sheet}>
+          <View style={styles.header}>
+            <Text style={styles.heading}>{editing ? 'Edit task' : 'New task'}</Text>
+            <Pressable
+              onPress={onCancel}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+            >
+              <Ionicons
+                name="close"
+                size={22}
+                color={Colors.text.muted}
+              />
+            </Pressable>
+          </View>
+          <TextInput
+            style={styles.titleInput}
+            placeholder="Task name"
+            placeholderTextColor={Colors.text.faint}
+            value={title}
+            onChangeText={onTitleChange}
+            returnKeyType="done"
+            autoFocus={!editing}
+          />
+
+          <View style={styles.rows}>
+            <AttachRow
+              icon={
+                selectedBehavior ? (
+                  <BehaviorIcon
+                    behavior={selectedBehavior}
+                    size={20}
+                  />
+                ) : (
+                  <Ionicons
+                    name="extension-puzzle-outline"
+                    size={18}
+                    color={Colors.text.muted}
+                  />
+                )
+              }
+              label="Behavior"
+              value={selectedBehavior?.name}
+              onPress={() => setPicker('behavior')}
+              onClear={selectedBehavior ? () => onBehaviorSelect(undefined) : undefined}
+            />
+            {AppUsage != null && (
+              <AttachRow
+                icon={
+                  <Ionicons
+                    name="phone-portrait-outline"
+                    size={18}
+                    color={Colors.text.muted}
+                  />
+                }
+                label="App"
+                value={app?.label}
+                badge={appIsNew ? 'New' : undefined}
+                onPress={() => setPicker('app')}
+                onClear={app ? () => onAppChange(undefined) : undefined}
+              />
+            )}
+            <AttachRow
+              icon={
+                selectedPlace ? (
+                  <AppIcon
+                    value={getPlaceEmoji(selectedPlace)}
+                    style={styles.placeEmoji}
+                  />
+                ) : (
+                  <Ionicons
+                    name="location-outline"
+                    size={18}
+                    color={Colors.text.muted}
+                  />
+                )
+              }
+              label="Place"
+              value={
+                selectedPlace
+                  ? placeDwellMin > 0
+                    ? `${selectedPlace.name} · ${formatPlaceDwell(placeDwellMin)}`
+                    : selectedPlace.name
+                  : undefined
+              }
+              onPress={() => setPicker('place')}
+              onClear={selectedPlace ? () => onPlaceSelect(undefined) : undefined}
+              last
+            />
+          </View>
+
+          <CheckboxRow
+            variant="row"
+            label="Time it"
+            hint={
+              !canTime
+                ? 'Pick a behavior or an app to time this task.'
+                : timed
+                  ? `Adds a ▶ timer button${app ? ` that opens ${app.label}` : ''}. Ticking the task while it runs logs the time to ${timedTarget}.`
+                  : 'Adds a ▶ timer button to the task.'
+            }
+            checked={timed && canTime}
+            disabled={!canTime}
+            onToggle={() => onTimedChange(!timed)}
+          />
+
+          <View style={styles.footer}>
+            <StarPicker
+              value={stars}
+              onChange={onStarsChange}
+            />
+            <View style={styles.spacer} />
+            <Button
+              variant="ghost"
+              size="sm"
+              onPress={onCancel}
+              style={styles.footerButton}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onPress={onSubmit}
+              disabled={!canSubmit}
+              style={styles.footerButton}
+            >
+              {editing ? 'Save' : 'Add'}
+            </Button>
+          </View>
+        </View>
+      </View>
+
+      {picker === 'behavior' && (
+        <TaskBehaviorPicker
+          behaviors={behaviors}
+          selectedBehaviorId={selectedBehavior?.id}
+          onClose={() => setPicker(undefined)}
+          onPick={behaviorId => {
+            onBehaviorSelect(behaviorId);
+            setPicker(undefined);
+          }}
+        />
+      )}
+      <AppPickerModal
+        visible={picker === 'app'}
+        markNew
+        onClose={() => setPicker(undefined)}
+        onPick={picked => {
+          onAppChange(picked);
+          setPicker(undefined);
+        }}
+      />
+      {picker === 'place' && (
+        <TaskPlaceScreen
+          places={places}
+          selectedPlaceId={selectedPlace?.id}
+          onSelect={onPlaceSelect}
+          dwellMin={placeDwellMin}
+          onDwellChange={onPlaceDwellChange}
+          onClose={() => setPicker(undefined)}
+        />
+      )}
+    </Modal>
+  );
+}
+
+interface AttachRowProps {
+  icon: ReactNode;
+  label: string;
+  value: string | undefined;
+  badge?: string;
+  onPress: () => void;
+  onClear?: () => void;
+  last?: boolean;
+}
+
+function AttachRow({ icon, label, value, badge, onPress, onClear, last }: AttachRowProps) {
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.row, !last && styles.rowDivider, pressed && styles.pressed]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value ?? 'none'}`}
+    >
+      <View style={styles.rowIcon}>{icon}</View>
+      <Text
+        style={styles.rowLabel}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+      <Text
+        style={[styles.rowValue, !value && styles.rowValueNone]}
+        numberOfLines={1}
+      >
+        {value ?? 'None'}
+      </Text>
+      {badge ? (
+        <Text
+          style={styles.badge}
+          numberOfLines={1}
+        >
+          {badge}
+        </Text>
+      ) : null}
+      {onClear ? (
+        <Pressable
+          onPress={onClear}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={`Clear ${label}`}
+        >
+          <Ionicons
+            name="close"
+            size={18}
+            color={Colors.text.muted}
+          />
+        </Pressable>
+      ) : (
+        <Ionicons
+          name="chevron-forward"
+          size={18}
+          color={Colors.text.faint}
+        />
+      )}
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  overlay: { flex: 1, justifyContent: 'center', paddingHorizontal: 16, backgroundColor: 'rgba(0,0,0,0.65)' },
+  overlayTop: { justifyContent: 'flex-start' },
+  sheet: { backgroundColor: Colors.bg.card, borderRadius: 18, padding: 16, gap: 12 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  heading: { color: Colors.text.primary, fontSize: 17, fontWeight: '700' },
+  titleInput: {
+    height: 46,
+    backgroundColor: Colors.bg.input,
+    color: Colors.text.primary,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 0,
+    fontSize: 15,
+  },
+  rows: { backgroundColor: Colors.bg.input, borderRadius: 12, overflow: 'hidden' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 50, paddingHorizontal: 12 },
+  rowDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.bg.card },
+  rowIcon: { width: 26, alignItems: 'center' },
+  rowLabel: { width: 68, color: Colors.text.muted, fontSize: 13 },
+  rowValue: { flex: 1, color: Colors.text.primary, fontSize: 15 },
+  rowValueNone: { color: Colors.text.faint },
+  badge: {
+    color: Colors.text.muted,
+    backgroundColor: Colors.bg.card,
+    fontSize: 11,
+    fontWeight: '600',
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    overflow: 'hidden',
+  },
+  placeEmoji: { fontSize: 17 },
+  footer: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  spacer: { flex: 1 },
+  footerButton: { minWidth: 80 },
+  pressed: { opacity: 0.7 },
+});

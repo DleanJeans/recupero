@@ -3,16 +3,15 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppUsage, type LaunchableApp } from '../../../modules/app-usage';
 import { useAppUsagePermission } from '../../hooks/use-app-usage-permission';
-import { AppPickerModal } from '../../screens/behavior-form-screen/components/app-picker-modal';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useNeedsStore } from '../../store/needs-store';
 import { useSettingsStore } from '../../store/settings-store';
 import type { NeedId } from '../../types/need';
+import { ensureAppBehavior } from '../../utils/app-behavior';
 import { syncAppUsage } from '../../utils/app-usage-sync';
 import {
   fetchSiteName,
   findAutoTrackedBehavior,
-  getAutoTrackApp,
   getAutoTrackSite,
   getSiteFallbackName,
   getSiteFaviconUri,
@@ -21,6 +20,7 @@ import {
 import { Colors } from '../../utils/colors';
 import { parseDecimalInput } from '../../utils/metadata-calculation-utils';
 import { getDefaultRefill } from '../../utils/need-utils';
+import { AppPickerModal } from '../app-picker-modal';
 import { Button } from '../button';
 import { CheckboxRow } from '../checkbox-row';
 import { FullScreenModal } from '../full-screen-modal';
@@ -69,49 +69,43 @@ export function NeedAppSourceModal({ needId, needLabel, onClose }: NeedAppSource
   if (!AppUsage) return null;
 
   const addTracked = async (kind: 'app' | 'site') => {
-    const store = useBehaviorStore.getState();
-    const cutoff = useSettingsStore.getState().dayCutoffHour;
-    const target = kind === 'app' && app ? { packageName: app.packageName } : { domain: normalizedSite };
-    let iconUri: string | null | undefined;
-    if (kind === 'app' && app) iconUri = await AppUsage?.getAppIcon?.(app.packageName).catch(() => null);
-    if (kind === 'site') iconUri = getSiteFaviconUri(normalizedSite);
-    const displayName = kind === 'site' ? siteName.trim() || normalizedSite : '';
-    let id = findAutoTrackedBehavior(store.behaviors, target)?.id;
-    if (id && kind === 'app') {
-      const existing = store.behaviors.find(b => b.id === id)?.autoTrackApp;
-      if (existing && Boolean(existing.mediaOnly) !== mediaOnly)
-        store.updateBehavior(id, { autoTrackApp: { ...existing, mediaOnly: mediaOnly || undefined } });
-    }
-    if (id && kind === 'site' && displayName) store.updateBehavior(id, { name: displayName });
-    if (!id) {
-      const baseApp = kind === 'app' ? getAutoTrackApp(app, undefined, cutoff) : undefined;
-      const autoApp = baseApp && mediaOnly ? { ...baseApp, mediaOnly: true } : baseApp;
-      const autoSite = kind === 'site' ? getAutoTrackSite(normalizedSite, undefined, cutoff) : undefined;
-      store.addBehavior(
-        kind === 'app' ? (app?.label ?? '') : displayName,
-        'neutral',
-        iconUri ? { uri: iconUri } : undefined,
-        0,
-        'rest',
-        undefined,
-        undefined,
-        false,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        autoApp,
-        autoSite,
-      );
-      const behaviors = useBehaviorStore.getState().behaviors;
-      id = behaviors[behaviors.length - 1]?.id;
+    let id: string | undefined;
+    if (kind === 'app') {
+      if (app) id = await ensureAppBehavior(app, { mediaOnly });
+    } else {
+      const store = useBehaviorStore.getState();
+      const cutoff = useSettingsStore.getState().dayCutoffHour;
+      const displayName = siteName.trim() || normalizedSite;
+      id = findAutoTrackedBehavior(store.behaviors, { domain: normalizedSite })?.id;
+      if (id && siteName.trim()) store.updateBehavior(id, { name: displayName });
+      if (!id) {
+        const iconUri = getSiteFaviconUri(normalizedSite);
+        store.addBehavior(
+          displayName,
+          'neutral',
+          { uri: iconUri },
+          0,
+          'rest',
+          undefined,
+          undefined,
+          false,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          getAutoTrackSite(normalizedSite, undefined, cutoff),
+        );
+        const behaviors = useBehaviorStore.getState().behaviors;
+        id = behaviors[behaviors.length - 1]?.id;
+      }
     }
     if (id)
       useNeedsStore
@@ -256,6 +250,7 @@ export function NeedAppSourceModal({ needId, needLabel, onClose }: NeedAppSource
       </ScrollView>
       <AppPickerModal
         visible={pickerOpen}
+        markNew
         onClose={() => setPickerOpen(false)}
         onPick={picked => {
           setPickerOpen(false);

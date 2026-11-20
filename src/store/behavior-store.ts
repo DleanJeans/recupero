@@ -161,11 +161,22 @@ interface BehaviorStore {
     updates: Partial<
       Pick<
         TaskEntry,
-        'title' | 'stars' | 'scheduledDate' | 'source' | 'behaviorId' | 'placeId' | 'placeDwellMin' | 'list'
+        | 'title'
+        | 'stars'
+        | 'scheduledDate'
+        | 'source'
+        | 'behaviorId'
+        | 'placeId'
+        | 'placeDwellMin'
+        | 'appPackage'
+        | 'appLabel'
+        | 'timed'
+        | 'list'
       >
     >,
   ) => void;
-  toggleTaskCompletion: (taskId: string, dateStr: string) => void;
+  /** `timed` (a running task timer) makes the completion log span that time instead of being a single tick. */
+  toggleTaskCompletion: (taskId: string, dateStr: string, timed?: { start: number; end: number }) => void;
   /** Pick or unpick a task as one of "Today's 3" for the date. */
   toggleTaskFocus: (taskId: string, dateStr: string) => void;
   removeTask: (taskId: string) => void;
@@ -509,6 +520,9 @@ export const useBehaviorStore = create<BehaviorStore>()(
               behaviorId: input.behaviorId,
               placeId: input.placeId,
               placeDwellMin: input.placeDwellMin,
+              appPackage: input.appPackage,
+              appLabel: input.appLabel,
+              timed: input.timed,
               list: input.list,
               completedDates: [],
               completedAtByDate: undefined,
@@ -540,7 +554,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
             return { ...task, focusDates: next.length > 0 ? next : undefined };
           }),
         })),
-      toggleTaskCompletion: (taskId, dateStr) =>
+      toggleTaskCompletion: (taskId, dateStr, timed) =>
         set(state => {
           const task = (state.tasks ?? []).find(t => t.id === taskId);
           if (!task) return state;
@@ -549,7 +563,8 @@ export const useBehaviorStore = create<BehaviorStore>()(
           const logIdToRemove = wasComplete ? task.completionLogIds?.[dateStr] : undefined;
           const logIdToAdd = !wasComplete && task.behaviorId ? uuidv4() : undefined;
           const dayCutoffHour = useSettingsStore.getState().dayCutoffHour;
-          const taskTimestamp = timestampForTaskDate(dateStr, dayCutoffHour);
+          const taskTimestamp = timed && !wasComplete ? timed.end : timestampForTaskDate(dateStr, dayCutoffHour);
+          const logStart = timed && !wasComplete ? timed.start : taskTimestamp;
 
           const tasks = (state.tasks ?? []).map(t => {
             if (t.id !== taskId) return t;
@@ -599,7 +614,8 @@ export const useBehaviorStore = create<BehaviorStore>()(
                       ...b.logs,
                       {
                         id: logIdToAdd,
-                        timestamp: taskTimestamp,
+                        timestamp: logStart,
+                        ...(logStart < taskTimestamp ? { endTimestamp: taskTimestamp } : {}),
                         metadata,
                       },
                     ],

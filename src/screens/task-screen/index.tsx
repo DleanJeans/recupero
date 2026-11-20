@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import type { LaunchableApp } from '../../../modules/app-usage';
 import { Button } from '../../components/button';
-
 import { SafeAreaView } from '../../components/safe-area-view';
 import { TabHeader } from '../../components/tab-header';
 import { Text } from '../../components/text';
@@ -12,7 +12,10 @@ import { useBehaviorStore } from '../../store/behavior-store';
 import { useCuesStore } from '../../store/cues-store';
 import { type TaskTab, useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
+import { useTimerStore } from '../../store/timer-store';
 import type { TaskEntry, TaskList, TaskStarValue } from '../../types/task';
+import { ensureAppBehavior } from '../../utils/app-behavior';
+import { syncAppUsage } from '../../utils/app-usage-sync';
 import { getActiveBehaviors } from '../../utils/archive-utils';
 import { getCalendarTaskCompletionMetrics } from '../../utils/calendar-metrics';
 import { Colors } from '../../utils/colors';
@@ -37,7 +40,7 @@ import { AddBehaviorFab } from '../home-screen/components/add-behavior-fab';
 import { FocusStreakStrip } from './components/focus-streak-strip';
 import { TaskActionSheet } from './components/task-action-sheet';
 import { TaskCard } from './components/task-card';
-import { TaskComposer } from './components/task-composer';
+import { TaskEditorDialog } from './components/task-editor-dialog';
 import { TaskTabs } from './components/task-tabs';
 import { type TodayPickCandidate, TodayPickSheet } from './components/today-pick-sheet';
 
@@ -59,11 +62,12 @@ export function TaskScreen() {
   const setTab = useScreenUiStore(s => s.setTaskScreenTab);
   const selectedDate = taskScreenSelectedDate ?? todayStr;
   const [title, setTitle] = useState('');
-  const [behaviorQuery, setBehaviorQuery] = useState('');
   const [stars, setStars] = useState<TaskStarValue>(1);
   const [selectedBehaviorId, setSelectedBehaviorId] = useState<string | undefined>();
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | undefined>();
   const [placeDwellMin, setPlaceDwellMin] = useState(DEFAULT_PLACE_DWELL_MIN);
+  const [selectedApp, setSelectedApp] = useState<LaunchableApp>();
+  const [timed, setTimed] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | undefined>();
   const [menuTaskId, setMenuTaskId] = useState<string | undefined>();
@@ -166,8 +170,9 @@ export function TaskScreen() {
 
   const resetComposer = () => {
     setTitle('');
-    setBehaviorQuery('');
     setSelectedBehaviorId(undefined);
+    setSelectedApp(undefined);
+    setTimed(false);
     setSelectedPlaceId(undefined);
     setPlaceDwellMin(DEFAULT_PLACE_DWELL_MIN);
     setEditingTaskId(undefined);
@@ -178,19 +183,27 @@ export function TaskScreen() {
     setComposerOpen(false);
   };
 
-  const handleSubmitTask = () => {
+  const handleSubmitTask = async () => {
     const trimmedTitle = title.trim();
-    const taskTitle = trimmedTitle || selectedBehavior?.name.trim() || '';
+    const app = selectedApp;
+    const taskTitle = trimmedTitle || selectedBehavior?.name.trim() || app?.label || '';
     if (!taskTitle) return;
-    const isBehaviorOnlyTask = !trimmedTitle && selectedBehavior != null;
+    const isTimed = timed && (selectedBehavior != null || app != null);
+    // Picking an app makes (or reuses) the behavior that tracks it, shared with Needs.
+    const appBehaviorId = app ? await ensureAppBehavior(app, { trackDuration: isTimed }) : undefined;
+    const behaviorId = selectedBehavior?.id ?? appBehaviorId;
+    const isBehaviorOnlyTask = !trimmedTitle && behaviorId != null;
     const hasPlace = selectedPlaceId != null && placeById.has(selectedPlaceId);
     const nextTask = {
       title: taskTitle,
       stars: stars === 0 ? (1 as const) : stars,
       source: isBehaviorOnlyTask ? ('behavior' as const) : ('oneOff' as const),
-      behaviorId: selectedBehavior?.id,
+      behaviorId,
       placeId: hasPlace ? selectedPlaceId : undefined,
       placeDwellMin: hasPlace ? placeDwellMin : undefined,
+      appPackage: app?.packageName,
+      appLabel: app?.label,
+      timed: isTimed ? (true as const) : undefined,
     };
 
     if (editingTaskId) {
@@ -203,6 +216,7 @@ export function TaskScreen() {
       });
     }
     closeComposer();
+    if (app && appBehaviorId && !selectedBehavior) syncAppUsage();
     if (nextTask.placeId) {
       requestPlaceTaskPermissions()
         .then(() => resyncReminders())
@@ -219,10 +233,15 @@ export function TaskScreen() {
   const openEditComposer = (task: TaskEntry) => {
     const behavior = behaviorOf(task);
     setTitle(task.source === 'behavior' ? '' : task.title);
-    setBehaviorQuery(behavior?.name ?? '');
     setStars(task.stars === 0 ? 1 : task.stars);
-    setSelectedBehaviorId(task.behaviorId);
+    // A behavior that only came from the task's app shows on the App row, not again on the Behavior row.
+    const behaviorIsApp = task.appPackage != null && behavior?.autoTrackApp?.packageName === task.appPackage;
+    setSelectedBehaviorId(behaviorIsApp ? undefined : task.behaviorId);
     setSelectedPlaceId(task.placeId);
+    setSelectedApp(
+      task.appPackage ? { packageName: task.appPackage, label: task.appLabel ?? task.appPackage } : undefined,
+    );
+    setTimed(task.timed === true);
     setPlaceDwellMin(getPlaceDwellMin(task));
     setEditingTaskId(task.id);
     setComposerOpen(true);
@@ -245,14 +264,26 @@ export function TaskScreen() {
     ]);
   };
 
+  /** Ticking a timed task while its timer runs stops the timer and logs the time it ran. */
+  const toggleTask = useCallback(
+    (task: TaskEntry, date: string) => {
+      const ticking = !isTaskCompleteOnDate(task, date);
+      const range =
+        ticking && task.timed && task.behaviorId
+          ? useTimerStore.getState().takeRunning(task.behaviorId, Date.now())
+          : undefined;
+      toggleTaskCompletion(task.id, date, range);
+    },
+    [toggleTaskCompletion],
+  );
   const handleTodayToggle = useCallback(
-    (task: TaskEntry) => toggleTaskCompletion(task.id, selectedDate),
-    [selectedDate, toggleTaskCompletion],
+    (task: TaskEntry) => toggleTask(task, selectedDate),
+    [selectedDate, toggleTask],
   );
   /** Shopping and Later items tick off today, and untick on the day they were done. */
   const handleListToggle = useCallback(
-    (task: TaskEntry) => toggleTaskCompletion(task.id, lastCompletedDate(task) ?? todayStr),
-    [todayStr, toggleTaskCompletion],
+    (task: TaskEntry) => toggleTask(task, lastCompletedDate(task) ?? todayStr),
+    [todayStr, toggleTask],
   );
   const openMenu = useCallback((task: TaskEntry) => setMenuTaskId(task.id), []);
 
@@ -270,7 +301,7 @@ export function TaskScreen() {
       complete={complete}
       focused={options.focused}
       note={options.note}
-      openAppPackage={options.openAppPackage}
+      openAppPackage={task.appPackage ?? options.openAppPackage}
       onToggle={onToggle}
       onLongPress={openMenu}
     />
@@ -383,30 +414,6 @@ export function TaskScreen() {
         </>
       )}
 
-      {composerOpen && (
-        <View style={styles.composer}>
-          <TaskComposer
-            title={title}
-            behaviorQuery={behaviorQuery}
-            stars={stars}
-            behaviors={availableBehaviors}
-            selectedBehaviorId={selectedBehaviorId}
-            onTitleChange={setTitle}
-            onBehaviorQueryChange={setBehaviorQuery}
-            onStarsChange={setStars}
-            onBehaviorSelect={setSelectedBehaviorId}
-            places={places}
-            selectedPlaceId={selectedPlaceId}
-            onPlaceSelect={setSelectedPlaceId}
-            placeDwellMin={placeDwellMin}
-            onPlaceDwellChange={setPlaceDwellMin}
-            onAdd={handleSubmitTask}
-            onCancel={closeComposer}
-            submitLabel={editingTaskId ? 'Save' : 'Add'}
-          />
-        </View>
-      )}
-
       <ScrollView
         style={styles.list}
         contentContainerStyle={styles.listContent}
@@ -430,6 +437,30 @@ export function TaskScreen() {
             onPress={openAddComposer}
           />
         </View>
+      )}
+
+      {composerOpen && (
+        <TaskEditorDialog
+          editing={editingTaskId != null}
+          title={title}
+          onTitleChange={setTitle}
+          stars={stars}
+          onStarsChange={setStars}
+          behaviors={availableBehaviors}
+          selectedBehavior={selectedBehavior}
+          onBehaviorSelect={setSelectedBehaviorId}
+          app={selectedApp}
+          onAppChange={setSelectedApp}
+          places={places}
+          selectedPlace={selectedPlaceId ? placeById.get(selectedPlaceId) : undefined}
+          onPlaceSelect={setSelectedPlaceId}
+          placeDwellMin={placeDwellMin}
+          onPlaceDwellChange={setPlaceDwellMin}
+          timed={timed}
+          onTimedChange={setTimed}
+          onSubmit={handleSubmitTask}
+          onCancel={closeComposer}
+        />
       )}
 
       {menuTask && (
@@ -515,10 +546,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 12,
-  },
-  composer: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
   },
   list: {
     flex: 1,

@@ -15,6 +15,7 @@ import {
   normalizeSiteDomain,
   parseSiteName,
   siteMatchesDomain,
+  sumAppUsage,
 } from '../src/utils/app-usage-utils';
 
 const MIN = 60_000;
@@ -270,5 +271,17 @@ describe('mergeCloseAutoLogs', () => {
     ];
     const { logs } = mergeCloseAutoLogs(input, 3 * MIN, new Set(['e']));
     expect(logs).toHaveLength(6);
+  });
+});
+
+describe('sumAppUsage', () => {
+  it('adds up time per app', () => {
+    const totals = sumAppUsage([
+      { packageName: 'yt', start: 0, end: 60_000 },
+      { packageName: 'yt', start: 100_000, end: 160_000 },
+      { packageName: 'zalo', start: 0, end: 30_000 },
+    ]);
+    expect(totals.get('yt')).toBe(120_000);
+    expect(totals.get('zalo')).toBe(30_000);
   });
 });

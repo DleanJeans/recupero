@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { AppUsage } from '../../../../modules/app-usage';
+import { AppPickerModal } from '../../../components/app-picker-modal';
 import { Button } from '../../../components/button';
 import { Text } from '../../../components/text';
 import { useAppUsagePermission } from '../../../hooks/use-app-usage-permission';
 import type { CueTrigger } from '../../../types/cue';
 import { isAppOpenWatchingAvailable } from '../../../utils/app-open-watches';
 import { Colors } from '../../../utils/colors';
-import { AppPickerModal } from '../../behavior-form-screen/components/app-picker-modal';
 
 type AppTrigger = Extract<CueTrigger, { type: 'app' }>;
 

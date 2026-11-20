@@ -343,3 +343,12 @@ export function mergeCloseAutoLogs(
   }
   return changed ? { logs: result, changed } : { logs, changed };
 }
+
+/** Milliseconds of screen time per app package, summed over sessions. */
+export function sumAppUsage(sessions: AppUsageSession[]): Map<string, number> {
+  const totals = new Map<string, number>();
+  for (const session of sessions) {
+    totals.set(session.packageName, (totals.get(session.packageName) ?? 0) + (session.end - session.start));
+  }
+  return totals;
+}
