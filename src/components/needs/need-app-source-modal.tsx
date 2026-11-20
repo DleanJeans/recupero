@@ -45,7 +45,7 @@ export function NeedAppSourceModal({ needId, needLabel, onClose }: NeedAppSource
   const [siteNameEdited, setSiteNameEdited] = useState(false);
   const defaultRefill = getDefaultRefill(needId);
   const [minutesText, setMinutesText] = useState(
-    defaultRefill.mode === 'duration' ? String(defaultRefill.fullMinutes) : '120',
+    defaultRefill.mode === 'duration' ? String(defaultRefill.fullMinutes) : '100',
   );
   const fullMinutes = parseDecimalInput(minutesText);
   const normalizedSite = normalizeSiteDomain(site);

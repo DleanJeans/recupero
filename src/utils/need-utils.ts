@@ -607,10 +607,10 @@ export function getDefaultRefill(needId: NeedId): NeedRefill {
   if (needId === 'hygiene') return { mode: 'set' };
   if (needId === 'energy') return { mode: 'duration', fullMinutes: 8 * 60 };
   if (needId === 'thirst') return { mode: 'add', amount: 40 };
-  if (needId === 'fun') return { mode: 'duration', fullMinutes: 120 };
-  if (needId === 'social') return { mode: 'duration', fullMinutes: 120 };
-  if (needId === 'comfort') return { mode: 'duration', fullMinutes: 60 };
-  if (needId === 'movement') return { mode: 'duration', fullMinutes: 45 };
+  if (needId === 'fun') return { mode: 'duration', fullMinutes: 100 };
+  if (needId === 'social') return { mode: 'duration', fullMinutes: 100 };
+  if (needId === 'comfort') return { mode: 'duration', fullMinutes: 100 };
+  if (needId === 'movement') return { mode: 'duration', fullMinutes: 100 };
   if (needId === 'tidiness') return { mode: 'add', amount: 30 };
   return { mode: 'add', amount: 60 };
 }
