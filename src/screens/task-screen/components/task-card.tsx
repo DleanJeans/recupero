@@ -64,9 +64,9 @@ function TaskCardComponent({
 
   const handlePlay = () => {
     if (!behavior || !canTrack) return;
-    startTimer(behavior.id, Date.now(), task.title);
+    const opened = openAppPackage ? launchApp(openAppPackage) : false;
+    startTimer(behavior.id, Date.now(), task.title, opened ? openAppPackage : undefined);
     navigation.navigate('Timer');
-    if (openAppPackage) launchApp(openAppPackage);
   };
 
   return (

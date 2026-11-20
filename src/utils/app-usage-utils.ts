@@ -386,3 +386,34 @@ export function formatSiteDebug(json: string, now = Date.now()): string {
     return 'Could not read the watcher report.';
   }
 }
+
+/** How long an app must stay closed before a timer that opened it stops by itself. */
+export const APP_TIMER_CLOSE_GRACE_MS = 2 * 60_000;
+
+/**
+ * When `packageName` was last closed, for a timer that started at `since`: the end of its last session
+ * after `since`, once it has stayed closed for `graceMs`. Undefined while the app is still on screen,
+ * if it was never opened after `since`, or if it was closed too recently (it may come right back).
+ */
+export function getAppClosedAt(
+  events: AppUsageEvent[],
+  packageName: string,
+  since: number,
+  now: number,
+  graceMs = APP_TIMER_CLOSE_GRACE_MS,
+): number | undefined {
+  const sorted = [...events].sort((a, b) => a.timestamp - b.timestamp);
+  let foreground: string | null = null;
+  for (const event of sorted) {
+    if (event.type === 'resume') foreground = event.packageName;
+    else if (event.type === 'screen_off' || (event.type === 'pause' && event.packageName === foreground))
+      foreground = null;
+  }
+  if (foreground === packageName) return undefined;
+  const sessions = buildAppSessions(sorted).filter(
+    session => session.packageName === packageName && session.end > since,
+  );
+  const last = sessions[sessions.length - 1];
+  if (!last || now - last.end < graceMs) return undefined;
+  return last.end;
+}

@@ -14,6 +14,7 @@ import { NeedFillOverlayHost } from './src/components/need-fill-overlay-host';
 import { ReminderToastHost } from './src/components/reminder-toast-host';
 import { Text } from './src/components/text';
 import { useAppFonts } from './src/hooks/use-app-fonts';
+import { useAppTimerAutoStop } from './src/hooks/use-app-timer-auto-stop';
 import { useAppUsageSync } from './src/hooks/use-app-usage-sync';
 import { useCheckInNudges } from './src/hooks/use-checkin-nudges';
 import { useDeferredBottomNavNavigation } from './src/hooks/use-deferred-bottom-nav-navigation';
@@ -123,6 +124,7 @@ export default function App() {
   const { pendingRouteName, deferNavigation, completeNavigation } = useDeferredBottomNavNavigation<BottomNavRoute>();
   useAppUsageSync(storesReady);
   useTimerOverlay(storesReady);
+  useAppTimerAutoStop(storesReady);
   useGoogleHealthSync(storesReady);
   useReminderEngine(storesReady, navigationRef);
   useNeedNudges(storesReady, navigationRef);

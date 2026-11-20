@@ -6,6 +6,7 @@ import {
   buildAppSessions,
   buildMediaSessions,
   buildSiteSessions,
+  getAppClosedAt,
   getAppUsageQueryStart,
   getAutoTrackApp,
   getAutoTrackSite,
@@ -283,5 +284,42 @@ describe('sumAppUsage', () => {
     ]);
     expect(totals.get('yt')).toBe(120_000);
     expect(totals.get('zalo')).toBe(30_000);
+  });
+});
+
+describe('getAppClosedAt', () => {
+  const ev = (packageName: string, type: AppUsageEvent['type'], timestamp: number): AppUsageEvent => ({
+    packageName,
+    type,
+    timestamp,
+  });
+  const min = 60_000;
+
+  it('returns when the app was left, once it stayed closed past the grace', () => {
+    const events = [ev('shop', 'resume', 1 * min), ev('shop', 'pause', 20 * min), ev('zalo', 'resume', 20 * min)];
+    expect(getAppClosedAt(events, 'shop', 0, 30 * min)).toBe(20 * min);
+  });
+
+  it('waits while the app is still on screen or was closed moments ago', () => {
+    expect(getAppClosedAt([ev('shop', 'resume', 1 * min)], 'shop', 0, 30 * min)).toBeUndefined();
+    const justLeft = [ev('shop', 'resume', 1 * min), ev('shop', 'pause', 29 * min)];
+    expect(getAppClosedAt(justLeft, 'shop', 0, 30 * min)).toBeUndefined();
+  });
+
+  it('ignores an app never opened after the timer started', () => {
+    const before = [ev('shop', 'resume', 1 * min), ev('shop', 'pause', 2 * min)];
+    expect(getAppClosedAt(before, 'shop', 5 * min, 30 * min)).toBeUndefined();
+  });
+
+  it('uses the last visit when the app was left and opened again', () => {
+    const events = [
+      ev('shop', 'resume', 1 * min),
+      ev('shop', 'pause', 3 * min),
+      ev('zalo', 'resume', 3 * min),
+      ev('zalo', 'pause', 5 * min),
+      ev('shop', 'resume', 5 * min),
+      ev('shop', 'pause', 12 * min),
+    ];
+    expect(getAppClosedAt(events, 'shop', 0, 30 * min)).toBe(12 * min);
   });
 });

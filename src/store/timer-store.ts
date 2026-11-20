@@ -10,6 +10,8 @@ export interface TimerSession {
   stopTimestamp: number | undefined;
   pendingLogBehaviorLogCount: number | undefined;
   pausedAt: number | undefined;
+  /** App opened with this timer. Leaving that app stops the timer and logs it (see useAppTimerAutoStop). */
+  appPackage?: string;
 }
 
 interface TimerStore {
@@ -39,7 +41,9 @@ interface TimerStore {
   pendingLogBehaviorLogCount: number | undefined;
   /** Set while paused: the segment before it was already saved as its own log, and Resume starts a new one. */
   pausedAt: number | undefined;
-  start: (behaviorId: string, timestamp?: number, initialNotes?: string) => void;
+  /** App opened with the current timer, if any. */
+  appPackage: string | undefined;
+  start: (behaviorId: string, timestamp?: number, initialNotes?: string, appPackage?: string) => void;
   setLockedBehavior: (behaviorId: string) => void;
   setStart: (timestamp: number) => void;
   rewindStartMinute: () => void;
@@ -60,6 +64,7 @@ const EMPTY_CURRENT = {
   stopTimestamp: undefined,
   pendingLogBehaviorLogCount: undefined,
   pausedAt: undefined,
+  appPackage: undefined,
 };
 
 /** A timer that has started or is paused; a behavior merely picked on the Timer screen is not worth keeping. */
@@ -76,6 +81,7 @@ function currentSession(state: TimerStore): TimerSession | undefined {
     stopTimestamp: state.stopTimestamp,
     pendingLogBehaviorLogCount: state.pendingLogBehaviorLogCount,
     pausedAt: state.pausedAt,
+    appPackage: state.appPackage,
   };
 }
 
@@ -97,13 +103,14 @@ export const useTimerStore = create<TimerStore>()(
       },
       takeRunning: (behaviorId, now) => {
         const state = get();
-        if (state.lockedBehaviorId === behaviorId && state.startTimestamp != null) {
+        if (state.lockedBehaviorId === behaviorId && state.startTimestamp != null && state.stopTimestamp == null) {
           const range = { start: state.startTimestamp, end: now };
           set({ ...EMPTY_CURRENT });
           return range;
         }
         const parked = state.parked.find(
-          session => session.lockedBehaviorId === behaviorId && session.startTimestamp != null,
+          session =>
+            session.lockedBehaviorId === behaviorId && session.startTimestamp != null && session.stopTimestamp == null,
         );
         if (!parked || parked.startTimestamp == null) return undefined;
         set({ parked: state.parked.filter(session => session !== parked) });
@@ -119,7 +126,8 @@ export const useTimerStore = create<TimerStore>()(
       stopTimestamp: undefined,
       pendingLogBehaviorLogCount: undefined,
       pausedAt: undefined,
-      start: (behaviorId, timestamp = Date.now(), initialNotes) => {
+      appPackage: undefined,
+      start: (behaviorId, timestamp = Date.now(), initialNotes, appPackage) => {
         const state = get();
         // Already open in the background: bring it forward instead of starting it twice.
         if (state.parked.some(session => session.lockedBehaviorId === behaviorId)) {
@@ -131,6 +139,7 @@ export const useTimerStore = create<TimerStore>()(
         set({
           lockedBehaviorId: behaviorId,
           initialNotes,
+          appPackage,
           startTimestamp: timestamp,
           stopTimestamp: undefined,
           pendingLogBehaviorLogCount: undefined,
@@ -138,7 +147,10 @@ export const useTimerStore = create<TimerStore>()(
           parked: current ? [...state.parked, current] : state.parked,
         });
       },
-      setLockedBehavior: behaviorId => set({ lockedBehaviorId: behaviorId }),
+      setLockedBehavior: behaviorId =>
+        set(state =>
+          state.lockedBehaviorId === behaviorId ? {} : { lockedBehaviorId: behaviorId, appPackage: undefined },
+        ),
       setStart: timestamp => set({ startTimestamp: timestamp, stopTimestamp: undefined, pausedAt: undefined }),
       rewindStartMinute: () =>
         set(state => (state.startTimestamp == null ? {} : { startTimestamp: state.startTimestamp - 60_000 })),
@@ -167,6 +179,7 @@ export const useTimerStore = create<TimerStore>()(
           stopTimestamp: undefined,
           pendingLogBehaviorLogCount: undefined,
           pausedAt: undefined,
+          appPackage: undefined,
         }),
     }),
     {
