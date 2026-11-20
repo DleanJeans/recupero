@@ -83,13 +83,13 @@ describe("Today's 3", () => {
     const today = '2026-11-19';
     const shopee = new Map([['s', { name: 'Shopee-ng' }]]);
     const tasks = [
-      makeTask({ id: 'n1' }),
-      makeTask({ id: 'n2' }),
-      makeTask({ id: 'buy', behaviorId: 's' }),
-      makeTask({ id: 'later', list: 'someday' }),
+      makeTask({ id: 'n1', scheduledDate: today }),
+      makeTask({ id: 'n2', scheduledDate: today }),
+      makeTask({ id: 'buy', behaviorId: 's', scheduledDate: today }),
+      makeTask({ id: 'later', list: 'someday', scheduledDate: today }),
     ];
     expect(getUncompletedTaskCountForDate(tasks, today, 0, shopee)).toBe(2);
-    const withPick = [...tasks, makeTask({ id: 'p', focusDates: [today] })];
+    const withPick = [...tasks, makeTask({ id: 'p', focusDates: [today], scheduledDate: today })];
     expect(getUncompletedTaskCountForDate(withPick, today, 0, shopee)).toBe(1);
   });
 });
