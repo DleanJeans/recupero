@@ -51,11 +51,13 @@ export function useTimerOverlay(enabled: boolean) {
         id => {
           const behavior = byId.get(id);
           if (!behavior) return undefined;
+          // Also shown by default when a Need is being filled from this app's time (e.g. Fun apps).
+          const fillsNeed = needs.some(n => n.timerFullInMs != null && n.timerBehaviorNames?.includes(behavior.name));
           // XP logged so far; the pill adds 1 XP per minute on the clock itself.
           const xp = behavior.xpEnabled ? getEffectiveXp(behavior, now, dayCutoffHour) : undefined;
           return {
             icon: iconText(behavior.icon) || undefined,
-            tracksApp: behavior.autoTrackApp ? true : undefined,
+            tracksApp: behavior.autoTrackApp || fillsNeed ? true : undefined,
             level: xp == null ? undefined : { inLevel: getLevelXp(xp), forLevel: xpRequiredForLevel(getLevel(xp)) },
           };
         },
