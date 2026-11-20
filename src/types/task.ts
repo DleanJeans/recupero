@@ -18,7 +18,7 @@ export interface TaskEntry {
   appPackage?: string;
   /** App name, kept so it shows even if the app is uninstalled. */
   appLabel?: string;
-  /** "Time it": the task shows a ▶ timer button, and ticking it while that timer runs logs the time. */
+  /** "Track duration": the task shows a ▶ timer button, and ticking it while that timer runs logs the time. */
   timed?: true;
   /** Tasks tab this task lives on. Unset means derived, see getTaskList. */
   list?: TaskList;

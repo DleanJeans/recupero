@@ -191,7 +191,7 @@ export function TaskEditorDialog({
 
           <CheckboxRow
             variant="row"
-            label="Time it"
+            label="Track duration"
             hint={
               !canTime
                 ? 'Pick a behavior or an app to time this task.'

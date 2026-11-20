@@ -37,7 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-21',
     items: [
-      'In the task dialog, picking a behavior that tracks an app fills the App row with that app and ticks Time it. Picking an app also ticks Time it, and every behavior made for an app now has duration XP on.',
+      'In the task dialog, picking a behavior that tracks an app fills the App row with that app and ticks Track duration. Picking an app also ticks it, and every behavior made for an app now has duration XP on.',
       {
         text: 'On the Timer screen, tap "since 5:08 AM" to set the start time with the time picker (replaces the -1 min button). A time later than now means yesterday. "Start another timer" is no longer hidden under the Android navigation bar.',
         screen: 'Timer',
@@ -46,7 +46,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       'Website tracking in Firefox is more tolerant: it finds the address bar in newer Firefox versions and Firefox forks (Iceraven, Fennec, Mull, LibreWolf, Tor). New "What does the watcher see?" button next to the website field shows what the watcher last read, so you can tell why a site isn\'t counted. Needs a new app install to take effect.',
       'Adding or editing a task now opens a dialog over the Tasks screen instead of pushing the list down. Behavior, App and Place are rows that each open their own full-screen picker.',
       'Tasks can have an app: the ▶ button opens it with a timer. The first time you pick an app, Recupero makes a behavior that tracks its screen time; if Needs (e.g. Fun) already tracks that app, the task reuses that behavior instead.',
-      'New "Time it" checkbox on tasks: adds a ▶ timer button (and turns on duration XP for the app\'s behavior). Ticking the task while its timer runs logs the time it took.',
+      'New "Track duration" checkbox on tasks: adds a ▶ timer button (and turns on duration XP for the app\'s behavior). Ticking the task while its timer runs logs the time it took.',
       "A timer that opened an app (a task's ▶, the Shopping play button, or a timer for an app-tracked behavior) now stops by itself once you leave that app for 2 minutes, and logs the time up to when you left it.",
       '"Choose an app" is now one full-screen list everywhere (tasks, Needs app usage, behavior auto-tracking, reminders, Shopping timer app): your most-used apps this week come first, and apps that already have a behavior show its name.',
     ],
