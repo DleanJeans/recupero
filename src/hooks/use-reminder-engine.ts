@@ -131,7 +131,7 @@ export function useReminderEngine(
       syncIfChanged();
       const { cues, places } = useCuesStore.getState();
       for (const { behaviorId } of getNewlyLoggedBehaviors(previous.behaviors, state.behaviors)) {
-        for (const { cue, delayMin } of getRemindersForLoggedBehavior(cues, behaviorId)) {
+        for (const { cue, delayMin } of getRemindersForLoggedBehavior(cues, behaviorId, state.behaviors)) {
           scheduleDelayedReminder(cue, delayMin, places, state.behaviors).catch(error =>
             console.warn('Habit reminder failed', error),
           );
@@ -144,7 +144,7 @@ export function useReminderEngine(
       const { cues, places } = useCuesStore.getState();
       const { behaviors } = useBehaviorStore.getState();
       for (const behaviorId of getNewlySavedPendingBehaviorIds(previous.pendingLogs, state.pendingLogs)) {
-        for (const { cue, delayMin } of getRemindersForLoggedBehavior(cues, behaviorId)) {
+        for (const { cue, delayMin } of getRemindersForLoggedBehavior(cues, behaviorId, behaviors)) {
           scheduleDelayedReminder(cue, delayMin, places, behaviors).catch(error =>
             console.warn('Habit reminder failed', error),
           );

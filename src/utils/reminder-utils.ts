@@ -1,6 +1,7 @@
 import type { PendingLog } from '../store/pending-logs-store';
 import type { BehaviorEntry, LogEntry } from '../types/behavior';
 import type { Cue, CueRef, CueTrigger, SavedPlace } from '../types/cue';
+import { isSameGroup } from './behavior-group-utils';
 import { getCueTriggerLabel, placeCueRef } from './cue-utils';
 import { getLogEndTimestamp } from './log-utils';
 
@@ -175,10 +176,18 @@ export function getRemindersForGeofenceEvent(cues: Cue[], placeId: string, direc
 }
 
 /** Reminders that start counting down when `behaviorId` is logged, with their delay in minutes. */
-export function getRemindersForLoggedBehavior(cues: Cue[], behaviorId: string): Array<{ cue: Cue; delayMin: number }> {
+export function getRemindersForLoggedBehavior(
+  cues: Cue[],
+  behaviorId: string,
+  behaviors: BehaviorEntry[] = [],
+): Array<{ cue: Cue; delayMin: number }> {
+  const loggedGroup = behaviors.find(behavior => behavior.id === behaviorId)?.group;
   return getActivePushReminders(cues).flatMap(cue => {
     const trigger = cue.trigger;
-    if (trigger.type === 'habit' && trigger.behaviorId === behaviorId) {
+    if (
+      trigger.type === 'habit' &&
+      (trigger.behaviorId === behaviorId || (trigger.group != null && isSameGroup(trigger.group, loggedGroup)))
+    ) {
       return [{ cue, delayMin: Math.max(0, trigger.delayMin ?? 0) }];
     }
     if (trigger.type === 'time' && trigger.mode === 'auto' && trigger.pattern === 'afterBehavior') {

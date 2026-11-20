@@ -19,7 +19,9 @@ export function HabitTriggerEditor({ value, onChange }: HabitTriggerEditorProps)
       <CueBehaviorPicker
         selectedIds={value.behaviorId ? [value.behaviorId] : []}
         multiple={false}
-        onChange={ids => onChange({ ...value, behaviorId: ids[0] ?? '' })}
+        selectedGroup={value.group}
+        onGroupChange={group => onChange({ ...value, behaviorId: '', group })}
+        onChange={ids => onChange({ ...value, behaviorId: ids[0] ?? '', group: undefined })}
       />
       <View style={styles.delayRow}>
         <View style={styles.delayCopy}>

@@ -36,7 +36,8 @@ export type CueTrigger =
   | { type: 'time'; mode: 'simple'; at: string; repeatDays: number[] }
   | { type: 'time'; mode: 'auto'; pattern: 'wakeup' }
   | { type: 'time'; mode: 'auto'; pattern: 'afterBehavior'; behaviorId: string; delayMin: number }
-  | { type: 'habit'; behaviorId: string; delayMin?: number }
+  /** `group` set = any behaviour in that group (behaviorId is then empty). */
+  | { type: 'habit'; behaviorId: string; group?: string; delayMin?: number }
   | { type: 'mood'; moods: MoodId[] }
   | { type: 'body'; sensations: BodySensationId[] }
   /** Another Android app came to the foreground (seen by the accessibility service). */

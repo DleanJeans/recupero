@@ -165,6 +165,19 @@ describe('getRemindersForLoggedBehavior', () => {
   });
 });
 
+describe('getRemindersForLoggedBehavior with groups', () => {
+  it('matches any member of the trigger group', () => {
+    const behaviors = [
+      { id: 'o1', name: 'Omachi Bò Hầm', group: 'Omachi' },
+      { id: 'o2', name: 'Omachi Sườn', group: ' omachi ' },
+      { id: 'x', name: 'Tea' },
+    ] as BehaviorEntry[];
+    const cues = [cue('g', { type: 'habit', behaviorId: '', group: 'Omachi', delayMin: 3 })];
+    expect(getRemindersForLoggedBehavior(cues, 'o2', behaviors).map(({ cue: c }) => c.id)).toEqual(['g']);
+    expect(getRemindersForLoggedBehavior(cues, 'x', behaviors)).toEqual([]);
+  });
+});
+
 describe('getNewlyLoggedBehaviors', () => {
   const now = 1_000_000_000;
   it('finds fresh manual logs only', () => {

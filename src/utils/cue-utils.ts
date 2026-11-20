@@ -104,7 +104,9 @@ export function getCueTriggerLabel(
     return `${trigger.delayMin} min after ${behavior}`;
   }
   if (trigger.type === 'habit') {
-    const behavior = behaviors.find(item => item.id === trigger.behaviorId)?.name ?? 'a behaviour';
+    const behavior = trigger.group
+      ? `any ${trigger.group}`
+      : (behaviors.find(item => item.id === trigger.behaviorId)?.name ?? 'a behaviour');
     return `${trigger.delayMin ? `${trigger.delayMin} min after` : 'After logging'} ${behavior}`;
   }
   if (trigger.type === 'app') return trigger.appLabel ? `Open ${trigger.appLabel}` : 'Open an app';
@@ -188,7 +190,7 @@ export function createDefaultCueTrigger(
 
 export function isCueTriggerComplete(trigger: CueTrigger): boolean {
   if (trigger.type === 'location') return trigger.placeId.length > 0;
-  if (trigger.type === 'habit') return trigger.behaviorId.length > 0;
+  if (trigger.type === 'habit') return trigger.behaviorId.length > 0 || (trigger.group?.length ?? 0) > 0;
   if (trigger.type === 'mood') return trigger.moods.length > 0;
   if (trigger.type === 'body') return trigger.sensations.length > 0;
   if (trigger.type === 'app') return trigger.packageName.length > 0;

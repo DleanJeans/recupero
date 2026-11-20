@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-20',
     items: [
+      'New reminder: "After logging" can now pick a whole behaviour group (e.g. Omachi) from the top of the list, so logging any flavour triggers it.',
       'Reminders set to fire after a behaviour is logged now also start when you use "Save for later" on its log.',
     ],
   },
