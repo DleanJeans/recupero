@@ -37,6 +37,12 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-20',
     items: [
+      {
+        text: 'The Cues check-in sheets (mood and body) now let you pick several tiles at once, then tap Log. Picks logged together count as one check-in for XP and the streak.',
+        screen: 'CheckIn',
+        linkPhrase: 'check-in',
+      },
+      'Body sensations with "itch", "sweat", "smell" etc. in the name (like Face Itch or Body Itch) now lower your Hygiene need to its craving line when logged, and logging from the Cues check-in sheet now updates Hunger, Thirst, Energy and Hygiene too.',
       'In the Logged today list on a need, timed logs (like app usage) now show how long they lasted under the name and their start - end time on the right.',
       'New reminder: "After logging" can now pick a whole behaviour group (e.g. Omachi) from the top of the list, so logging any flavour triggers it.',
       'Reminders set to fire after a behaviour is logged now also start when you use "Save for later" on its log.',

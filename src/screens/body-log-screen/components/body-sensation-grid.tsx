@@ -9,6 +9,8 @@ import { getBodySensationOptions } from '../../../utils/cue-utils';
 
 interface BodySensationGridProps {
   selected?: BodySensationId;
+  /** Multi-select mode (check-in sheet): these ids are highlighted instead of the single selection. */
+  selectedMany?: readonly BodySensationId[];
   onSelect: (sensation: BodySensationId) => void;
 }
 

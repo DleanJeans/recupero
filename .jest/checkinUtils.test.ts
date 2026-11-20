@@ -28,6 +28,14 @@ describe('check-in XP', () => {
     expect(getCheckInXp(events)).toBe((CHECKIN_DAILY_XP_LOGS + 1) * 5);
   });
 
+  it('counts several picks logged together as one check-in', () => {
+    const events = getCheckInEvents([], [body(at(10), 'hungry'), { ...body(at(10), 'thirsty'), id: 'b2' }]);
+    expect(getCheckInXp(events)).toBe(3);
+    const moods = Array.from({ length: CHECKIN_DAILY_XP_LOGS - 1 }, (_, i) => mood(at(10, 8 + i)));
+    const all = getCheckInEvents(moods, [body(at(10, 15), 'hungry'), { ...body(at(10, 15), 'thirsty'), id: 'b2' }]);
+    expect(getNextCheckInXp(all, 'mood', at(10, 20))).toBe(0);
+  });
+
   it('predicts the next log XP', () => {
     const moods = Array.from({ length: CHECKIN_DAILY_XP_LOGS }, (_, i) => mood(at(10, 8 + i)));
     const events = getCheckInEvents(moods, []);

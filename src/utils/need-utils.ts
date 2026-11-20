@@ -25,6 +25,8 @@ export interface NeedInfo {
   checkIns: ReadonlyArray<{ label: string; level: number }>;
   /** Body sensations that count as a check-in at the craving line. */
   bodySensations: readonly string[];
+  /** Custom body sensations whose label matches also count (e.g. "Face Itch" lowers Hygiene). */
+  bodyLabel?: RegExp;
   /** Behaviour names that probably refill this need, offered as suggestions. */
   suggest: RegExp;
 }
@@ -58,6 +60,7 @@ export const NEED_INFO: Record<NeedId, NeedInfo> = {
     question: 'How clean do you feel?',
     checkIns: checkInLevels(['Gross', 'Grubby', 'Okay', 'Clean', 'Fresh']),
     bodySensations: [],
+    bodyLabel: /itch|smell|stink|sweat|greas|oily|sticky|dirty|grimy/i,
     suggest: /shower|bath|wash|brush|teeth|shave/i,
   },
   energy: {
@@ -615,8 +618,12 @@ export function getDefaultRefill(needId: NeedId): NeedRefill {
   return { mode: 'add', amount: 60 };
 }
 
-export function getNeedIdForBodySensation(sensation: string): NeedId | undefined {
-  return NEED_IDS.find(id => NEED_INFO[id].bodySensations.includes(sensation));
+/** The need a body sensation points at: by id for built-ins, or by label for custom ones (e.g. "Face Itch"). */
+export function getNeedIdForBodySensation(sensation: string, label?: string): NeedId | undefined {
+  return NEED_IDS.find(id => {
+    const info = NEED_INFO[id];
+    return info.bodySensations.includes(sensation) || (label != null && info.bodyLabel?.test(label) === true);
+  });
 }
 
 const REFILL_CHOICES: NeedRefill[] = [

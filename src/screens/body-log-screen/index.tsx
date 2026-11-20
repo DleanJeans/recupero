@@ -8,11 +8,10 @@ import { CueSectionLabel } from '../../components/cues/cue-section-label';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text, TextInput } from '../../components/text';
 import { useCuesStore } from '../../store/cues-store';
-import { useNeedsStore } from '../../store/needs-store';
 import type { BodySensationId } from '../../types/cue';
 import type { RootStackParamList } from '../../types/navigation';
+import { applyBodySensationsToNeeds } from '../../utils/body-need-utils';
 import { Colors } from '../../utils/colors';
-import { getNeedIdForBodySensation } from '../../utils/need-utils';
 import { BodySensationGrid } from './components/body-sensation-grid';
 import { BodySuggestions } from './components/body-suggestions';
 
@@ -20,8 +19,6 @@ export function BodyLogScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const logBodySensation = useCuesStore(state => state.logBodySensation);
   const updateBodyNote = useCuesStore(state => state.updateBodyNote);
-  const needs = useNeedsStore(state => state.needs);
-  const needCheckIn = useNeedsStore(state => state.checkIn);
   const [selected, setSelected] = useState<BodySensationId | undefined>();
   const [bodyLogId, setBodyLogId] = useState<string | undefined>();
   const [note, setNote] = useState('');
@@ -30,8 +27,7 @@ export function BodyLogScreen() {
     if (bodyLogId) updateBodyNote(bodyLogId, note);
     setBodyLogId(logBodySensation(sensation));
     // Feeling hungry, thirsty or tired means that need just reached its craving line.
-    const needId = getNeedIdForBodySensation(sensation);
-    if (needId && needs[needId].enabled) needCheckIn(needId, needs[needId].cravingLine, 'body');
+    applyBodySensationsToNeeds([sensation]);
     setSelected(sensation);
     setNote('');
   };

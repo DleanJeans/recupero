@@ -9,21 +9,23 @@ import { getMoodOptions } from '../../../utils/cue-utils';
 
 interface MoodGridProps {
   selectedMood?: MoodId;
+  /** Multi-select mode (check-in sheet): these ids are highlighted instead of the single selection. */
+  selectedMany?: readonly MoodId[];
   onSelect: (mood: MoodId) => void;
 }
 
-export function MoodGrid({ selectedMood, onSelect }: MoodGridProps) {
+export function MoodGrid({ selectedMood, selectedMany, onSelect }: MoodGridProps) {
   const customMoods = useCuesStore(state => state.customMoods);
   return (
     <View style={styles.grid}>
       {getMoodOptions(customMoods).map(option => {
-        const selected = option.id === selectedMood;
+        const selected = selectedMany ? selectedMany.includes(option.id) : option.id === selectedMood;
         return (
           <Pressable
             key={option.id}
             style={({ pressed }) => [styles.tile, selected && styles.selectedTile, pressed && styles.pressed]}
             onPress={() => onSelect(option.id)}
-            accessibilityRole="radio"
+            accessibilityRole={selectedMany ? 'checkbox' : 'radio'}
             accessibilityLabel={option.label}
             accessibilityState={{ selected }}
           >

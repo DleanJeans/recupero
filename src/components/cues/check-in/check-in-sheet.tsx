@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React from 'react';
+import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BodySensationGrid } from '../../../screens/body-log-screen/components/body-sensation-grid';
@@ -16,23 +16,22 @@ interface CheckInSheetProps {
   kind: CheckInSheetKind;
   /** XP the log earns, shown as a hint. */
   xp: number;
-  selectedMood?: MoodId;
-  selectedSensation?: BodySensationId;
-  onPickMood: (mood: MoodId) => void;
-  onPickSensation: (sensation: BodySensationId) => void;
+  onLogMoods: (moods: MoodId[]) => void;
+  onLogSensations: (sensations: BodySensationId[]) => void;
   onClose: () => void;
 }
 
-/** Bottom sheet with the mood or body grid; one tap logs and closes it. No text input, so no keyboard docking. */
-export function CheckInSheet({
-  kind,
-  xp,
-  selectedMood,
-  selectedSensation,
-  onPickMood,
-  onPickSensation,
-  onClose,
-}: CheckInSheetProps) {
+/** Bottom sheet with the mood or body grid: tap one or several tiles, then Log. No text input, so no keyboard docking. */
+export function CheckInSheet({ kind, xp, onLogMoods, onLogSensations, onClose }: CheckInSheetProps) {
+  const [moods, setMoods] = useState<MoodId[]>([]);
+  const [sensations, setSensations] = useState<BodySensationId[]>([]);
+  const toggle = <T extends string>(list: T[], item: T) =>
+    list.includes(item) ? list.filter(entry => entry !== item) : [...list, item];
+  const count = kind === 'mood' ? moods.length : sensations.length;
+  const submit = () => {
+    if (kind === 'mood') onLogMoods(moods);
+    else onLogSensations(sensations);
+  };
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const openFullScreen = () => {
@@ -55,16 +54,19 @@ export function CheckInSheet({
       />
       <View style={[styles.sheet, { paddingBottom: 18 + insets.bottom }]}>
         <View style={styles.grabber} />
-        <Text style={styles.title}>{kind === 'mood' ? 'How do you feel right now?' : 'What does your body say?'}</Text>
+        <Text style={styles.title}>
+          {kind === 'mood' ? 'How do you feel right now?' : 'What does your body say?'}{' '}
+          <Text style={styles.hint}>Pick all that apply</Text>
+        </Text>
         {kind === 'mood' ? (
           <MoodGrid
-            selectedMood={selectedMood}
-            onSelect={onPickMood}
+            selectedMany={moods}
+            onSelect={mood => setMoods(list => toggle(list, mood))}
           />
         ) : (
           <BodySensationGrid
-            selected={selectedSensation}
-            onSelect={onPickSensation}
+            selectedMany={sensations}
+            onSelect={sensation => setSensations(list => toggle(list, sensation))}
           />
         )}
         <View style={styles.footer}>
@@ -73,9 +75,27 @@ export function CheckInSheet({
             hitSlop={8}
             accessibilityRole="button"
           >
-            <Text style={styles.link}>Add a note or see suggestions ›</Text>
+            <Text
+              style={styles.link}
+              numberOfLines={1}
+            >
+              Add a note or see suggestions ›
+            </Text>
           </Pressable>
-          {xp > 0 ? <Text style={styles.xp}>+{xp} XP</Text> : null}
+          <Pressable
+            onPress={submit}
+            disabled={count === 0}
+            style={[styles.logButton, count === 0 && styles.logButtonOff]}
+            accessibilityRole="button"
+            accessibilityLabel="Log selected"
+          >
+            <Text
+              style={styles.logText}
+              numberOfLines={1}
+            >
+              {count === 0 ? 'Pick any' : `Log ${count}${xp > 0 ? ` · +${xp} XP` : ''}`}
+            </Text>
+          </Pressable>
         </View>
       </View>
     </Modal>
@@ -95,8 +115,19 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   grabber: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border.light },
+  hint: { color: Colors.text.muted, fontSize: 12, fontWeight: '400' },
   title: { color: Colors.text.primary, fontSize: 16, fontWeight: '700' },
-  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  link: { color: Colors.text.muted, fontSize: 12 },
-  xp: { color: Colors.cooldown.yellow, fontSize: 12, fontWeight: '700' },
+  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
+  link: { flexShrink: 1, color: Colors.text.muted, fontSize: 12 },
+  logButton: {
+    flexShrink: 0,
+    minWidth: 96,
+    alignItems: 'center',
+    backgroundColor: Colors.cooldown.yellow,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  logButtonOff: { backgroundColor: Colors.bg.card, borderWidth: 1, borderColor: Colors.border.default },
+  logText: { color: '#1a1a1a', fontSize: 13, fontWeight: '700' },
 });

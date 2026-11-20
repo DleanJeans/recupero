@@ -9,6 +9,7 @@ import { useCuesStore } from '../../../store/cues-store';
 import { useSettingsStore } from '../../../store/settings-store';
 import type { BodySensationId, MoodId } from '../../../types/cue';
 import type { RootStackParamList } from '../../../types/navigation';
+import { applyBodySensationsToNeeds } from '../../../utils/body-need-utils';
 import { formatCheckInAgo, getCheckInDays, getNextCheckInXp, isCheckInStale } from '../../../utils/checkin-utils';
 import { Colors } from '../../../utils/colors';
 import { getBodySensationOption, getMoodOption } from '../../../utils/cue-utils';
@@ -22,7 +23,7 @@ const STREAK_ACCENT = '#fb923c';
 
 interface JustLogged {
   kind: CheckInSheetKind;
-  id: string;
+  ids: string[];
   label: string;
   xp: number;
 }
@@ -34,8 +35,8 @@ export function CheckInCard() {
   const custom = useCustomCueOptions();
   const staleHours = useCheckInStore(state => state.staleHours);
   const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
-  const logMood = useCuesStore(state => state.logMood);
-  const logBodySensation = useCuesStore(state => state.logBodySensation);
+  const logMoods = useCuesStore(state => state.logMoods);
+  const logBodySensations = useCuesStore(state => state.logBodySensations);
   const removeMoodLog = useCuesStore(state => state.removeMoodLog);
   const removeBodyLog = useCuesStore(state => state.removeBodyLog);
   const [sheet, setSheet] = useState<CheckInSheetKind>();
@@ -49,7 +50,7 @@ export function CheckInCard() {
     () => getCheckInDays(checkIn.events, 7, Date.now(), dayCutoffHour),
     [checkIn.events, dayCutoffHour],
   );
-  const { streak, level, lastMood, lastBody } = checkIn;
+  const { streak, level, lastMood, lastBody, lastMoodExtra, lastBodyExtra } = checkIn;
 
   const showUndo = (entry: JustLogged) => {
     setJustLogged(entry);
@@ -57,26 +58,37 @@ export function CheckInCard() {
     undoTimer.current = setTimeout(() => setJustLogged(undefined), UNDO_VISIBLE_MS);
   };
 
-  const pickMood = (mood: MoodId) => {
+  const joinLabels = (labels: string[]) =>
+    labels.length > 2 ? `${labels[0]}, ${labels[1]} +${labels.length - 2}` : labels.join(', ');
+
+  const logPickedMoods = (moods: MoodId[]) => {
+    if (moods.length === 0) return;
     const xp = getNextCheckInXp(checkIn.events, 'mood', Date.now(), dayCutoffHour);
-    const id = logMood(mood);
-    const option = getMoodOption(mood, custom.moods);
+    const ids = logMoods(moods);
     setSheet(undefined);
-    showUndo({ kind: 'mood', id, label: option.label, xp });
+    showUndo({ kind: 'mood', ids, label: joinLabels(moods.map(m => getMoodOption(m, custom.moods).label)), xp });
   };
 
-  const pickSensation = (sensation: BodySensationId) => {
+  const logPickedSensations = (sensations: BodySensationId[]) => {
+    if (sensations.length === 0) return;
     const xp = getNextCheckInXp(checkIn.events, 'body', Date.now(), dayCutoffHour);
-    const id = logBodySensation(sensation);
-    const option = getBodySensationOption(sensation, custom.sensations);
+    const ids = logBodySensations(sensations);
+    applyBodySensationsToNeeds(sensations);
     setSheet(undefined);
-    showUndo({ kind: 'body', id, label: option.label, xp });
+    showUndo({
+      kind: 'body',
+      ids,
+      label: joinLabels(sensations.map(s => getBodySensationOption(s, custom.sensations).label)),
+      xp,
+    });
   };
 
   const undo = () => {
     if (!justLogged) return;
-    if (justLogged.kind === 'mood') removeMoodLog(justLogged.id);
-    else removeBodyLog(justLogged.id);
+    for (const id of justLogged.ids) {
+      if (justLogged.kind === 'mood') removeMoodLog(id);
+      else removeBodyLog(id);
+    }
     clearTimeout(undoTimer.current);
     setJustLogged(undefined);
   };
@@ -124,7 +136,9 @@ export function CheckInCard() {
           <CheckInSquare
             tag="MOOD"
             emoji={moodOption?.emoji}
-            title={moodOption?.label ?? 'How do you feel?'}
+            title={
+              moodOption ? `${moodOption.label}${lastMoodExtra > 0 ? ` +${lastMoodExtra}` : ''}` : 'How do you feel?'
+            }
             caption={
               moodStale && lastMood
                 ? `${formatCheckInAgo(lastMood.ts, now)} · still true?`
@@ -137,7 +151,11 @@ export function CheckInCard() {
           <CheckInSquare
             tag="BODY"
             emoji={bodyOption?.emoji}
-            title={bodyOption?.label ?? 'What does your body say?'}
+            title={
+              bodyOption
+                ? `${bodyOption.label}${lastBodyExtra > 0 ? ` +${lastBodyExtra}` : ''}`
+                : 'What does your body say?'
+            }
             caption={
               bodyStale && lastBody
                 ? `${formatCheckInAgo(lastBody.ts, now)} · still true?`
@@ -153,7 +171,10 @@ export function CheckInCard() {
 
         {justLogged && (
           <View style={styles.undoBar}>
-            <Text style={styles.undoText}>
+            <Text
+              style={styles.undoText}
+              numberOfLines={1}
+            >
               {justLogged.label} logged
               {justLogged.xp > 0 ? ` · +${justLogged.xp} XP` : ''}
               {streak.current > 0 ? ` · 🔥 ${streak.current}-day streak` : ''}
@@ -173,10 +194,8 @@ export function CheckInCard() {
         <CheckInSheet
           kind={sheet}
           xp={getNextCheckInXp(checkIn.events, sheet, now, dayCutoffHour)}
-          selectedMood={lastMood?.mood}
-          selectedSensation={lastBody?.sensation}
-          onPickMood={pickMood}
-          onPickSensation={pickSensation}
+          onLogMoods={logPickedMoods}
+          onLogSensations={logPickedSensations}
           onClose={() => setSheet(undefined)}
         />
       )}

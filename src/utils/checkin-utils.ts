@@ -66,7 +66,12 @@ export function getCheckInEvents(
     ...bodyLogs.map(log => ({ id: log.id, ts: log.ts, kind: 'body' as const, value: log.sensation })),
   ].sort((a, b) => a.ts - b.ts);
   const perDay = new Map<string, number>();
+  const seen = new Set<string>();
   return raw.map(event => {
+    // Several picks logged together (same kind and timestamp) are one check-in: only the first earns XP.
+    const groupKey = `${event.kind}:${event.ts}`;
+    if (seen.has(groupKey)) return { ...event, xp: 0 };
+    seen.add(groupKey);
     const day = toDateString(new Date(event.ts), dayCutoffHour);
     const count = perDay.get(day) ?? 0;
     perDay.set(day, count + 1);
@@ -87,7 +92,11 @@ export function getNextCheckInXp(
   dayCutoffHour = DEFAULT_DAY_CUTOFF_HOUR,
 ): number {
   const today = toDateString(new Date(now), dayCutoffHour);
-  const loggedToday = events.filter(event => toDateString(new Date(event.ts), dayCutoffHour) === today).length;
+  const loggedToday = new Set(
+    events
+      .filter(event => toDateString(new Date(event.ts), dayCutoffHour) === today)
+      .map(event => `${event.kind}:${event.ts}`),
+  ).size;
   if (loggedToday >= CHECKIN_DAILY_XP_LOGS) return 0;
   return kind === 'mood' ? CHECKIN_MOOD_XP : CHECKIN_BODY_XP;
 }

@@ -89,6 +89,8 @@ export interface NeedsStore {
   setEnergyRuleHidden: (hidden: boolean) => void;
   /** Records how the need feels now and nudges its decay rate toward what that implies. */
   checkIn: (needId: NeedId, level: number, source: NeedCheckInSource) => void;
+  /** Like checkIn, but does nothing when the need is already at or below `level` (a sensation never raises it). */
+  lowerTo: (needId: NeedId, level: number, source: NeedCheckInSource) => void;
   /** Tops a need up by `amount` points without logging a behaviour. Doesn't teach the decay rate. */
   updateLevel: (needId: NeedId, amount: number) => void;
   /** Undoes a check-in or update. */
@@ -153,7 +155,7 @@ function getCurrentNeedState(state: Pick<NeedsStore, 'needs' | 'checkIns'>, need
 
 export const useNeedsStore = create<NeedsStore>()(
   persist(
-    set => ({
+    (set, get) => ({
       needs: withDefaults(undefined),
       customNeeds: [],
       emojiOverrides: {},
@@ -217,6 +219,10 @@ export const useNeedsStore = create<NeedsStore>()(
       setHistoryDisplay: display => set({ historyDisplay: display }),
       energyRuleHidden: false,
       setEnergyRuleHidden: hidden => set({ energyRuleHidden: hidden }),
+      lowerTo: (needId, level, source) => {
+        const current = getCurrentNeedState(get(), needId, Date.now()).level;
+        if (current == null || current > level) get().checkIn(needId, level, source);
+      },
       checkIn: (needId, level, source) =>
         set(state => {
           const now = Date.now();
