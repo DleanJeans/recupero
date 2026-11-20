@@ -190,7 +190,7 @@ export function TaskScreen() {
     if (!taskTitle) return;
     const isTimed = timed && (selectedBehavior != null || app != null);
     // Picking an app makes (or reuses) the behavior that tracks it, shared with Needs.
-    const appBehaviorId = app ? await ensureAppBehavior(app, { trackDuration: isTimed }) : undefined;
+    const appBehaviorId = app ? await ensureAppBehavior(app, { trackDuration: true }) : undefined;
     const behaviorId = selectedBehavior?.id ?? appBehaviorId;
     const isBehaviorOnlyTask = !trimmedTitle && behaviorId != null;
     const hasPlace = selectedPlaceId != null && placeById.has(selectedPlaceId);

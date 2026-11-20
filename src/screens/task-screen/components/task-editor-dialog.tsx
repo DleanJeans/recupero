@@ -238,6 +238,12 @@ export function TaskEditorDialog({
           onClose={() => setPicker(undefined)}
           onPick={behaviorId => {
             onBehaviorSelect(behaviorId);
+            // A behavior that tracks an app brings that app along, and the task gets timed.
+            const picked = behaviorId ? behaviors.find(b => b.id === behaviorId) : undefined;
+            if (picked?.autoTrackApp) {
+              onAppChange({ packageName: picked.autoTrackApp.packageName, label: picked.autoTrackApp.label });
+              onTimedChange(true);
+            }
             setPicker(undefined);
           }}
         />
@@ -248,6 +254,7 @@ export function TaskEditorDialog({
         onClose={() => setPicker(undefined)}
         onPick={picked => {
           onAppChange(picked);
+          onTimedChange(true);
           setPicker(undefined);
         }}
       />

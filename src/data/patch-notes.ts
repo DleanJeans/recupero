@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-21',
     items: [
+      'In the task dialog, picking a behavior that tracks an app fills the App row with that app and ticks Time it. Picking an app also ticks Time it, and every behavior made for an app now has duration XP on.',
       {
         text: 'On the Timer screen, tap "since 5:08 AM" to set the start time with the time picker (replaces the -1 min button). A time later than now means yesterday. "Start another timer" is no longer hidden under the Android navigation bar.',
         screen: 'Timer',
