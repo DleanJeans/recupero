@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-19',
     items: [
+      'Searching "What helps" on a need no longer hides the search box behind the keyboard; the list shrinks and scrolls it into view.',
       'Saved-for-later pills are now just as wide as their name, so there is no big gap before the bookmark.',
       {
         text: 'Needs settings: the Sort arrows now really move needs, and the new Manual order / Lowest % first switch (also on the Needs panel header) lists the neediest need on top. Cardio and Sunlight are sorted too: by progress toward their goal, or in your Sort order.',

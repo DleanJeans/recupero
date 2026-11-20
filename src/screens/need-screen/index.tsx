@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { type RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppUsage } from '../../../modules/app-usage';
 import { AppIcon } from '../../components/app-icon';
@@ -72,7 +73,14 @@ export function NeedScreen() {
   const [amountLog, setAmountLog] = useState<NeedRefillEntry>();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
+  const scrollRef = useRef<ScrollView>(null);
+  const searchY = useRef(0);
   const [filter, setFilter] = useState('');
+
+  /** Keeps the search box above the keyboard: waits for the list to resize, then scrolls it to the top. */
+  const scrollToSearch = () => {
+    setTimeout(() => scrollRef.current?.scrollTo({ y: Math.max(0, searchY.current - 8), animated: true }), 300);
+  };
 
   const need = needs.find(item => item.id === needId);
   const behaviorById = useMemo(() => new Map(behaviors.map(behavior => [behavior.id, behavior])), [behaviors]);
@@ -207,8 +215,12 @@ export function NeedScreen() {
         </>
       }
     >
-      <View style={styles.sheet}>
+      <KeyboardAvoidingView
+        behavior="height"
+        style={styles.sheet}
+      >
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={[styles.content, { paddingBottom: styles.content.paddingBottom + insets.bottom }]}
           keyboardShouldPersistTaps="handled"
         >
@@ -456,7 +468,12 @@ export function NeedScreen() {
 
           {adding ? (
             <>
-              <View style={styles.search}>
+              <View
+                style={styles.search}
+                onLayout={event => {
+                  searchY.current = event.nativeEvent.layout.y;
+                }}
+              >
                 <Ionicons
                   name="search"
                   size={16}
@@ -470,6 +487,7 @@ export function NeedScreen() {
                   placeholderTextColor={Colors.text.faint}
                   autoCorrect={false}
                   autoFocus
+                  onFocus={scrollToSearch}
                 />
               </View>
               {categoryResults.map(category => (
@@ -523,7 +541,7 @@ export function NeedScreen() {
           <NeedRateLearning needId={need.id} />
           {need.id === 'energy' && <FitbitConnectRow />}
         </ScrollView>
-      </View>
+      </KeyboardAvoidingView>
       {rateEdit ? (
         <NeedAmountDialog
           title={`Minutes to fill ${info.label}`}
