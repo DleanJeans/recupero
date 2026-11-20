@@ -101,6 +101,8 @@ export interface NeedsStore {
   setCategoryRefill: (needId: NeedId, categoryId: string, refill: NeedRefill | undefined) => void;
   setMetadataSource: (needId: NeedId, source: NeedMetadataSource | null | undefined) => void;
   setEnabled: (needId: NeedId, enabled: boolean) => void;
+  /** Sets the words that make a body sensation lower this need. Undefined restores the default words. */
+  setBodyWords: (needId: NeedId, words: string | undefined) => void;
   resetLearning: (needId: NeedId) => void;
 }
 
@@ -284,6 +286,8 @@ export const useNeedsStore = create<NeedsStore>()(
         }),
       setMetadataSource: (needId, source) =>
         set(state => ({ needs: { ...state.needs, [needId]: { ...state.needs[needId], metadataSource: source } } })),
+      setBodyWords: (needId, bodyWords) =>
+        set(state => ({ needs: { ...state.needs, [needId]: { ...state.needs[needId], bodyWords } } })),
       setEnabled: (needId, enabled) =>
         set(state => ({ needs: { ...state.needs, [needId]: { ...state.needs[needId], enabled } } })),
       resetLearning: needId =>

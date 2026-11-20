@@ -42,7 +42,11 @@ export const PATCH_NOTES: PatchNotesDay[] = [
         screen: 'CheckIn',
         linkPhrase: 'check-in',
       },
-      'Body sensations with "itch", "sweat", "smell" etc. in the name (like Face Itch or Body Itch) now lower your Hygiene need to its craving line when logged, and logging from the Cues check-in sheet now updates Hunger, Thirst, Energy and Hygiene too.',
+      {
+        text: 'Body sensations can now lower a need by their name. Each need in Needs settings has a "Body words that lower it" box (Hygiene starts with itch, sweat, smell, greasy and similar), so Face Itch or Body Itch drop Hygiene to its craving line. Logging from the Cues check-in sheet now also updates Hunger, Thirst, Energy and Hygiene.',
+        screen: 'NeedsSettings',
+        linkPhrase: 'Needs settings',
+      },
       'In the Logged today list on a need, timed logs (like app usage) now show how long they lasted under the name and their start - end time on the right.',
       'New reminder: "After logging" can now pick a whole behaviour group (e.g. Omachi) from the top of the list, so logging any flavour triggers it.',
       'Reminders set to fire after a behaviour is logged now also start when you use "Save for later" on its log.',

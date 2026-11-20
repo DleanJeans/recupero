@@ -25,8 +25,6 @@ export interface NeedInfo {
   checkIns: ReadonlyArray<{ label: string; level: number }>;
   /** Body sensations that count as a check-in at the craving line. */
   bodySensations: readonly string[];
-  /** Custom body sensations whose label matches also count (e.g. "Face Itch" lowers Hygiene). */
-  bodyLabel?: RegExp;
   /** Behaviour names that probably refill this need, offered as suggestions. */
   suggest: RegExp;
 }
@@ -60,7 +58,6 @@ export const NEED_INFO: Record<NeedId, NeedInfo> = {
     question: 'How clean do you feel?',
     checkIns: checkInLevels(['Gross', 'Grubby', 'Okay', 'Clean', 'Fresh']),
     bodySensations: [],
-    bodyLabel: /itch|smell|stink|sweat|greas|oily|sticky|dirty|grimy/i,
     suggest: /shower|bath|wash|brush|teeth|shave/i,
   },
   energy: {
@@ -618,12 +615,33 @@ export function getDefaultRefill(needId: NeedId): NeedRefill {
   return { mode: 'add', amount: 60 };
 }
 
-/** The need a body sensation points at: by id for built-ins, or by label for custom ones (e.g. "Face Itch"). */
-export function getNeedIdForBodySensation(sensation: string, label?: string): NeedId | undefined {
-  return NEED_IDS.find(id => {
-    const info = NEED_INFO[id];
-    return info.bodySensations.includes(sensation) || (label != null && info.bodyLabel?.test(label) === true);
-  });
+/** Words whose presence in a body sensation's label lowers the need, until the user edits them. */
+export const DEFAULT_BODY_WORDS: Partial<Record<string, string>> = {
+  hygiene: 'itch, sweat, smell, stink, greasy, oily, sticky, dirty, grimy',
+};
+
+/** The need's trigger words as a list: its own setting, else the defaults. */
+export function getBodyWords(needId: NeedId, config: Pick<NeedConfig, 'bodyWords'> | undefined): string[] {
+  const text = config?.bodyWords ?? DEFAULT_BODY_WORDS[needId] ?? '';
+  return text
+    .split(/[,;\n]/)
+    .map(word => word.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+/**
+ * The need a body sensation points at: built-in ids (Hungry, Thirsty, Tired, Sleepy, Aches), or a trigger word
+ * found in its label (e.g. "Face Itch" lowers Hygiene).
+ */
+export function getNeedIdForBodySensation(
+  sensation: string,
+  label?: string,
+  configs?: Partial<Record<NeedId, Pick<NeedConfig, 'bodyWords'>>>,
+): NeedId | undefined {
+  const byId = NEED_IDS.find(id => NEED_INFO[id].bodySensations.includes(sensation));
+  if (byId || label == null) return byId;
+  const lower = label.toLowerCase();
+  return NEED_IDS.find(id => getBodyWords(id, configs?.[id]).some(word => lower.includes(word)));
 }
 
 const REFILL_CHOICES: NeedRefill[] = [

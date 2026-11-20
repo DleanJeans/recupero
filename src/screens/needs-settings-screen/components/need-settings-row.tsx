@@ -9,6 +9,7 @@ import { Colors } from '../../../utils/colors';
 import { toPlainEmoji } from '../../../utils/icon-utils';
 import { parseDecimalInput } from '../../../utils/metadata-calculation-utils';
 import {
+  DEFAULT_BODY_WORDS,
   findMetadataField,
   formatEmptyHours,
   getBuiltInEmoji,
@@ -30,6 +31,7 @@ export function NeedSettingsRow({ needId, first, onPickSource, onEdit }: NeedSet
   const config = useNeedsStore(state => state.needs[needId]);
   const setEnabled = useNeedsStore(state => state.setEnabled);
   const setMetadataSource = useNeedsStore(state => state.setMetadataSource);
+  const setBodyWords = useNeedsStore(state => state.setBodyWords);
   const resetLearning = useNeedsStore(state => state.resetLearning);
   const categories = useBehaviorStore(state => state.categories);
   const setBuiltInEmoji = useNeedsStore(state => state.setBuiltInEmoji);
@@ -43,6 +45,13 @@ export function NeedSettingsRow({ needId, first, onPickSource, onEdit }: NeedSet
     id => categories.find(category => category.id === id)?.name ?? [],
   );
   const [fullText, setFullText] = useState<string>();
+  const [wordsText, setWordsText] = useState<string>();
+  const commitWords = () => {
+    if (wordsText == null) return;
+    const trimmed = wordsText.trim();
+    setBodyWords(needId, trimmed === (DEFAULT_BODY_WORDS[needId] ?? '') ? undefined : trimmed);
+    setWordsText(undefined);
+  };
 
   const updateCustomNeed = useNeedsStore(state => state.updateCustomNeed);
   const changeEmoji = (next: string) => {
@@ -155,6 +164,25 @@ export function NeedSettingsRow({ needId, first, onPickSource, onEdit }: NeedSet
               </View>
             </View>
           ) : null}
+          <View style={styles.wordsBlock}>
+            <Text
+              style={styles.detailLabel}
+              numberOfLines={1}
+            >
+              Body words that lower it
+            </Text>
+            <TextInput
+              style={styles.wordsInput}
+              value={wordsText ?? config.bodyWords ?? DEFAULT_BODY_WORDS[needId] ?? ''}
+              onChangeText={setWordsText}
+              onBlur={commitWords}
+              onSubmitEditing={commitWords}
+              placeholder="e.g. itch, sweat (comma separated)"
+              placeholderTextColor={Colors.text.faint}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
           {builtInEmoji && info.emoji !== builtInEmoji ? (
             <Pressable
               style={({ pressed }) => [styles.detailRow, pressed && styles.pressed]}
@@ -227,6 +255,15 @@ const styles = StyleSheet.create({
   },
   detailLabel: { color: Colors.text.muted, fontSize: 13, flexShrink: 0, marginRight: 12 },
   detailValue: { color: Colors.text.light, fontSize: 13, fontWeight: '600' },
+  wordsBlock: { gap: 4, paddingVertical: 4 },
+  wordsInput: {
+    color: Colors.text.light,
+    fontSize: 13,
+    backgroundColor: Colors.bg.elevated,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
   detailValueShrink: { flexShrink: 1, textAlign: 'right' },
   amount: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   input: {

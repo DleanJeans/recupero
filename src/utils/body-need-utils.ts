@@ -14,7 +14,7 @@ export function applyBodySensationsToNeeds(sensations: readonly BodySensationId[
   const done = new Set<string>();
   for (const sensation of sensations) {
     const label = getBodySensationOption(sensation, customSensations).label;
-    const needId = getNeedIdForBodySensation(sensation, label);
+    const needId = getNeedIdForBodySensation(sensation, label, needs);
     if (!needId || done.has(needId) || !needs[needId]?.enabled) continue;
     done.add(needId);
     lowerTo(needId, needs[needId].cravingLine, 'body');

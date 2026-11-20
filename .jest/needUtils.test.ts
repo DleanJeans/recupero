@@ -5,6 +5,7 @@ import {
   DEFAULT_NEED_CONFIGS,
   formatNextCraving,
   getBehaviorRefill,
+  getBodyWords,
   getLineCrossingTime,
   getNeedEvents,
   getNeedIdForBodySensation,
@@ -478,5 +479,18 @@ describe('registerCustomNeeds', () => {
   it('survives labels with regex characters', () => {
     registerCustomNeeds([{ id: 'custom:b', emoji: '⭐', label: 'C++ (study)', emptyHours: 24, color: '#fff' }]);
     expect(NEED_INFO['custom:b'].suggest.test('C++ (study) session')).toBe(true);
+  });
+});
+
+describe('body words', () => {
+  it('maps built-in sensations and default Hygiene words', () => {
+    expect(getNeedIdForBodySensation('hungry', 'Hungry')).toBe('hunger');
+    expect(getNeedIdForBodySensation('custom1', 'Face Itch')).toBe('hygiene');
+    expect(getNeedIdForBodySensation('custom2', 'Sore feet')).toBeUndefined();
+  });
+  it('uses edited words and allows none', () => {
+    expect(getNeedIdForBodySensation('c', 'Sore feet', { hygiene: { bodyWords: 'sore' } })).toBe('hygiene');
+    expect(getNeedIdForBodySensation('c', 'Face Itch', { hygiene: { bodyWords: '' } })).toBeUndefined();
+    expect(getBodyWords('hygiene', { bodyWords: ' A, b ;c' })).toEqual(['a', 'b', 'c']);
   });
 });
