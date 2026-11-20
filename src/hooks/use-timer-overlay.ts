@@ -55,6 +55,7 @@ export function useTimerOverlay(enabled: boolean) {
           const xp = behavior.xpEnabled ? getEffectiveXp(behavior, now, dayCutoffHour) : undefined;
           return {
             icon: iconText(behavior.icon) || undefined,
+            tracksApp: behavior.autoTrackApp ? true : undefined,
             level: xp == null ? undefined : { inLevel: getLevelXp(xp), forLevel: xpRequiredForLevel(getLevel(xp)) },
           };
         },

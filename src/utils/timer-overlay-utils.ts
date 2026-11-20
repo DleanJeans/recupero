@@ -19,6 +19,8 @@ export interface OverlayLevel {
 export interface OverlayExtras {
   icon?: string;
   level?: OverlayLevel;
+  /** The behavior tracks another app's usage, so the pill shows by default. Otherwise it stays hidden until toggled. */
+  tracksApp?: boolean;
 }
 
 export interface OverlayTimer extends OverlayExtras {
