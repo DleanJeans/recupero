@@ -41,7 +41,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       'Adding or editing a task now opens a dialog over the Tasks screen instead of pushing the list down. Behavior, App and Place are rows that each open their own full-screen picker.',
       'Tasks can have an app: the ▶ button opens it with a timer. The first time you pick an app, Recupero makes a behavior that tracks its screen time; if Needs (e.g. Fun) already tracks that app, the task reuses that behavior instead.',
       'New "Time it" checkbox on tasks: adds a ▶ timer button (and turns on duration XP for the app\'s behavior). Ticking the task while its timer runs logs the time it took.',
-      'A timer that opened an app (a task\'s ▶, the Shopping play button, or a timer for an app-tracked behavior) now stops by itself once you leave that app for 2 minutes, and logs the time up to when you left it.',
+      "A timer that opened an app (a task's ▶, the Shopping play button, or a timer for an app-tracked behavior) now stops by itself once you leave that app for 2 minutes, and logs the time up to when you left it.",
       '"Choose an app" is now one full-screen list everywhere (tasks, Needs app usage, behavior auto-tracking, reminders, Shopping timer app): your most-used apps this week come first, and apps that already have a behavior show its name.',
     ],
   },
