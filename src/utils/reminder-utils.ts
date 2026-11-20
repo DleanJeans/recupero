@@ -1,3 +1,4 @@
+import type { PendingLog } from '../store/pending-logs-store';
 import type { BehaviorEntry, LogEntry } from '../types/behavior';
 import type { Cue, CueRef, CueTrigger, SavedPlace } from '../types/cue';
 import { getCueTriggerLabel, placeCueRef } from './cue-utils';
@@ -201,6 +202,12 @@ export function getNewlyLoggedBehaviors(
       )
       .map(log => ({ behaviorId: behavior.id, log })),
   );
+}
+
+/** Behaviours of logs newly saved for later (edits of an already saved one don't count). */
+export function getNewlySavedPendingBehaviorIds(previous: PendingLog[], next: PendingLog[]): string[] {
+  const previousIds = new Set(previous.map(pending => pending.id));
+  return next.filter(pending => !previousIds.has(pending.id)).map(pending => pending.behaviorId);
 }
 
 export function isReminderOnCooldown(lastFiredAt: number | undefined, now = Date.now()): boolean {

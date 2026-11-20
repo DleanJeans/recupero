@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useCuesStore } from '../store/cues-store';
+import { usePendingLogsStore } from '../store/pending-logs-store';
 import { useSettingsStore } from '../store/settings-store';
 import { useSunlightStore } from '../store/sunlight-store';
 import { useTimerStore } from '../store/timer-store';
@@ -19,6 +20,7 @@ import {
 } from '../utils/reminder-notifications';
 import {
   getNewlyLoggedBehaviors,
+  getNewlySavedPendingBehaviorIds,
   getReminderScheduleSignature,
   getRemindersForLoggedBehavior,
   isReminderNotificationData,
@@ -136,6 +138,19 @@ export function useReminderEngine(
         }
       }
     });
+    // A log saved for later has no time yet, so its habit reminders start when it is saved.
+    const unsubscribePending = usePendingLogsStore.subscribe((state, previous) => {
+      if (state.pendingLogs === previous.pendingLogs) return;
+      const { cues, places } = useCuesStore.getState();
+      const { behaviors } = useBehaviorStore.getState();
+      for (const behaviorId of getNewlySavedPendingBehaviorIds(previous.pendingLogs, state.pendingLogs)) {
+        for (const { cue, delayMin } of getRemindersForLoggedBehavior(cues, behaviorId)) {
+          scheduleDelayedReminder(cue, delayMin, places, behaviors).catch(error =>
+            console.warn('Habit reminder failed', error),
+          );
+        }
+      }
+    });
     // A timer started from a notification shows an ongoing notification; clear it once the timer stops in the app.
     const unsubscribeTimer = useTimerStore.subscribe((state, previous) => {
       if (isTimerRunning(previous) && !isTimerRunning(state)) {
@@ -148,6 +163,7 @@ export function useReminderEngine(
       unsubscribeSettings();
       unsubscribeSunlight();
       unsubscribeBehaviors();
+      unsubscribePending();
       unsubscribeTimer();
     };
   }, [ready]);

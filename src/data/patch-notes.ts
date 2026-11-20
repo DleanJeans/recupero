@@ -35,6 +35,12 @@ export interface PatchNotesDay {
  */
 export const PATCH_NOTES: PatchNotesDay[] = [
   {
+    date: '2026-11-20',
+    items: [
+      'Reminders set to fire after a behaviour is logged now also start when you use "Save for later" on its log.',
+    ],
+  },
+  {
     date: '2026-11-19',
     items: [
       'Searching "What helps" on a need no longer hides the search box behind the keyboard; the list shrinks and scrolls it into view.',
