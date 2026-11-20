@@ -33,6 +33,7 @@ export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChang
     if (!value && suggestedEmoji) {
       onChangeText(suggestedEmoji);
       onPick?.();
+      return; // first tap only fills the suggestion; the next tap opens the editor
     }
     setOpen(true);
     onOpenChange?.(true);
