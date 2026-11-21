@@ -7,6 +7,7 @@ import { Text, TextInput } from '../../../components/text';
 import { useActiveBehaviors } from '../../../hooks/use-active-behaviors';
 import { useKeyboardVisible } from '../../../hooks/use-keyboard-visible';
 import type { BehaviorEntry } from '../../../types/behavior';
+import { capitalizeFirst } from '../../../utils/behavior-group-utils';
 import { Colors } from '../../../utils/colors';
 import { rankStackSuggestions, type StackSuggestionGroup } from '../../../utils/stack-suggestion-utils';
 
@@ -29,6 +30,8 @@ interface StackBehaviorPickerModalProps {
   onPick?: (behaviorId: string) => void;
   /** Multi pick: rows get checkboxes and an Add button, which calls this with the ticked ids in tap order. */
   onPickMany?: (behaviorIds: string[]) => void;
+  /** When set and the search text matches no behaviour exactly, a "Create" row makes a new one and returns its id. */
+  onCreate?: (name: string) => string | undefined;
 }
 
 export function StackBehaviorPickerModal({
@@ -38,6 +41,7 @@ export function StackBehaviorPickerModal({
   onClose,
   onPick,
   onPickMany,
+  onCreate,
 }: StackBehaviorPickerModalProps) {
   const keyboardUp = useKeyboardVisible();
   const behaviors = useActiveBehaviors();
@@ -78,6 +82,20 @@ export function StackBehaviorPickerModal({
     }
     setQuery('');
     onPick?.(id);
+  };
+
+  const trimmedQuery = query.trim();
+  const canCreate =
+    onCreate != null &&
+    trimmedQuery.length > 0 &&
+    !behaviors.some(behavior => behavior.name.trim().toLowerCase() === trimmedQuery.toLowerCase());
+
+  const handleCreate = () => {
+    const id = onCreate?.(capitalizeFirst(trimmedQuery));
+    if (!id) return;
+    setQuery('');
+    if (multiple) setPicked(current => [...current, id]);
+    else onPick?.(id);
   };
 
   const handleAdd = () => {
@@ -145,6 +163,29 @@ export function StackBehaviorPickerModal({
                 </Pressable>
               );
             }}
+            ListHeaderComponent={
+              canCreate ? (
+                <Pressable
+                  style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+                  onPress={handleCreate}
+                  accessibilityRole="button"
+                >
+                  <View style={styles.createIcon}>
+                    <Ionicons
+                      name="add"
+                      size={18}
+                      color={Colors.bg.black}
+                    />
+                  </View>
+                  <Text
+                    style={styles.createText}
+                    numberOfLines={1}
+                  >
+                    Create "{capitalizeFirst(trimmedQuery)}"
+                  </Text>
+                </Pressable>
+              ) : null
+            }
             ListEmptyComponent={<Text style={styles.empty}>No behaviours found</Text>}
           />
           {multiple && (
@@ -217,6 +258,20 @@ const styles = StyleSheet.create({
   checkboxOn: {
     backgroundColor: Colors.type.desirable,
     borderColor: Colors.type.desirable,
+  },
+  createIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    backgroundColor: Colors.type.desirable,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  createText: {
+    flex: 1,
+    color: Colors.type.desirable,
+    fontSize: 15,
+    fontWeight: '600',
   },
   name: {
     flex: 1,

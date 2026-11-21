@@ -11,9 +11,11 @@ import { EmojiPicker } from '../../components/emoji-picker';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text, TextInput } from '../../components/text';
 import { useBehaviorStore } from '../../store/behavior-store';
+import { useSettingsStore } from '../../store/settings-store';
 import type { BehaviorEntry } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
+import { getCookBatchCategoryIds } from '../../utils/cook-batch-utils';
 import {
   buildBatchName,
   getBatchRates,
@@ -98,6 +100,17 @@ export function MealBatchFormScreen() {
   const rates = getBatchRates(totals, cooked ?? 0, RATE_BASIS);
   const suggestedPortion = getSuggestedPortionAmount(cooked ?? 0, portions ?? undefined);
   const portionValues = getPortionValues(totals, cooked ?? 0, suggestedPortion ?? 0);
+
+  const createIngredient = (ingredientName: string): string | undefined => {
+    const categoryId =
+      picked?.category.id ??
+      getCookBatchCategoryIds(categories, useSettingsStore.getState().cookBatchCategoryIds)[0] ??
+      undefined;
+    useBehaviorStore
+      .getState()
+      .addBehavior(ingredientName, amountSource?.type ?? 'desirable', undefined, 0, 'rest', categoryId);
+    return useBehaviorStore.getState().behaviors.at(-1)?.id;
+  };
 
   const addIngredients = (ids: string[]) => {
     setPickerOpen(false);
@@ -313,6 +326,7 @@ export function MealBatchFormScreen() {
         excludeIds={rows.map(row => row.behaviorId)}
         onClose={() => setPickerOpen(false)}
         onPickMany={addIngredients}
+        onCreate={createIngredient}
       />
     </SafeAreaView>
   );
