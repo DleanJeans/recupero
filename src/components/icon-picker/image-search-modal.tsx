@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, type WebViewNavigation } from 'react-native-webview';
 import { Colors } from '../../utils/colors';
 import {
+  DESKTOP_MODE_SCRIPT,
   DESKTOP_USER_AGENT,
   getImageSearchUrl,
   getUrlForQuery,
@@ -100,6 +101,10 @@ export function ImageSearchModal({ initialQuery, onPick, onClose }: Props) {
             key={desktop ? 'desktop' : 'mobile'}
             ref={webRef}
             userAgent={desktop ? DESKTOP_USER_AGENT : undefined}
+            injectedJavaScriptBeforeContentLoaded={desktop ? DESKTOP_MODE_SCRIPT : undefined}
+            scalesPageToFit
+            setBuiltInZoomControls
+            setDisplayZoomControls={false}
             onNavigationStateChange={onNavigation}
             source={{ uri: url }}
             injectedJavaScript={IMAGE_SEARCH_SCRIPT}

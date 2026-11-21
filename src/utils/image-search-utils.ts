@@ -59,7 +59,7 @@ true;
 
 /** A desktop Chrome user agent, so sites like WhatsApp Web serve their desktop page. */
 export const DESKTOP_USER_AGENT =
-  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
 /** The page for what was typed in the search box: a web address opens directly, anything else is an image search. */
 export function getUrlForQuery(query: string): string {
@@ -68,3 +68,26 @@ export function getUrlForQuery(query: string): string {
   if (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(text) && !/\s/.test(text)) return `https://${text}`;
   return getImageSearchUrl(text);
 }
+
+/** Runs before a page loads in desktop mode: reports a desktop platform, no touch and a wide viewport. */
+export const DESKTOP_MODE_SCRIPT = `
+(function () {
+  try {
+    Object.defineProperty(navigator, 'platform', { get: function () { return 'Win32'; } });
+    Object.defineProperty(navigator, 'maxTouchPoints', { get: function () { return 0; } });
+    Object.defineProperty(navigator, 'userAgentData', { get: function () { return undefined; } });
+    var fixViewport = function () {
+      var meta = document.querySelector('meta[name=viewport]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = 'viewport';
+        (document.head || document.documentElement).appendChild(meta);
+      }
+      meta.content = 'width=1280, initial-scale=0.3, minimum-scale=0.1, maximum-scale=3, user-scalable=yes';
+    };
+    fixViewport();
+    document.addEventListener('DOMContentLoaded', fixViewport);
+  } catch (e) {}
+})();
+true;
+`;
