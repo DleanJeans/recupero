@@ -2,7 +2,7 @@ import DateTimePicker, {
   DateTimePickerAndroid,
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
@@ -60,6 +60,24 @@ function TimePickerComponent({
         : `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
     [hour, minute, second, showSeconds],
   );
+  const latest = useRef({ second, maxSecond, onSecondChange });
+  latest.current = { second, maxSecond, onSecondChange };
+  const openSecondsDialog = useCallback(() => {
+    const current = latest.current;
+    DateTimePickerAndroid.open({
+      value: new Date(2000, 0, 1, 0, current.second),
+      mode: 'time',
+      display: 'spinner',
+      is24Hour: true,
+      minimumDate: new Date(2000, 0, 1),
+      maximumDate: new Date(2000, 0, 1, 0, current.maxSecond),
+      onChange: (event, selectedDate) => {
+        if (event.type === 'dismissed' || !selectedDate) return;
+        // Read latest props: the hour/minute dialog may just have changed them.
+        latest.current.onSecondChange(Math.min(selectedDate.getMinutes(), latest.current.maxSecond));
+      },
+    });
+  }, []);
   const handleChange = useCallback(
     (event: DateTimePickerEvent, selectedDate: Date | undefined, secondsMode: boolean) => {
       if (event.type === 'dismissed' || !selectedDate) return;
@@ -86,9 +104,15 @@ function TimePickerComponent({
       is24Hour: true,
       minimumDate: pickerMinimumDate,
       maximumDate: maximumDate,
-      onChange: (event, selectedDate) => handleChange(event, selectedDate, false),
+      onChange: (event, selectedDate) => {
+        handleChange(event, selectedDate, false);
+        // Chain straight into the 00:ss wheel so one tap sets HH:mm:ss.
+        if (event.type !== 'dismissed' && selectedDate && showSeconds) {
+          setTimeout(openSecondsDialog, 0);
+        }
+      },
     });
-  }, [handleChange, maximumDate, onExpand, pickerMinimumDate, value]);
+  }, [handleChange, maximumDate, onExpand, openSecondsDialog, pickerMinimumDate, showSeconds, value]);
   const handleSecondPress = useCallback(() => {
     setEditingSeconds(true);
     if (!IS_ANDROID) {
