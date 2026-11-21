@@ -54,6 +54,7 @@ object AppOpenWatcher {
     if (packageName == defaultInputMethodPackage(context)) return
     if (packageName == lastForegroundPackage) return
     lastForegroundPackage = packageName
+    NeedAppOverlay.onForegroundChanged(context, packageName)
 
     val watches = readWatches(context).filter { it.packageName == packageName }
     if (watches.isEmpty()) return

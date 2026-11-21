@@ -20,6 +20,7 @@ import { useCheckInNudges } from './src/hooks/use-checkin-nudges';
 import { useDeferredBottomNavNavigation } from './src/hooks/use-deferred-bottom-nav-navigation';
 import { useDevHandoffImport } from './src/hooks/use-dev-handoff-import';
 import { useGoogleHealthSync } from './src/hooks/use-google-health-sync';
+import { useNeedAppOverlayWatches } from './src/hooks/use-need-app-overlay-watches';
 import { useNeedNudges } from './src/hooks/use-need-nudges';
 import { useReminderEngine } from './src/hooks/use-reminder-engine';
 import { useSunlightTracking } from './src/hooks/use-sunlight-tracking';
@@ -124,6 +125,7 @@ export default function App() {
   const { pendingRouteName, deferNavigation, completeNavigation } = useDeferredBottomNavNavigation<BottomNavRoute>();
   useAppUsageSync(storesReady);
   useTimerOverlay(storesReady);
+  useNeedAppOverlayWatches(storesReady);
   useAppTimerAutoStop(storesReady);
   useGoogleHealthSync(storesReady);
   useReminderEngine(storesReady, navigationRef);

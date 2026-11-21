@@ -39,7 +39,7 @@ class SiteTrackingService : AccessibilityService() {
   /** All apps while an app-open reminder exists (to see app switches), else just Firefox. */
   private fun applyPackageFilter() {
     val info = serviceInfo ?: return
-    val watchesApps = AppOpenWatcher.watchedPackages(this).isNotEmpty()
+    val watchesApps = AppOpenWatcher.watchedPackages(this).isNotEmpty() || NeedAppOverlay.watchedPackages(this).isNotEmpty()
     info.packageNames = if (watchesApps) null else FIREFOX_PACKAGES.toTypedArray()
     info.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
     info.flags = info.flags or AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS

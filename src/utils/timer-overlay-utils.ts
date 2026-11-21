@@ -21,6 +21,8 @@ export interface OverlayExtras {
   level?: OverlayLevel;
   /** The behavior tracks another app's usage or fills a need, so the pill shows by default. Otherwise it stays hidden until toggled. */
   tracksApp?: boolean;
+  /** The app this timer watches; the automatic overlay for that app is skipped while it runs. */
+  appPackage?: string;
 }
 
 export interface OverlayTimer extends OverlayExtras {
@@ -35,7 +37,7 @@ export interface OverlayTimer extends OverlayExtras {
 export function getRunningOverlayTimers(
   sessions: Array<
     Pick<TimerSession, 'lockedBehaviorId' | 'startTimestamp' | 'stopTimestamp'> &
-      Partial<Pick<TimerSession, 'initialNotes'>>
+      Partial<Pick<TimerSession, 'initialNotes' | 'appPackage'>>
   >,
   getName: (behaviorId: string) => string | undefined,
   getNeed?: (behaviorName: string) => OverlayNeed | undefined,
@@ -47,12 +49,15 @@ export function getRunningOverlayTimers(
     const name = getName(session.lockedBehaviorId);
     if (name) {
       const note = session.initialNotes?.trim();
+      const extras = getExtras?.(session.lockedBehaviorId);
+      const appPackage = session.appPackage ?? extras?.appPackage;
       timers.push({
         name,
         start: session.startTimestamp,
         ...(note ? { note } : {}),
         need: getNeed?.(name),
-        ...getExtras?.(session.lockedBehaviorId),
+        ...extras,
+        ...(appPackage ? { appPackage } : {}),
       });
     }
   }

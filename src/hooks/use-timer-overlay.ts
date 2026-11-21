@@ -17,6 +17,7 @@ import { useNeedLevels } from './use-need-levels';
 export function useTimerOverlay(enabled: boolean) {
   const lockedBehaviorId = useTimerStore(s => s.lockedBehaviorId);
   const initialNotes = useTimerStore(s => s.initialNotes);
+  const appPackage = useTimerStore(s => s.appPackage);
   const startTimestamp = useTimerStore(s => s.startTimestamp);
   const stopTimestamp = useTimerStore(s => s.stopTimestamp);
   const parked = useTimerStore(s => s.parked);
@@ -26,7 +27,7 @@ export function useTimerOverlay(enabled: boolean) {
 
   const timersJson = useMemo(() => {
     const sessions = [
-      ...(lockedBehaviorId ? [{ lockedBehaviorId, initialNotes, startTimestamp, stopTimestamp }] : []),
+      ...(lockedBehaviorId ? [{ lockedBehaviorId, initialNotes, appPackage, startTimestamp, stopTimestamp }] : []),
       ...parked,
     ];
     const byId = new Map(behaviors.map(b => [b.id, b]));
@@ -58,12 +59,24 @@ export function useTimerOverlay(enabled: boolean) {
           return {
             icon: iconText(behavior.icon) || undefined,
             tracksApp: behavior.autoTrackApp || fillsNeed ? true : undefined,
+            appPackage: behavior.autoTrackApp?.packageName,
             level: xp == null ? undefined : { inLevel: getLevelXp(xp), forLevel: xpRequiredForLevel(getLevel(xp)) },
           };
         },
       ),
     );
-  }, [lockedBehaviorId, initialNotes, startTimestamp, stopTimestamp, parked, behaviors, needs, now, dayCutoffHour]);
+  }, [
+    lockedBehaviorId,
+    initialNotes,
+    appPackage,
+    startTimestamp,
+    stopTimestamp,
+    parked,
+    behaviors,
+    needs,
+    now,
+    dayCutoffHour,
+  ]);
 
   useEffect(() => {
     if (!enabled || !AppUsage?.startTimerOverlay) return;

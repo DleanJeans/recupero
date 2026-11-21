@@ -70,6 +70,12 @@ class AppUsageModule : Module() {
       SiteTrackingService.refreshPackageFilter()
     }
 
+    // JSON array of { packageName, name, icon, need } (NeedAppOverlayWatch in JS): apps that show the timer overlay when opened.
+    Function("setNeedAppOverlayWatches") { json: String ->
+      NeedAppOverlay.setWatches(context, json)
+      SiteTrackingService.refreshPackageFilter()
+    }
+
     Function("isSiteTrackingEnabled") {
       SiteTrackingService.isEnabled(context)
     }
@@ -138,7 +144,9 @@ class AppUsageModule : Module() {
     }
 
     Function("stopTimerOverlay") {
-      context.stopService(Intent(context, TimerOverlayService::class.java))
+      // An automatic overlay for the app in front keeps the service alive; it clears only the JS timers.
+      val running = TimerOverlayService.instance
+      if (running != null) running.clearTimers() else context.stopService(Intent(context, TimerOverlayService::class.java))
     }
 
     // Saves the app's launcher icon as a PNG in the app's files and returns its file:// uri, or null.

@@ -32,6 +32,8 @@ interface AppUsageNativeModule {
   getMediaEvents?(start: number, end: number): Promise<MediaEvent[]>;
   /** JSON array of AppOpenWatch. Missing in builds made before app-open reminders. */
   setAppOpenWatches?(json: string): void;
+  /** JSON array of NeedAppOverlayWatch: apps that show the timer overlay when opened. Missing in older builds. */
+  setNeedAppOverlayWatches?(json: string): void;
 }
 
 /** Android-only. `null` on iOS, web, and builds made before this module existed. */

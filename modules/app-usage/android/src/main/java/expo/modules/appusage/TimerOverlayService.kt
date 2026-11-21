@@ -27,6 +27,7 @@ import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.TextView
 import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * Floating timer pill drawn over other apps while a Recupero timer runs and Recupero itself is in the
@@ -40,14 +41,22 @@ class TimerOverlayService : Service() {
   /** The behavior's level before this timer started: XP into the level and the level's size (1 XP per timer minute). */
   private class Level(val inLevel: Double, val forLevel: Double)
 
-  private class Timer(val name: String, val start: Long, val fill: Fill?, val icon: String?, val level: Level?, val note: String?, val tracksApp: Boolean)
+  private class Timer(val name: String, val start: Long, val fill: Fill?, val icon: String?, val level: Level?, val note: String?, val tracksApp: Boolean, val appPackage: String? = null)
 
   /** One timer's bubble: a ring (need fill, else level) around the icon, the time, and the name underneath. */
   private class Bubble(val root: LinearLayout, val ring: RingView, val time: TextView, val name: TextView)
 
 
   private val handler = Handler(Looper.getMainLooper())
-  private var timers: List<Timer> = emptyList()
+  /** Timers Recupero hands over. */
+  private var jsTimers: List<Timer> = emptyList()
+  /** The app in front that helps a need (see NeedAppOverlay); drawn as one more timer unless a Recupero timer already watches it. */
+  private var appTimer: Timer? = null
+  private val timers: List<Timer>
+    get() {
+      val auto = appTimer
+      return if (auto != null && jsTimers.none { it.appPackage == auto.appPackage }) jsTimers + auto else jsTimers
+    }
   private var windowManager: WindowManager? = null
   private var container: LinearLayout? = null
   private val bubbles = mutableListOf<Bubble>()
@@ -92,12 +101,27 @@ class TimerOverlayService : Service() {
       }
       return START_NOT_STICKY
     }
-    val json = intent?.getStringExtra(EXTRA_TIMERS)
-    if (json == null) {
-      stopSelf()
+    if (intent?.action == ACTION_APP_LEAVE) {
+      appTimer = null
+      handler.post { if (timers.isEmpty()) stopSelf() else render() }
       return START_NOT_STICKY
     }
-    timers = parse(json)
+    if (intent?.action == ACTION_APP_ENTER) {
+      appTimer = parseAppTimer(intent) ?: appTimer
+      // A new app in front gets the overlay again even if the last one was swiped away.
+      dismissed = false
+      wantVisible = true
+      if (!enterForeground()) return START_NOT_STICKY
+      handler.removeCallbacks(tick)
+      handler.post(tick)
+      return START_NOT_STICKY
+    }
+    val json = intent?.getStringExtra(EXTRA_TIMERS)
+    if (json == null) {
+      if (appTimer == null) stopSelf()
+      return START_NOT_STICKY
+    }
+    jsTimers = parse(json)
     if (intent.hasExtra(EXTRA_VISIBLE)) {
       val visible = intent.getBooleanExtra(EXTRA_VISIBLE, false)
       // Coming back to Recupero ends a swipe-dismiss; the pill is allowed again next time it leaves.
@@ -108,6 +132,14 @@ class TimerOverlayService : Service() {
       stopSelf()
       return START_NOT_STICKY
     }
+    if (!enterForeground()) return START_NOT_STICKY
+    handler.removeCallbacks(tick)
+    handler.post(tick)
+    return START_NOT_STICKY
+  }
+
+  /** Goes foreground with the notification. Stops the service (false) when Android refuses. */
+  private fun enterForeground(): Boolean {
     try {
       val notification = buildNotification()
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -115,14 +147,44 @@ class TimerOverlayService : Service() {
       } else {
         startForeground(NOTIFICATION_ID, notification)
       }
+      return true
     } catch (error: Exception) {
       Log.w(TAG, "startForeground refused", error)
       stopSelf()
-      return START_NOT_STICKY
+      return false
     }
-    handler.removeCallbacks(tick)
-    handler.post(tick)
-    return START_NOT_STICKY
+  }
+
+  /** Drops the Recupero timers (they all ended); stays up while an app's automatic overlay is showing. */
+  fun clearTimers() {
+    handler.post {
+      jsTimers = emptyList()
+      if (appTimer == null) stopSelf() else render()
+    }
+  }
+
+  /** The need the app in front fills, from its level at `at` minus decay since, then rising while it is used. */
+  private fun parseAppTimer(intent: Intent): Timer? {
+    val packageName = intent.getStringExtra(EXTRA_APP_PACKAGE) ?: return null
+    val json = intent.getStringExtra(EXTRA_APP_JSON) ?: return null
+    return try {
+      val item = JSONObject(json)
+      val start = intent.getLongExtra(EXTRA_APP_START, System.currentTimeMillis())
+      val need = item.optJSONObject("need")
+      val fullMinutes = need?.optDouble("fullMinutes", 0.0) ?: 0.0
+      val fill = if (need != null && fullMinutes > 0) {
+        val decayed = need.getDouble("level") - need.optDouble("decayPerHour", 0.0) * Math.max(0L, start - need.getLong("at")) / 3600000.0
+        val level = decayed.coerceIn(0.0, 100.0)
+        Fill(need.getString("emoji"), need.getString("label"), level, (100.0 - level) / (100.0 / fullMinutes) * 60000.0, start)
+      } else {
+        null
+      }
+      val icon = item.optString("icon", "").ifEmpty { null } ?: need?.optString("emoji", "")?.ifEmpty { null }
+      Timer(item.getString("name"), start, fill, icon, null, null, true, packageName)
+    } catch (error: Exception) {
+      Log.w(TAG, "Bad app overlay", error)
+      null
+    }
   }
 
   fun setVisible(visible: Boolean) {
@@ -443,7 +505,7 @@ class TimerOverlayService : Service() {
       val level = item.optJSONObject("level")?.let { Level(it.optDouble("inLevel", 0.0), it.optDouble("forLevel", 0.0)) }
       val icon = item.optString("icon", "").ifEmpty { null }
       val note = item.optString("note", "").ifEmpty { null }
-      Timer(item.getString("name"), item.getLong("start"), fill, icon, level, note, item.optBoolean("tracksApp", false))
+      Timer(item.getString("name"), item.getLong("start"), fill, icon, level, note, item.optBoolean("tracksApp", false), item.optString("appPackage", "").ifEmpty { null })
     }
   }
 
@@ -451,6 +513,11 @@ class TimerOverlayService : Service() {
     private val GREEN = Color.parseColor("#4ADE80")
     const val EXTRA_TIMERS = "timers"
     const val EXTRA_VISIBLE = "visible"
+    const val ACTION_APP_ENTER = "expo.modules.appusage.APP_OVERLAY_ENTER"
+    const val ACTION_APP_LEAVE = "expo.modules.appusage.APP_OVERLAY_LEAVE"
+    const val EXTRA_APP_PACKAGE = "app_package"
+    const val EXTRA_APP_JSON = "app_json"
+    const val EXTRA_APP_START = "app_start"
     const val ACTION_TOGGLE = "expo.modules.appusage.TOGGLE_TIMER_OVERLAY"
     private const val CHANNEL_ID = "recupero-timer-overlay"
     private const val NOTIFICATION_ID = 7421
