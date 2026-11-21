@@ -31,6 +31,7 @@ export function ImageSearchModal({ initialQuery, onPick, onClose }: Props) {
   const [desktop, setDesktop] = useState(false);
   const webRef = useRef<WebView>(null);
   const canGoBack = useRef(false);
+  const currentUrl = useRef('');
 
   // System Back steps back through the browser history; it closes only when there is none left.
   const handleBack = () => {
@@ -39,6 +40,7 @@ export function ImageSearchModal({ initialQuery, onPick, onClose }: Props) {
   };
   const onNavigation = (nav: WebViewNavigation) => {
     canGoBack.current = nav.canGoBack;
+    currentUrl.current = nav.url;
   };
 
   const search = () => {
@@ -78,7 +80,11 @@ export function ImageSearchModal({ initialQuery, onPick, onClose }: Props) {
           />
           <Button
             variant="icon"
-            onPress={() => setDesktop(value => !value)}
+            onPress={() => {
+              // The browser restarts with the other identity: reopen the page being viewed, not the first search.
+              if (currentUrl.current) setUrl(currentUrl.current);
+              setDesktop(value => !value);
+            }}
             accessibilityLabel={desktop ? 'Desktop mode on' : 'Desktop mode off'}
             accessibilityState={{ selected: desktop }}
           >
