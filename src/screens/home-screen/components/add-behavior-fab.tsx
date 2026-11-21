@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 
@@ -18,6 +18,8 @@ interface AddBehaviorFabProps {
   label?: string;
   /** Ionicons name for the collapsed circle and the left of the label. */
   icon?: React.ComponentProps<typeof Ionicons>['name'];
+  /** Glyph size inside the fixed icon slot. Busy outline icons read better smaller than the plain +. */
+  iconSize?: number;
   /** Secondary look (dark pill) so it does not compete with the primary Add behavior button. */
   secondary?: boolean;
 }
@@ -28,6 +30,7 @@ export function AddBehaviorFab({
   onPress,
   label = 'Add behavior',
   icon = 'add',
+  iconSize = ICON_SIZE,
   secondary,
 }: AddBehaviorFabProps) {
   const fg = secondary ? Colors.text.primary : Colors.bg.black;
@@ -53,11 +56,13 @@ export function AddBehaviorFab({
       style={({ pressed }) => [styles.touch, pressed && styles.pressed]}
     >
       <Animated.View style={[styles.fab, secondary && styles.fabSecondary, { width }]}>
-        <Ionicons
-          name={icon}
-          size={ICON_SIZE}
-          color={fg}
-        />
+        <View style={styles.iconSlot}>
+          <Ionicons
+            name={icon}
+            size={iconSize}
+            color={fg}
+          />
+        </View>
         <AnimatedText
           numberOfLines={1}
           onLayout={e => setLabelWidth(Math.ceil(e.nativeEvent.layout.width))}
@@ -86,6 +91,12 @@ const styles = StyleSheet.create({
     paddingLeft: LEFT_PAD,
     overflow: 'hidden',
     elevation: 4,
+  },
+  iconSlot: {
+    width: ICON_SIZE,
+    height: ICON_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   fabSecondary: {
     backgroundColor: Colors.bg.elevated,

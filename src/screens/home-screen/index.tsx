@@ -236,6 +236,7 @@ export function HomeScreen() {
             secondary
             label="Cook a meal"
             icon="restaurant-outline"
+            iconSize={19}
             collapsed={fabCollapsed}
             onPress={() => navigation.navigate('MealBatchForm')}
           />
