@@ -32,6 +32,7 @@ interface BehaviorMetadataEditorProps {
   onIconPick?: (imageUrl: string) => void;
   /** Behaviour name, the starting query for the food search. */
   nameHint?: string;
+  currentIcon?: string;
 }
 
 export function BehaviorMetadataEditor({
@@ -45,6 +46,7 @@ export function BehaviorMetadataEditor({
   onAmountFieldChange,
   onIconPick,
   nameHint,
+  currentIcon,
 }: BehaviorMetadataEditorProps) {
   const selectedCategory = categories.find(category => category.id === categoryId);
   const fields = selectedCategory?.metadataFields ?? [];
@@ -141,6 +143,7 @@ export function BehaviorMetadataEditor({
             onChange={onChange}
             onIconPick={onIconPick}
             searchHint={nameHint}
+            currentIcon={currentIcon}
           />
           {calculatedFields.map((field: MetadataField) => (
             <MetadataDefaultInput

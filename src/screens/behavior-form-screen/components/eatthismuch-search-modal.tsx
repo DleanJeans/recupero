@@ -9,7 +9,8 @@ import { Colors } from '../../../utils/colors';
 import { type FoodSearchResult, searchEatThisMuch } from '../../../utils/nutrition-import-utils';
 
 interface EatThisMuchSearchModalProps {
-  onPick: (result: FoodSearchResult) => void;
+  /** Imports the picked food; `imageUrl` is the photo being shown for it, if any. */
+  onPick: (result: FoodSearchResult, imageUrl?: string) => void;
   /** Sets the picked food's image as the behaviour icon. Hides the button when missing. */
   onUseAsIcon?: (imageUrl: string) => void;
   onClose: () => void;
@@ -108,7 +109,7 @@ export function EatThisMuchSearchModal({
         renderItem={({ item }) => (
           <View style={styles.row}>
             <Pressable
-              onPress={() => onPick(item)}
+              onPress={() => onPick(item, shownImage(item))}
               style={styles.main}
             >
               {item.imageUrl ? (

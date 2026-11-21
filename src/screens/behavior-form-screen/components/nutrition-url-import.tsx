@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Button } from '../../../components/button';
+import { IconTile } from '../../../components/icon-tile';
 import { Text, TextInput } from '../../../components/text';
 import type { MetadataField } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
@@ -18,6 +19,8 @@ interface NutritionUrlImportProps {
   onIconPick?: (imageUrl: string) => void;
   /** Behaviour name, used as the starting search query. */
   searchHint?: string;
+  /** The behaviour's current icon text; empty means none yet. */
+  currentIcon?: string;
 }
 
 interface ImportStatus {
@@ -32,11 +35,13 @@ export function NutritionUrlImport({
   onChange,
   onIconPick,
   searchHint,
+  currentIcon,
 }: NutritionUrlImportProps) {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<ImportStatus | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [iconOffer, setIconOffer] = useState<string | null>(null);
   const trimmedUrl = url.trim();
 
   const handleImport = async (link: string = trimmedUrl) => {
@@ -124,12 +129,67 @@ export function NutritionUrlImport({
               setSearchOpen(false);
             })
           }
-          onPick={result => {
+          onPick={(result, imageUrl) => {
             setSearchOpen(false);
+            // No icon yet: use the food's photo. Otherwise ask before replacing it.
+            if (imageUrl && onIconPick) {
+              if (currentIcon?.trim()) setIconOffer(imageUrl);
+              else onIconPick(imageUrl);
+            }
             setUrl(result.url);
             handleImport(result.url);
           }}
         />
+      )}
+      {iconOffer && (
+        <Modal
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+          onRequestClose={() => setIconOffer(null)}
+        >
+          <View style={styles.dialogBackdrop}>
+            <View style={styles.dialog}>
+              <Text style={styles.dialogTitle}>Replace the icon?</Text>
+              <View style={styles.dialogIcons}>
+                <IconTile
+                  value={currentIcon}
+                  size={72}
+                  radius={16}
+                  style={styles.dialogTile}
+                />
+                <Ionicons
+                  name="arrow-forward"
+                  size={28}
+                  color={Colors.text.muted}
+                />
+                <IconTile
+                  value={iconOffer}
+                  size={72}
+                  radius={16}
+                  style={styles.dialogTile}
+                />
+              </View>
+              <View style={styles.dialogButtons}>
+                <Button
+                  size="sm"
+                  onPress={() => setIconOffer(null)}
+                >
+                  Keep current
+                </Button>
+                <Button
+                  size="sm"
+                  onPress={() => {
+                    onIconPick?.(iconOffer);
+                    setIconOffer(null);
+                  }}
+                >
+                  Replace
+                </Button>
+              </View>
+            </View>
+          </View>
+        </Modal>
       )}
       {status && <Text style={[styles.status, status.isError && styles.statusError]}>{status.message}</Text>}
     </View>
@@ -154,6 +214,26 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     fontSize: 14,
   },
+  dialogBackdrop: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 24,
+  },
+  dialog: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: Colors.bg.card,
+    borderRadius: 16,
+    padding: 20,
+    gap: 16,
+    alignItems: 'center',
+  },
+  dialogTitle: { color: Colors.text.primary, fontSize: 17, fontWeight: '600' },
+  dialogIcons: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  dialogTile: { backgroundColor: Colors.bg.input, alignItems: 'center', justifyContent: 'center' },
+  dialogButtons: { flexDirection: 'row', gap: 12 },
   searchButton: {
     width: 36,
     height: 36,
