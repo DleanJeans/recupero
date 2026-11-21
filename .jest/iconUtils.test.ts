@@ -28,7 +28,7 @@ import {
   toStackLayers,
 } from '../src/utils/icon-utils';
 import { CLEAR_BACKGROUND_SOURCE } from '../src/utils/image-clear-script';
-import { getImageSearchUrl, parseImageCandidate } from '../src/utils/image-search-utils';
+import { getImageSearchUrl, getUrlForQuery, parseImageCandidate } from '../src/utils/image-search-utils';
 
 describe('emoji kitchen index', () => {
   it('finds a mix in either order with the URL Google serves', () => {
@@ -181,6 +181,9 @@ describe('image crop', () => {
 describe('image search', () => {
   it('builds the search URL', () => {
     expect(getImageSearchUrl(' oat milk ')).toBe('https://www.google.com/search?tbm=isch&q=oat%20milk');
+    expect(getUrlForQuery('web.whatsapp.com')).toBe('https://web.whatsapp.com');
+    expect(getUrlForQuery('https://a.com/x?y=1')).toBe('https://a.com/x?y=1');
+    expect(getUrlForQuery('oat milk')).toBe('https://www.google.com/search?tbm=isch&q=oat%20milk');
   });
 
   it('accepts only http image candidates', () => {

@@ -56,3 +56,15 @@ export const IMAGE_SEARCH_SCRIPT = `
 })();
 true;
 `;
+
+/** A desktop Chrome user agent, so sites like WhatsApp Web serve their desktop page. */
+export const DESKTOP_USER_AGENT =
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+/** The page for what was typed in the search box: a web address opens directly, anything else is an image search. */
+export function getUrlForQuery(query: string): string {
+  const text = query.trim();
+  if (/^https?:\/\/\S+$/i.test(text)) return text;
+  if (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(text) && !/\s/.test(text)) return `https://${text}`;
+  return getImageSearchUrl(text);
+}

@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-21',
     items: [
+      'The in-app image browser (from the icon editor) now has a Desktop mode button next to the search box, and you can type a web address in the search box to open that site, e.g. web.whatsapp.com to log into WhatsApp Web.',
       'Fixed the automatic timer overlay (and its notification) disappearing less than a second after opening an app like WhatsApp. It now stays until you leave the app.',
       'Move or merge logs: long-press a behavior (or tap ⋯ on its screen) › Move logs to… › pick the other behavior. All its logs move there, with a choice to also archive the old one. Values with no matching field in the new behavior are dropped, and the confirmation says so.',
       'In Cook a meal, the base behavior card has a play button to start its timer when it is not running.',

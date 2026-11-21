@@ -5,7 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView, type WebViewNavigation } from 'react-native-webview';
 import { Colors } from '../../utils/colors';
 import {
+  DESKTOP_USER_AGENT,
   getImageSearchUrl,
+  getUrlForQuery,
   IMAGE_SEARCH_SCRIPT,
   type ImageCandidate,
   parseImageCandidate,
@@ -26,6 +28,7 @@ export function ImageSearchModal({ initialQuery, onPick, onClose }: Props) {
   const [url, setUrl] = useState(() => getImageSearchUrl(initialQuery));
   const [candidate, setCandidate] = useState<ImageCandidate | null>(null);
   const [loading, setLoading] = useState(true);
+  const [desktop, setDesktop] = useState(false);
   const webRef = useRef<WebView>(null);
   const canGoBack = useRef(false);
 
@@ -39,7 +42,7 @@ export function ImageSearchModal({ initialQuery, onPick, onClose }: Props) {
   };
 
   const search = () => {
-    if (query.trim()) setUrl(getImageSearchUrl(query));
+    if (query.trim()) setUrl(getUrlForQuery(query));
   };
 
   return (
@@ -67,15 +70,30 @@ export function ImageSearchModal({ initialQuery, onPick, onClose }: Props) {
             value={query}
             onChangeText={setQuery}
             onSubmitEditing={search}
-            placeholder="Search images"
+            placeholder="Search images or type a web address"
             placeholderTextColor={Colors.text.faint}
             returnKeyType="search"
             autoCorrect={false}
+            autoCapitalize="none"
           />
+          <Button
+            variant="icon"
+            onPress={() => setDesktop(value => !value)}
+            accessibilityLabel={desktop ? 'Desktop mode on' : 'Desktop mode off'}
+            accessibilityState={{ selected: desktop }}
+          >
+            <Ionicons
+              name={desktop ? 'desktop' : 'desktop-outline'}
+              size={22}
+              color={desktop ? Colors.type.desirable : Colors.text.secondary}
+            />
+          </Button>
         </View>
         <View style={styles.web}>
           <WebView
+            key={desktop ? 'desktop' : 'mobile'}
             ref={webRef}
+            userAgent={desktop ? DESKTOP_USER_AGENT : undefined}
             onNavigationStateChange={onNavigation}
             source={{ uri: url }}
             injectedJavaScript={IMAGE_SEARCH_SCRIPT}
