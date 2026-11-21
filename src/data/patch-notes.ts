@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-21',
     items: [
+      'In Cook a meal, the base behavior card has a play button to start its timer when it is not running.',
       {
         text: "In the Social need screen's person dialog, the emoji now opens the full icon editor, the address has a map (search, tap to drop a pin, or locate yourself), and the birthday uses a date picker.",
         screen: 'Need',

@@ -345,8 +345,23 @@ export function MealBatchFormScreen() {
                   {formatClockDuration(now - baseStart)}
                 </Text>
               )}
+              {!baseRunning && (
+                <Button
+                  variant="icon"
+                  style={styles.tightButton}
+                  onPress={() => startIngredientTimer(baseBehavior.id, baseBehavior.name)}
+                  accessibilityLabel={`Start timer for ${baseBehavior.name}`}
+                >
+                  <Ionicons
+                    name="play-circle-outline"
+                    size={26}
+                    color="#4ade80"
+                  />
+                </Button>
+              )}
               <Button
                 variant="icon"
+                style={styles.tightButton}
                 onPress={() => setBaseBehaviorId(undefined)}
                 accessibilityLabel="Remove base behavior"
               >
@@ -573,6 +588,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   macroChipText: { color: Colors.text.muted, fontSize: 12, fontWeight: '600', flexShrink: 0 },
+  tightButton: { minWidth: 36, paddingHorizontal: 2 },
   baseRow: {
     flexDirection: 'row',
     alignItems: 'center',
