@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-21',
     items: [
+      'In Cook a meal, tap the "Showing ..." button above the ingredients to switch which macro (calories, protein, fiber...) shows under each ingredient name.',
       'The Settings cog at the top right of each tab is now a "..." menu with Check for updates, Patch notes and Settings. Check for updates shows its result in the menu without closing it.',
       'In Cook a meal, the base behavior card (like Chicken Soup) now shows its running timer ticking, such as 40:05.',
       "In Cook a meal, press and hold an ingredient's icon or name to open its details and edit it. What you entered is kept.",

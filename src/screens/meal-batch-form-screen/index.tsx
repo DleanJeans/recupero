@@ -90,6 +90,8 @@ export function MealBatchFormScreen() {
   const [baseBehaviorId, setBaseBehaviorId] = useState<string | undefined>(
     existing ? existing.batch?.baseBehaviorId : initial?.baseBehaviorId,
   );
+  /** Which calculated macro each ingredient row shows under its name (first one until chosen). */
+  const [shownKey, setShownKey] = useState<string | undefined>();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [basePickerOpen, setBasePickerOpen] = useState(false);
   const baseBehavior = baseBehaviorId ? behaviors.find(behavior => behavior.id === baseBehaviorId) : undefined;
@@ -156,6 +158,12 @@ export function MealBatchFormScreen() {
   const picked = useMemo(() => pickBatchCategory(ingredientBehaviors, categories), [ingredientBehaviors, categories]);
   const fields = picked?.fields ?? [];
   const calculatedFields = getCalculatedMetadataFields(fields);
+  const shownField = calculatedFields.find(field => field.key === shownKey) ?? calculatedFields[0];
+  const cycleShownField = () => {
+    if (calculatedFields.length < 2 || !shownField) return;
+    const index = calculatedFields.findIndex(field => field.key === shownField.key);
+    setShownKey(calculatedFields[(index + 1) % calculatedFields.length].key);
+  };
   const amountSource = ingredientBehaviors.find(behavior => behavior.categoryId === picked?.category.id);
   const amountField = amountSource ? getBehaviorAmountField(amountSource, fields) : undefined;
   const unit = amountField?.unit ?? '';
@@ -204,7 +212,11 @@ export function MealBatchFormScreen() {
     if (keys.length === 0 && (behavior.defaultMetadata == null || Object.keys(behavior.defaultMetadata).length === 0)) {
       return { text: 'No rates saved, adds nothing', warn: true };
     }
-    const first = calculatedFields.find(field => own[field.key] != null);
+    const first =
+      calculatedFields.find(field => field.key === shownField?.key) ??
+      calculatedFields.find(field => own[field.key] != null);
+    if (shownField && own[shownField.key] == null && amount == null)
+      return { text: 'Enter the raw amount', warn: false };
     if (!first) return { text: 'Enter the raw amount', warn: false };
     return {
       text: `${Math.round(own[first.key] * 10) / 10}${first.unit ? ` ${first.unit}` : ''} ${first.label}`,
@@ -354,6 +366,24 @@ export function MealBatchFormScreen() {
 
         <View style={styles.section}>
           <CueSectionLabel>{`Ingredients · raw amount${unit ? ` (${unit})` : ''}`}</CueSectionLabel>
+          {calculatedFields.length > 1 && shownField && (
+            <Pressable
+              style={styles.macroChip}
+              onPress={cycleShownField}
+              accessibilityRole="button"
+              accessibilityLabel={`Showing ${shownField.label} per ingredient. Tap to change`}
+            >
+              <Ionicons
+                name="swap-horizontal"
+                size={14}
+                color={Colors.text.muted}
+              />
+              <Text
+                style={styles.macroChipText}
+                numberOfLines={1}
+              >{`Showing ${shownField.label}`}</Text>
+            </Pressable>
+          )}
           {rows.map(row => {
             const behavior = behaviors.find(candidate => candidate.id === row.behaviorId);
             const info = behavior
@@ -506,6 +536,17 @@ const styles = StyleSheet.create({
   nameInput: { flex: 1, fontSize: 17, fontWeight: '600' },
   link: { color: '#4ade80', fontSize: 12, fontWeight: '600' },
   hint: { color: Colors.text.faint, fontSize: 12, lineHeight: 17 },
+  macroChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    backgroundColor: Colors.bg.input,
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  macroChipText: { color: Colors.text.muted, fontSize: 12, fontWeight: '600', flexShrink: 0 },
   baseRow: {
     flexDirection: 'row',
     alignItems: 'center',
