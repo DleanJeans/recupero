@@ -13,6 +13,7 @@ import {
   getLastContactTs,
   sortPeopleByContact,
 } from '../../utils/people-utils';
+import { AppIcon } from '../app-icon';
 import { Text } from '../text';
 import { PersonDialog } from './person-dialog';
 
@@ -55,7 +56,10 @@ export function PeopleStrip({ now }: PeopleStripProps) {
               accessibilityRole="button"
               accessibilityLabel={`${person.name}, last contact ${formatDaysSince(days)}`}
             >
-              <Text style={styles.emoji}>{person.emoji}</Text>
+              <AppIcon
+                value={person.emoji}
+                size={24}
+              />
               <Text
                 style={styles.name}
                 numberOfLines={1}

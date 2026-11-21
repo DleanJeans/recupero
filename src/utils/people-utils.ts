@@ -147,3 +147,18 @@ export function planChatContacts(
   }
   return plan;
 }
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "14 May 1990" or "14 May" when no year; undefined when empty or invalid. */
+export function formatBirthday(birthday: string): string | undefined {
+  const parsed = parseBirthday(birthday);
+  if (!parsed) return undefined;
+  return `${parsed.day} ${MONTHS[parsed.month - 1]}${parsed.year ? ` ${parsed.year}` : ''}`;
+}
+
+/** Stored birthday text for a picked date: "YYYY-MM-DD". */
+export function toBirthday(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}

@@ -1,11 +1,13 @@
 import type { Person } from '../src/types/person';
 import {
+  formatBirthday,
   getContactTone,
   getDaysSince,
   getDaysUntilBirthday,
   matchPersonBySender,
   parseBirthday,
   planChatContacts,
+  toBirthday,
 } from '../src/utils/people-utils';
 
 const person = (over: Partial<Person>): Person => ({
@@ -29,6 +31,8 @@ describe('people utils', () => {
     expect(parseBirthday('13-40')).toBeUndefined();
     expect(parseBirthday('02-31')).toBeUndefined();
     expect(parseBirthday('abc')).toBeUndefined();
+    expect(formatBirthday('1990-05-14')).toBe('14 May 1990');
+    expect(toBirthday(new Date(1990, 4, 4))).toBe('1990-05-04');
   });
 
   it('counts days until the next birthday', () => {

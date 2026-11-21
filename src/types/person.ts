@@ -10,6 +10,9 @@ export interface Person {
   /** "MM-DD" or "YYYY-MM-DD". Empty when unknown. */
   birthday: string;
   address: string;
+  /** Pin on the map for the address, when picked. */
+  lat?: number;
+  lng?: number;
   /** Free notes: likes, dislikes, gift ideas, food allergies... */
   preferences: string;
   /** Days without contact after which this person turns red. */

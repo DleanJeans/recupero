@@ -1,21 +1,28 @@
-import React, { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import React, { useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useKeyboardVisible } from '../../hooks/use-keyboard-visible';
+import { GeofenceMap } from '../../screens/location-edit-screen/components/geofence-map';
 import { EMPTY_PERSON, type PersonDraft, usePeopleStore } from '../../store/people-store';
 import type { ContactKind, Person } from '../../types/person';
 import { Colors } from '../../utils/colors';
+import type { GeoPoint } from '../../utils/geofence-utils';
+import { geocodeAddress, getCurrentPoint, reverseGeocodePoint } from '../../utils/location-utils';
 import {
   CONTACT_AMOUNTS,
   CONTACT_EMOJIS,
   CONTACT_LABELS,
+  formatBirthday,
   formatBirthdayHint,
   formatDaysSince,
   getDaysSince,
   getLastContactTs,
   parseBirthday,
+  toBirthday,
 } from '../../utils/people-utils';
 import { Button } from '../button';
+import { EmojiPicker } from '../emoji-picker';
 import { Text, TextInput } from '../text';
 
 interface PersonDialogProps {
@@ -39,7 +46,64 @@ export function PersonDialog({ person, now, onClose }: PersonDialogProps) {
   const [draft, setDraft] = useState<PersonDraft>(person ? { ...person } : EMPTY_PERSON);
   const [nudgeText, setNudgeText] = useState(String(draft.nudgeDays));
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const pinRequest = useRef(0);
+  const point: GeoPoint | null = draft.lat != null && draft.lng != null ? { lat: draft.lat, lng: draft.lng } : null;
   const set = (patch: Partial<PersonDraft>) => setDraft(current => ({ ...current, ...patch }));
+
+  const dropPin = async (next: GeoPoint, fillAddress: boolean) => {
+    const requestId = ++pinRequest.current;
+    set({ lat: next.lat, lng: next.lng });
+    if (!fillAddress) return;
+    try {
+      const resolved = await reverseGeocodePoint(next);
+      if (resolved && requestId === pinRequest.current) set({ address: resolved });
+    } catch {
+      // Best effort: the pin is what matters.
+    }
+  };
+
+  const findAddress = async () => {
+    const query = draft.address.trim();
+    if (!query) return;
+    setSearching(true);
+    try {
+      const found = await geocodeAddress(query);
+      if (found) await dropPin(found, false);
+      else Alert.alert('No match', `Couldn't find "${query}". Try a fuller address, or tap the map.`);
+    } catch {
+      Alert.alert('Search failed', 'Check your connection, or tap the map to drop a pin.');
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const locateMe = async () => {
+    setLocating(true);
+    try {
+      const current = await getCurrentPoint();
+      if (current) await dropPin(current, true);
+      else Alert.alert('Location unavailable', 'Allow location access, or tap the map to drop a pin.');
+    } catch {
+      Alert.alert('Location unavailable', 'Could not get your position. Tap the map to drop a pin.');
+    } finally {
+      setLocating(false);
+    }
+  };
+
+  const pickBirthday = () => {
+    const parsed = parseBirthday(draft.birthday);
+    DateTimePickerAndroid.open({
+      mode: 'date',
+      value: new Date(parsed?.year ?? 1995, (parsed?.month ?? 1) - 1, parsed?.day ?? 1),
+      maximumDate: new Date(),
+      onChange: (event, date) => {
+        if (event.type !== 'set' || !date) return;
+        set({ birthday: toBirthday(date) });
+      },
+    });
+  };
 
   const birthdayValid = !draft.birthday.trim() || parseBirthday(draft.birthday) != null;
   const nudgeDays = Math.round(Number(nudgeText));
@@ -49,7 +113,7 @@ export function PersonDialog({ person, now, onClose }: PersonDialogProps) {
   const birthdayHint = formatBirthdayHint(draft.birthday, now);
 
   const save = () => {
-    const finished = { ...draft, birthday: draft.birthday.trim(), nudgeDays };
+    const finished = { ...draft, birthday: draft.birthday.trim(), address: draft.address.trim(), nudgeDays };
     if (person) updatePerson(person.id, finished);
     else addPerson(finished);
     onClose();
@@ -115,11 +179,11 @@ export function PersonDialog({ person, now, onClose }: PersonDialogProps) {
             ) : null}
 
             <View style={styles.nameRow}>
-              <TextInput
-                style={[styles.input, styles.emojiInput]}
+              <EmojiPicker
                 value={draft.emoji}
-                onChangeText={text => set({ emoji: text.trim().slice(-4) || '🧑' })}
-                accessibilityLabel="Emoji"
+                onChangeText={emoji => set({ emoji: emoji || '🧑' })}
+                nameHint={draft.name}
+                style={styles.emojiInput}
               />
               <TextInput
                 style={[styles.input, styles.flex]}
@@ -143,18 +207,56 @@ export function PersonDialog({ person, now, onClose }: PersonDialogProps) {
               placeholder="+84 912 345 678"
               keyboardType="phone-pad"
             />
-            <Field
-              label={`Birthday (MM-DD or YYYY-MM-DD)${birthdayHint ? ` · ${birthdayHint}` : ''}`}
-              value={draft.birthday}
-              onChange={birthday => set({ birthday })}
-              placeholder="05-14"
-              invalid={!birthdayValid}
-            />
-            <Field
-              label="Address"
-              value={draft.address}
-              onChange={address => set({ address })}
-              multiline
+            <View style={styles.field}>
+              <Text style={styles.label}>{`BIRTHDAY${birthdayHint ? ` · ${birthdayHint}` : ''}`}</Text>
+              <View style={styles.addressRow}>
+                <Pressable
+                  style={({ pressed }) => [styles.input, styles.flex, pressed && styles.pressed]}
+                  onPress={pickBirthday}
+                  accessibilityRole="button"
+                  accessibilityLabel="Pick birthday"
+                >
+                  <Text
+                    style={draft.birthday ? styles.dateText : styles.datePlaceholder}
+                    numberOfLines={1}
+                  >
+                    {formatBirthday(draft.birthday) ?? 'Pick a date'}
+                  </Text>
+                </Pressable>
+                {draft.birthday ? <Button onPress={() => set({ birthday: '' })}>Clear</Button> : null}
+              </View>
+            </View>
+            <View style={styles.field}>
+              <Text style={styles.label}>Address</Text>
+              <View style={styles.addressRow}>
+                <TextInput
+                  style={[styles.input, styles.flex]}
+                  value={draft.address}
+                  onChangeText={address => set({ address })}
+                  placeholder="Search address or place"
+                  placeholderTextColor={Colors.text.faint}
+                  returnKeyType="search"
+                  onSubmitEditing={findAddress}
+                  editable={!searching}
+                />
+                {searching ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={Colors.text.faint}
+                  />
+                ) : (
+                  <Button onPress={findAddress}>Find</Button>
+                )}
+              </View>
+            </View>
+            <GeofenceMap
+              point={point}
+              radiusM={20}
+              isLocating={locating}
+              onChangePoint={next => dropPin(next, true)}
+              onLocateMe={locateMe}
+              label={draft.name.trim() || undefined}
+              height={180}
             />
             <Field
               label="Preferences (likes, dislikes, gift ideas)"
@@ -251,7 +353,8 @@ const styles = StyleSheet.create({
   invalidInput: { borderWidth: 1, borderColor: Colors.type.undesirable },
   multiline: { minHeight: 64, textAlignVertical: 'top' },
   nameRow: { flexDirection: 'row', gap: 8 },
-  emojiInput: { width: 56, textAlign: 'center', fontSize: 22 },
+  emojiInput: { height: 46, borderRadius: 10 },
+  addressRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   kinds: { flexDirection: 'row', gap: 8 },
   kind: {
     flex: 1,
@@ -266,6 +369,8 @@ const styles = StyleSheet.create({
   kindEmoji: { fontSize: 20 },
   kindLabel: { color: Colors.text.primary, fontSize: 12, fontWeight: '600', maxWidth: '100%' },
   kindAmount: { color: Colors.type.desirable, fontSize: 11, fontWeight: '700' },
+  dateText: { color: Colors.text.primary, fontSize: 15 },
+  datePlaceholder: { color: Colors.text.faint, fontSize: 15 },
   nudgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   nudgeLabel: { color: Colors.text.light, fontSize: 13 },
   nudgeInput: { width: 64, textAlign: 'center' },

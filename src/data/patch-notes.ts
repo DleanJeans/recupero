@@ -37,6 +37,12 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-21',
     items: [
+      {
+        text: 'In the Social need screen\'s person dialog, the emoji now opens the full icon editor, the address has a map (search, tap to drop a pin, or locate yourself), and the birthday uses a date picker.',
+        screen: 'Need',
+        params: { needId: 'social' },
+        linkPhrase: 'Social need screen',
+      },
       "Social auto-log (needs a new app install and Notification access): when someone on your People list messages you on WhatsApp or Messenger, the app counts it as a message contact and updates their last contact. It matches the chat name against the person's name, nicknames or phone. Only the sender name is read, never the message. Messages you send are not seen.",
       {
         text: 'The Social need screen now has a People strip showing how long since you last talked to each person (green today, red once past their limit). Tap a person to log meeting, a call or a message (adds to Social), and to save their nicknames, phone, birthday, address and preferences.',
