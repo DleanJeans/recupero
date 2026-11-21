@@ -57,10 +57,7 @@ function TaskCardComponent({
     place ? `${getPlaceIconText(place)} ${place.name}` : undefined,
     note,
   ].filter((part): part is string => Boolean(part));
-  const canTrack =
-    !complete &&
-    behavior != null &&
-    (task.timed === true || (behavior.xpEnabled === true && behavior.durationXpEnabled === true));
+  const canTrack = !complete && behavior != null && (task.timed === true || behavior.durationXpEnabled === true);
 
   const handlePlay = () => {
     if (!behavior || !canTrack) return;

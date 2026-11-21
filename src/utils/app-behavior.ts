@@ -25,7 +25,7 @@ export async function ensureAppBehavior(app: LaunchableApp, options: EnsureAppBe
       Boolean(existing.autoTrackApp.mediaOnly) !== options.mediaOnly
     )
       updates.autoTrackApp = { ...existing.autoTrackApp, mediaOnly: options.mediaOnly || undefined };
-    if (options.trackDuration && !(existing.xpEnabled && existing.durationXpEnabled)) {
+    if (options.trackDuration && !existing.durationXpEnabled) {
       updates.xpEnabled = true;
       updates.durationXpEnabled = true;
     }

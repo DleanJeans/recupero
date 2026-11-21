@@ -113,9 +113,7 @@ export function BehaviorFormScreen() {
     String(
       getMoneyRewardAmount(
         behavior?.moneyReward,
-        behavior
-          ? behavior.xpEnabled === true && behavior.durationXpEnabled === true
-          : defaultXpEnabled === true && defaultDurationXpEnabled === true,
+        behavior ? behavior.durationXpEnabled === true : defaultXpEnabled === true && defaultDurationXpEnabled === true,
       ),
     ),
   );
@@ -161,7 +159,7 @@ export function BehaviorFormScreen() {
   const normalizedSiteDomain = siteTrackEnabled ? normalizeSiteDomain(siteDomain) : '';
   const siteDomainInvalid = siteTrackEnabled && !normalizedSiteDomain;
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-  const moneyRewardDurationBased = xpEnabled && durationXpEnabled;
+  const moneyRewardDurationBased = durationXpEnabled;
   const handleDurationXpToggle = () => {
     const nextEnabled = !durationXpEnabled;
     setDurationXpEnabled(nextEnabled);
@@ -249,11 +247,7 @@ export function BehaviorFormScreen() {
     setDurationXpEnabled(behavior.durationXpEnabled === true);
     setHideTotalXp(behavior.hideTotalXp === true);
     setMoneyReward(behavior.type !== 'neutral' && behavior.moneyReward != null);
-    setMoneyRewardAmount(
-      String(
-        getMoneyRewardAmount(behavior.moneyReward, behavior.xpEnabled === true && behavior.durationXpEnabled === true),
-      ),
-    );
+    setMoneyRewardAmount(String(getMoneyRewardAmount(behavior.moneyReward, behavior.durationXpEnabled === true)));
     setMoneyRewardAmountTouched(behavior.moneyReward != null);
     setCooldownMinutes(behavior.cooldownMinutes || 0);
     setCooldownType(behavior.cooldownType || 'rest');
@@ -302,10 +296,7 @@ export function BehaviorFormScreen() {
     defaultMetadataChanged = [...keys].some(k => String(orig[k] ?? '') !== (behaviorDefaultMetadata[k] ?? ''));
   }
 
-  const savedMoneyRewardAmount = getMoneyRewardAmount(
-    behavior?.moneyReward,
-    behavior?.xpEnabled === true && behavior?.durationXpEnabled === true,
-  );
+  const savedMoneyRewardAmount = getMoneyRewardAmount(behavior?.moneyReward, behavior?.durationXpEnabled === true);
   const moneyRewardEnabled = type !== 'neutral' && moneyReward;
   const starMoneyMultipliersEnabled = starsEnabled && moneyRewardEnabled;
   const starMoneyMultipliersChanged = starMoneyMultipliersEnabled
@@ -424,7 +415,7 @@ export function BehaviorFormScreen() {
         // XP is opt-in. When off, preserve the existing xpDecay config (it's ignored at runtime).
         xpEnabled: xpEnabled ? true : undefined,
         xpDecay: xpEnabled ? (xpDecayEnabled ? xpDecaySerialized : undefined) : behavior?.xpDecay,
-        durationXpEnabled: xpEnabled && durationXpEnabled ? true : undefined,
+        durationXpEnabled: durationXpEnabled ? true : undefined,
         hideTotalXp: xpEnabled && hideTotalXp ? true : undefined,
         moneyReward: moneyRewardConfig,
         autoTrackApp,
@@ -450,7 +441,7 @@ export function BehaviorFormScreen() {
         xpEnabled ? true : undefined,
         xpDecayEnabled ? xpDecaySerialized : undefined,
         cooldownEnabled,
-        xpEnabled && durationXpEnabled ? true : undefined,
+        durationXpEnabled ? true : undefined,
         xpEnabled && hideTotalXp ? true : undefined,
         moneyRewardConfig,
         autoTrackApp,
@@ -598,6 +589,15 @@ export function BehaviorFormScreen() {
             />
 
             <CheckboxRow
+              label="Track duration"
+              hint={
+                xpEnabled ? 'Use start and end time, awarding 1 XP per minute' : 'Use start and end time for each log'
+              }
+              checked={durationXpEnabled}
+              onToggle={handleDurationXpToggle}
+            />
+
+            <CheckboxRow
               label="Track XP"
               hint="Show level, XP bar, and decay"
               checked={xpEnabled}
@@ -605,13 +605,6 @@ export function BehaviorFormScreen() {
             >
               {xpEnabled && (
                 <View style={styles.xpOptions}>
-                  <CheckboxRow
-                    label="Track duration for XP"
-                    hint="Use start and end time, awarding 1 XP per minute"
-                    checked={durationXpEnabled}
-                    onToggle={handleDurationXpToggle}
-                    variant="row"
-                  />
                   <XPDecayInput
                     enabled={xpDecayEnabled}
                     every={xpDecayEvery}

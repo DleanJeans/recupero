@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-21',
     items: [
+      'You can now turn on "Track duration" in a behavior without turning on Track XP. Logs still get a start and end time and the Timer works; the level and XP bar stay hidden until you also turn on Track XP.',
       'Tapping the start or end time in a behavior log now opens a dialog with scrolling wheels for hours, minutes and seconds (HH:mm:ss) instead of the clock. Start and end times of timed logs now always show and keep seconds. Cancel or OK closes it.',
       'Selected tiles in the mood and body pickers now have a clear thicker outline and a stronger tint, so you can see what you picked.',
       'In the task dialog, picking a behavior that tracks an app fills the App row with that app and ticks Track duration. Picking an app also ticks it, and every behavior made for an app now has duration XP on.',

@@ -31,9 +31,7 @@ export function TimerPicker({
         selectedBehaviorId={selectedBehaviorId}
         query={behaviorQuery}
         showAllWhenEmpty
-        emptyMessage={
-          "No Timed behaviors available.\nTurn on Track XP and Track duration for XP\nin a behavior's settings to use it here."
-        }
+        emptyMessage={"No Timed behaviors available.\nTurn on Track duration\nin a behavior's settings to use it here."}
         onQueryChange={onBehaviorQueryChange}
         onSelect={onBehaviorSelect}
         appearance="timer"

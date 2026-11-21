@@ -51,9 +51,7 @@ export function TimerScreen() {
   }, [navigation]);
 
   const availableBehaviors = useMemo(() => {
-    const timerBehaviors = behaviors.filter(
-      behavior => behavior.xpEnabled === true && behavior.durationXpEnabled === true && !isArchived(behavior),
-    );
+    const timerBehaviors = behaviors.filter(behavior => behavior.durationXpEnabled === true && !isArchived(behavior));
     const visibleBehaviors = hidePrivate ? timerBehaviors.filter(behavior => !behavior.private) : timerBehaviors;
     // Behaviors that already have a timer open in the background can't be started again.
     const parkedIds = new Set(parked.map(session => session.lockedBehaviorId));
