@@ -24,6 +24,8 @@ interface TaskActionSheetProps {
   canFocus: boolean;
   onClose: () => void;
   onEdit: () => void;
+  /** Starts select mode with this task ticked, to edit or move several at once. */
+  onSelect: () => void;
   onToggleFocus: () => void;
   onMove: (list: TaskList) => void;
   onDelete: () => void;
@@ -37,6 +39,7 @@ export function TaskActionSheet({
   canFocus,
   onClose,
   onEdit,
+  onSelect,
   onToggleFocus,
   onMove,
   onDelete,
@@ -69,6 +72,12 @@ export function TaskActionSheet({
             icon="create-outline"
             label="Edit"
             onPress={onEdit}
+          />
+          <SheetOption
+            icon="checkbox-outline"
+            label="Select"
+            hint="Pick several tasks to edit or move together."
+            onPress={onSelect}
           />
           {(focused || canFocus) && (
             <SheetOption

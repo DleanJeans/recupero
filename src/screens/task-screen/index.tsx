@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, BackHandler, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import type { LaunchableApp } from '../../../modules/app-usage';
 import { Button } from '../../components/button';
 import { SafeAreaView } from '../../components/safe-area-view';
@@ -22,6 +22,7 @@ import { Colors } from '../../utils/colors';
 import { formatDateDisplay, toDateString } from '../../utils/date-utils';
 import { DEFAULT_PLACE_DWELL_MIN, getPlaceDwellMin } from '../../utils/place-task-utils';
 import { requestPlaceTaskPermissions } from '../../utils/reminder-permissions';
+import { buildBatchUpdates, type TaskBatchEdits } from '../../utils/task-batch-utils';
 import {
   FOCUS_BONUS_STARS,
   getFocusStreak,
@@ -39,8 +40,10 @@ import { DateNavigationRow } from '../components/date-navigation-row';
 import { AddBehaviorFab } from '../home-screen/components/add-behavior-fab';
 import { FocusStreakStrip } from './components/focus-streak-strip';
 import { TaskActionSheet } from './components/task-action-sheet';
+import { TaskBatchEditDialog } from './components/task-batch-edit-dialog';
 import { TaskCard } from './components/task-card';
 import { TaskEditorDialog } from './components/task-editor-dialog';
+import { TaskSelectionBar } from './components/task-selection-bar';
 import { TaskTabs } from './components/task-tabs';
 import { type TodayPickCandidate, TodayPickSheet } from './components/today-pick-sheet';
 
@@ -59,7 +62,14 @@ export function TaskScreen() {
   const taskScreenSelectedDate = useScreenUiStore(s => s.taskScreenSelectedDate);
   const setSelectedDate = useScreenUiStore(s => s.setTaskScreenSelectedDate);
   const tab = useScreenUiStore(s => s.taskScreenTab);
-  const setTab = useScreenUiStore(s => s.setTaskScreenTab);
+  const setTaskTab = useScreenUiStore(s => s.setTaskScreenTab);
+  const setTab = useCallback(
+    (next: TaskTab) => {
+      setSelectedIds(undefined);
+      setTaskTab(next);
+    },
+    [setTaskTab],
+  );
   const selectedDate = taskScreenSelectedDate ?? todayStr;
   const [title, setTitle] = useState('');
   const [stars, setStars] = useState<TaskStarValue>(1);
@@ -72,6 +82,10 @@ export function TaskScreen() {
   const [editingTaskId, setEditingTaskId] = useState<string | undefined>();
   const [menuTaskId, setMenuTaskId] = useState<string | undefined>();
   const [pickOpen, setPickOpen] = useState(false);
+  /** Select mode: ids of the picked tasks (undefined = not selecting). */
+  const [selectedIds, setSelectedIds] = useState<string[]>();
+  const [batchOpen, setBatchOpen] = useState(false);
+  const selecting = selectedIds !== undefined;
   const { collapsed: fabCollapsed, onScroll } = useFabCollapse();
 
   const behaviors = useBehaviorStore(s => s.behaviors);
@@ -87,11 +101,11 @@ export function TaskScreen() {
   const placeById = useMemo(() => new Map(places.map(place => [place.id, place])), [places]);
 
   const availableBehaviors = useMemo(() => {
-    if (!composerOpen) return [];
+    if (!composerOpen && !batchOpen) return [];
     const active = getActiveBehaviors(behaviors);
     const visible = hidePrivate ? active.filter(behavior => !behavior.private) : active;
     return [...visible].sort((a, b) => a.name.localeCompare(b.name));
-  }, [behaviors, composerOpen, hidePrivate]);
+  }, [behaviors, composerOpen, batchOpen, hidePrivate]);
   const behaviorById = useMemo(() => new Map(behaviors.map(behavior => [behavior.id, behavior])), [behaviors]);
   const behaviorOf = useCallback(
     (task: TaskEntry) => (task.behaviorId ? behaviorById.get(task.behaviorId) : undefined),
@@ -286,6 +300,46 @@ export function TaskScreen() {
     [todayStr, toggleTask],
   );
   const openMenu = useCallback((task: TaskEntry) => setMenuTaskId(task.id), []);
+  const toggleSelected = useCallback(
+    (task: TaskEntry) =>
+      setSelectedIds(ids =>
+        ids ? (ids.includes(task.id) ? ids.filter(id => id !== task.id) : [...ids, task.id]) : ids,
+      ),
+    [],
+  );
+  const selectedTasks = useMemo(
+    () => (tasks ?? []).filter(task => selectedIds?.includes(task.id)),
+    [tasks, selectedIds],
+  );
+
+  useEffect(() => {
+    if (!selecting) return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      setSelectedIds(undefined);
+      return true;
+    });
+    return () => subscription.remove();
+  }, [selecting]);
+
+  const handleBatchApply = async (ids: string[], edits: TaskBatchEdits) => {
+    setBatchOpen(false);
+    setSelectedIds(undefined);
+    const appBehaviorIds = new Map<string, string>();
+    // An app gets (or reuses) the behavior that tracks it, with duration XP on, like in the single editor.
+    if (edits.app)
+      appBehaviorIds.set(edits.app.packageName, await ensureAppBehavior(edits.app, { trackDuration: true }));
+    const latest = useBehaviorStore.getState().tasks ?? [];
+    for (const id of ids) {
+      const task = latest.find(candidate => candidate.id === id);
+      if (task) updateTask(id, buildBatchUpdates(task, edits, appBehaviorIds));
+    }
+    if (edits.app) syncAppUsage();
+    if (edits.place?.id) {
+      requestPlaceTaskPermissions()
+        .then(() => resyncReminders())
+        .catch(error => console.warn('Place task permissions failed', error));
+    }
+  };
 
   const renderCard = (
     task: TaskEntry,
@@ -302,8 +356,9 @@ export function TaskScreen() {
       focused={options.focused}
       note={options.note}
       openAppPackage={task.appPackage ?? options.openAppPackage}
-      onToggle={onToggle}
-      onLongPress={openMenu}
+      selected={selectedIds ? selectedIds.includes(task.id) : undefined}
+      onToggle={selecting ? toggleSelected : onToggle}
+      onLongPress={selecting ? toggleSelected : openMenu}
     />
   );
 
@@ -416,7 +471,7 @@ export function TaskScreen() {
 
       <ScrollView
         style={styles.list}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, selecting && styles.listContentSelecting]}
         keyboardShouldPersistTaps="handled"
         onScroll={onScroll}
         scrollEventThrottle={16}
@@ -426,7 +481,7 @@ export function TaskScreen() {
         {tab === 'later' && renderLater()}
       </ScrollView>
 
-      {!composerOpen && (
+      {!composerOpen && !selecting && (
         <View
           style={styles.fab}
           pointerEvents="box-none"
@@ -463,6 +518,28 @@ export function TaskScreen() {
         />
       )}
 
+      {selecting && (
+        <TaskSelectionBar
+          count={selectedTasks.length}
+          onCancel={() => setSelectedIds(undefined)}
+          onEdit={() => setBatchOpen(true)}
+          onMove={list => {
+            for (const task of selectedTasks) updateTask(task.id, { list });
+            setSelectedIds(undefined);
+          }}
+        />
+      )}
+
+      {batchOpen && selectedTasks.length > 0 && (
+        <TaskBatchEditDialog
+          tasks={selectedTasks}
+          behaviors={availableBehaviors}
+          places={places}
+          onApply={handleBatchApply}
+          onCancel={() => setBatchOpen(false)}
+        />
+      )}
+
       {menuTask && (
         <TaskActionSheet
           task={menuTask}
@@ -473,6 +550,10 @@ export function TaskScreen() {
           onEdit={() => {
             setMenuTaskId(undefined);
             openEditComposer(menuTask);
+          }}
+          onSelect={() => {
+            setMenuTaskId(undefined);
+            setSelectedIds([menuTask.id]);
           }}
           onToggleFocus={() => {
             setMenuTaskId(undefined);
@@ -550,6 +631,7 @@ const styles = StyleSheet.create({
   list: {
     flex: 1,
   },
+  listContentSelecting: { paddingBottom: 140 },
   listContent: {
     paddingHorizontal: 16,
     paddingBottom: 96,

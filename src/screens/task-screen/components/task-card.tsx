@@ -33,6 +33,8 @@ interface TaskCardProps {
   openAppPackage?: string;
   /** Extra text for the second line, e.g. "Got it Nov 18". */
   note?: string;
+  /** Select mode: the box shows whether the task is selected (undefined = not selecting). */
+  selected?: boolean;
   onToggle: (task: TaskEntry) => void;
   onLongPress: (task: TaskEntry) => void;
 }
@@ -45,6 +47,7 @@ function TaskCardComponent({
   focused,
   note,
   openAppPackage,
+  selected,
   onToggle,
   onLongPress,
 }: TaskCardProps) {
@@ -57,7 +60,11 @@ function TaskCardComponent({
     place ? `${getPlaceIconText(place)} ${place.name}` : undefined,
     note,
   ].filter((part): part is string => Boolean(part));
-  const canTrack = !complete && behavior != null && (task.timed === true || behavior.durationXpEnabled === true);
+  const canTrack =
+    selected === undefined &&
+    !complete &&
+    behavior != null &&
+    (task.timed === true || behavior.durationXpEnabled === true);
 
   const handlePlay = () => {
     if (!behavior || !canTrack) return;
@@ -77,10 +84,10 @@ function TaskCardComponent({
         onLongPress={() => onLongPress(task)}
         accessibilityRole="button"
         accessibilityLabel={task.title}
-        accessibilityHint="Opens the task menu"
+        accessibilityHint={selected === undefined ? 'Opens the task menu' : 'Selects or unselects the task'}
       >
         <TaskCheckbox
-          checked={complete}
+          checked={selected ?? complete}
           onPress={() => onToggle(task)}
           label={task.title}
         />

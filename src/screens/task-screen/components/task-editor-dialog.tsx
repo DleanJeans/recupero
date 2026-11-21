@@ -19,6 +19,7 @@ import { Colors } from '../../../utils/colors';
 import { getPlaceEmoji } from '../../../utils/cue-utils';
 import { formatPlaceDwell } from '../../../utils/place-task-utils';
 import { StarPicker } from './star-picker';
+import { AttachRow } from './task-attach-row';
 import { TaskBehaviorPicker } from './task-behavior-picker';
 import { TaskPlaceScreen } from './task-place-screen';
 
@@ -272,69 +273,6 @@ export function TaskEditorDialog({
   );
 }
 
-interface AttachRowProps {
-  icon: ReactNode;
-  label: string;
-  value: string | undefined;
-  badge?: string;
-  onPress: () => void;
-  onClear?: () => void;
-  last?: boolean;
-}
-
-function AttachRow({ icon, label, value, badge, onPress, onClear, last }: AttachRowProps) {
-  return (
-    <Pressable
-      style={({ pressed }) => [styles.row, !last && styles.rowDivider, pressed && styles.pressed]}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`${label}: ${value ?? 'none'}`}
-    >
-      <View style={styles.rowIcon}>{icon}</View>
-      <Text
-        style={styles.rowLabel}
-        numberOfLines={1}
-      >
-        {label}
-      </Text>
-      <Text
-        style={[styles.rowValue, !value && styles.rowValueNone]}
-        numberOfLines={1}
-      >
-        {value ?? 'None'}
-      </Text>
-      {badge ? (
-        <Text
-          style={styles.badge}
-          numberOfLines={1}
-        >
-          {badge}
-        </Text>
-      ) : null}
-      {onClear ? (
-        <Pressable
-          onPress={onClear}
-          hitSlop={10}
-          accessibilityRole="button"
-          accessibilityLabel={`Clear ${label}`}
-        >
-          <Ionicons
-            name="close"
-            size={18}
-            color={Colors.text.muted}
-          />
-        </Pressable>
-      ) : (
-        <Ionicons
-          name="chevron-forward"
-          size={18}
-          color={Colors.text.faint}
-        />
-      )}
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'center', paddingHorizontal: 16, backgroundColor: 'rgba(0,0,0,0.65)' },
   overlayTop: { justifyContent: 'flex-start' },
@@ -351,25 +289,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   rows: { backgroundColor: Colors.bg.input, borderRadius: 12, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, height: 50, paddingHorizontal: 12 },
-  rowDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.bg.card },
-  rowIcon: { width: 26, alignItems: 'center' },
-  rowLabel: { width: 68, color: Colors.text.muted, fontSize: 13 },
-  rowValue: { flex: 1, color: Colors.text.primary, fontSize: 15 },
-  rowValueNone: { color: Colors.text.faint },
-  badge: {
-    color: Colors.text.muted,
-    backgroundColor: Colors.bg.card,
-    fontSize: 11,
-    fontWeight: '600',
-    borderRadius: 8,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    overflow: 'hidden',
-  },
   placeEmoji: { fontSize: 17 },
   footer: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   spacer: { flex: 1 },
   footerButton: { minWidth: 80 },
-  pressed: { opacity: 0.7 },
 });
