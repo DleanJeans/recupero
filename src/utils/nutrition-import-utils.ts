@@ -286,3 +286,43 @@ export async function fetchNutritionFromUrl(
   if (!response.ok) throw new Error(`The page returned an error (${response.status}).`);
   return mapNutritionToMetadata(parseNutritionHtml(await response.text()), fields, rateBasis);
 }
+
+export interface FoodSearchResult {
+  name: string;
+  description?: string;
+  url: string;
+}
+
+const EATTHISMUCH_ORIGIN = 'https://www.eatthismuch.com';
+
+/** Reads the food links (`/calories/<slug>-<id>`) out of an eatthismuch.com search results page. */
+export function parseFoodSearchHtml(html: string): FoodSearchResult[] {
+  const results: FoodSearchResult[] = [];
+  const seen = new Set<string>();
+  for (const [, path, inner] of html.matchAll(
+    /<a\b[^>]*?href="(\/calories\/[a-z0-9-]+-\d+)(?:\?[^"]*)?"[^>]*>([\s\S]*?)<\/a>/gi,
+  )) {
+    if (seen.has(path)) continue;
+    const [name, ...rest] = htmlToText(inner)
+      .split('\n')
+      .map(line =>
+        line
+          .replace(/&#39;|&apos;/g, "'")
+          .replace(/&quot;/g, '"')
+          .trim(),
+      )
+      .filter(Boolean);
+    if (!name) continue;
+    seen.add(path);
+    results.push({ name, description: rest.join(', ') || undefined, url: `${EATTHISMUCH_ORIGIN}${path}` });
+  }
+  return results;
+}
+
+export async function searchEatThisMuch(query: string): Promise<FoodSearchResult[]> {
+  const response = await fetch(`${EATTHISMUCH_ORIGIN}/food/browse?q=${encodeURIComponent(query.trim())}`, {
+    headers: { Accept: 'text/html,application/xhtml+xml' },
+  });
+  if (!response.ok) throw new Error(`The search returned an error (${response.status}).`);
+  return parseFoodSearchHtml(await response.text());
+}

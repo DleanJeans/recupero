@@ -1,10 +1,12 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Button } from '../../../components/button';
 import { Text, TextInput } from '../../../components/text';
 import type { MetadataField } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 import { fetchNutritionFromUrl, isGramAmountField } from '../../../utils/nutrition-import-utils';
+import { EatThisMuchSearchModal } from './eatthismuch-search-modal';
 
 interface NutritionUrlImportProps {
   fields: MetadataField[];
@@ -23,10 +25,11 @@ export function NutritionUrlImport({ fields, amountField, rateBasis, onChange }:
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<ImportStatus | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
   const trimmedUrl = url.trim();
 
-  const handleImport = async () => {
-    if (!/^https?:\/\//i.test(trimmedUrl)) {
+  const handleImport = async (link: string = trimmedUrl) => {
+    if (!/^https?:\/\//i.test(link)) {
       setStatus({ message: 'Paste a full link starting with https://', isError: true });
       return;
     }
@@ -38,7 +41,7 @@ export function NutritionUrlImport({ fields, amountField, rateBasis, onChange }:
     setLoading(true);
     setStatus(null);
     try {
-      const result = await fetchNutritionFromUrl(trimmedUrl, fields, rateBasis);
+      const result = await fetchNutritionFromUrl(link, fields, rateBasis);
       if (result.matchedFields.length === 0) {
         setStatus({ message: 'No nutrients on that page matched this category’s fields.', isError: true });
         return;
@@ -60,6 +63,17 @@ export function NutritionUrlImport({ fields, amountField, rateBasis, onChange }:
   return (
     <View style={styles.container}>
       <View style={styles.row}>
+        <Pressable
+          onPress={() => setSearchOpen(true)}
+          hitSlop={8}
+          style={styles.searchButton}
+        >
+          <Ionicons
+            name="search"
+            size={20}
+            color={Colors.text.primary}
+          />
+        </Pressable>
         <TextInput
           style={styles.input}
           value={url}
@@ -70,11 +84,11 @@ export function NutritionUrlImport({ fields, amountField, rateBasis, onChange }:
           autoCorrect={false}
           keyboardType="url"
           returnKeyType="go"
-          onSubmitEditing={handleImport}
+          onSubmitEditing={() => handleImport()}
         />
         <Button
           size="sm"
-          onPress={handleImport}
+          onPress={() => handleImport()}
           disabled={loading || !trimmedUrl}
           style={styles.button}
         >
@@ -88,6 +102,16 @@ export function NutritionUrlImport({ fields, amountField, rateBasis, onChange }:
           )}
         </Button>
       </View>
+      {searchOpen && (
+        <EatThisMuchSearchModal
+          onClose={() => setSearchOpen(false)}
+          onPick={result => {
+            setSearchOpen(false);
+            setUrl(result.url);
+            handleImport(result.url);
+          }}
+        />
+      )}
       {status && <Text style={[styles.status, status.isError && styles.statusError]}>{status.message}</Text>}
     </View>
   );
@@ -110,6 +134,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     color: Colors.text.primary,
     fontSize: 14,
+  },
+  searchButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.bg.input,
   },
   button: {
     minWidth: 72,

@@ -3,6 +3,7 @@ import {
   canonicalNutrientKey,
   isGramAmountField,
   mapNutritionToMetadata,
+  parseFoodSearchHtml,
   parseNutritionHtml,
 } from '../src/utils/nutrition-import-utils';
 
@@ -143,5 +144,19 @@ describe('nutrition URL import', () => {
     expect(canonicalNutrientKey('β-carotene')).toBe('betacarotene');
     expect(canonicalNutrientKey('Beta carotene')).toBe('betacarotene');
     expect(canonicalNutrientKey('Beta-Carotene (provitamin A)')).toBe('betacarotene');
+  });
+
+  it('reads food links from a search results page', () => {
+    const html = `<a href="/calories/white-mushrooms-2021"><div>White mushrooms</div><div>raw</div></a>
+<a href="/calories/white-mushrooms-2021">dup</a>
+<a href="/calories/mushroom-stroganoff-123?a=1:0"><span>Mushroom Stroganoff</span></a><a href="/food/browse?q=x">Next</a>`;
+    expect(parseFoodSearchHtml(html)).toEqual([
+      { name: 'White mushrooms', description: 'raw', url: 'https://www.eatthismuch.com/calories/white-mushrooms-2021' },
+      {
+        name: 'Mushroom Stroganoff',
+        description: undefined,
+        url: 'https://www.eatthismuch.com/calories/mushroom-stroganoff-123',
+      },
+    ]);
   });
 });
