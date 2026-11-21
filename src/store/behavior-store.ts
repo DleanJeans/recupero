@@ -340,9 +340,9 @@ export const useBehaviorStore = create<BehaviorStore>()(
               starThresholds,
               starPeriod,
               starMoneyMultipliers,
-              xpEnabled,
+              xpEnabled: xpEnabled ?? (autoTrackApp || autoTrackSite ? true : undefined),
               xpDecay,
-              durationXpEnabled,
+              durationXpEnabled: durationXpEnabled ?? (autoTrackApp || autoTrackSite ? true : undefined),
               hideTotalXp,
               moneyReward,
               autoTrackApp,
@@ -722,11 +722,12 @@ export const useBehaviorStore = create<BehaviorStore>()(
     {
       name: 'recupero-behaviors',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 7,
+      version: 8,
       // v0 → v1: rename `xp` field to `xpEnabled` and drop the old key.
       // v1 → v2: backfill `cooldownEnabled` from `cooldownMinutes` (old logs had no opt-in flag).
       // v2 → v3: add persisted tasks.
       // v3 → v4: opt existing behaviors into retrospective money effects.
+      // v7 → v8: behaviors linked to an app or website get Track duration and Track XP.
       // v4 → v5: replace the legacy money opt-in with editable default rates.
       // v5 → v6: give the ingredients of existing meal batches a log each.
       // v6 → v7: every task pays stars now, so open tasks that had 0 stars (linked to a behavior) get 1.
@@ -793,6 +794,16 @@ export const useBehaviorStore = create<BehaviorStore>()(
             ...state,
             tasks: (state.tasks ?? []).map(task =>
               task.stars === 0 && task.completedDates.length === 0 ? { ...task, stars: 1 as const } : task,
+            ),
+          };
+        }
+        if (version < 8) {
+          state = {
+            ...state,
+            behaviors: (state.behaviors ?? []).map(b =>
+              b.autoTrackApp || b.autoTrackSite
+                ? { ...b, xpEnabled: true as const, durationXpEnabled: true as const }
+                : b,
             ),
           };
         }

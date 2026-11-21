@@ -142,11 +142,9 @@ export function BehaviorFormScreen() {
   const [siteTrackEnabled, setSiteTrackEnabled] = useState(() => behavior?.autoTrackSite != null);
   const [siteDomain, setSiteDomain] = useState(() => behavior?.autoTrackSite?.domain ?? '');
   const enableDurationXp = () => {
-    // Auto-tracked logs are timed sessions, so default to XP per minute.
-    if (!xpEnabled) {
-      setXpEnabled(true);
-      setDurationXpEnabled(true);
-    }
+    // Auto-tracked logs are timed sessions, so turn on both Track duration and Track XP (each can be switched off).
+    setXpEnabled(true);
+    setDurationXpEnabled(true);
   };
   const handleAutoTrackAppChange = (app: { packageName: string; label: string }) => {
     setAutoTrackPick(app);

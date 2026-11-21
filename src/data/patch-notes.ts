@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-21',
     items: [
+      'Behaviors linked to an app or website now get Track duration and Track XP turned on automatically, both for existing ones and whenever you link a new app or website. You can still switch either off afterwards.',
       "The birthday in the person dialog can now be typed in your phone's date order (e.g. 14/05/1990, or just 14/05 without a year), with a calendar button beside it.",
       'The birthday date picker in the person dialog now goes back before 1970.',
       'The in-app image browser (from the icon editor) now has a Desktop mode button next to the search box, and you can type a web address in the search box to open that site, e.g. web.whatsapp.com to log into WhatsApp Web. Switching Desktop mode keeps the page you are on.',
