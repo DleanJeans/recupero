@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import React, { useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FullScreenModal } from '../../../components/full-screen-modal';
 import { Text, TextInput } from '../../../components/text';
@@ -9,16 +10,25 @@ import { type FoodSearchResult, searchEatThisMuch } from '../../../utils/nutriti
 
 interface EatThisMuchSearchModalProps {
   onPick: (result: FoodSearchResult) => void;
+  /** Sets the picked food's image as the behaviour icon. Hides the button when missing. */
+  onUseAsIcon?: (imageUrl: string) => void;
   onClose: () => void;
 }
 
 /** Searches eatthismuch.com foods and returns the picked food's page link for the nutrition import. */
-export function EatThisMuchSearchModal({ onPick, onClose }: EatThisMuchSearchModalProps) {
+export function EatThisMuchSearchModal({ onPick, onUseAsIcon, onClose }: EatThisMuchSearchModalProps) {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FoodSearchResult[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const copyImage = async (item: FoodSearchResult) => {
+    if (!item.imageUrl) return;
+    await Clipboard.setStringAsync(item.imageUrl);
+    setNotice(`Copied the ${item.name} image link.`);
+  };
 
   const search = async () => {
     if (!query.trim()) return;
@@ -70,6 +80,7 @@ export function EatThisMuchSearchModal({ onPick, onClose }: EatThisMuchSearchMod
           )}
         </Pressable>
       </View>
+      {notice && <Text style={styles.notice}>{notice}</Text>}
       {error && <Text style={styles.error}>{error}</Text>}
       {results?.length === 0 && <Text style={styles.empty}>No foods found.</Text>}
       <FlatList
@@ -78,25 +89,65 @@ export function EatThisMuchSearchModal({ onPick, onClose }: EatThisMuchSearchMod
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ paddingBottom: insets.bottom + 16 }}
         renderItem={({ item }) => (
-          <Pressable
-            onPress={() => onPick(item)}
-            style={styles.row}
-          >
-            <Text
-              style={styles.name}
-              numberOfLines={1}
+          <View style={styles.row}>
+            <Pressable
+              onPress={() => onPick(item)}
+              style={styles.main}
             >
-              {item.name}
-            </Text>
-            {item.description && (
-              <Text
-                style={styles.description}
-                numberOfLines={1}
-              >
-                {item.description}
-              </Text>
+              {item.imageUrl ? (
+                <Image
+                  source={{ uri: item.imageUrl }}
+                  style={styles.thumb}
+                />
+              ) : (
+                <View style={styles.thumb} />
+              )}
+              <View style={styles.texts}>
+                <Text
+                  style={styles.name}
+                  numberOfLines={1}
+                >
+                  {item.name}
+                </Text>
+                {item.description && (
+                  <Text
+                    style={styles.description}
+                    numberOfLines={1}
+                  >
+                    {item.description}
+                  </Text>
+                )}
+              </View>
+            </Pressable>
+            {item.imageUrl && (
+              <>
+                <Pressable
+                  onPress={() => copyImage(item)}
+                  hitSlop={6}
+                  style={styles.action}
+                >
+                  <Ionicons
+                    name="copy-outline"
+                    size={20}
+                    color={Colors.text.muted}
+                  />
+                </Pressable>
+                {onUseAsIcon && (
+                  <Pressable
+                    onPress={() => item.imageUrl && onUseAsIcon(item.imageUrl)}
+                    hitSlop={6}
+                    style={styles.action}
+                  >
+                    <Ionicons
+                      name="image-outline"
+                      size={20}
+                      color={Colors.text.muted}
+                    />
+                  </Pressable>
+                )}
+              </>
             )}
-          </Pressable>
+          </View>
         )}
       />
     </FullScreenModal>
@@ -122,9 +173,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: Colors.bg.input,
   },
-  row: { paddingHorizontal: 16, paddingVertical: 12, gap: 2 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, gap: 4 },
+  main: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  texts: { flex: 1, gap: 2 },
+  thumb: { width: 48, height: 48, borderRadius: 8, backgroundColor: Colors.bg.input },
+  action: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  notice: { color: Colors.text.muted, fontSize: 12, paddingHorizontal: 16 },
   name: { color: Colors.text.primary, fontSize: 15 },
-  description: { color: Colors.text.muted, fontSize: 12 },
+  description: { color: Colors.text.dim, fontSize: 12 },
   error: { color: Colors.status.dangerLight, fontSize: 12, paddingHorizontal: 16 },
   empty: { color: Colors.text.muted, fontSize: 13, paddingHorizontal: 16 },
 });

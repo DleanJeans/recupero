@@ -146,16 +146,31 @@ describe('nutrition URL import', () => {
     expect(canonicalNutrientKey('Beta-Carotene (provitamin A)')).toBe('betacarotene');
   });
 
-  it('reads food links from a search results page', () => {
-    const html = `<a href="/calories/white-mushrooms-2021"><div>White mushrooms</div><div>raw</div></a>
-<a href="/calories/white-mushrooms-2021">dup</a>
-<a href="/calories/mushroom-stroganoff-123?a=1:0"><span>Mushroom Stroganoff</span></a><a href="/food/browse?q=x">Next</a>`;
+  it('reads name, subtext, image and link from a search results page', () => {
+    const html = `<table>
+<tr><td><img src="https://images.eatthismuch.com/thmb/451_a.png" alt=""></td><td><a href="/calories/chicken-breast-451">Chicken breast</a><div>raw, skinless</div></td><td>142</td></tr>
+<tr><td><a href="/calories/chicken-breast-453"><img src="https://images.eatthismuch.com/thmb/453_b.jpg"><span>Chicken breast</span></a><div>cooked, roasted, skinless</div></td><td>142</td></tr>
+<tr><td><a href="/calories/chicken-breast-451">dup</a></td></tr>
+<tr><td><a href="/calories/baked-chicken-breasts-3200328?a=1:0">Baked Chicken Breasts</a></td><td>347</td></tr>
+</table><a href="/food/browse?q=x">Next</a>`;
     expect(parseFoodSearchHtml(html)).toEqual([
-      { name: 'White mushrooms', description: 'raw', url: 'https://www.eatthismuch.com/calories/white-mushrooms-2021' },
       {
-        name: 'Mushroom Stroganoff',
+        name: 'Chicken breast',
+        description: 'raw, skinless',
+        imageUrl: 'https://images.eatthismuch.com/thmb/451_a.png',
+        url: 'https://www.eatthismuch.com/calories/chicken-breast-451',
+      },
+      {
+        name: 'Chicken breast',
+        description: 'cooked, roasted, skinless',
+        imageUrl: 'https://images.eatthismuch.com/thmb/453_b.jpg',
+        url: 'https://www.eatthismuch.com/calories/chicken-breast-453',
+      },
+      {
+        name: 'Baked Chicken Breasts',
         description: undefined,
-        url: 'https://www.eatthismuch.com/calories/mushroom-stroganoff-123',
+        imageUrl: undefined,
+        url: 'https://www.eatthismuch.com/calories/baked-chicken-breasts-3200328',
       },
     ]);
   });

@@ -290,31 +290,48 @@ export async function fetchNutritionFromUrl(
 export interface FoodSearchResult {
   name: string;
   description?: string;
+  /** Thumbnail from images.eatthismuch.com, when the row has one. */
+  imageUrl?: string;
   url: string;
 }
 
 const EATTHISMUCH_ORIGIN = 'https://www.eatthismuch.com';
+const FOOD_LINK = /<a\b[^>]*?href="(\/calories\/[a-z0-9-]+-\d+)(?:\?[^"]*)?"[^>]*>([\s\S]*?)<\/a>/i;
+const FOOD_IMAGE = /https:\/\/images\.eatthismuch\.com\/[^"'\s,)<>]+/i;
 
-/** Reads the food links (`/calories/<slug>-<id>`) out of an eatthismuch.com search results page. */
+function cleanText(html: string): string[] {
+  return htmlToText(html)
+    .split('\n')
+    .map(line =>
+      line
+        .replace(/&#39;|&#x27;|&apos;/g, "'")
+        .replace(/&quot;/g, '"')
+        .trim(),
+    )
+    .filter(Boolean);
+}
+
+/** Reads the foods (name, grey subtext like "raw, skinless", thumbnail, link) out of an eatthismuch.com search page. */
 export function parseFoodSearchHtml(html: string): FoodSearchResult[] {
   const results: FoodSearchResult[] = [];
   const seen = new Set<string>();
-  for (const [, path, inner] of html.matchAll(
-    /<a\b[^>]*?href="(\/calories\/[a-z0-9-]+-\d+)(?:\?[^"]*)?"[^>]*>([\s\S]*?)<\/a>/gi,
-  )) {
-    if (seen.has(path)) continue;
-    const [name, ...rest] = htmlToText(inner)
-      .split('\n')
-      .map(line =>
-        line
-          .replace(/&#39;|&apos;/g, "'")
-          .replace(/&quot;/g, '"')
-          .trim(),
-      )
-      .filter(Boolean);
+  for (const row of html.split(/<tr\b/i)) {
+    const link = row.match(FOOD_LINK);
+    if (!link || seen.has(link[1])) continue;
+    const [name, ...inLink] = cleanText(link[2]);
     if (!name) continue;
-    seen.add(path);
-    results.push({ name, description: rest.join(', ') || undefined, url: `${EATTHISMUCH_ORIGIN}${path}` });
+    // The subtext sits beside the link inside the same cell.
+    const cell = (row.split(/<\/t[dh]>/i).find(part => part.includes(link[1])) ?? '')
+      .replace(/^[^<]*>/, '')
+      .replace(FOOD_LINK, '\n');
+    const description = [...inLink, ...cleanText(cell)].join(', ');
+    seen.add(link[1]);
+    results.push({
+      name,
+      description: description || undefined,
+      imageUrl: row.match(FOOD_IMAGE)?.[0].replace(/&amp;/g, '&'),
+      url: `${EATTHISMUCH_ORIGIN}${link[1]}`,
+    });
   }
   return results;
 }

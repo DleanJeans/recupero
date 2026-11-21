@@ -29,6 +29,7 @@ interface BehaviorMetadataEditorProps {
   onRateBasisChange: (value: string) => void;
   onChange: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   onAmountFieldChange: (fieldKey: string) => void;
+  onIconPick?: (imageUrl: string) => void;
 }
 
 export function BehaviorMetadataEditor({
@@ -40,6 +41,7 @@ export function BehaviorMetadataEditor({
   onRateBasisChange,
   onChange,
   onAmountFieldChange,
+  onIconPick,
 }: BehaviorMetadataEditorProps) {
   const selectedCategory = categories.find(category => category.id === categoryId);
   const fields = selectedCategory?.metadataFields ?? [];
@@ -134,6 +136,7 @@ export function BehaviorMetadataEditor({
             amountField={selectedAmountField}
             rateBasis={resolveMetadataRateBasis(parseDecimalInput(rateBasis))}
             onChange={onChange}
+            onIconPick={onIconPick}
           />
           {calculatedFields.map((field: MetadataField) => (
             <MetadataDefaultInput

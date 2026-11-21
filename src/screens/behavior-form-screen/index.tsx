@@ -535,6 +535,7 @@ export function BehaviorFormScreen() {
               onRateBasisChange={setRateBasisInput}
               onChange={setBehaviorDefaultMetadata}
               onAmountFieldChange={setMetadataAmountFieldKey}
+              onIconPick={setIcon}
             />
 
             <CheckboxRow

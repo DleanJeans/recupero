@@ -14,6 +14,8 @@ interface NutritionUrlImportProps {
   /** Grams the rates are given for (the behaviour's rate basis). */
   rateBasis: number;
   onChange: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  /** Sets the behaviour icon from a searched food's picture. */
+  onIconPick?: (imageUrl: string) => void;
 }
 
 interface ImportStatus {
@@ -21,7 +23,7 @@ interface ImportStatus {
   isError: boolean;
 }
 
-export function NutritionUrlImport({ fields, amountField, rateBasis, onChange }: NutritionUrlImportProps) {
+export function NutritionUrlImport({ fields, amountField, rateBasis, onChange, onIconPick }: NutritionUrlImportProps) {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<ImportStatus | null>(null);
@@ -105,6 +107,13 @@ export function NutritionUrlImport({ fields, amountField, rateBasis, onChange }:
       {searchOpen && (
         <EatThisMuchSearchModal
           onClose={() => setSearchOpen(false)}
+          onUseAsIcon={
+            onIconPick &&
+            (imageUrl => {
+              onIconPick(imageUrl);
+              setSearchOpen(false);
+            })
+          }
           onPick={result => {
             setSearchOpen(false);
             setUrl(result.url);
