@@ -36,6 +36,7 @@ import {
 } from '../../utils/meal-batch-utils';
 import {
   getBehaviorAmountField,
+  getBehaviorMetadataFields,
   getCalculatedMetadataFields,
   parseDecimalInput,
 } from '../../utils/metadata-calculation-utils';
@@ -181,6 +182,10 @@ export function MealBatchFormScreen() {
   const rates = getBatchRates(totals, cooked ?? 0, RATE_BASIS);
   const suggestedPortion = getSuggestedPortionAmount(cooked ?? 0, portions ?? undefined);
   const portionValues = getPortionValues(totals, cooked ?? 0, suggestedPortion ?? 0);
+
+  /** Each ingredient is weighed in its own amount unit (g for weight, ml for volume). */
+  const getIngredientUnit = (behavior: BehaviorEntry): string =>
+    getBehaviorAmountField(behavior, getBehaviorMetadataFields(behavior, categories))?.unit ?? unit;
 
   const createIngredient = (ingredientName: string): string | undefined => {
     const categoryId =
@@ -365,7 +370,7 @@ export function MealBatchFormScreen() {
         </View>
 
         <View style={styles.section}>
-          <CueSectionLabel>{`Ingredients · raw amount${unit ? ` (${unit})` : ''}`}</CueSectionLabel>
+          <CueSectionLabel>Ingredients · raw amount</CueSectionLabel>
           {calculatedFields.length > 1 && shownField && (
             <Pressable
               style={styles.macroChip}
@@ -397,7 +402,7 @@ export function MealBatchFormScreen() {
                 subtitle={info.text}
                 warn={info.warn}
                 amountText={row.amountText}
-                unit={unit}
+                unit={behavior ? getIngredientUnit(behavior) : unit}
                 onChangeAmount={text =>
                   setRows(current => current.map(item => (item.key === row.key ? { ...item, amountText: text } : item)))
                 }
