@@ -124,7 +124,11 @@ export function NeedsPanel() {
                   : formatNextCraving(need.level, need.config, now, ts => formatTime(ts))
               }
               timerNames={need.timerBehaviorNames}
-              onPress={() => navigation.navigate('Need', { needId: need.id })}
+              onPress={() =>
+                need.id === 'tidiness'
+                  ? navigation.navigate('Tidiness')
+                  : navigation.navigate('Need', { needId: need.id })
+              }
             />
           );
         })}

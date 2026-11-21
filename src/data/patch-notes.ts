@@ -40,6 +40,13 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       'The in-app image browser (from the icon editor) now has a Desktop mode button next to the search box, and you can type a web address in the search box to open that site, e.g. web.whatsapp.com to log into WhatsApp Web.',
       'Fixed the automatic timer overlay (and its notification) disappearing less than a second after opening an app like WhatsApp. It now stays until you leave the app.',
       'Move or merge logs: long-press a behavior (or tap ⋯ on its screen) › Move logs to… › pick the other behavior. All its logs move there, with a choice to also archive the old one. Values with no matching field in the new behavior are dropped, and the confirmation says so.',
+      {
+        text: 'Tapping Tidiness on Cues opens the new Tidiness screen: split your home into rooms and spots (Sink, Desk, Bed sheets…). Each spot gets messy at its own speed, ✓ or logging its cleaning behaviour fills only that spot, and Tidiness becomes the average of your spots. Start with the starter rooms or an empty plan.',
+        screen: 'Tidiness',
+        linkPhrase: 'Tidiness screen',
+      },
+      'Tidiness screen: the floor plan shows rooms coloured by how tidy they are, with a dot per spot. Tap ✎ Edit to drag and resize rooms and to drag spot dots to where they really are.',
+      'Tidiness spot sheet: Log or start a timer for its cleaning behaviours, mark it clean, or answer "How is it now?" to teach how fast it gets messy.',
       'In Cook a meal, the base behavior card has a play button to start its timer when it is not running.',
       'Tasks: long-press a task › Select, tick more, then Edit N changes Behavior, App, Place, Track duration and stars for all of them at once. A field left on Keep is untouched; Mixed means they differ. Move sends them to Today, Shopping or Later together.',
       {

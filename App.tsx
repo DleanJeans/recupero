@@ -54,6 +54,7 @@ import { SettingsScreen } from './src/screens/settings-screen';
 import { ShopScreen } from './src/screens/shop-screen';
 import { SunlightScreen } from './src/screens/sunlight-screen';
 import { TaskScreen } from './src/screens/task-screen';
+import { TidinessScreen } from './src/screens/tidiness-screen';
 import { TimerScreen } from './src/screens/timer-screen';
 import { useBehaviorStore } from './src/store/behavior-store';
 import { useCheckInStore } from './src/store/checkin-store';
@@ -65,6 +66,7 @@ import { useNeedsStore } from './src/store/needs-store';
 import { useSettingsStore } from './src/store/settings-store';
 import { useShopStore } from './src/store/shop-store';
 import { useSunlightStore } from './src/store/sunlight-store';
+import { useTidinessStore } from './src/store/tidiness-store';
 import { useTimerStore } from './src/store/timer-store';
 import type { RootStackParamList } from './src/types/navigation';
 import { Colors } from './src/utils/colors';
@@ -83,6 +85,7 @@ const PERSISTED_STORES = [
   useSettingsStore,
   useShopStore,
   useSunlightStore,
+  useTidinessStore,
   useTimerStore,
 ];
 
@@ -253,6 +256,11 @@ export default function App() {
                   <Stack.Screen
                     name="Sunlight"
                     component={SunlightScreen}
+                    options={{ animation: 'none' }}
+                  />
+                  <Stack.Screen
+                    name="Tidiness"
+                    component={TidinessScreen}
                     options={{ animation: 'none' }}
                   />
                   <Stack.Screen

@@ -47,6 +47,8 @@ export type RootStackParamList = {
   Need: { needId: NeedId };
   /** Outdoor sunlight time: status, today's route, week, settings. */
   Sunlight: undefined;
+  /** Tidiness by room and spot, with a floor plan. */
+  Tidiness: undefined;
   Cues: undefined;
   CueForm: { cueId?: string } | undefined;
   CueActivity: undefined;

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useNeedsStore } from '../store/needs-store';
+import { useTidinessStore } from '../store/tidiness-store';
 import { type TimerSession, useTimerStore } from '../store/timer-store';
 import type { NeedConfig, NeedId, NeedMetadataSource } from '../types/need';
 import {
@@ -17,6 +18,7 @@ import {
   simulateNeed,
   withTimerLogs,
 } from '../utils/need-utils';
+import { getTidinessNeedOverride } from '../utils/tidiness-utils';
 
 function isRunning(session: TimerSession): boolean {
   return session.startTimestamp != null && session.stopTimestamp == null;
@@ -71,6 +73,8 @@ export function useNeedLevels(): { needs: NeedSnapshot[]; now: number } {
   const timerStart = useTimerStore(state => state.startTimestamp);
   const timerStop = useTimerStore(state => state.stopTimestamp);
   const parkedTimers = useTimerStore(state => state.parked);
+  const tidySpots = useTidinessStore(state => state.spots);
+  const tidyMarks = useTidinessStore(state => state.marks);
   const timerRunning =
     (timerBehaviorId != null && timerStart != null && timerStop == null) || parkedTimers.some(isRunning);
   const [tick, setTick] = useState(0);
@@ -86,7 +90,20 @@ export function useNeedLevels(): { needs: NeedSnapshot[]; now: number } {
     const now = Date.now();
     const timers = getRunningTimers(timerBehaviorId, timerStart, timerStop, parkedTimers, now);
     const logged = withTimerLogs(behaviors, timers);
+    const tidiness = getTidinessNeedOverride(tidySpots, tidyMarks, behaviors, now);
     const needs = NEED_IDS.filter(id => configs[id].enabled).map(id => {
+      if (id === 'tidiness' && tidiness) {
+        const config = { ...configs[id], emptyHours: tidiness.emptyHours ?? configs[id].emptyHours };
+        const anchor = tidiness.level == null ? undefined : { ts: now, level: tidiness.level };
+        return {
+          id,
+          config,
+          level: tidiness.level,
+          anchor,
+          lastRefillAt: tidiness.lastRefillAt,
+          lastRefillBehaviorId: tidiness.lastRefillBehaviorId,
+        } as NeedSnapshot;
+      }
       const config = configs[id];
       const source = getNeedMetadataSource(id, config, categories);
       const events = getNeedEvents(id, config, logged, checkIns, source, now - NEED_LOOKBACK_MS);
@@ -123,5 +140,7 @@ export function useNeedLevels(): { needs: NeedSnapshot[]; now: number } {
     timerStart,
     timerStop,
     parkedTimers,
+    tidySpots,
+    tidyMarks,
   ]);
 }

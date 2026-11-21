@@ -3,6 +3,7 @@ import * as Notifications from 'expo-notifications';
 import { useEffect, useRef } from 'react';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useNeedsStore } from '../store/needs-store';
+import { useTidinessStore } from '../store/tidiness-store';
 import type { RootStackParamList } from '../types/navigation';
 import { dismissRefilledNeedNudges, syncNeedNudges } from '../utils/need-notifications';
 import {
@@ -20,6 +21,7 @@ import {
   type NeedNudgePlan,
   simulateNeed,
 } from '../utils/need-utils';
+import { getTidinessNeedOverride } from '../utils/tidiness-utils';
 
 const NAVIGATION_RETRY_MS = 250;
 const NAVIGATION_MAX_RETRIES = 20;
@@ -28,7 +30,19 @@ function buildNudgeInputs(now: number): NeedNudgeInput[] {
   const { behaviors, categories } = useBehaviorStore.getState();
   const { needs, checkIns } = useNeedsStore.getState();
   const nameById = new Map(behaviors.map(behavior => [behavior.id, behavior.name]));
+  const { spots, marks } = useTidinessStore.getState();
+  const tidiness = getTidinessNeedOverride(spots, marks, behaviors, now);
   return NEED_IDS.map(id => {
+    if (id === 'tidiness' && tidiness) {
+      const config = { ...needs[id], emptyHours: tidiness.emptyHours ?? needs[id].emptyHours };
+      const refills = tidiness.refillBehaviorIds
+        .filter(behaviorId => nameById.has(behaviorId))
+        .slice(0, 2)
+        .map(behaviorId => ({ id: behaviorId, name: nameById.get(behaviorId) ?? '' }));
+      const lastRefillName =
+        tidiness.lastRefillBehaviorId != null ? nameById.get(tidiness.lastRefillBehaviorId) : undefined;
+      return { id, config, level: tidiness.level, lastRefillAt: tidiness.lastRefillAt, lastRefillName, refills };
+    }
     const config = needs[id];
     const source = getNeedMetadataSource(id, config, categories);
     const events = getNeedEvents(id, config, behaviors, checkIns, source, now - NEED_LOOKBACK_MS);
@@ -71,9 +85,13 @@ export function useNeedNudges(ready: boolean, navigationRef: NavigationContainer
       if (state.behaviors !== previous.behaviors || state.categories !== previous.categories) sync();
     });
     const unsubscribeNeeds = useNeedsStore.subscribe(sync);
+    const unsubscribeTidiness = useTidinessStore.subscribe((state, previous) => {
+      if (state.spots !== previous.spots || state.marks !== previous.marks) sync();
+    });
     return () => {
       unsubscribeBehaviors();
       unsubscribeNeeds();
+      unsubscribeTidiness();
     };
   }, [ready]);
 
