@@ -320,12 +320,6 @@ export function useBehaviorLogForm({
     };
   }, []);
 
-  const handleExpandTime = useCallback(() => {
-    notesRef.current?.blur();
-    Keyboard.dismiss();
-    setTimePickerCollapsed(false);
-  }, []);
-
   const handleCollapseTime = useCallback(() => setTimePickerCollapsed(true), []);
   const handleInputBlur = useCallback(() => {}, []);
   const applyStartSeconds = useCallback(
@@ -596,12 +590,9 @@ export function useBehaviorLogForm({
             ? maxTimeSeconds % 60
             : 59,
         showSeconds,
-        collapsed: timePickerCollapsed,
-        onMinuteChange: nextMinute => applySeconds(hour * 3600 + nextMinute * 60 + (showSeconds ? second : 0)),
-        onSecondChange: nextSecond => applySeconds(hour * 3600 + minute * 60 + nextSecond),
-        onExpand: handleExpandTime,
+        onTimeChange: applySeconds,
       }),
-    [handleExpandTime, maxTimeSeconds, showSeconds, timePickerCollapsed],
+    [maxTimeSeconds, showSeconds],
   );
 
   return {
