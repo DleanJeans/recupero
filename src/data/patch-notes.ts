@@ -37,7 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-21',
     items: [
-      'The fork and knife icon on the Cook a meal button on Routines is smaller, so it no longer looks bigger than the label.',
+      'The Cook a meal button on Routines now has a chef hat icon instead of the big fork and knife, sized to match its label.',
       {
         text: 'Cook a meal can now be cooked as a behavior you pick (like Chicken Soup). Its running timer is logged there when you create the meal, linked to it. Ingredients have a play button to start a timer, and everything you typed is kept when you leave the screen.',
         screen: 'MealBatchForm',

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
@@ -18,6 +18,8 @@ interface AddBehaviorFabProps {
   label?: string;
   /** Ionicons name for the collapsed circle and the left of the label. */
   icon?: React.ComponentProps<typeof Ionicons>['name'];
+  /** MaterialCommunityIcons name, used instead of `icon` when set (e.g. chef-hat, which Ionicons lacks). */
+  mciIcon?: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
   /** Glyph size inside the fixed icon slot. Busy outline icons read better smaller than the plain +. */
   iconSize?: number;
   /** Secondary look (dark pill) so it does not compete with the primary Add behavior button. */
@@ -30,6 +32,7 @@ export function AddBehaviorFab({
   onPress,
   label = 'Add behavior',
   icon = 'add',
+  mciIcon,
   iconSize = ICON_SIZE,
   secondary,
 }: AddBehaviorFabProps) {
@@ -57,11 +60,19 @@ export function AddBehaviorFab({
     >
       <Animated.View style={[styles.fab, secondary && styles.fabSecondary, { width }]}>
         <View style={styles.iconSlot}>
-          <Ionicons
-            name={icon}
-            size={iconSize}
-            color={fg}
-          />
+          {mciIcon ? (
+            <MaterialCommunityIcons
+              name={mciIcon}
+              size={iconSize}
+              color={fg}
+            />
+          ) : (
+            <Ionicons
+              name={icon}
+              size={iconSize}
+              color={fg}
+            />
+          )}
         </View>
         <AnimatedText
           numberOfLines={1}

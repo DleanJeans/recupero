@@ -235,8 +235,8 @@ export function HomeScreen() {
           <AddBehaviorFab
             secondary
             label="Cook a meal"
-            icon="restaurant-outline"
-            iconSize={19}
+            mciIcon="chef-hat"
+            iconSize={23}
             collapsed={fabCollapsed}
             onPress={() => navigation.navigate('MealBatchForm')}
           />
