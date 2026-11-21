@@ -1,40 +1,23 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import type { RootStackParamList } from '../types/navigation';
-import { Colors } from '../utils/colors';
-import { Button } from './button';
 import { MoneyBalance } from './money-balance';
 import { ScreenTitle } from './screen-title';
+import { TabHeaderMenu } from './tab-header-menu';
 
 interface TabHeaderProps {
   title: string;
-  /** Screen-specific icon buttons, shown before the cog. */
+  /** Screen-specific icon buttons, shown before the menu. */
   actions?: React.ReactNode;
 }
 
-/** Shared header of the five bottom-nav tabs: title, optional actions, balance and the Settings cog in the same spot. */
+/** Shared header of the five bottom-nav tabs: title, optional actions, balance and the "..." menu in the same spot. */
 export function TabHeader({ title, actions }: TabHeaderProps) {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-
   return (
     <View style={styles.header}>
       <ScreenTitle style={styles.title}>{title}</ScreenTitle>
       {actions}
       <MoneyBalance />
-      <Button
-        variant="icon"
-        onPress={() => navigation.navigate('Settings')}
-        accessibilityLabel="Settings"
-      >
-        <Ionicons
-          name="settings-outline"
-          size={22}
-          color={Colors.text.secondary}
-        />
-      </Button>
+      <TabHeaderMenu />
     </View>
   );
 }

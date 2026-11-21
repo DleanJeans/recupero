@@ -1,16 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Updates from 'expo-updates';
-import React, { useState } from 'react';
+import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
+import { type UpdateStatus, useCheckUpdate } from '../../../hooks/use-check-update';
 import { Colors } from '../../../utils/colors';
-import { reloadIntoUpdate } from '../../../utils/update-utils';
 
-type Status = 'idle' | 'checking' | 'downloading' | 'restarting' | 'upToDate' | 'error';
-
-const BUSY: Status[] = ['checking', 'downloading', 'restarting'];
-
-const LABELS: Record<Status, string> = {
+const LABELS: Record<UpdateStatus, string> = {
   idle: 'Check for update',
   checking: 'Checking…',
   downloading: 'Downloading update…',
@@ -24,39 +19,7 @@ const LABELS: Record<Status, string> = {
  * so applying an update is a single tap instead of waiting for the "Update ready" pill and restarting.
  */
 export function CheckUpdateButton() {
-  const { isUpdatePending } = Updates.useUpdates();
-  const [status, setStatus] = useState<Status>('idle');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Dev-client sessions served by Metro have nothing to fetch.
-  const unavailable = !Updates.isEnabled || __DEV__;
-  const busy = BUSY.includes(status);
-
-  const run = async () => {
-    setErrorMessage(null);
-    try {
-      if (!isUpdatePending) {
-        setStatus('checking');
-        const result = await Updates.checkForUpdateAsync();
-        if (!result.isAvailable) {
-          setStatus('upToDate');
-          return;
-        }
-        setStatus('downloading');
-        const fetched = await Updates.fetchUpdateAsync();
-        // The server can roll back or the update can be identical to what's running.
-        if (!fetched.isNew && !fetched.isRollBackToEmbedded) {
-          setStatus('upToDate');
-          return;
-        }
-      }
-      setStatus('restarting');
-      await reloadIntoUpdate();
-    } catch (error) {
-      setStatus('error');
-      setErrorMessage(error instanceof Error ? error.message : String(error));
-    }
-  };
+  const { status, errorMessage, isUpdatePending, unavailable, busy, run } = useCheckUpdate();
 
   const label = isUpdatePending && !busy ? 'Update ready · restart now' : LABELS[status];
 
