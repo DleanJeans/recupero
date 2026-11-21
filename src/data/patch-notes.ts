@@ -37,7 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-21',
     items: [
-      'Tapping the hours:minutes of a start or end time in a behavior log now opens the HH:mm wheel and then straight away the 00:ss seconds wheel, so one tap sets the time with seconds. Tapping the seconds alone still opens just the seconds wheel.',
+      'Tapping the hours:minutes of a start or end time in a behavior log now opens the clock-face time picker and then straight away a second clock for the seconds (00:ss), so one tap sets the time with seconds. Tapping the seconds alone still opens just the seconds clock.',
       'Selected tiles in the mood and body pickers now have a clear thicker outline and a stronger tint, so you can see what you picked.',
       'In the task dialog, picking a behavior that tracks an app fills the App row with that app and ticks Track duration. Picking an app also ticks it, and every behavior made for an app now has duration XP on.',
       {

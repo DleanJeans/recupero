@@ -67,7 +67,7 @@ function TimePickerComponent({
     DateTimePickerAndroid.open({
       value: new Date(2000, 0, 1, 0, current.second),
       mode: 'time',
-      display: 'spinner',
+      display: 'clock',
       is24Hour: true,
       minimumDate: new Date(2000, 0, 1),
       maximumDate: new Date(2000, 0, 1, 0, current.maxSecond),
@@ -100,7 +100,7 @@ function TimePickerComponent({
     DateTimePickerAndroid.open({
       value,
       mode: 'time',
-      display: 'spinner',
+      display: 'clock',
       is24Hour: true,
       minimumDate: pickerMinimumDate,
       maximumDate: maximumDate,
@@ -122,7 +122,7 @@ function TimePickerComponent({
     DateTimePickerAndroid.open({
       value: new Date(2000, 0, 1, 0, second),
       mode: 'time',
-      display: 'spinner',
+      display: 'clock',
       is24Hour: true,
       minimumDate: pickerMinimumDate,
       maximumDate: new Date(2000, 0, 1, 0, maxSecond),
