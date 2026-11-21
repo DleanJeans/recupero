@@ -41,13 +41,13 @@ export function BatchIngredientRow({
       <View style={styles.text}>
         <Text
           style={styles.name}
-          numberOfLines={1}
+          numberOfLines={2}
         >
           {name}
         </Text>
         <Text
           style={[styles.subtitle, warn && styles.warn]}
-          numberOfLines={1}
+          numberOfLines={2}
         >
           {subtitle}
         </Text>
@@ -67,6 +67,7 @@ export function BatchIngredientRow({
       {onStartTimer && (
         <Button
           variant="icon"
+          style={styles.tightButton}
           onPress={onStartTimer}
           accessibilityLabel={`Start timer for ${name}`}
         >
@@ -79,6 +80,7 @@ export function BatchIngredientRow({
       )}
       <Button
         variant="icon"
+        style={styles.tightButton}
         onPress={onRemove}
         accessibilityLabel={`Remove ${name}`}
       >
@@ -96,19 +98,20 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     backgroundColor: Colors.bg.card,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.border.default,
     paddingVertical: 8,
     paddingLeft: 10,
-    paddingRight: 4,
+    paddingRight: 2,
     marginBottom: 6,
   },
   text: { flex: 1, minWidth: 0 },
   name: { color: Colors.text.primary, fontSize: 14, fontWeight: '600' },
   subtitle: { color: Colors.text.muted, fontSize: 11, marginTop: 1 },
+  tightButton: { minWidth: 32, paddingHorizontal: 2 },
   warn: { color: Colors.cooldown.yellow },
   amountBox: {
     flexDirection: 'row',
@@ -119,7 +122,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   amount: {
-    minWidth: 48,
+    minWidth: 44,
     height: 38,
     color: Colors.text.primary,
     fontSize: 15,
