@@ -354,6 +354,9 @@ export function MealBatchFormScreen() {
                   setRows(current => current.map(item => (item.key === row.key ? { ...item, amountText: text } : item)))
                 }
                 onRemove={() => setRows(current => current.filter(item => item.key !== row.key))}
+                onOpenDetails={
+                  behavior ? () => navigation.navigate('BehaviorForm', { behaviorId: behavior.id }) : undefined
+                }
                 onStartTimer={behavior ? () => startIngredientTimer(behavior.id, behavior.name) : undefined}
               />
             );

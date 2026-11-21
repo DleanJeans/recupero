@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { AppIcon } from '../../../components/app-icon';
 import { Button } from '../../../components/button';
 import { Text, TextInput } from '../../../components/text';
@@ -18,6 +18,8 @@ interface BatchIngredientRowProps {
   onRemove: () => void;
   /** Starts a timer on the ingredient (e.g. chopping or marinating time). */
   onStartTimer?: () => void;
+  /** Press and hold on the icon or name: opens the ingredient's Behavior Details. */
+  onOpenDetails?: () => void;
 }
 
 export function BatchIngredientRow({
@@ -30,28 +32,36 @@ export function BatchIngredientRow({
   onChangeAmount,
   onRemove,
   onStartTimer,
+  onOpenDetails,
 }: BatchIngredientRowProps) {
   return (
     <View style={styles.row}>
-      <AppIcon
-        value={icon}
-        size={30}
-        fallback="🍽️"
-      />
-      <View style={styles.text}>
-        <Text
-          style={styles.name}
-          numberOfLines={2}
-        >
-          {name}
-        </Text>
-        <Text
-          style={[styles.subtitle, warn && styles.warn]}
-          numberOfLines={2}
-        >
-          {subtitle}
-        </Text>
-      </View>
+      <Pressable
+        style={styles.details}
+        onLongPress={onOpenDetails}
+        accessibilityRole="button"
+        accessibilityLabel={`${name}, hold to open details`}
+      >
+        <AppIcon
+          value={icon}
+          size={30}
+          fallback="🍽️"
+        />
+        <View style={styles.text}>
+          <Text
+            style={styles.name}
+            numberOfLines={2}
+          >
+            {name}
+          </Text>
+          <Text
+            style={[styles.subtitle, warn && styles.warn]}
+            numberOfLines={2}
+          >
+            {subtitle}
+          </Text>
+        </View>
+      </Pressable>
       <View style={styles.amountBox}>
         <TextInput
           style={styles.amount}
@@ -108,6 +118,7 @@ const styles = StyleSheet.create({
     paddingRight: 2,
     marginBottom: 6,
   },
+  details: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 0 },
   text: { flex: 1, minWidth: 0 },
   name: { color: Colors.text.primary, fontSize: 14, fontWeight: '600' },
   subtitle: { color: Colors.text.muted, fontSize: 11, marginTop: 1 },
