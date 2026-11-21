@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -13,12 +14,15 @@ import {
   CONTACT_AMOUNTS,
   CONTACT_EMOJIS,
   CONTACT_LABELS,
-  formatBirthday,
   formatBirthdayHint,
+  formatBirthdayInput,
   formatDaysSince,
+  getBirthdayPlaceholder,
+  getDateLocale,
   getDaysSince,
   getLastContactTs,
   parseBirthday,
+  parseBirthdayInput,
   toBirthday,
 } from '../../utils/people-utils';
 import { Button } from '../button';
@@ -46,6 +50,8 @@ export function PersonDialog({ person, now, onClose }: PersonDialogProps) {
   const [draft, setDraft] = useState<PersonDraft>(person ? { ...person } : EMPTY_PERSON);
   const [nudgeText, setNudgeText] = useState(String(draft.nudgeDays));
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [dateLocale] = useState(getDateLocale);
+  const [birthdayText, setBirthdayText] = useState(() => formatBirthdayInput(draft.birthday, dateLocale));
   const [searching, setSearching] = useState(false);
   const [locating, setLocating] = useState(false);
   const pinRequest = useRef(0);
@@ -101,12 +107,14 @@ export function PersonDialog({ person, now, onClose }: PersonDialogProps) {
       maximumDate: new Date(),
       onChange: (event, date) => {
         if (event.type !== 'set' || !date) return;
-        set({ birthday: toBirthday(date) });
+        const picked = toBirthday(date);
+        set({ birthday: picked });
+        setBirthdayText(formatBirthdayInput(picked, dateLocale));
       },
     });
   };
 
-  const birthdayValid = !draft.birthday.trim() || parseBirthday(draft.birthday) != null;
+  const birthdayValid = parseBirthdayInput(birthdayText, dateLocale) != null;
   const nudgeDays = Math.round(Number(nudgeText));
   const nudgeValid = Number.isFinite(nudgeDays) && nudgeDays >= 1 && nudgeDays <= 365;
   const valid = draft.name.trim().length > 0 && birthdayValid && nudgeValid;
@@ -209,22 +217,33 @@ export function PersonDialog({ person, now, onClose }: PersonDialogProps) {
               keyboardType="phone-pad"
             />
             <View style={styles.field}>
-              <Text style={styles.label}>{`BIRTHDAY${birthdayHint ? ` · ${birthdayHint}` : ''}`}</Text>
+              <Text style={[styles.label, !birthdayValid && styles.invalid]}>
+                {`BIRTHDAY${birthdayHint ? ` · ${birthdayHint}` : ''}`}
+              </Text>
               <View style={styles.addressRow}>
-                <Pressable
-                  style={({ pressed }) => [styles.input, styles.flex, pressed && styles.pressed]}
+                <TextInput
+                  style={[styles.input, styles.flex, !birthdayValid && styles.invalidInput]}
+                  value={birthdayText}
+                  onChangeText={text => {
+                    setBirthdayText(text);
+                    const stored = parseBirthdayInput(text, dateLocale);
+                    if (stored != null) set({ birthday: stored });
+                  }}
+                  placeholder={getBirthdayPlaceholder(dateLocale)}
+                  placeholderTextColor={Colors.text.faint}
+                  keyboardType="numbers-and-punctuation"
+                />
+                <Button
+                  variant="icon"
                   onPress={pickBirthday}
-                  accessibilityRole="button"
-                  accessibilityLabel="Pick birthday"
+                  accessibilityLabel="Open calendar"
                 >
-                  <Text
-                    style={draft.birthday ? styles.dateText : styles.datePlaceholder}
-                    numberOfLines={1}
-                  >
-                    {formatBirthday(draft.birthday) ?? 'Pick a date'}
-                  </Text>
-                </Pressable>
-                {draft.birthday ? <Button onPress={() => set({ birthday: '' })}>Clear</Button> : null}
+                  <Ionicons
+                    name="calendar-outline"
+                    size={22}
+                    color={Colors.text.secondary}
+                  />
+                </Button>
               </View>
             </View>
             <View style={styles.field}>

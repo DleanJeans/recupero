@@ -162,3 +162,74 @@ export function toBirthday(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
+
+export type DatePart = 'day' | 'month' | 'year';
+
+export interface DateLocale {
+  order: DatePart[];
+  separator: string;
+}
+
+const DEFAULT_DATE_LOCALE: DateLocale = { order: ['day', 'month', 'year'], separator: '/' };
+
+/** Day, month and year order and separator of the device's locale, e.g. DD/MM/YYYY or MM/DD/YYYY. */
+export function getDateLocale(): DateLocale {
+  try {
+    const parts = new Intl.DateTimeFormat(undefined, {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).formatToParts(new Date(2000, 10, 25));
+    const order = parts.flatMap(part =>
+      part.type === 'day' || part.type === 'month' || part.type === 'year' ? [part.type] : [],
+    );
+    const separator = parts.find(part => part.type === 'literal' && part.value.trim())?.value.trim();
+    if (order.length === 3) return { order, separator: separator ?? '/' };
+  } catch {
+    // Intl is missing or failed: use day first.
+  }
+  return DEFAULT_DATE_LOCALE;
+}
+
+/** Placeholder like "DD/MM/YYYY" for the locale. */
+export function getBirthdayPlaceholder(locale: DateLocale): string {
+  const label = { day: 'DD', month: 'MM', year: 'YYYY' };
+  return locale.order.map(part => label[part]).join(locale.separator);
+}
+
+/** A stored birthday written in the locale's order, e.g. "14/05/1990" or "14/05" without a year. */
+export function formatBirthdayInput(birthday: string, locale: DateLocale): string {
+  const parsed = parseBirthday(birthday);
+  if (!parsed) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const value = { day: pad(parsed.day), month: pad(parsed.month), year: parsed.year ? String(parsed.year) : '' };
+  return locale.order
+    .map(part => value[part])
+    .filter(Boolean)
+    .join(locale.separator);
+}
+
+/**
+ * Reads typed text in the locale's order (day and month, or day, month and year) into the stored form.
+ * Empty text gives "" (no birthday); text that is not a valid date gives undefined.
+ */
+export function parseBirthdayInput(text: string, locale: DateLocale): string | undefined {
+  if (!text.trim()) return '';
+  const numbers = text
+    .trim()
+    .split(/\D+/)
+    .filter(Boolean)
+    .map(part => ({ digits: part.length, value: Number(part) }));
+  if (numbers.length < 2 || numbers.length > 3) return undefined;
+  const parts = numbers.length === 3 ? locale.order : locale.order.filter(part => part !== 'year');
+  const found: Partial<Record<DatePart, { digits: number; value: number }>> = {};
+  parts.forEach((part, index) => {
+    found[part] = numbers[index];
+  });
+  const { day, month, year } = found;
+  if (!day || !month) return undefined;
+  if (year && year.digits !== 4) return undefined;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const stored = `${year ? `${year.value}-` : ''}${pad(month.value)}-${pad(day.value)}`;
+  return parseBirthday(stored) ? stored : undefined;
+}

@@ -1,11 +1,13 @@
 import type { Person } from '../src/types/person';
 import {
   formatBirthday,
+  formatBirthdayInput,
   getContactTone,
   getDaysSince,
   getDaysUntilBirthday,
   matchPersonBySender,
   parseBirthday,
+  parseBirthdayInput,
   planChatContacts,
   toBirthday,
 } from '../src/utils/people-utils';
@@ -81,5 +83,22 @@ describe('people utils', () => {
       { personId: 'a', ts: 10 * min },
       { personId: 'a', ts: 60 * min },
     ]);
+  });
+
+  it('reads and writes birthdays in the locale order', () => {
+    const dmy = { order: ['day', 'month', 'year'] as ('day' | 'month' | 'year')[], separator: '/' };
+    const mdy = { order: ['month', 'day', 'year'] as ('day' | 'month' | 'year')[], separator: '/' };
+    const ymd = { order: ['year', 'month', 'day'] as ('day' | 'month' | 'year')[], separator: '-' };
+    expect(parseBirthdayInput('14/5/1990', dmy)).toBe('1990-05-14');
+    expect(parseBirthdayInput('5/14/1990', mdy)).toBe('1990-05-14');
+    expect(parseBirthdayInput('1990-05-14', ymd)).toBe('1990-05-14');
+    expect(parseBirthdayInput('14/05', dmy)).toBe('05-14');
+    expect(parseBirthdayInput('05/14', mdy)).toBe('05-14');
+    expect(parseBirthdayInput('31/02/1990', dmy)).toBeUndefined();
+    expect(parseBirthdayInput('14/05/90', dmy)).toBeUndefined();
+    expect(parseBirthdayInput('', dmy)).toBe('');
+    expect(formatBirthdayInput('1990-05-14', dmy)).toBe('14/05/1990');
+    expect(formatBirthdayInput('1990-05-14', mdy)).toBe('05/14/1990');
+    expect(formatBirthdayInput('05-14', dmy)).toBe('14/05');
   });
 });

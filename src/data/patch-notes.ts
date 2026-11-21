@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-21',
     items: [
+      "The birthday in the person dialog can now be typed in your phone's date order (e.g. 14/05/1990, or just 14/05 without a year), with a calendar button beside it.",
       'The birthday date picker in the person dialog now goes back before 1970.',
       'The in-app image browser (from the icon editor) now has a Desktop mode button next to the search box, and you can type a web address in the search box to open that site, e.g. web.whatsapp.com to log into WhatsApp Web. Switching Desktop mode keeps the page you are on.',
       'Fixed the automatic timer overlay (and its notification) disappearing less than a second after opening an app like WhatsApp. It now stays until you leave the app.',
