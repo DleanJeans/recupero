@@ -1,6 +1,8 @@
-import React from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppIcon } from '../../../components/app-icon';
+import { AddCueOptionModal } from '../../../components/cues/add-cue-option-modal';
 import { Text } from '../../../components/text';
 import { useCuesStore } from '../../../store/cues-store';
 import type { MoodId } from '../../../types/cue';
@@ -16,6 +18,7 @@ interface MoodGridProps {
 
 export function MoodGrid({ selectedMood, selectedMany, onSelect }: MoodGridProps) {
   const customMoods = useCuesStore(state => state.customMoods);
+  const [adding, setAdding] = useState(false);
   return (
     <View style={styles.grid}>
       {getMoodOptions(customMoods).map(option => {
@@ -37,6 +40,28 @@ export function MoodGrid({ selectedMood, selectedMany, onSelect }: MoodGridProps
           </Pressable>
         );
       })}
+      <Pressable
+        style={({ pressed }) => [styles.tile, styles.addTile, pressed && styles.pressed]}
+        onPress={() => setAdding(true)}
+        accessibilityRole="button"
+        accessibilityLabel="Add mood"
+      >
+        <Ionicons
+          name="add"
+          size={30}
+          color={Colors.text.muted}
+        />
+        <Text
+          style={styles.label}
+          numberOfLines={1}
+        >
+          Add mood
+        </Text>
+      </Pressable>
+      <AddCueOptionModal
+        kind={adding ? 'mood' : undefined}
+        onClose={() => setAdding(false)}
+      />
     </View>
   );
 }
@@ -62,6 +87,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 14,
   },
+  addTile: { borderStyle: 'dashed' },
   emoji: { fontSize: 30 },
   label: { color: Colors.text.muted, fontSize: 13, fontWeight: '700' },
   selectedLabel: { color: Colors.text.primary },

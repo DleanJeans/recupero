@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-21',
     items: [
+      'The Mood screen and the mood check-in sheet now end with an "Add mood" tile, so you can add your own mood with a name and emoji.',
       'You can now set when a body sensation started: the Body screen has a "When did it start?" time after you tap a sensation, and the body check-in sheet shows a Started time once you pick one. Pick an earlier time today and the log moves there.',
       'The Body check-in screen and the body check-in sheet now end with an "Add sensation" tile. Give it a name and emoji and it is saved with the others.',
       'In Cook a meal, picking a base behavior copies its name into the meal name, Create batch is now a floating button, and Discard this meal is a red button that asks first.',
