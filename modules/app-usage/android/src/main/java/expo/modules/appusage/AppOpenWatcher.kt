@@ -51,6 +51,8 @@ object AppOpenWatcher {
   fun onWindowChanged(context: Context, packageName: String, className: String?) {
     if (packageName in IGNORED_PACKAGES) return
     if (className?.contains("inputmethod", ignoreCase = true) == true) return
+    // Recupero's own floating timer is a window of this package; it is not Recupero coming to the front.
+    if (packageName == context.packageName && className?.endsWith("Activity") != true) return
     if (packageName == defaultInputMethodPackage(context)) return
     if (packageName == lastForegroundPackage) return
     lastForegroundPackage = packageName
