@@ -21,6 +21,7 @@ interface EditableRoomTileProps {
 /** A room tile on the plan editor: drag to move, drag the corner to resize. Snaps to the grid on release. */
 export function EditableRoomTile({ room, cell, selected, onSelect, onDragging }: EditableRoomTileProps) {
   const setRoomRect = useTidinessStore(store => store.setRoomRect);
+  const planSize = useTidinessStore(store => store.planSize);
   const [drag, setDrag] = useState({ dx: 0, dy: 0, dw: 0, dh: 0 });
 
   const move = useMemo(
@@ -77,12 +78,15 @@ export function EditableRoomTile({ room, cell, selected, onSelect, onDragging }:
   );
 
   // Preview where the tile will snap to.
-  const rect = clampRect({
-    x: room.rect.x + drag.dx / cell,
-    y: room.rect.y + drag.dy / cell,
-    w: room.rect.w + drag.dw / cell,
-    h: room.rect.h + drag.dh / cell,
-  });
+  const rect = clampRect(
+    {
+      x: room.rect.x + drag.dx / cell,
+      y: room.rect.y + drag.dy / cell,
+      w: room.rect.w + drag.dw / cell,
+      h: room.rect.h + drag.dh / cell,
+    },
+    planSize,
+  );
 
   return (
     <View

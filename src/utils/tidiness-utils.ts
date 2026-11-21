@@ -1,5 +1,5 @@
 import type { BehaviorEntry } from '../types/behavior';
-import type { TidyMark, TidyRect, TidyRoom, TidySpot, TidyWeight } from '../types/tidiness';
+import type { TidyMark, TidyPlanSize, TidyRect, TidyRoom, TidySpot, TidyWeight } from '../types/tidiness';
 import { Colors } from './colors';
 import {
   clampLevel,
@@ -12,11 +12,11 @@ import {
 const MS_PER_HOUR = 3_600_000;
 const HOURS_PER_DAY = 24;
 
-/** The floor plan is this many cells wide; cells are square. */
-export const TIDY_PLAN_COLUMNS = 12;
-/** The plan is at least this many cells tall, so there is room to add tiles below. */
-export const TIDY_PLAN_MIN_ROWS = 8;
-export const TIDY_PLAN_MAX_ROWS = 24;
+/** Default plan size in square cells; the user can change it in Edit plan. */
+export const TIDY_DEFAULT_PLAN_SIZE: TidyPlanSize = { cols: 12, rows: 8 };
+export const TIDY_PLAN_MIN_SIDE = 4;
+export const TIDY_PLAN_MAX_COLS = 24;
+export const TIDY_PLAN_MAX_ROWS = 40;
 export const TIDY_MIN_EMPTY_HOURS = 6;
 export const TIDY_MAX_EMPTY_HOURS = 90 * HOURS_PER_DAY;
 /** Same as other needs: below this a spot shows red. */
@@ -233,24 +233,34 @@ export function getMessyDayStepIndex(emptyHours: number): number {
 
 // ── Floor plan ──
 
-export function clampRect(rect: TidyRect): TidyRect {
-  const w = Math.max(1, Math.min(TIDY_PLAN_COLUMNS, Math.round(rect.w)));
-  const h = Math.max(1, Math.min(TIDY_PLAN_MAX_ROWS, Math.round(rect.h)));
-  const x = Math.max(0, Math.min(TIDY_PLAN_COLUMNS - w, Math.round(rect.x)));
-  const y = Math.max(0, Math.min(TIDY_PLAN_MAX_ROWS - h, Math.round(rect.y)));
+/** Keeps a tile on the grid and inside the plan. */
+export function clampRect(rect: TidyRect, size: TidyPlanSize): TidyRect {
+  const w = Math.max(1, Math.min(size.cols, Math.round(rect.w)));
+  const h = Math.max(1, Math.min(size.rows, Math.round(rect.h)));
+  const x = Math.max(0, Math.min(size.cols - w, Math.round(rect.x)));
+  const y = Math.max(0, Math.min(size.rows - h, Math.round(rect.y)));
   return { x, y, w, h };
 }
 
-/** Rows the plan needs to show every tile, plus one spare row. */
-export function getPlanRows(rooms: TidyRoom[]): number {
-  const bottom = rooms.reduce((max, room) => Math.max(max, room.rect.y + room.rect.h), 0);
-  return Math.min(TIDY_PLAN_MAX_ROWS, Math.max(TIDY_PLAN_MIN_ROWS, bottom));
+/** Plan width and height kept within limits. */
+export function clampPlanSize(size: TidyPlanSize): TidyPlanSize {
+  return {
+    cols: Math.max(TIDY_PLAN_MIN_SIDE, Math.min(TIDY_PLAN_MAX_COLS, Math.round(size.cols))),
+    rows: Math.max(TIDY_PLAN_MIN_SIDE, Math.min(TIDY_PLAN_MAX_ROWS, Math.round(size.rows))),
+  };
 }
 
-/** A free spot for a new room tile: the first row below every tile. */
-export function getNewRoomRect(rooms: TidyRoom[]): TidyRect {
+/** A plan big enough for every tile (for plans saved before the size could be set). */
+export function getFittingPlanSize(rooms: TidyRoom[], size: TidyPlanSize = TIDY_DEFAULT_PLAN_SIZE): TidyPlanSize {
+  const right = rooms.reduce((max, room) => Math.max(max, room.rect.x + room.rect.w), 0);
   const bottom = rooms.reduce((max, room) => Math.max(max, room.rect.y + room.rect.h), 0);
-  return clampRect({ x: 0, y: bottom, w: 4, h: 3 });
+  return clampPlanSize({ cols: Math.max(size.cols, right), rows: Math.max(size.rows, bottom) });
+}
+
+/** A spot for a new room tile: below every tile, or at the bottom edge when the plan is full. */
+export function getNewRoomRect(rooms: TidyRoom[], size: TidyPlanSize): TidyRect {
+  const bottom = rooms.reduce((max, room) => Math.max(max, room.rect.y + room.rect.h), 0);
+  return clampRect({ x: 0, y: bottom, w: 4, h: 3 }, size);
 }
 
 /**

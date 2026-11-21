@@ -1,7 +1,9 @@
 import type { BehaviorEntry } from '../src/types/behavior';
 import type { TidyMark, TidySpot } from '../src/types/tidiness';
 import {
+  clampPlanSize,
   clampRect,
+  getFittingPlanSize,
   getMessiestSpot,
   getNextLowSpot,
   getOverallTidiness,
@@ -10,7 +12,6 @@ import {
   getTidinessNeedOverride,
   learnSpotEmptyHours,
   matchStarterBehaviors,
-  TIDY_PLAN_COLUMNS,
 } from '../src/utils/tidiness-utils';
 
 const HOUR = 3_600_000;
@@ -129,7 +130,14 @@ describe('learnSpotEmptyHours', () => {
 
 describe('floor plan', () => {
   it('keeps tiles on the grid', () => {
-    expect(clampRect({ x: 11.6, y: -2, w: 4.4, h: 0.2 })).toEqual({ x: TIDY_PLAN_COLUMNS - 4, y: 0, w: 4, h: 1 });
+    expect(clampRect({ x: 11.6, y: -2, w: 4.4, h: 0.2 }, { cols: 12, rows: 8 })).toEqual({ x: 8, y: 0, w: 4, h: 1 });
+    expect(clampRect({ x: 0, y: 6, w: 10, h: 5 }, { cols: 6, rows: 4 })).toEqual({ x: 0, y: 0, w: 6, h: 4 });
+  });
+
+  it('keeps the plan size within limits and fits old plans', () => {
+    expect(clampPlanSize({ cols: 2, rows: 99 })).toEqual({ cols: 4, rows: 40 });
+    const room = { id: 'r', name: 'Hall', emoji: '', rect: { x: 10, y: 9, w: 4, h: 2 } };
+    expect(getFittingPlanSize([room])).toEqual({ cols: 14, rows: 11 });
   });
 
   it('places unpinned spots inside their room', () => {

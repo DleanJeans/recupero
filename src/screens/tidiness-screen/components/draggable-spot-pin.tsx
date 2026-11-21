@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { PanResponder, StyleSheet, View } from 'react-native';
+import { AppIcon } from '../../../components/app-icon';
 import { useTidinessStore } from '../../../store/tidiness-store';
 import type { TidyRoom, TidySpot } from '../../../types/tidiness';
 import { Colors } from '../../../utils/colors';
 
-const DOT_SIZE = 18;
+const DOT_SIZE = 30;
 
 interface DraggableSpotPinProps {
   spot: TidySpot;
@@ -14,7 +15,7 @@ interface DraggableSpotPinProps {
   onDragging: (dragging: boolean) => void;
 }
 
-/** A spot's dot on the plan editor; drag it to where the spot really is inside its room. */
+/** A spot's emoji on the plan editor; drag it to where the spot really is inside its room. */
 export function DraggableSpotPin({ spot, room, pin, cell, onDragging }: DraggableSpotPinProps) {
   const setSpotPin = useTidinessStore(store => store.setSpotPin);
   const [drag, setDrag] = useState({ dx: 0, dy: 0 });
@@ -56,7 +57,13 @@ export function DraggableSpotPin({ spot, room, pin, cell, onDragging }: Draggabl
           top: room.rect.y * cell + y * roomHeight - DOT_SIZE / 2,
         },
       ]}
-    />
+    >
+      <AppIcon
+        value={spot.emoji}
+        size={18}
+        fallback="🧹"
+      />
+    </View>
   );
 }
 
@@ -67,8 +74,10 @@ const styles = StyleSheet.create({
     width: DOT_SIZE,
     height: DOT_SIZE,
     borderRadius: DOT_SIZE / 2,
-    backgroundColor: Colors.cue.location,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.bg.primary,
     borderWidth: 2,
-    borderColor: Colors.bg.primary,
+    borderColor: Colors.cue.location,
   },
 });

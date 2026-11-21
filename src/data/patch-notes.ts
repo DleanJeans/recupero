@@ -47,7 +47,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
         screen: 'Tidiness',
         linkPhrase: 'Tidiness screen',
       },
-      'Tidiness screen: the floor plan shows rooms coloured by how tidy they are, with a dot per spot. Tap ✎ Edit to drag and resize rooms and to drag spot dots to where they really are.',
+      'Tidiness screen: the floor plan shows rooms coloured by how tidy they are, with each spot as its emoji ringed in its level colour. Tap ✎ Edit to drag and resize rooms, drag spot emoji to where they really are, and set the plan Width and Height (in squares).',
       'Tidiness spot sheet: Log or start a timer for its cleaning behaviours, mark it clean, or answer "How is it now?" to teach how fast it gets messy.',
       'In Cook a meal, the base behavior card has a play button to start its timer when it is not running.',
       'Tasks: long-press a task › Select, tick more, then Edit N changes Behavior, App, Place, Track duration and stars for all of them at once. A field left on Keep is untouched; Mixed means they differ. Move sends them to Today, Shopping or Later together.',

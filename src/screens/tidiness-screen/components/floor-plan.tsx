@@ -1,19 +1,14 @@
 import React, { useState } from 'react';
 import { type LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
+import { AppIcon } from '../../../components/app-icon';
 import { Text } from '../../../components/text';
+import { useTidinessStore } from '../../../store/tidiness-store';
 import type { TidyRoom, TidySpot } from '../../../types/tidiness';
 import { Colors } from '../../../utils/colors';
-import {
-  formatTidyPercent,
-  getPlanRows,
-  getSpotPins,
-  getTidyColor,
-  getTidyTileColors,
-  TIDY_PLAN_COLUMNS,
-} from '../../../utils/tidiness-utils';
+import { formatTidyPercent, getSpotPins, getTidyColor, getTidyTileColors } from '../../../utils/tidiness-utils';
 
 const TILE_GAP = 3;
-const DOT_SIZE = 14;
+const DOT_SIZE = 26;
 
 interface FloorPlanProps {
   rooms: TidyRoom[];
@@ -24,17 +19,18 @@ interface FloorPlanProps {
   onSpotPress: (spotId: string) => void;
 }
 
-/** The home as room tiles tinted by tidiness, with a dot per spot. */
+/** The home as room tiles tinted by tidiness, with each spot's emoji ringed in its level colour. */
 export function FloorPlan({ rooms, spots, roomLevels, spotLevels, onRoomPress, onSpotPress }: FloorPlanProps) {
   const [width, setWidth] = useState(0);
-  const cell = width / TIDY_PLAN_COLUMNS;
-  const rows = getPlanRows(rooms);
+  const planSize = useTidinessStore(store => store.planSize);
+  const cell = width / planSize.cols;
+  const rows = planSize.rows;
   const pins = getSpotPins(spots);
   const roomById = new Map(rooms.map(room => [room.id, room]));
 
   return (
     <View
-      style={[styles.plan, { height: Math.max(120, rows * cell) }]}
+      style={[styles.plan, { height: rows * cell }]}
       onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
     >
       {width > 0 &&
@@ -90,8 +86,14 @@ export function FloorPlan({ rooms, spots, roomLevels, spotLevels, onRoomPress, o
               hitSlop={10}
               accessibilityRole="button"
               accessibilityLabel={`${spot.name} ${formatTidyPercent(spotLevels.get(spot.id))}`}
-              style={[styles.dot, { left, top, backgroundColor: getTidyColor(spotLevels.get(spot.id)) }]}
-            />
+              style={[styles.dot, { left, top, borderColor: getTidyColor(spotLevels.get(spot.id)) }]}
+            >
+              <AppIcon
+                value={spot.emoji}
+                size={15}
+                fallback="🧹"
+              />
+            </Pressable>
           );
         })}
     </View>
@@ -114,7 +116,9 @@ const styles = StyleSheet.create({
     width: DOT_SIZE,
     height: DOT_SIZE,
     borderRadius: DOT_SIZE / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.bg.primary,
     borderWidth: 2,
-    borderColor: Colors.bg.primary,
   },
 });

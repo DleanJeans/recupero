@@ -1,4 +1,10 @@
-/** A cell rectangle on the floor plan grid (TIDY_PLAN_COLUMNS wide). */
+/** Floor plan size in square cells. */
+export interface TidyPlanSize {
+  cols: number;
+  rows: number;
+}
+
+/** A cell rectangle on the floor plan grid. */
 export interface TidyRect {
   x: number;
   y: number;

@@ -2,14 +2,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { TidyMark, TidyRect, TidyRoom, TidySpot, TidyWeight } from '../types/tidiness';
+import type { TidyMark, TidyPlanSize, TidyRect, TidyRoom, TidySpot, TidyWeight } from '../types/tidiness';
 import {
+  clampPlanSize,
   clampRect,
   daysToHours,
+  getFittingPlanSize,
   getNewRoomRect,
   getSpotState,
   learnSpotEmptyHours,
   matchStarterBehaviors,
+  TIDY_DEFAULT_PLAN_SIZE,
   TIDY_STARTER_ROOMS,
 } from '../utils/tidiness-utils';
 import { useBehaviorStore } from './behavior-store';
@@ -29,6 +32,10 @@ export interface TidinessStore {
   rooms: TidyRoom[];
   spots: TidySpot[];
   marks: TidyMark[];
+  /** Floor plan width and height in cells. */
+  planSize: TidyPlanSize;
+  /** Changes the plan size; tiles outside it move in (and shrink if they must). */
+  setPlanSize: (size: TidyPlanSize) => void;
   /** Whether the floor plan shows above the room list. */
   showPlan: boolean;
   /** Rooms unfolded in the list. */
@@ -60,8 +67,16 @@ export const useTidinessStore = create<TidinessStore>()(
       rooms: [],
       spots: [],
       marks: [],
+      planSize: TIDY_DEFAULT_PLAN_SIZE,
       showPlan: true,
       expandedRoomIds: [],
+      setPlanSize: size => {
+        const planSize = clampPlanSize(size);
+        set(state => ({
+          planSize,
+          rooms: state.rooms.map(room => ({ ...room, rect: clampRect(room.rect, planSize) })),
+        }));
+      },
       setShowPlan: show => set({ showPlan: show }),
       toggleRoomExpanded: roomId =>
         set(state => ({
@@ -71,10 +86,16 @@ export const useTidinessStore = create<TidinessStore>()(
         })),
       addRoom: ({ name, emoji }) => {
         const id = uuidv4();
-        set(state => ({
-          rooms: [...state.rooms, { id, name, emoji, rect: getNewRoomRect(state.rooms) }],
-          expandedRoomIds: [...state.expandedRoomIds, id],
-        }));
+        set(state => {
+          // Grow the plan downward when there is no free row for the new tile.
+          const bottom = state.rooms.reduce((max, room) => Math.max(max, room.rect.y + room.rect.h), 0);
+          const planSize = clampPlanSize({ ...state.planSize, rows: Math.max(state.planSize.rows, bottom + 3) });
+          return {
+            planSize,
+            rooms: [...state.rooms, { id, name, emoji, rect: getNewRoomRect(state.rooms, planSize) }],
+            expandedRoomIds: [...state.expandedRoomIds, id],
+          };
+        });
         return id;
       },
       updateRoom: (roomId, patch) =>
@@ -91,7 +112,9 @@ export const useTidinessStore = create<TidinessStore>()(
         }),
       setRoomRect: (roomId, rect) =>
         set(state => ({
-          rooms: state.rooms.map(room => (room.id === roomId ? { ...room, rect: clampRect(rect) } : room)),
+          rooms: state.rooms.map(room =>
+            room.id === roomId ? { ...room, rect: clampRect(rect, state.planSize) } : room,
+          ),
         })),
       addSpot: (input, initialLevel) => {
         const id = uuidv4();
@@ -183,6 +206,7 @@ export const useTidinessStore = create<TidinessStore>()(
         }
         set(state => ({
           rooms: [...state.rooms, ...rooms],
+          planSize: getFittingPlanSize([...state.rooms, ...rooms], state.planSize),
           spots: [...state.spots, ...spots],
           marks: [...state.marks, ...marks],
         }));
@@ -194,10 +218,12 @@ export const useTidinessStore = create<TidinessStore>()(
       version: 1,
       merge: (persisted, current) => {
         const state = persisted as Partial<TidinessStore> | undefined;
+        const rooms = state?.rooms ?? [];
         return {
           ...current,
           ...state,
-          rooms: state?.rooms ?? [],
+          rooms,
+          planSize: state?.planSize ? clampPlanSize(state.planSize) : getFittingPlanSize(rooms),
           spots: state?.spots ?? [],
           marks: state?.marks ?? [],
           expandedRoomIds: state?.expandedRoomIds ?? [],

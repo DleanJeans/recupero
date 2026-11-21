@@ -6,13 +6,11 @@ import { FullScreenModal } from '../../../components/full-screen-modal';
 import { Text } from '../../../components/text';
 import { useTidinessStore } from '../../../store/tidiness-store';
 import { Colors } from '../../../utils/colors';
-import { getPlanRows, getSpotPins, TIDY_PLAN_COLUMNS, TIDY_PLAN_MAX_ROWS } from '../../../utils/tidiness-utils';
+import { getSpotPins } from '../../../utils/tidiness-utils';
 import { DraggableSpotPin } from './draggable-spot-pin';
 import { EditableRoomTile } from './editable-room-tile';
+import { PlanSizeStepper } from './plan-size-stepper';
 import { RoomDialog } from './room-dialog';
-
-/** Rows of free space shown below the lowest tile, to drag tiles into. */
-const SPARE_ROWS = 3;
 
 interface FloorPlanEditorProps {
   onClose: () => void;
@@ -22,13 +20,15 @@ interface FloorPlanEditorProps {
 export function FloorPlanEditor({ onClose }: FloorPlanEditorProps) {
   const rooms = useTidinessStore(store => store.rooms);
   const spots = useTidinessStore(store => store.spots);
+  const planSize = useTidinessStore(store => store.planSize);
+  const setPlanSize = useTidinessStore(store => store.setPlanSize);
   const insets = useSafeAreaInsets();
   const [width, setWidth] = useState(0);
   const [selectedId, setSelectedId] = useState<string | undefined>(rooms[0]?.id);
   const [dragging, setDragging] = useState(false);
   const [roomDialog, setRoomDialog] = useState<{ roomId?: string }>();
-  const cell = width / TIDY_PLAN_COLUMNS;
-  const rows = Math.min(TIDY_PLAN_MAX_ROWS, getPlanRows(rooms) + SPARE_ROWS);
+  const cell = width / planSize.cols;
+  const rows = planSize.rows;
   const selected = rooms.find(room => room.id === selectedId);
   const selectedSpots = spots.filter(spot => spot.roomId === selectedId);
   const pins = getSpotPins(spots);
@@ -52,15 +52,27 @@ export function FloorPlanEditor({ onClose }: FloorPlanEditorProps) {
         contentContainerStyle={[styles.content, { paddingBottom: 24 + insets.bottom }]}
       >
         <Text style={styles.hint}>
-          Drag a room to move it and its green corner to resize it. The selected room's spots show as blue dots you can
-          drag to where they really are.
+          Drag a room to move it and its green corner to resize it. Drag the selected room's spot emoji to where they
+          really are.
         </Text>
+        <View style={styles.sizeRow}>
+          <PlanSizeStepper
+            label="Width"
+            value={planSize.cols}
+            onChange={cols => setPlanSize({ ...planSize, cols })}
+          />
+          <PlanSizeStepper
+            label="Height"
+            value={planSize.rows}
+            onChange={rows => setPlanSize({ ...planSize, rows })}
+          />
+        </View>
         <View
-          style={[styles.plan, { height: Math.max(120, rows * cell) }]}
+          style={[styles.plan, { height: rows * cell }]}
           onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
         >
           {width > 0 &&
-            Array.from({ length: TIDY_PLAN_COLUMNS - 1 }, (_, index) => (
+            Array.from({ length: planSize.cols - 1 }, (_, index) => (
               <View
                 key={`c${index}`}
                 style={[styles.lineV, { left: (index + 1) * cell }]}
@@ -121,7 +133,10 @@ export function FloorPlanEditor({ onClose }: FloorPlanEditorProps) {
           <Button onPress={() => setRoomDialog({})}>＋ Room</Button>
           {selected && <Button onPress={() => setRoomDialog({ roomId: selected.id })}>Edit room</Button>}
         </View>
-        <Text style={styles.hint}>Tiles can overlap. Rooms keep their spots wherever they move.</Text>
+        <Text style={styles.hint}>
+          Width and height are in squares. Shrinking the plan moves rooms inside it. Tiles can overlap, and rooms keep
+          their spots wherever they move.
+        </Text>
       </ScrollView>
       {roomDialog && (
         <RoomDialog
@@ -150,4 +165,5 @@ const styles = StyleSheet.create({
   cardTitle: { color: Colors.text.primary, fontSize: 15, fontWeight: '700' },
   cardText: { color: Colors.text.light, fontSize: 13, lineHeight: 19 },
   actions: { flexDirection: 'row', gap: 8 },
+  sizeRow: { flexDirection: 'row', gap: 8 },
 });
