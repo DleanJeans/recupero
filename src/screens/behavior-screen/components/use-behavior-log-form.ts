@@ -115,7 +115,9 @@ export function useBehaviorLogForm({
     existingLog?.timestamp ??
     timerStartTimestamp ??
     getDefaultTimedLogStartTimestamp(new Date(initialEndTimestamp), dayCutoffHour);
-  const showSeconds = hasTimerRange;
+  const showTimeRange =
+    hasTimerRange || existingLog?.endTimestamp != null || (!existingLog && behavior.durationXpEnabled === true);
+  const showSeconds = showTimeRange;
   const initialStartSeconds = showSeconds
     ? getTimeOfDaySeconds(initialStartTimestamp)
     : Math.floor(getTimeOfDaySeconds(initialStartTimestamp) / 60) * 60;
@@ -126,8 +128,6 @@ export function useBehaviorLogForm({
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [startSeconds, setStartSeconds] = useState(initialStartSeconds);
   const [endSeconds, setEndSeconds] = useState(initialEndSeconds);
-  const showTimeRange =
-    hasTimerRange || existingLog?.endTimestamp != null || (!existingLog && behavior.durationXpEnabled === true);
   const notesRef = useRef<import('react-native').TextInput>(null);
   const [notes, setNotes] = useState(String(existingLog?.metadata?.notes ?? pendingLog?.notes ?? initialNotes ?? ''));
   const [selectedCues, setSelectedCues] = useState<CueRef[]>(() =>
