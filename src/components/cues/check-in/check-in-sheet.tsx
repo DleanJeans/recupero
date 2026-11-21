@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BodySensationGrid } from '../../../screens/body-log-screen/components/body-sensation-grid';
+import { BodyStartTime } from '../../../screens/body-log-screen/components/body-start-time';
 import { MoodGrid } from '../../../screens/mood-log-screen/components/mood-grid';
 import type { BodySensationId, MoodId } from '../../../types/cue';
 import type { RootStackParamList } from '../../../types/navigation';
@@ -17,7 +18,7 @@ interface CheckInSheetProps {
   /** XP the log earns, shown as a hint. */
   xp: number;
   onLogMoods: (moods: MoodId[]) => void;
-  onLogSensations: (sensations: BodySensationId[]) => void;
+  onLogSensations: (sensations: BodySensationId[], ts?: number) => void;
   onClose: () => void;
 }
 
@@ -25,12 +26,14 @@ interface CheckInSheetProps {
 export function CheckInSheet({ kind, xp, onLogMoods, onLogSensations, onClose }: CheckInSheetProps) {
   const [moods, setMoods] = useState<MoodId[]>([]);
   const [sensations, setSensations] = useState<BodySensationId[]>([]);
+  const [startTs, setStartTs] = useState(() => Date.now());
+  const [startEdited, setStartEdited] = useState(false);
   const toggle = <T extends string>(list: T[], item: T) =>
     list.includes(item) ? list.filter(entry => entry !== item) : [...list, item];
   const count = kind === 'mood' ? moods.length : sensations.length;
   const submit = () => {
     if (kind === 'mood') onLogMoods(moods);
-    else onLogSensations(sensations);
+    else onLogSensations(sensations, startEdited ? startTs : undefined);
   };
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -67,6 +70,15 @@ export function CheckInSheet({ kind, xp, onLogMoods, onLogSensations, onClose }:
           <BodySensationGrid
             selectedMany={sensations}
             onSelect={sensation => setSensations(list => toggle(list, sensation))}
+          />
+        )}
+        {kind === 'body' && sensations.length > 0 && (
+          <BodyStartTime
+            ts={startTs}
+            onChange={ts => {
+              setStartTs(ts);
+              setStartEdited(true);
+            }}
           />
         )}
         <View style={styles.footer}>

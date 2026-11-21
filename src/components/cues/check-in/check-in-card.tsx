@@ -69,10 +69,10 @@ export function CheckInCard() {
     showUndo({ kind: 'mood', ids, label: joinLabels(moods.map(m => getMoodOption(m, custom.moods).label)), xp });
   };
 
-  const logPickedSensations = (sensations: BodySensationId[]) => {
+  const logPickedSensations = (sensations: BodySensationId[], ts?: number) => {
     if (sensations.length === 0) return;
     const xp = getNextCheckInXp(checkIn.events, 'body', Date.now(), dayCutoffHour);
-    const ids = logBodySensations(sensations);
+    const ids = logBodySensations(sensations, ts);
     applyBodySensationsToNeeds(sensations);
     setSheet(undefined);
     showUndo({

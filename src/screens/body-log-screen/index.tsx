@@ -13,12 +13,15 @@ import type { RootStackParamList } from '../../types/navigation';
 import { applyBodySensationsToNeeds } from '../../utils/body-need-utils';
 import { Colors } from '../../utils/colors';
 import { BodySensationGrid } from './components/body-sensation-grid';
+import { BodyStartTime } from './components/body-start-time';
 import { BodySuggestions } from './components/body-suggestions';
 
 export function BodyLogScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const logBodySensation = useCuesStore(state => state.logBodySensation);
   const updateBodyNote = useCuesStore(state => state.updateBodyNote);
+  const updateBodyLogTime = useCuesStore(state => state.updateBodyLogTime);
+  const bodyLogTs = useCuesStore(state => state.bodyLogs.find(log => log.id === bodyLogId)?.ts);
   const [selected, setSelected] = useState<BodySensationId | undefined>();
   const [bodyLogId, setBodyLogId] = useState<string | undefined>();
   const [note, setNote] = useState('');
@@ -61,6 +64,16 @@ export function BodyLogScreen() {
           <View style={styles.section}>
             <CueSectionLabel>Suggested for this sensation</CueSectionLabel>
             <BodySuggestions sensation={selected} />
+          </View>
+        )}
+
+        {selected && bodyLogId && bodyLogTs != null && (
+          <View style={styles.section}>
+            <CueSectionLabel>When did it start?</CueSectionLabel>
+            <BodyStartTime
+              ts={bodyLogTs}
+              onChange={ts => updateBodyLogTime(bodyLogId, ts)}
+            />
           </View>
         )}
 

@@ -42,7 +42,9 @@ export interface CuesStore {
   /** Logs several moods as one check-in: they share one timestamp. Returns the new log ids. */
   logMoods: (moods: MoodId[]) => string[];
   /** Logs several body sensations as one check-in: they share one timestamp. Returns the new log ids. */
-  logBodySensations: (sensations: BodySensationId[]) => string[];
+  logBodySensations: (sensations: BodySensationId[], ts?: number) => string[];
+  /** Moves a body log (and its activity entry) to a new start time. */
+  updateBodyLogTime: (id: string, ts: number) => void;
   updateBodyNote: (id: string, note?: string) => void;
   /** Undoes a body sensation log (and its activity entry). */
   removeBodyLog: (id: string) => void;
@@ -148,8 +150,8 @@ export const useCuesStore = create<CuesStore>()(
         }));
         return ids;
       },
-      logBodySensations: sensations => {
-        const ts = Date.now();
+      logBodySensations: (sensations, startTs) => {
+        const ts = startTs ?? Date.now();
         const ids = sensations.map(() => uuidv4());
         set(state => ({
           bodyLogs: [...state.bodyLogs, ...sensations.map((sensation, index) => ({ id: ids[index], sensation, ts }))],
@@ -170,6 +172,19 @@ export const useCuesStore = create<CuesStore>()(
         }));
         return id;
       },
+      updateBodyLogTime: (id, ts) =>
+        set(state => {
+          const log = state.bodyLogs.find(item => item.id === id);
+          if (!log) return state;
+          return {
+            bodyLogs: state.bodyLogs.map(item => (item.id === id ? { ...item, ts } : item)),
+            activity: state.activity.map(event =>
+              event.kind === 'body' && event.ts === log.ts && event.sensation === log.sensation
+                ? { ...event, ts }
+                : event,
+            ),
+          };
+        }),
       updateBodyNote: (id, note) =>
         set(state => ({
           bodyLogs: state.bodyLogs.map(log => (log.id === id ? { ...log, note: note?.trim() || undefined } : log)),
