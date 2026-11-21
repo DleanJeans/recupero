@@ -16,6 +16,7 @@ import { NeedAppSourceModal } from '../../components/needs/need-app-source-modal
 import { NEED_TONE_COLORS } from '../../components/needs/need-bar-row';
 import { NeedHistorySection } from '../../components/needs/need-history-section';
 import { NeedRateLearning } from '../../components/needs/need-rate-learning';
+import { PeopleStrip } from '../../components/needs/people-strip';
 import { ScreenFrame } from '../../components/screen-frame';
 import { Text, TextInput } from '../../components/text';
 import { useNeedLevels } from '../../hooks/use-need-levels';
@@ -242,6 +243,13 @@ export function NeedScreen() {
             needId={need.id}
             onEditLog={editLog}
           />
+
+          {need.id === 'social' ? (
+            <>
+              <CueSectionLabel>People · last contact</CueSectionLabel>
+              <PeopleStrip now={now} />
+            </>
+          ) : null}
 
           <CueSectionLabel>{info.question}</CueSectionLabel>
           <View style={styles.checkIns}>

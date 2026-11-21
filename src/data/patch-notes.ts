@@ -37,6 +37,12 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-21',
     items: [
+      {
+        text: 'The Social need screen now has a People strip showing how long since you last talked to each person (green today, red once past their limit). Tap a person to log meeting, a call or a message (adds to Social), and to save their nicknames, phone, birthday, address and preferences.',
+        screen: 'Need',
+        params: { needId: 'social' },
+        linkPhrase: 'Social need screen',
+      },
       'The Mood screen and the mood check-in sheet now end with an "Add mood" tile, so you can add your own mood with a name and emoji.',
       'You can now set when a body sensation started: the Body screen has a "When did it start?" time after you tap a sensation, and the body check-in sheet shows a Started time once you pick one. Pick an earlier time today and the log moves there.',
       'The Body check-in screen and the body check-in sheet now end with an "Add sensation" tile. Give it a name and emoji and it is saved with the others.',

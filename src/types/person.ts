@@ -1,0 +1,26 @@
+export type ContactKind = 'in-person' | 'call' | 'message';
+
+export interface Person {
+  id: string;
+  name: string;
+  emoji: string;
+  /** Other names this person goes by, comma separated. Used to match chat notifications. */
+  nicknames: string;
+  phone: string;
+  /** "MM-DD" or "YYYY-MM-DD". Empty when unknown. */
+  birthday: string;
+  address: string;
+  /** Free notes: likes, dislikes, gift ideas, food allergies... */
+  preferences: string;
+  /** Days without contact after which this person turns red. */
+  nudgeDays: number;
+  createdAt: number;
+}
+
+export interface PersonContact {
+  id: string;
+  personId: string;
+  ts: number;
+  kind: ContactKind;
+  source: 'manual' | 'notification';
+}

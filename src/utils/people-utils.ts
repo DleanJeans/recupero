@@ -1,0 +1,109 @@
+import type { ContactKind, Person, PersonContact } from '../types/person';
+
+export const DEFAULT_NUDGE_DAYS = 7;
+const DAY_MS = 86_400_000;
+
+/** How much one contact refills the Social need, in percent. */
+export const CONTACT_AMOUNTS: Record<ContactKind, number> = { 'in-person': 50, call: 30, message: 8 };
+
+export const CONTACT_LABELS: Record<ContactKind, string> = {
+  'in-person': 'Met in person',
+  call: 'Call / video',
+  message: 'Message',
+};
+
+export const CONTACT_EMOJIS: Record<ContactKind, string> = { 'in-person': '🤝', call: '📞', message: '💬' };
+
+export type ContactTone = 'fresh' | 'ok' | 'due' | 'overdue' | 'never';
+
+/** Most recent contact timestamp of one person, or undefined when never. */
+export function getLastContactTs(personId: string, contacts: PersonContact[]): number | undefined {
+  let last: number | undefined;
+  for (const contact of contacts) {
+    if (contact.personId === personId && (last == null || contact.ts > last)) last = contact.ts;
+  }
+  return last;
+}
+
+/** Whole days between a contact and now (0 = today, using the local calendar day). */
+export function getDaysSince(ts: number, now: number): number {
+  const a = new Date(ts);
+  const b = new Date(now);
+  const startA = new Date(a.getFullYear(), a.getMonth(), a.getDate()).getTime();
+  const startB = new Date(b.getFullYear(), b.getMonth(), b.getDate()).getTime();
+  return Math.max(0, Math.round((startB - startA) / DAY_MS));
+}
+
+export function formatDaysSince(days: number | undefined): string {
+  if (days == null) return 'never';
+  if (days === 0) return 'today';
+  return `${days} day${days === 1 ? '' : 's'}`;
+}
+
+export function getContactTone(days: number | undefined, nudgeDays: number): ContactTone {
+  if (days == null) return 'never';
+  if (days >= nudgeDays) return 'overdue';
+  if (days >= nudgeDays / 2) return 'due';
+  return days === 0 ? 'fresh' : 'ok';
+}
+
+/** People sorted with the longest time since contact first, never-contacted people before that. */
+export function sortPeopleByContact(people: Person[], contacts: PersonContact[]): Person[] {
+  const last = new Map(people.map(person => [person.id, getLastContactTs(person.id, contacts)]));
+  return [...people].sort((a, b) => (last.get(a.id) ?? 0) - (last.get(b.id) ?? 0) || a.name.localeCompare(b.name));
+}
+
+/** Parses "MM-DD" or "YYYY-MM-DD" (also "/" or "." separators). Returns undefined when invalid. */
+export function parseBirthday(text: string): { year?: number; month: number; day: number } | undefined {
+  const parts = text
+    .trim()
+    .split(/[-/.]/)
+    .map(part => Number(part));
+  if (parts.length < 2 || parts.length > 3 || parts.some(part => !Number.isInteger(part))) return undefined;
+  const [year, month, day] = parts.length === 3 ? parts : [undefined, parts[0], parts[1]];
+  if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
+  if (year != null && (year < 1900 || year > 2100)) return undefined;
+  const check = new Date(2000, month - 1, day);
+  if (check.getMonth() !== month - 1) return undefined;
+  return { year, month, day };
+}
+
+/** Days until the next birthday (0 = today), or undefined when unknown or invalid. */
+export function getDaysUntilBirthday(birthday: string, now: number): number | undefined {
+  const parsed = parseBirthday(birthday);
+  if (!parsed) return undefined;
+  const today = new Date(now);
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  let next = new Date(today.getFullYear(), parsed.month - 1, parsed.day).getTime();
+  if (next < start) next = new Date(today.getFullYear() + 1, parsed.month - 1, parsed.day).getTime();
+  return Math.round((next - start) / DAY_MS);
+}
+
+export function formatBirthdayHint(birthday: string, now: number): string | undefined {
+  const days = getDaysUntilBirthday(birthday, now);
+  if (days == null) return undefined;
+  if (days === 0) return 'Birthday today 🎂';
+  if (days > 30) return undefined;
+  return `Birthday in ${days} day${days === 1 ? '' : 's'}`;
+}
+
+/** Every lowercase name this person can appear as in a chat: name, nicknames and phone digits. */
+export function getPersonMatchKeys(person: Person): string[] {
+  const keys = [person.name, ...person.nicknames.split(',')].map(key => key.trim().toLowerCase()).filter(Boolean);
+  const digits = person.phone.replace(/\D/g, '');
+  if (digits.length >= 6) keys.push(digits);
+  return keys;
+}
+
+/** Finds the person a chat sender name (or phone number) belongs to. Exact match on name, nickname or phone. */
+export function matchPersonBySender(sender: string, people: Person[]): Person | undefined {
+  const text = sender.trim().toLowerCase();
+  if (!text) return undefined;
+  const digits = text.replace(/\D/g, '');
+  const phoneLike = digits.length >= 6 && /^[+\d\s()-]+$/.test(text);
+  return people.find(person =>
+    getPersonMatchKeys(person).some(
+      key => key === text || (phoneLike && key.length >= 6 && digits.endsWith(key.slice(-9))),
+    ),
+  );
+}
