@@ -97,6 +97,7 @@ export function PersonDialog({ person, now, onClose }: PersonDialogProps) {
     DateTimePickerAndroid.open({
       mode: 'date',
       value: new Date(parsed?.year ?? 1995, (parsed?.month ?? 1) - 1, parsed?.day ?? 1),
+      minimumDate: new Date(1900, 0, 1),
       maximumDate: new Date(),
       onChange: (event, date) => {
         if (event.type !== 'set' || !date) return;
