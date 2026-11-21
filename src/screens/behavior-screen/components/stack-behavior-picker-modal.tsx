@@ -57,9 +57,16 @@ export function StackBehaviorPickerModal({
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const matches = ranked.filter(({ behavior }) => !q || behavior.name.toLowerCase().includes(q));
+    // Ticked behaviours (multi pick) stay on top in tap order, so the selection is always in view.
+    const pickedRows: PickerRow[] = picked.flatMap(id => {
+      const found = ranked.find(({ behavior }) => behavior.id === id);
+      return found ? [{ kind: 'behavior' as const, behavior: found.behavior }] : [];
+    });
+    const matches = ranked.filter(
+      ({ behavior }) => !picked.includes(behavior.id) && (!q || behavior.name.toLowerCase().includes(q)),
+    );
     const showHeaders = matches.some(({ group }) => group !== 'other');
-    const result: PickerRow[] = [];
+    const result: PickerRow[] = [...pickedRows];
     matches.forEach(({ behavior, group }, index) => {
       if (showHeaders && (index === 0 || matches[index - 1].group !== group)) {
         result.push({ kind: 'header', group });
@@ -67,7 +74,7 @@ export function StackBehaviorPickerModal({
       result.push({ kind: 'behavior', behavior });
     });
     return result;
-  }, [ranked, query]);
+  }, [ranked, query, picked]);
 
   const close = () => {
     setQuery('');
