@@ -44,7 +44,8 @@ export function getIngredientTotals(
   for (const field of getCalculatedMetadataFields(fields)) {
     const rate = behavior.defaultMetadata?.[field.key];
     if (rate == null || !Number.isFinite(rate)) continue;
-    totals[field.key] = (rate * amount) / basis;
+    const value = (rate * amount) / basis;
+    totals[field.key] = Number.isFinite(value) ? value : 0;
   }
   return totals;
 }

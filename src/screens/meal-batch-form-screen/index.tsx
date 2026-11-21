@@ -44,6 +44,7 @@ import { formatClockDuration } from '../../utils/time-utils';
 import { StackBehaviorPickerModal } from '../behavior-screen/components/stack-behavior-picker-modal';
 import { BatchIngredientRow } from './components/batch-ingredient-row';
 import { BatchTotalsCard } from './components/batch-totals-card';
+import { MacroPickerModal } from './components/macro-picker-modal';
 
 type MealBatchFormRoute = NativeStackScreenProps<RootStackParamList, 'MealBatchForm'>['route'];
 
@@ -160,11 +161,7 @@ export function MealBatchFormScreen() {
   const fields = picked?.fields ?? [];
   const calculatedFields = getCalculatedMetadataFields(fields);
   const shownField = calculatedFields.find(field => field.key === shownKey) ?? calculatedFields[0];
-  const cycleShownField = () => {
-    if (calculatedFields.length < 2 || !shownField) return;
-    const index = calculatedFields.findIndex(field => field.key === shownField.key);
-    setShownKey(calculatedFields[(index + 1) % calculatedFields.length].key);
-  };
+  const [macroPickerOpen, setMacroPickerOpen] = useState(false);
   const amountSource = ingredientBehaviors.find(behavior => behavior.categoryId === picked?.category.id);
   const amountField = amountSource ? getBehaviorAmountField(amountSource, fields) : undefined;
   const unit = amountField?.unit ?? '';
@@ -224,7 +221,7 @@ export function MealBatchFormScreen() {
       return { text: 'Enter the raw amount', warn: false };
     if (!first) return { text: 'Enter the raw amount', warn: false };
     return {
-      text: `${Math.round(own[first.key] * 10) / 10}${first.unit ? ` ${first.unit}` : ''} ${first.label}`,
+      text: `${Math.round((Number.isFinite(own[first.key]) ? own[first.key] : 0) * 10) / 10}${first.unit ? ` ${first.unit}` : ''} ${first.label}`,
       warn: false,
     };
   };
@@ -374,12 +371,12 @@ export function MealBatchFormScreen() {
           {calculatedFields.length > 1 && shownField && (
             <Pressable
               style={styles.macroChip}
-              onPress={cycleShownField}
+              onPress={() => setMacroPickerOpen(true)}
               accessibilityRole="button"
-              accessibilityLabel={`Showing ${shownField.label} per ingredient. Tap to change`}
+              accessibilityLabel={`Showing ${shownField.label} per ingredient. Tap to choose`}
             >
               <Ionicons
-                name="swap-horizontal"
+                name="chevron-down"
                 size={14}
                 color={Colors.text.muted}
               />
@@ -509,6 +506,16 @@ export function MealBatchFormScreen() {
         onClose={() => setPickerOpen(false)}
         onPickMany={addIngredients}
         onCreate={createIngredient}
+      />
+      <MacroPickerModal
+        visible={macroPickerOpen}
+        fields={calculatedFields}
+        selectedKey={shownField?.key}
+        onSelect={key => {
+          setShownKey(key);
+          setMacroPickerOpen(false);
+        }}
+        onClose={() => setMacroPickerOpen(false)}
       />
       <StackBehaviorPickerModal
         visible={basePickerOpen}
