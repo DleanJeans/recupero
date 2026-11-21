@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-21',
     items: [
+      'In Cook a meal, picking a base behavior copies its name into the meal name, Create batch is now a floating button, and Discard this meal is a red button that asks first.',
       'In the ingredient picker for Cook a meal (and other multi-select behavior pickers), the ones you ticked now stay at the top of the list.',
       'In Cook a meal, the "Showing ..." button now opens a list to pick the macro instead of cycling through them. Empty or broken rates show 0 instead of NaN.',
       'In Cook a meal, each ingredient now shows its own amount unit (g for weight, ml for volume) instead of g for everything.',

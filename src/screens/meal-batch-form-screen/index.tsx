@@ -12,6 +12,7 @@ import { CueSectionLabel } from '../../components/cues/cue-section-label';
 import { EmojiPicker } from '../../components/emoji-picker';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text, TextInput } from '../../components/text';
+import { useFabCollapse } from '../../hooks/use-fab-collapse';
 import { useBehaviorStore } from '../../store/behavior-store';
 import {
   type DraftIngredient,
@@ -42,6 +43,7 @@ import {
 } from '../../utils/metadata-calculation-utils';
 import { formatClockDuration } from '../../utils/time-utils';
 import { StackBehaviorPickerModal } from '../behavior-screen/components/stack-behavior-picker-modal';
+import { AddBehaviorFab } from '../home-screen/components/add-behavior-fab';
 import { BatchIngredientRow } from './components/batch-ingredient-row';
 import { BatchTotalsCard } from './components/batch-totals-card';
 import { MacroPickerModal } from './components/macro-picker-modal';
@@ -54,6 +56,7 @@ const RATE_BASIS = 100;
  *  behaviour whose per-100 rates are the batch totals spread over the cooked weight. */
 export function MealBatchFormScreen() {
   const insets = useSafeAreaInsets();
+  const { collapsed: fabCollapsed, onScroll } = useFabCollapse();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<MealBatchFormRoute>();
   const behaviorId = route.params?.behaviorId;
@@ -227,7 +230,7 @@ export function MealBatchFormScreen() {
   };
 
   const handleSave = () => {
-    const trimmedName = name.trim();
+    const trimmedName = name.trim() || (baseBehavior ? stripBatchNameDate(baseBehavior.name) : '');
     if (!trimmedName) {
       Alert.alert('Name it', 'Give the batch a name, like Chicken rice bowl.');
       return;
@@ -288,8 +291,10 @@ export function MealBatchFormScreen() {
         showBalance={false}
       />
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: 32 + insets.bottom }]}
+        contentContainerStyle={[styles.content, { paddingBottom: 96 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
+        onScroll={onScroll}
+        scrollEventThrottle={16}
       >
         <View style={styles.nameRow}>
           <EmojiPicker
@@ -482,20 +487,14 @@ export function MealBatchFormScreen() {
           </View>
         )}
 
-        <Button
-          variant="primary"
-          onPress={handleSave}
-        >
-          {existing ? 'Save batch' : 'Create batch'}
-        </Button>
         {!existing && (
-          <Pressable
+          <Button
+            variant="danger"
             onPress={discardDraft}
-            accessibilityRole="button"
             accessibilityLabel="Discard this meal"
           >
-            <Text style={styles.link}>Discard this meal</Text>
-          </Pressable>
+            Discard this meal
+          </Button>
         )}
         {existing && <Text style={styles.hint}>Saving recalculates the macros of portions you already logged.</Text>}
       </ScrollView>
@@ -507,6 +506,17 @@ export function MealBatchFormScreen() {
         onPickMany={addIngredients}
         onCreate={createIngredient}
       />
+      <View
+        style={[styles.fab, { bottom: 12 + insets.bottom }]}
+        pointerEvents="box-none"
+      >
+        <AddBehaviorFab
+          label={existing ? 'Save batch' : 'Create batch'}
+          icon="checkmark"
+          collapsed={fabCollapsed}
+          onPress={handleSave}
+        />
+      </View>
       <MacroPickerModal
         visible={macroPickerOpen}
         fields={calculatedFields}
@@ -524,6 +534,9 @@ export function MealBatchFormScreen() {
         onPick={id => {
           setBasePickerOpen(false);
           setBaseBehaviorId(id);
+          // Copy the base behaviour's name unless the meal already has its own.
+          const picked = behaviors.find(behavior => behavior.id === id);
+          if (picked && (name.trim() === '' || name.trim() === baseBehavior?.name)) setName(picked.name);
         }}
       />
     </SafeAreaView>
@@ -533,6 +546,7 @@ export function MealBatchFormScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg.primary },
   content: { gap: 18, paddingHorizontal: 16 },
+  fab: { position: 'absolute', right: 16 },
   section: { gap: 9 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   input: {
