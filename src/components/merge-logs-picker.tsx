@@ -14,6 +14,30 @@ interface MergeLogsPickerProps {
 /** Picks the behaviour to move all of `behavior`'s logs into, then asks to confirm. */
 export function MergeLogsPicker({ behavior, onClose }: MergeLogsPickerProps) {
   const mergeBehaviorLogs = useBehaviorStore(state => state.mergeBehaviorLogs);
+  const archiveBehavior = useBehaviorStore(state => state.archiveBehavior);
+  const removeBehavior = useBehaviorStore(state => state.removeBehavior);
+
+  /** Logs are already moved; ask what happens to the now empty source behaviour. */
+  const askAboutSource = (targetName: string) => {
+    Alert.alert('Moved', `Its logs are now in "${targetName}". What about "${behavior.name}"?`, [
+      { text: 'Keep it', onPress: onClose },
+      {
+        text: 'Archive',
+        onPress: () => {
+          archiveBehavior(behavior.id);
+          onClose();
+        },
+      },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          removeBehavior(behavior.id);
+          onClose();
+        },
+      },
+    ]);
+  };
 
   const handlePick = (targetId: string) => {
     const { behaviors, categories } = useBehaviorStore.getState();
@@ -39,15 +63,7 @@ export function MergeLogsPicker({ behavior, onClose }: MergeLogsPickerProps) {
           text: 'Move logs',
           onPress: () => {
             mergeBehaviorLogs(behavior.id, targetId, false);
-            onClose();
-          },
-        },
-        {
-          text: 'Move and archive',
-          style: 'destructive',
-          onPress: () => {
-            mergeBehaviorLogs(behavior.id, targetId, true);
-            onClose();
+            askAboutSource(target.name);
           },
         },
       ],

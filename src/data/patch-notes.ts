@@ -41,7 +41,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       'The birthday date picker in the person dialog now goes back before 1970.',
       'The in-app image browser (from the icon editor) now has a Desktop mode button next to the search box, and you can type a web address in the search box to open that site, e.g. web.whatsapp.com to log into WhatsApp Web. Switching Desktop mode keeps the page you are on.',
       'Fixed the automatic timer overlay (and its notification) disappearing less than a second after opening an app like WhatsApp. It now stays until you leave the app.',
-      'Move or merge logs: long-press a behavior (or tap ⋯ on its screen) › Move logs to… › pick the other behavior. All its logs move there, with a choice to also archive the old one. Values with no matching field in the new behavior are dropped, and the confirmation says so.',
+      'Move or merge logs: long-press a behavior (or tap ⋯ on its screen) › Move logs to… › pick the other behavior. All its logs move there, then you choose to keep, archive or delete the old one. Values with no matching field in the new behavior are dropped, and the confirmation says so.',
       {
         text: 'Tapping Tidiness on Cues opens the new Tidiness screen: split your home into rooms and spots (Sink, Desk, Bed sheets…). Each spot gets messy at its own speed, ✓ or logging its cleaning behaviour fills only that spot, and Tidiness becomes the average of your spots. Start with the starter rooms or an empty plan.',
         screen: 'Tidiness',
