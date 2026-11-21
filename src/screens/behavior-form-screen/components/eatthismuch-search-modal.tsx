@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FullScreenModal } from '../../../components/full-screen-modal';
@@ -13,12 +13,19 @@ interface EatThisMuchSearchModalProps {
   /** Sets the picked food's image as the behaviour icon. Hides the button when missing. */
   onUseAsIcon?: (imageUrl: string) => void;
   onClose: () => void;
+  /** Prefilled query (the behaviour's name); searched on open. */
+  initialQuery?: string;
 }
 
 /** Searches eatthismuch.com foods and returns the picked food's page link for the nutrition import. */
-export function EatThisMuchSearchModal({ onPick, onUseAsIcon, onClose }: EatThisMuchSearchModalProps) {
+export function EatThisMuchSearchModal({
+  onPick,
+  onUseAsIcon,
+  onClose,
+  initialQuery = '',
+}: EatThisMuchSearchModalProps) {
   const insets = useSafeAreaInsets();
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery.trim());
   const [results, setResults] = useState<FoodSearchResult[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +50,11 @@ export function EatThisMuchSearchModal({ onPick, onUseAsIcon, onClose }: EatThis
       setLoading(false);
     }
   };
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: search once when the dialog opens
+  useEffect(() => {
+    if (query) search();
+  }, []);
 
   return (
     <FullScreenModal

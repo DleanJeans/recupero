@@ -30,6 +30,8 @@ interface BehaviorMetadataEditorProps {
   onChange: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   onAmountFieldChange: (fieldKey: string) => void;
   onIconPick?: (imageUrl: string) => void;
+  /** Behaviour name, the starting query for the food search. */
+  nameHint?: string;
 }
 
 export function BehaviorMetadataEditor({
@@ -42,6 +44,7 @@ export function BehaviorMetadataEditor({
   onChange,
   onAmountFieldChange,
   onIconPick,
+  nameHint,
 }: BehaviorMetadataEditorProps) {
   const selectedCategory = categories.find(category => category.id === categoryId);
   const fields = selectedCategory?.metadataFields ?? [];
@@ -137,6 +140,7 @@ export function BehaviorMetadataEditor({
             rateBasis={resolveMetadataRateBasis(parseDecimalInput(rateBasis))}
             onChange={onChange}
             onIconPick={onIconPick}
+            searchHint={nameHint}
           />
           {calculatedFields.map((field: MetadataField) => (
             <MetadataDefaultInput
