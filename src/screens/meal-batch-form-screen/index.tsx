@@ -1,9 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { v4 as uuidv4 } from 'uuid';
+import { BehaviorIcon } from '../../components/behavior-icon';
 import { Button } from '../../components/button';
 import { CueScreenHeader } from '../../components/cues/cue-screen-header';
 import { CueSectionLabel } from '../../components/cues/cue-section-label';
@@ -11,7 +13,13 @@ import { EmojiPicker } from '../../components/emoji-picker';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { Text, TextInput } from '../../components/text';
 import { useBehaviorStore } from '../../store/behavior-store';
+import {
+  type DraftIngredient,
+  EMPTY_MEAL_BATCH_DRAFT,
+  useMealBatchDraftStore,
+} from '../../store/meal-batch-draft-store';
 import { useSettingsStore } from '../../store/settings-store';
+import { useTimerStore } from '../../store/timer-store';
 import type { BehaviorEntry } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
@@ -36,7 +44,6 @@ import { BatchIngredientRow } from './components/batch-ingredient-row';
 import { BatchTotalsCard } from './components/batch-totals-card';
 
 type MealBatchFormRoute = NativeStackScreenProps<RootStackParamList, 'MealBatchForm'>['route'];
-type DraftIngredient = { key: string; behaviorId: string; amountText: string };
 
 const RATE_BASIS = 100;
 
@@ -56,22 +63,78 @@ export function MealBatchFormScreen() {
     [behaviorId, behaviors],
   );
 
-  const [name, setName] = useState(existing ? stripBatchNameDate(existing.name) : '');
-  const [emoji, setEmoji] = useState(typeof existing?.icon === 'string' ? existing.icon : '🍲');
-  const [rows, setRows] = useState<DraftIngredient[]>(() =>
-    (existing?.batch?.ingredients ?? []).map(ingredient => ({
-      key: uuidv4(),
-      behaviorId: ingredient.behaviorId,
-      amountText: String(ingredient.amount),
-    })),
+  /** A new meal starts from the saved draft, so leaving the screen (ingredient timers, picker) loses nothing. */
+  const [initial] = useState(() => (existing ? undefined : useMealBatchDraftStore.getState().draft));
+  const [name, setName] = useState(existing ? stripBatchNameDate(existing.name) : (initial?.name ?? ''));
+  const [emoji, setEmoji] = useState(
+    typeof existing?.icon === 'string' ? existing.icon : (initial?.emoji ?? EMPTY_MEAL_BATCH_DRAFT.emoji),
   );
-  const [cookedText, setCookedText] = useState(existing?.batch ? String(existing.batch.cookedAmount) : '');
+  const [rows, setRows] = useState<DraftIngredient[]>(() =>
+    existing
+      ? (existing.batch?.ingredients ?? []).map(ingredient => ({
+          key: uuidv4(),
+          behaviorId: ingredient.behaviorId,
+          amountText: String(ingredient.amount),
+        }))
+      : (initial?.rows ?? []),
+  );
+  const [cookedText, setCookedText] = useState(
+    existing?.batch ? String(existing.batch.cookedAmount) : (initial?.cookedText ?? ''),
+  );
   /** Until the user types a cooked weight, it follows the sum of the raw ingredient amounts. */
-  const [cookedEdited, setCookedEdited] = useState(existing?.batch != null);
+  const [cookedEdited, setCookedEdited] = useState(existing?.batch != null || initial?.cookedEdited === true);
   const [portionsText, setPortionsText] = useState(
-    existing?.batch?.plannedPortions ? String(existing.batch.plannedPortions) : '',
+    existing?.batch?.plannedPortions ? String(existing.batch.plannedPortions) : (initial?.portionsText ?? ''),
+  );
+  const [baseBehaviorId, setBaseBehaviorId] = useState<string | undefined>(
+    existing ? existing.batch?.baseBehaviorId : initial?.baseBehaviorId,
   );
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [basePickerOpen, setBasePickerOpen] = useState(false);
+  const baseBehavior = baseBehaviorId ? behaviors.find(behavior => behavior.id === baseBehaviorId) : undefined;
+  const baseRunning = useTimerStore(
+    state =>
+      baseBehaviorId != null &&
+      [state, ...state.parked].some(
+        session =>
+          session.lockedBehaviorId === baseBehaviorId &&
+          session.startTimestamp != null &&
+          session.stopTimestamp == null &&
+          session.pausedAt == null,
+      ),
+  );
+
+  useEffect(() => {
+    if (existing) return;
+    useMealBatchDraftStore
+      .getState()
+      .setDraft({ name, emoji, rows, cookedText, cookedEdited, portionsText, baseBehaviorId });
+  }, [existing, name, emoji, rows, cookedText, cookedEdited, portionsText, baseBehaviorId]);
+
+  const discardDraft = () =>
+    Alert.alert('Discard this meal?', 'The name, ingredients and weights you entered are cleared.', [
+      { text: 'Keep', style: 'cancel' },
+      {
+        text: 'Discard',
+        style: 'destructive',
+        onPress: () => {
+          const empty = EMPTY_MEAL_BATCH_DRAFT;
+          setName(empty.name);
+          setEmoji(empty.emoji);
+          setRows([]);
+          setCookedText('');
+          setCookedEdited(false);
+          setPortionsText('');
+          setBaseBehaviorId(undefined);
+          useMealBatchDraftStore.getState().clearDraft();
+        },
+      },
+    ]);
+
+  const startIngredientTimer = (ingredientId: string, ingredientName: string) => {
+    useTimerStore.getState().start(ingredientId, Date.now(), ingredientName);
+    navigation.navigate('Timer');
+  };
 
   const ingredientBehaviors = useMemo(
     () =>
@@ -164,6 +227,7 @@ export function MealBatchFormScreen() {
       cookedAmount: cooked,
       plannedPortions: portions != null && portions > 0 ? portions : undefined,
       cookedAt: existing?.batch?.cookedAt ?? Date.now(),
+      baseBehaviorId,
       finishedAt: existing?.batch?.finishedAt,
     };
     const fullName = buildBatchName(trimmedName, batch.cookedAt);
@@ -172,6 +236,8 @@ export function MealBatchFormScreen() {
       navigation.goBack();
       return;
     }
+    // The base behaviour's running timer (e.g. Chicken Soup) ends here and becomes its log, linked to the batch.
+    const baseTime = baseBehaviorId ? useTimerStore.getState().takeRunning(baseBehaviorId, Date.now()) : undefined;
     const id = addBatchBehavior({
       name: fullName,
       icon: emoji || '🍲',
@@ -180,7 +246,9 @@ export function MealBatchFormScreen() {
       metadataAmountFieldKey: amountField.key,
       defaultMetadata,
       batch,
+      baseTime,
     });
+    useMealBatchDraftStore.getState().clearDraft();
     navigation.replace('BehaviorLog', { behaviorId: id, initialMode: 'log' });
   };
 
@@ -219,6 +287,54 @@ export function MealBatchFormScreen() {
         </Text>
 
         <View style={styles.section}>
+          <CueSectionLabel>Cooked as</CueSectionLabel>
+          {baseBehavior ? (
+            <View style={styles.baseRow}>
+              <BehaviorIcon
+                behavior={baseBehavior}
+                size={28}
+              />
+              <View style={styles.baseText}>
+                <Text
+                  style={styles.baseName}
+                  numberOfLines={1}
+                >
+                  {baseBehavior.name}
+                </Text>
+                <Text
+                  style={styles.baseSub}
+                  numberOfLines={1}
+                >
+                  {baseRunning ? 'Timer running, logged when you create' : 'Not timing'}
+                </Text>
+              </View>
+              <Button
+                variant="icon"
+                onPress={() => setBaseBehaviorId(undefined)}
+                accessibilityLabel="Remove base behavior"
+              >
+                <Ionicons
+                  name="close"
+                  size={20}
+                  color={Colors.text.muted}
+                />
+              </Button>
+            </View>
+          ) : (
+            <Text style={styles.hint}>
+              Optional. Pick the behavior you are cooking this as (like Chicken Soup). Its running timer is logged and
+              linked to this meal.
+            </Text>
+          )}
+          <Button
+            onPress={() => setBasePickerOpen(true)}
+            accessibilityLabel="Choose base behavior"
+          >
+            {baseBehavior ? 'Change base behavior' : 'Choose base behavior'}
+          </Button>
+        </View>
+
+        <View style={styles.section}>
           <CueSectionLabel>{`Ingredients · raw amount${unit ? ` (${unit})` : ''}`}</CueSectionLabel>
           {rows.map(row => {
             const behavior = behaviors.find(candidate => candidate.id === row.behaviorId);
@@ -238,6 +354,7 @@ export function MealBatchFormScreen() {
                   setRows(current => current.map(item => (item.key === row.key ? { ...item, amountText: text } : item)))
                 }
                 onRemove={() => setRows(current => current.filter(item => item.key !== row.key))}
+                onStartTimer={behavior ? () => startIngredientTimer(behavior.id, behavior.name) : undefined}
               />
             );
           })}
@@ -318,6 +435,15 @@ export function MealBatchFormScreen() {
         >
           {existing ? 'Save batch' : 'Create batch'}
         </Button>
+        {!existing && (
+          <Pressable
+            onPress={discardDraft}
+            accessibilityRole="button"
+            accessibilityLabel="Discard this meal"
+          >
+            <Text style={styles.link}>Discard this meal</Text>
+          </Pressable>
+        )}
         {existing && <Text style={styles.hint}>Saving recalculates the macros of portions you already logged.</Text>}
       </ScrollView>
 
@@ -327,6 +453,15 @@ export function MealBatchFormScreen() {
         onClose={() => setPickerOpen(false)}
         onPickMany={addIngredients}
         onCreate={createIngredient}
+      />
+      <StackBehaviorPickerModal
+        visible={basePickerOpen}
+        excludeIds={[]}
+        onClose={() => setBasePickerOpen(false)}
+        onPick={id => {
+          setBasePickerOpen(false);
+          setBaseBehaviorId(id);
+        }}
       />
     </SafeAreaView>
   );
@@ -350,6 +485,21 @@ const styles = StyleSheet.create({
   nameInput: { flex: 1, fontSize: 17, fontWeight: '600' },
   link: { color: '#4ade80', fontSize: 12, fontWeight: '600' },
   hint: { color: Colors.text.faint, fontSize: 12, lineHeight: 17 },
+  baseRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: Colors.bg.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border.default,
+    paddingVertical: 8,
+    paddingLeft: 10,
+    paddingRight: 4,
+  },
+  baseText: { flex: 1, minWidth: 0 },
+  baseName: { color: Colors.text.primary, fontSize: 14, fontWeight: '600' },
+  baseSub: { color: Colors.text.muted, fontSize: 11, marginTop: 1 },
   cookedRow: { flexDirection: 'row', gap: 10 },
   cookedField: { flex: 1, gap: 4 },
   fieldLabel: { color: Colors.text.muted, fontSize: 11, fontWeight: '600' },

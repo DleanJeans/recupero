@@ -40,6 +40,8 @@ export interface LogEntry {
   /** Set on logs made for an ingredient when its meal batch was cooked: the id of the batch behaviour. They never
    *  fill needs or add to daily totals, and editing one opens the batch's log instead. */
   batchBehaviorId?: string;
+  /** Set on the cooking-time log of a meal's base behaviour (e.g. Chicken Soup): the id of the batch it made. */
+  cookBatchId?: string;
   /** Id of the record this log was imported from (e.g. a Google Health sleep data point), used to dedupe syncs. */
   externalId?: string;
   /** Sleep details from a wearable. Energy refills by `asleepMinutes`, scaled by the deep + REM share. */
@@ -63,6 +65,8 @@ export interface MealBatch {
   /** How many portions the batch was planned for. Only used to suggest an amount when logging. */
   plannedPortions?: number;
   cookedAt: number;
+  /** Behaviour the meal was cooked as (its timer time is logged there, linked to this batch). */
+  baseBehaviorId?: string;
   /** Set when the batch was finished (the behaviour is archived at the same time). */
   finishedAt?: number;
 }

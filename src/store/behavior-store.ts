@@ -78,6 +78,8 @@ interface BehaviorStore {
     metadataAmountFieldKey?: string;
     defaultMetadata: Record<string, number>;
     batch: MealBatch;
+    /** Cooking time of the base behaviour (its stopped timer), logged there and linked to the new batch. */
+    baseTime?: { start: number; end: number };
   }) => string;
   updateBehaviorCooldown: (behaviorId: string, cooldownMinutes: number) => void;
   updateBehavior: (
@@ -241,10 +243,29 @@ export const useBehaviorStore = create<BehaviorStore>()(
         }),
       addBatchBehavior: input => {
         const id = uuidv4();
+        const { baseTime } = input;
+        const baseId = input.batch.baseBehaviorId;
         set(state => ({
           behaviors: syncBatchIngredientLogs(
             [
-              ...state.behaviors,
+              ...state.behaviors.map(behavior =>
+                baseTime && behavior.id === baseId
+                  ? {
+                      ...behavior,
+                      lastTimestamp: Math.max(behavior.lastTimestamp ?? 0, baseTime.end),
+                      logs: [
+                        ...behavior.logs,
+                        {
+                          id: uuidv4(),
+                          timestamp: baseTime.start,
+                          endTimestamp: baseTime.end,
+                          metadata: {},
+                          cookBatchId: id,
+                        },
+                      ],
+                    }
+                  : behavior,
+              ),
               {
                 id,
                 name: input.name,

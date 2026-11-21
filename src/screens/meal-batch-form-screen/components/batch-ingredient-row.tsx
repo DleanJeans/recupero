@@ -16,6 +16,8 @@ interface BatchIngredientRowProps {
   unit: string;
   onChangeAmount: (text: string) => void;
   onRemove: () => void;
+  /** Starts a timer on the ingredient (e.g. chopping or marinating time). */
+  onStartTimer?: () => void;
 }
 
 export function BatchIngredientRow({
@@ -27,6 +29,7 @@ export function BatchIngredientRow({
   unit,
   onChangeAmount,
   onRemove,
+  onStartTimer,
 }: BatchIngredientRowProps) {
   return (
     <View style={styles.row}>
@@ -61,6 +64,19 @@ export function BatchIngredientRow({
         />
         {unit ? <Text style={styles.unit}>{unit}</Text> : null}
       </View>
+      {onStartTimer && (
+        <Button
+          variant="icon"
+          onPress={onStartTimer}
+          accessibilityLabel={`Start timer for ${name}`}
+        >
+          <Ionicons
+            name="play-circle-outline"
+            size={24}
+            color={Colors.text.muted}
+          />
+        </Button>
+      )}
       <Button
         variant="icon"
         onPress={onRemove}

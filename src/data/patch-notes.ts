@@ -38,6 +38,11 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-21',
     items: [
       'The fork and knife icon on the Cook a meal button on Routines is smaller, so it no longer looks bigger than the label.',
+      {
+        text: 'Cook a meal can now be cooked as a behavior you pick (like Chicken Soup). Its running timer is logged there when you create the meal, linked to it. Ingredients have a play button to start a timer, and everything you typed is kept when you leave the screen.',
+        screen: 'MealBatchForm',
+        linkPhrase: 'Cook a meal',
+      },
       'In Cook a meal, the ingredient picker now has a "Create" row when your search matches nothing. Tap it to make a new behavior in your Food category and tick it, then add its nutrition rates later.',
       'Opening an app that fills a Need (like Messenger or WhatsApp for Social) now shows the floating timer by itself, with a ring for the Need, the time in the app and its name. It goes away when you leave the app, and the notification\'s Show/Hide overlay button still works. This needs the new app version and the "Display over other apps" permission.',
       'You can now turn on "Track duration" in a behavior without turning on Track XP. Logs still get a start and end time and the Timer works; the level and XP bar stay hidden until you also turn on Track XP.',
