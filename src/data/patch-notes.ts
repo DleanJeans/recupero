@@ -38,6 +38,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-21',
     items: [
       'The Settings cog at the top right of each tab is now a "..." menu with Check for updates, Patch notes and Settings. Check for updates shows its result in the menu without closing it.',
+      'In Cook a meal, the base behavior card (like Chicken Soup) now shows its running timer ticking, such as 40:05.',
       "In Cook a meal, press and hold an ingredient's icon or name to open its details and edit it. What you entered is kept.",
       'The Cook a meal button on Routines now has a chef hat icon instead of the big fork and knife, sized to match its label.',
       {

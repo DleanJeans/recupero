@@ -179,3 +179,13 @@ export function formatDuration(ms: number, showSeconds = false): string {
 
   return withSeconds(`${minutes}${Unit.MIN}`);
 }
+
+/** Running clock for a timer: "40:05", or "1:02:09" from an hour on. */
+export function formatClockDuration(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const pad = (value: number) => String(value).padStart(2, '0');
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  return hours > 0 ? `${hours}:${pad(minutes)}:${pad(seconds)}` : `${pad(minutes)}:${pad(seconds)}`;
+}

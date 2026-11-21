@@ -39,6 +39,7 @@ import {
   getCalculatedMetadataFields,
   parseDecimalInput,
 } from '../../utils/metadata-calculation-utils';
+import { formatClockDuration } from '../../utils/time-utils';
 import { StackBehaviorPickerModal } from '../behavior-screen/components/stack-behavior-picker-modal';
 import { BatchIngredientRow } from './components/batch-ingredient-row';
 import { BatchTotalsCard } from './components/batch-totals-card';
@@ -92,17 +93,26 @@ export function MealBatchFormScreen() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [basePickerOpen, setBasePickerOpen] = useState(false);
   const baseBehavior = baseBehaviorId ? behaviors.find(behavior => behavior.id === baseBehaviorId) : undefined;
-  const baseRunning = useTimerStore(
-    state =>
-      baseBehaviorId != null &&
-      [state, ...state.parked].some(
-        session =>
-          session.lockedBehaviorId === baseBehaviorId &&
-          session.startTimestamp != null &&
-          session.stopTimestamp == null &&
-          session.pausedAt == null,
-      ),
-  );
+  /** Start of the base behaviour's running timer, if it has one. */
+  const baseStart = useTimerStore(state => {
+    if (baseBehaviorId == null) return undefined;
+    const session = [state, ...state.parked].find(
+      candidate =>
+        candidate.lockedBehaviorId === baseBehaviorId &&
+        candidate.startTimestamp != null &&
+        candidate.stopTimestamp == null &&
+        candidate.pausedAt == null,
+    );
+    return session?.startTimestamp;
+  });
+  const baseRunning = baseStart != null;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!baseRunning) return;
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [baseRunning]);
 
   useEffect(() => {
     if (existing) return;
@@ -308,6 +318,14 @@ export function MealBatchFormScreen() {
                   {baseRunning ? 'Timer running, logged when you create' : 'Not timing'}
                 </Text>
               </View>
+              {baseStart != null && (
+                <Text
+                  style={styles.baseClock}
+                  numberOfLines={1}
+                >
+                  {formatClockDuration(now - baseStart)}
+                </Text>
+              )}
               <Button
                 variant="icon"
                 onPress={() => setBaseBehaviorId(undefined)}
@@ -502,6 +520,7 @@ const styles = StyleSheet.create({
   },
   baseText: { flex: 1, minWidth: 0 },
   baseName: { color: Colors.text.primary, fontSize: 14, fontWeight: '600' },
+  baseClock: { color: '#4ade80', fontSize: 16, fontWeight: '700', flexShrink: 0, minWidth: 56, textAlign: 'right' },
   baseSub: { color: Colors.text.muted, fontSize: 11, marginTop: 1 },
   cookedRow: { flexDirection: 'row', gap: 10 },
   cookedField: { flex: 1, gap: 4 },
