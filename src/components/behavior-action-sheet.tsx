@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Alert, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBehaviorActionSheetStore } from '../store/behavior-action-sheet-store';
@@ -12,6 +12,7 @@ import { isArchived } from '../utils/archive-utils';
 import { Colors } from '../utils/colors';
 import { confirmFinishBatch } from '../utils/finish-batch';
 import { BehaviorIcon } from './behavior-icon';
+import { MergeLogsPicker } from './merge-logs-picker';
 import { Text } from './text';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -38,7 +39,20 @@ export function BehaviorActionSheet({ showSelect = false }: BehaviorActionSheetP
   const removeBehavior = useBehaviorStore(state => state.removeBehavior);
   const startSelection = useChecklistSelectionStore(state => state.start);
 
+  const [merging, setMerging] = useState(false);
+
   if (!behavior) return null;
+  if (merging) {
+    return (
+      <MergeLogsPicker
+        behavior={behavior}
+        onClose={() => {
+          setMerging(false);
+          close();
+        }}
+      />
+    );
+  }
   const archived = isArchived(behavior);
 
   const handleEdit = () => {
@@ -133,6 +147,14 @@ export function BehaviorActionSheet({ showSelect = false }: BehaviorActionSheetP
             hint={archived ? undefined : 'Hide it everywhere. Logs and XP stay.'}
             onPress={handleArchive}
           />
+          {behavior.logs.length > 0 && (
+            <SheetOption
+              icon="git-merge-outline"
+              label="Move logs to…"
+              hint="Merge all logs into another behaviour."
+              onPress={() => setMerging(true)}
+            />
+          )}
           <SheetOption
             icon="trash-outline"
             label="Delete…"

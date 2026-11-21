@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SheetOption } from '../../../components/behavior-action-sheet';
+import { MergeLogsPicker } from '../../../components/merge-logs-picker';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import type { BehaviorEntry } from '../../../types/behavior';
 import { isArchived } from '../../../utils/archive-utils';
@@ -30,11 +31,21 @@ export function BehaviorMoreSheet({
   const archiveBehavior = useBehaviorStore(state => state.archiveBehavior);
   const unarchiveBehavior = useBehaviorStore(state => state.unarchiveBehavior);
   const archived = isArchived(behavior);
+  const [merging, setMerging] = useState(false);
 
   const run = (action: () => void) => () => {
     onClose();
     action();
   };
+
+  if (merging) {
+    return (
+      <MergeLogsPicker
+        behavior={behavior}
+        onClose={onClose}
+      />
+    );
+  }
 
   return (
     <Modal
@@ -69,6 +80,14 @@ export function BehaviorMoreSheet({
             hint={archived ? undefined : 'Hide it everywhere. Logs and XP stay.'}
             onPress={run(() => (archived ? unarchiveBehavior(behavior.id) : archiveBehavior(behavior.id)))}
           />
+          {behavior.logs.length > 0 && (
+            <SheetOption
+              icon="git-merge-outline"
+              label="Move logs to…"
+              hint="Merge all logs into another behaviour."
+              onPress={() => setMerging(true)}
+            />
+          )}
           <SheetOption
             icon="trash-outline"
             label="Delete behaviour…"

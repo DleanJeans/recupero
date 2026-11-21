@@ -21,6 +21,7 @@ import { getGroupKey } from '../utils/behavior-group-utils';
 import { mergeSleepIntoLogs } from '../utils/google-health-utils';
 import { getLogEndTimestamp } from '../utils/log-utils';
 import { syncBatchIngredientLogs } from '../utils/meal-batch-utils';
+import { mergeBehaviorLogsInto } from '../utils/merge-logs-utils';
 import {
   getLoggableDefaultMetadata,
   getMetadataRateBasis,
@@ -140,6 +141,8 @@ interface BehaviorStore {
   /** Hides a behaviour from lists, pickers and suggestions without touching its logs. */
   archiveBehavior: (id: string) => void;
   unarchiveBehavior: (id: string) => void;
+  /** Move every log of one behaviour into another; tasks linked to the source follow. Optionally archives the source. */
+  mergeBehaviorLogs: (fromId: string, toId: string, archiveSource: boolean) => void;
   removeLog: (behaviorId: string, logId: string) => void;
   updateLog: (
     behaviorId: string,
@@ -463,6 +466,11 @@ export const useBehaviorStore = create<BehaviorStore>()(
             const { archivedAt: _archivedAt, ...rest } = b;
             return rest;
           }),
+        })),
+      mergeBehaviorLogs: (fromId, toId, archiveSource) =>
+        set(state => ({
+          behaviors: mergeBehaviorLogsInto(state.behaviors, state.categories, fromId, toId, archiveSource, Date.now()),
+          tasks: (state.tasks ?? []).map(task => (task.behaviorId === fromId ? { ...task, behaviorId: toId } : task)),
         })),
       removeLog: (behaviorId, logId) =>
         set(state => ({
