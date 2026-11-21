@@ -119,4 +119,29 @@ describe('nutrition URL import', () => {
     expect(isGramAmountField({ key: 'a', label: 'Weight', unit: 'g' })).toBe(true);
     expect(isGramAmountField({ key: 'a', label: 'Volume', unit: 'ml' })).toBe(false);
   });
+
+  it('reads potassium and beta carotene from the table when JSON-LD lacks them', () => {
+    const html = `<script type="application/ld+json">${JSON.stringify({
+      '@type': 'NutritionInformation',
+      servingSize: '100 g',
+      calories: '34 kcal',
+      proteinContent: '2.2 g',
+    })}</script>
+<p>For 100 grams of shiitake mushrooms</p>
+<table>
+  <tr><td>Calories</td><td>34</td><td></td></tr>
+  <tr><td>Potassium</td><td>304mg</td><td>6%</td></tr>
+  <tr><td>Beta carotene</td><td>12&micro;g</td><td></td></tr>
+  <tr><td>Alpha carotene</td><td>5&micro;g</td><td></td></tr>
+</table>`;
+    const extra: MetadataField[] = [
+      { key: 'f_a', label: 'β-carotene', unit: 'mg', calculation: 'per100' },
+      { key: 'f_b', label: 'Potassium', unit: 'mg', calculation: 'per100' },
+    ];
+    const result = mapNutritionToMetadata(parseNutritionHtml(html), extra);
+    expect(result.values).toEqual({ f_a: '0.01', f_b: '304' });
+    expect(canonicalNutrientKey('β-carotene')).toBe('betacarotene');
+    expect(canonicalNutrientKey('Beta carotene')).toBe('betacarotene');
+    expect(canonicalNutrientKey('Beta-Carotene (provitamin A)')).toBe('betacarotene');
+  });
 });

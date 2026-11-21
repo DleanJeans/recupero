@@ -64,6 +64,9 @@ const ALIASES: Record<string, string> = {
   saturatedfat: 'saturatedfat',
   satfat: 'saturatedfat',
   transfat: 'transfat',
+  carotene: 'betacarotene',
+  bcarotene: 'betacarotene',
+  betacarotin: 'betacarotene',
 };
 
 const SCHEMA_NUTRITION_LABELS: Record<string, string> = {
@@ -91,6 +94,7 @@ function parseNumber(value: string): number {
 export function canonicalNutrientKey(label: string): string {
   const normalized = label
     .toLowerCase()
+    .replace(/[βß]/g, 'beta')
     .replace(/\(.*?\)/g, '')
     .replace(/[^a-z]/g, '')
     .replace(/s$/, '');
@@ -210,7 +214,9 @@ export function parseNutritionHtml(html: string): ParsedNutrition {
   const caloriesPer100g = caloriesMatch ? parseNumber(caloriesMatch[1]) : undefined;
 
   const jsonLd = parseJsonLdNutrition(html);
-  const nutrients = jsonLd?.nutrients ?? parseTextNutrients(text);
+  // schema.org has no potassium, carotene etc., so the page's own table fills what the JSON-LD lacks.
+  // JSON-LD comes first because mapNutritionToMetadata keeps the first value per nutrient.
+  const nutrients = [...(jsonLd?.nutrients ?? []), ...parseTextNutrients(text)];
   const servingGrams =
     jsonLd?.servingGrams ?? findServingGrams(text) ?? servingGramsFromCalories(nutrients, caloriesPer100g);
   return { servingGrams, caloriesPer100g, nutrients };
