@@ -157,19 +157,22 @@ describe('nutrition URL import', () => {
       {
         name: 'Chicken breast',
         description: 'raw, skinless',
-        imageUrl: 'https://images.eatthismuch.com/thmb/451_a.png',
+        imageUrl: 'https://images.eatthismuch.com/med/451_a.png',
+        thumbUrl: 'https://images.eatthismuch.com/thmb/451_a.png',
         url: 'https://www.eatthismuch.com/calories/chicken-breast-451',
       },
       {
         name: 'Chicken breast',
         description: 'cooked, roasted, skinless',
-        imageUrl: 'https://images.eatthismuch.com/thmb/453_b.jpg',
+        imageUrl: 'https://images.eatthismuch.com/med/453_b.jpg',
+        thumbUrl: 'https://images.eatthismuch.com/thmb/453_b.jpg',
         url: 'https://www.eatthismuch.com/calories/chicken-breast-453',
       },
       {
         name: 'Baked Chicken Breasts',
         description: undefined,
         imageUrl: undefined,
+        thumbUrl: undefined,
         url: 'https://www.eatthismuch.com/calories/baked-chicken-breasts-3200328',
       },
     ]);

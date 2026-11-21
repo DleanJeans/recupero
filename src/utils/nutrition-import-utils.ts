@@ -290,8 +290,10 @@ export async function fetchNutritionFromUrl(
 export interface FoodSearchResult {
   name: string;
   description?: string;
-  /** Thumbnail from images.eatthismuch.com, when the row has one. */
+  /** Medium-size photo from images.eatthismuch.com (sharper than the list thumbnail), when the row has one. */
   imageUrl?: string;
+  /** The small list thumbnail, the fallback if the medium photo is missing. */
+  thumbUrl?: string;
   url: string;
 }
 
@@ -326,10 +328,12 @@ export function parseFoodSearchHtml(html: string): FoodSearchResult[] {
       .replace(FOOD_LINK, '\n');
     const description = [...inLink, ...cleanText(cell)].join(', ');
     seen.add(link[1]);
+    const thumbUrl = row.match(FOOD_IMAGE)?.[0].replace(/&amp;/g, '&');
     results.push({
       name,
       description: description || undefined,
-      imageUrl: row.match(FOOD_IMAGE)?.[0].replace(/&amp;/g, '&'),
+      imageUrl: thumbUrl?.replace('/thmb/', '/med/'),
+      thumbUrl,
       url: `${EATTHISMUCH_ORIGIN}${link[1]}`,
     });
   }

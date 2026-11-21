@@ -29,11 +29,16 @@ export function EatThisMuchSearchModal({
   const [results, setResults] = useState<FoodSearchResult[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set());
   const [notice, setNotice] = useState<string | null>(null);
 
+  const shownImage = (item: FoodSearchResult) =>
+    brokenImages.has(item.url) && item.thumbUrl ? item.thumbUrl : item.imageUrl;
+
   const copyImage = async (item: FoodSearchResult) => {
-    if (!item.imageUrl) return;
-    await Clipboard.setStringAsync(item.imageUrl);
+    const image = shownImage(item);
+    if (!image) return;
+    await Clipboard.setStringAsync(image);
     setNotice(`Copied the ${item.name} image link.`);
   };
 
@@ -108,7 +113,8 @@ export function EatThisMuchSearchModal({
             >
               {item.imageUrl ? (
                 <Image
-                  source={{ uri: item.imageUrl }}
+                  source={{ uri: brokenImages.has(item.url) && item.thumbUrl ? item.thumbUrl : item.imageUrl }}
+                  onError={() => setBrokenImages(prev => new Set(prev).add(item.url))}
                   style={styles.thumb}
                 />
               ) : (
@@ -146,7 +152,10 @@ export function EatThisMuchSearchModal({
                 </Pressable>
                 {onUseAsIcon && (
                   <Pressable
-                    onPress={() => item.imageUrl && onUseAsIcon(item.imageUrl)}
+                    onPress={() => {
+                      const image = shownImage(item);
+                      if (image) onUseAsIcon(image);
+                    }}
                     hitSlop={6}
                     style={styles.action}
                   >
