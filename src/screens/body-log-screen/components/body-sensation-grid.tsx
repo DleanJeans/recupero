@@ -14,12 +14,12 @@ interface BodySensationGridProps {
   onSelect: (sensation: BodySensationId) => void;
 }
 
-export function BodySensationGrid({ selected, onSelect }: BodySensationGridProps) {
+export function BodySensationGrid({ selected, selectedMany, onSelect }: BodySensationGridProps) {
   const customSensations = useCuesStore(state => state.customSensations);
   return (
     <View style={styles.grid}>
       {getBodySensationOptions(customSensations).map(option => {
-        const isSelected = option.id === selected;
+        const isSelected = selectedMany ? selectedMany.includes(option.id) : option.id === selected;
         return (
           <Pressable
             key={option.id}
@@ -27,7 +27,7 @@ export function BodySensationGrid({ selected, onSelect }: BodySensationGridProps
             onPress={() => onSelect(option.id)}
             accessibilityRole="button"
             accessibilityLabel={`Log ${option.label}`}
-            accessibilityState={{ selected: isSelected }}
+            accessibilityState={{ selected: isSelected, checked: selectedMany ? isSelected : undefined }}
           >
             <AppIcon
               value={option.emoji}
