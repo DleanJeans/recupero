@@ -24,6 +24,9 @@ export const EMPTY_PERSON: PersonDraft = {
 interface PeopleStore {
   people: Person[];
   contacts: PersonContact[];
+  /** Chat notifications up to this time were already turned into contacts. */
+  chatSyncedTs: number;
+  setChatSyncedTs: (ts: number) => void;
   addPerson: (draft: PersonDraft) => string | undefined;
   updatePerson: (personId: string, draft: PersonDraft) => void;
   removePerson: (personId: string) => void;
@@ -37,6 +40,8 @@ export const usePeopleStore = create<PeopleStore>()(
     set => ({
       people: [],
       contacts: [],
+      chatSyncedTs: Date.now(),
+      setChatSyncedTs: chatSyncedTs => set({ chatSyncedTs }),
       addPerson: draft => {
         if (!draft.name.trim()) return undefined;
         const id = uuidv4();

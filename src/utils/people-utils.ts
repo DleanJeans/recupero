@@ -107,3 +107,43 @@ export function matchPersonBySender(sender: string, people: Person[]): Person | 
     ),
   );
 }
+
+export interface ChatEvent {
+  timestamp: number;
+  packageName: string;
+  title: string;
+}
+
+export const CHAT_SESSION_GAP_MS = 30 * 60 * 1000;
+
+/**
+ * Turns chat notifications into message contacts: one per person per chat session (a session ends after 30
+ * minutes without a message). Events at or before `sinceTs` were handled already.
+ */
+export function planChatContacts(
+  events: ChatEvent[],
+  people: Person[],
+  sinceTs: number,
+  contacts: PersonContact[],
+): { personId: string; ts: number }[] {
+  const lastByPerson = new Map<string, number>();
+  for (const contact of contacts) {
+    if (contact.kind === 'message' && contact.ts > (lastByPerson.get(contact.personId) ?? 0)) {
+      lastByPerson.set(contact.personId, contact.ts);
+    }
+  }
+  const plan: { personId: string; ts: number }[] = [];
+  for (const event of [...events].sort((a, b) => a.timestamp - b.timestamp)) {
+    if (event.timestamp <= sinceTs) continue;
+    const person = matchPersonBySender(event.title, people);
+    if (!person) continue;
+    const last = lastByPerson.get(person.id);
+    if (last != null && event.timestamp - last < CHAT_SESSION_GAP_MS) {
+      lastByPerson.set(person.id, event.timestamp);
+      continue;
+    }
+    plan.push({ personId: person.id, ts: event.timestamp });
+    lastByPerson.set(person.id, event.timestamp);
+  }
+  return plan;
+}

@@ -109,6 +109,11 @@ class AppUsageModule : Module() {
       MediaEvents.read(context, start.toLong(), end.toLong())
     }
 
+    // Senders of WhatsApp and Messenger notifications between start and end (epoch ms) as { timestamp, packageName, title }.
+    AsyncFunction("getChatEvents") { start: Double, end: Double ->
+      ChatEvents.read(context, start.toLong(), end.toLong())
+    }
+
     Function("canDrawOverlays") {
       Settings.canDrawOverlays(context)
     }

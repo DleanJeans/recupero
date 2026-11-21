@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppUsage } from '../../../modules/app-usage';
+import { useAppUsagePermission } from '../../hooks/use-app-usage-permission';
 import { usePeopleStore } from '../../store/people-store';
 import type { Person } from '../../types/person';
 import { Colors } from '../../utils/colors';
@@ -31,6 +33,8 @@ export function PeopleStrip({ now }: PeopleStripProps) {
   const people = usePeopleStore(state => state.people);
   const contacts = usePeopleStore(state => state.contacts);
   const [editing, setEditing] = useState<Person | 'new'>();
+  const { mediaWatch } = useAppUsagePermission();
+  const canAutoLog = AppUsage?.getChatEvents != null;
 
   return (
     <>
@@ -91,6 +95,19 @@ export function PeopleStrip({ now }: PeopleStripProps) {
           </Text>
         </View>
       ) : null}
+      {canAutoLog ? (
+        <Pressable
+          style={({ pressed }) => [styles.auto, pressed && styles.pressed]}
+          onPress={() => (mediaWatch ? undefined : AppUsage?.openNotificationListenerSettings?.())}
+          accessibilityRole="button"
+        >
+          <Text style={styles.autoText}>
+            {mediaWatch
+              ? '💬 Auto-log on: when someone on this list messages you on WhatsApp or Messenger (matched by name, nickname or phone), it counts as contact.'
+              : '💬 Turn on Notification access to auto-log WhatsApp and Messenger chats with these people.'}
+          </Text>
+        </Pressable>
+      ) : null}
       {editing ? (
         <PersonDialog
           person={editing === 'new' ? undefined : editing}
@@ -120,5 +137,7 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 24 },
   name: { color: Colors.text.primary, fontSize: 13, fontWeight: '600', maxWidth: 66 },
   days: { fontSize: 11, fontWeight: '600' },
+  auto: { padding: 10, borderRadius: 10, backgroundColor: Colors.bg.card },
+  autoText: { color: Colors.text.light, fontSize: 12, lineHeight: 17 },
   hint: { color: Colors.text.muted, fontSize: 12, lineHeight: 17 },
 });

@@ -16,6 +16,7 @@ import { Text } from './src/components/text';
 import { useAppFonts } from './src/hooks/use-app-fonts';
 import { useAppTimerAutoStop } from './src/hooks/use-app-timer-auto-stop';
 import { useAppUsageSync } from './src/hooks/use-app-usage-sync';
+import { useChatAutoLog } from './src/hooks/use-chat-auto-log';
 import { useCheckInNudges } from './src/hooks/use-checkin-nudges';
 import { useDeferredBottomNavNavigation } from './src/hooks/use-deferred-bottom-nav-navigation';
 import { useDevHandoffImport } from './src/hooks/use-dev-handoff-import';
@@ -130,6 +131,7 @@ export default function App() {
   useGoogleHealthSync(storesReady);
   useReminderEngine(storesReady, navigationRef);
   useNeedNudges(storesReady, navigationRef);
+  useChatAutoLog(storesReady);
   useCheckInNudges(storesReady, navigationRef);
   useSunlightTracking(storesReady);
   useDevHandoffImport(storesReady);

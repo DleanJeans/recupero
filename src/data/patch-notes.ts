@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-21',
     items: [
+      "Social auto-log (needs a new app install and Notification access): when someone on your People list messages you on WhatsApp or Messenger, the app counts it as a message contact and updates their last contact. It matches the chat name against the person's name, nicknames or phone. Only the sender name is read, never the message. Messages you send are not seen.",
       {
         text: 'The Social need screen now has a People strip showing how long since you last talked to each person (green today, red once past their limit). Tap a person to log meeting, a call or a message (adds to Social), and to save their nicknames, phone, birthday, address and preferences.',
         screen: 'Need',

@@ -5,6 +5,7 @@ import {
   getDaysUntilBirthday,
   matchPersonBySender,
   parseBirthday,
+  planChatContacts,
 } from '../src/utils/people-utils';
 
 const person = (over: Partial<Person>): Person => ({
@@ -60,5 +61,21 @@ describe('people utils', () => {
     expect(matchPersonBySender('Ben', people)?.id).toBe('b');
     expect(matchPersonBySender('+84912345678', people)?.id).toBe('b');
     expect(matchPersonBySender('Carl', people)).toBeUndefined();
+  });
+
+  it('plans one message contact per chat session', () => {
+    const people = [person({ id: 'a', name: 'Alex', nicknames: 'Lex' })];
+    const min = 60_000;
+    const event = (t: number, title = 'Lex') => ({ timestamp: t, packageName: 'com.whatsapp', title });
+    const plan = planChatContacts(
+      [event(10 * min), event(15 * min), event(60 * min), event(70 * min, 'Stranger'), event(1 * min)],
+      people,
+      5 * min,
+      [],
+    );
+    expect(plan).toEqual([
+      { personId: 'a', ts: 10 * min },
+      { personId: 'a', ts: 60 * min },
+    ]);
   });
 });
