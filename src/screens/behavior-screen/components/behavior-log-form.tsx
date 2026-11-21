@@ -72,7 +72,7 @@ export function BehaviorLogForm({ form }: Props) {
           </View>
 
           {showTimeRange ? (
-            <View style={styles.timePickerRow}>
+            <View style={[styles.timePickerRow, endsNextDay && styles.timePickerRowNextDay]}>
               <View style={styles.timePickerColumn}>
                 {renderTimePicker('Start', startHour, startMinute, startSecond, applyStartSeconds)}
               </View>
@@ -229,6 +229,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
+  timePickerRowNextDay: {
+    marginBottom: 20,
+  },
   singleTimePicker: {
     alignSelf: 'center',
     width: '58%',
@@ -294,7 +297,11 @@ const styles = StyleSheet.create({
     color: Colors.text.light,
     fontSize: 13,
     textAlign: 'center',
-    marginTop: 4,
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    marginTop: 2,
   },
   durationCard: {
     alignItems: 'center',
