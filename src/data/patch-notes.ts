@@ -35,6 +35,12 @@ export interface PatchNotesDay {
  */
 export const PATCH_NOTES: PatchNotesDay[] = [
   {
+    date: '2026-11-22',
+    items: [
+      "In a person's dialog (Social need › People), tapping Met in person, Call / video or Message now opens a log form where you pick the date and start/end time (defaults to today, now) and confirm with Log. The Social refill is applied at the time you chose, so you can log a catch-up that happened earlier.",
+    ],
+  },
+  {
     date: '2026-11-21',
     items: [
       'Behaviors linked to an app or website now get Track duration and Track XP turned on automatically, both for existing ones and whenever you link a new app or website. You can still switch either off afterwards.',

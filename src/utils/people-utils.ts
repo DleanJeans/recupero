@@ -233,3 +233,19 @@ export function parseBirthdayInput(text: string, locale: DateLocale): string | u
   const stored = `${year ? `${year.value}-` : ''}${pad(month.value)}-${pad(day.value)}`;
   return parseBirthday(stored) ? stored : undefined;
 }
+
+export interface ContactTimes {
+  startTs: number;
+  endTs: number;
+  endsNextDay: boolean;
+}
+
+/** Turns the contact form's date and start/end time of day (seconds) into timestamps, never past `now`. */
+export function getContactTimes(dateStr: string, startSeconds: number, endSeconds: number, now: number): ContactTimes {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const at = (seconds: number, dayOffset = 0) => new Date(year, month - 1, day + dayOffset, 0, 0, seconds, 0).getTime();
+  const endsNextDay = endSeconds < startSeconds;
+  const endTs = Math.min(at(endSeconds, endsNextDay ? 1 : 0), now);
+  const startTs = Math.min(at(startSeconds), endTs);
+  return { startTs, endTs, endsNextDay };
+}

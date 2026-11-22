@@ -23,7 +23,10 @@ export interface Person {
 export interface PersonContact {
   id: string;
   personId: string;
+  /** When the contact ended (the "last contact" time). */
   ts: number;
+  /** When it started, when it was logged with a start time. */
+  startTs?: number;
   kind: ContactKind;
   source: 'manual' | 'notification';
 }

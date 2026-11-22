@@ -28,6 +28,7 @@ import {
 import { Button } from '../button';
 import { EmojiPicker } from '../emoji-picker';
 import { Text, TextInput } from '../text';
+import { ContactLogDialog } from './contact-log-dialog';
 
 interface PersonDialogProps {
   /** Undefined to add a new person. */
@@ -50,6 +51,7 @@ export function PersonDialog({ person, now, onClose }: PersonDialogProps) {
   const [draft, setDraft] = useState<PersonDraft>(person ? { ...person } : EMPTY_PERSON);
   const [nudgeText, setNudgeText] = useState(String(draft.nudgeDays));
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [pendingKind, setPendingKind] = useState<ContactKind>();
   const [dateLocale] = useState(getDateLocale);
   const [birthdayText, setBirthdayText] = useState(() => formatBirthdayInput(draft.birthday, dateLocale));
   const [searching, setSearching] = useState(false);
@@ -164,10 +166,7 @@ export function PersonDialog({ person, now, onClose }: PersonDialogProps) {
                     <Pressable
                       key={kind}
                       style={({ pressed }) => [styles.kind, pressed && styles.pressed]}
-                      onPress={() => {
-                        logContact(person.id, kind);
-                        onClose();
-                      }}
+                      onPress={() => setPendingKind(kind)}
                       accessibilityRole="button"
                       accessibilityLabel={`${CONTACT_LABELS[kind]}, adds ${CONTACT_AMOUNTS[kind]} percent`}
                     >
@@ -319,6 +318,17 @@ export function PersonDialog({ person, now, onClose }: PersonDialogProps) {
           </View>
         </View>
       </View>
+      {person && pendingKind ? (
+        <ContactLogDialog
+          personName={person.name}
+          kind={pendingKind}
+          onClose={() => setPendingKind(undefined)}
+          onConfirm={(startTs, endTs) => {
+            logContact(person.id, pendingKind, endTs, 'manual', startTs);
+            onClose();
+          }}
+        />
+      ) : null}
     </Modal>
   );
 }

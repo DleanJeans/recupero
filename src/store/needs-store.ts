@@ -92,7 +92,8 @@ export interface NeedsStore {
   /** Like checkIn, but does nothing when the need is already at or below `level` (a sensation never raises it). */
   lowerTo: (needId: NeedId, level: number, source: NeedCheckInSource) => void;
   /** Tops a need up by `amount` points without logging a behaviour. Doesn't teach the decay rate. */
-  updateLevel: (needId: NeedId, amount: number) => void;
+  /** Tops a need up by hand. `ts` is when it happened (default now). */
+  updateLevel: (needId: NeedId, amount: number, ts?: number) => void;
   /** Undoes a check-in or update. */
   removeCheckIn: (id: string) => void;
   /** Sets how much one log refills a need, or clears it with undefined. */
@@ -248,9 +249,9 @@ export const useNeedsStore = create<NeedsStore>()(
             },
           };
         }),
-      updateLevel: (needId, amount) =>
+      updateLevel: (needId, amount, ts) =>
         set(state => {
-          const now = Date.now();
+          const now = ts ?? Date.now();
           const { level } = getCurrentNeedState(state, needId, now);
           const entry: NeedCheckIn = {
             id: uuidv4(),

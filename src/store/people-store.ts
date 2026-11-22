@@ -31,7 +31,13 @@ interface PeopleStore {
   updatePerson: (personId: string, draft: PersonDraft) => void;
   removePerson: (personId: string) => void;
   /** Records a contact and tops up the Social need by how much that kind of contact counts. */
-  logContact: (personId: string, kind: ContactKind, ts?: number, source?: PersonContact['source']) => void;
+  logContact: (
+    personId: string,
+    kind: ContactKind,
+    ts?: number,
+    source?: PersonContact['source'],
+    startTs?: number,
+  ) => void;
   removeContact: (contactId: string) => void;
 }
 
@@ -59,11 +65,14 @@ export const usePeopleStore = create<PeopleStore>()(
           people: state.people.filter(person => person.id !== personId),
           contacts: state.contacts.filter(contact => contact.personId !== personId),
         })),
-      logContact: (personId, kind, ts = Date.now(), source = 'manual') => {
+      logContact: (personId, kind, ts = Date.now(), source = 'manual', startTs) => {
         set(state => ({
-          contacts: [...state.contacts, { id: uuidv4(), personId, ts, kind, source }].slice(-MAX_CONTACTS),
+          contacts: [
+            ...state.contacts,
+            { id: uuidv4(), personId, ts, kind, source, ...(startTs != null ? { startTs } : {}) },
+          ].slice(-MAX_CONTACTS),
         }));
-        useNeedsStore.getState().updateLevel('social', CONTACT_AMOUNTS[kind]);
+        useNeedsStore.getState().updateLevel('social', CONTACT_AMOUNTS[kind], ts);
       },
       removeContact: contactId =>
         set(state => ({ contacts: state.contacts.filter(contact => contact.id !== contactId) })),
