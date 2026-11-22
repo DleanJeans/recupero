@@ -188,6 +188,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       {
         text: 'Every need screen (Fun, Hunger, ...) now has a Settings cog in the top right corner that opens Needs settings, scrolled to that need.',
         screen: 'NeedsSettings',
+        params: { needId: 'fun' },
         linkPhrase: 'Needs settings',
       },
       {
