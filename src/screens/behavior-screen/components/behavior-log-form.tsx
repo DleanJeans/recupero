@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   timePickerRowNextDay: {
-    marginBottom: 20,
+    marginBottom: 8,
   },
   singleTimePicker: {
     alignSelf: 'center',
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     top: '100%',
     left: 0,
     right: 0,
-    marginTop: 2,
+    marginTop: -12,
   },
   durationCard: {
     alignItems: 'center',
