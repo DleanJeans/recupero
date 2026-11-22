@@ -67,7 +67,6 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       {
         text: "In the Social need screen's person dialog, the emoji now opens the full icon editor, the address has a map (search, tap to drop a pin, or locate yourself), and the birthday uses a date picker.",
         screen: 'Need',
-        params: { needId: 'fun' },
         params: { needId: 'social' },
         linkPhrase: 'Social need screen',
       },
@@ -75,7 +74,6 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       {
         text: 'The Social need screen now has a People strip showing how long since you last talked to each person (green today, red once past their limit). Tap a person to log meeting, a call or a message (adds to Social), and to save their nicknames, phone, birthday, address and preferences.',
         screen: 'Need',
-        params: { needId: 'fun' },
         params: { needId: 'social' },
         linkPhrase: 'Social need screen',
       },
@@ -190,7 +188,6 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       {
         text: 'Every need screen (Fun, Hunger, ...) now has a Settings cog in the top right corner that opens Needs settings, scrolled to that need.',
         screen: 'NeedsSettings',
-        params: { needId: 'fun' },
         linkPhrase: 'Needs settings',
       },
       {
