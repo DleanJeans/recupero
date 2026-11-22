@@ -25,7 +25,7 @@ import { useNeedsStore } from '../../store/needs-store';
 import { useSettingsStore } from '../../store/settings-store';
 import type { BehaviorEntry } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
-import type { NeedId } from '../../types/need';
+import type { NeedId, NeedRefill } from '../../types/need';
 import { getActiveBehaviors } from '../../utils/archive-utils';
 import { Colors } from '../../utils/colors';
 import { toDateString } from '../../utils/date-utils';
@@ -75,7 +75,7 @@ export function NeedScreen() {
   const setCategoryRefill = useNeedsStore(state => state.setCategoryRefill);
   const [adding, setAdding] = useState(false);
   const [appSourceOpen, setAppSourceOpen] = useState(false);
-  const [rateEdit, setRateEdit] = useState<{ behaviorId: string; minutes: number }>();
+  const [rateEdit, setRateEdit] = useState<{ behaviorId?: string; categoryId?: string; minutes: number }>();
   const [customDialog, setCustomDialog] = useState<'checkIn' | 'update'>();
   const [amountLog, setAmountLog] = useState<NeedRefillEntry>();
   const insets = useSafeAreaInsets();
@@ -186,7 +186,7 @@ export function NeedScreen() {
     if (sourceFields.length > 0) return `By ${sourceLabel}`;
     if (viaCategory) {
       const category = categories.find(item => item.id === behavior.categoryId);
-      return `${formatRefill(viaCategory)} via ${category?.name ?? 'category'}`;
+      return `Via ${category?.name ?? 'category'}`;
     }
     return undefined;
   };
@@ -446,7 +446,10 @@ export function NeedScreen() {
                 onAmountPress={
                   need.source?.categoryIds?.includes(category.id)
                     ? undefined
-                    : () => setCategoryRefill(need.id, category.id, getNextRefill(refill))
+                    : () =>
+                        refill.mode === 'duration'
+                          ? setRateEdit({ categoryId: category.id, minutes: refill.fullMinutes })
+                          : setCategoryRefill(need.id, category.id, getNextRefill(refill))
                 }
                 onRemove={() => setCategoryRefill(need.id, category.id, undefined)}
               />
@@ -456,19 +459,29 @@ export function NeedScreen() {
             const behavior = behaviorById.get(id);
             if (!behavior) return null;
             const refill = need.config.refills[id];
+            const viaCategory =
+              !refill && !need.source && behavior.categoryId
+                ? need.config.categoryRefills?.[behavior.categoryId]
+                : undefined;
             return (
               <RefillRow
                 key={id}
                 behavior={behavior}
                 detail={refillDetail(behavior)}
-                amount={refill ? formatRefill(refill) : undefined}
+                amount={refill ? formatRefill(refill) : viaCategory ? formatRefill(viaCategory) : undefined}
                 onAmountPress={
                   refill
                     ? () =>
                         refill.mode === 'duration'
                           ? setRateEdit({ behaviorId: id, minutes: refill.fullMinutes })
                           : setRefill(need.id, id, getNextRefill(refill))
-                    : undefined
+                    : viaCategory
+                      ? () =>
+                          setRateEdit({
+                            behaviorId: id,
+                            minutes: viaCategory.mode === 'duration' ? viaCategory.fullMinutes : 100,
+                          })
+                      : undefined
                 }
                 onRemove={refill ? () => setRefill(need.id, id, undefined) : undefined}
                 onPress={() => logBehavior(id)}
@@ -576,14 +589,18 @@ export function NeedScreen() {
       {rateEdit ? (
         <NeedAmountDialog
           title={`Minutes to fill ${info.label}`}
-          hint={`How many minutes of ${behaviorById.get(rateEdit.behaviorId)?.name ?? 'this'} fill ${info.label} from 0 to 100%.`}
+          hint={`How many minutes of ${
+            rateEdit.behaviorId ? (behaviorById.get(rateEdit.behaviorId)?.name ?? 'this') : 'this category'
+          } fill ${info.label} from 0 to 100%.`}
           min={1}
           max={1440}
           suffix="min"
           linkedRate
           initial={rateEdit.minutes}
           onSubmit={value => {
-            setRefill(need.id, rateEdit.behaviorId, { mode: 'duration', fullMinutes: value });
+            const refill: NeedRefill = { mode: 'duration', fullMinutes: value };
+            if (rateEdit.behaviorId) setRefill(need.id, rateEdit.behaviorId, refill);
+            else if (rateEdit.categoryId) setCategoryRefill(need.id, rateEdit.categoryId, refill);
             setRateEdit(undefined);
           }}
           onClose={() => setRateEdit(undefined)}

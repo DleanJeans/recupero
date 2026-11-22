@@ -37,6 +37,12 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-22',
     items: [
+      {
+        text: "On a need's What helps list, behaviours that help through a whole category now show their amount too (e.g. Full). Tap it to type how many minutes fill the need (e.g. 100 min of Marvel Rivals = Full), so logged time fills it by percent like app usage does. Tapping a category's own duration pill sets it for all its behaviours.",
+        screen: 'Need',
+        params: { needId: 'fun' },
+        linkPhrase: "need's What helps list",
+      },
       "In a person's dialog (Social need › People), tapping Met in person, Call / video or Message now opens a log form where you pick the date and start/end time (defaults to today, now) and confirm with Log. The Social refill is applied at the time you chose, so you can log a catch-up that happened earlier.",
     ],
   },
@@ -61,6 +67,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       {
         text: "In the Social need screen's person dialog, the emoji now opens the full icon editor, the address has a map (search, tap to drop a pin, or locate yourself), and the birthday uses a date picker.",
         screen: 'Need',
+        params: { needId: 'fun' },
         params: { needId: 'social' },
         linkPhrase: 'Social need screen',
       },
@@ -68,6 +75,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       {
         text: 'The Social need screen now has a People strip showing how long since you last talked to each person (green today, red once past their limit). Tap a person to log meeting, a call or a message (adds to Social), and to save their nicknames, phone, birthday, address and preferences.',
         screen: 'Need',
+        params: { needId: 'fun' },
         params: { needId: 'social' },
         linkPhrase: 'Social need screen',
       },
