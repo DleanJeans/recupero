@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useNeedsStore } from '../../store/needs-store';
 import type { NeedId } from '../../types/need';
@@ -9,6 +9,7 @@ import { formatCompactDate } from '../../utils/time-utils';
 import { CueSectionLabel } from '../cues/cue-section-label';
 import { Text } from '../text';
 import { NeedLineChart } from './charts/need-line-chart';
+import { NeedRateDialog } from './need-rate-dialog';
 
 interface NeedRateLearningProps {
   needId: NeedId;
@@ -19,6 +20,8 @@ export function NeedRateLearning({ needId }: NeedRateLearningProps) {
   const history = useNeedsStore(state => state.rateHistory[needId]);
   const config = useNeedsStore(state => state.needs[needId]);
   const resetLearning = useNeedsStore(state => state.resetLearning);
+  const setEmptyHours = useNeedsStore(state => state.setEmptyHours);
+  const [editing, setEditing] = useState(false);
   const defaultHours = DEFAULT_NEED_CONFIGS[needId].emptyHours;
   const points = useMemo(() => getRateLearningPoints(history ?? [], defaultHours), [defaultHours, history]);
   const values = points.map(point => point.emptyHours);
@@ -54,15 +57,58 @@ export function NeedRateLearning({ needId }: NeedRateLearningProps) {
             empty, after {points.length - 1} change{points.length === 2 ? '' : 's'}
             {first ? ` since ${formatCompactDate(first)}` : ''}.
           </Text>
-          <Pressable
-            style={({ pressed }) => [styles.reset, pressed && styles.pressed]}
-            onPress={() => resetLearning(needId)}
-            accessibilityRole="button"
-          >
-            <Text style={styles.resetText}>Reset to {formatEmptyHours(defaultHours)}</Text>
-          </Pressable>
+          <View style={styles.buttons}>
+            <Pressable
+              style={({ pressed }) => [styles.reset, pressed && styles.pressed]}
+              onPress={() => setEditing(true)}
+              accessibilityRole="button"
+            >
+              <Text
+                style={styles.resetText}
+                numberOfLines={1}
+              >
+                Set rate
+              </Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.reset, pressed && styles.pressed]}
+              onPress={() => resetLearning(needId)}
+              accessibilityRole="button"
+            >
+              <Text
+                style={styles.resetText}
+                numberOfLines={1}
+              >
+                Reset to {formatEmptyHours(defaultHours)}
+              </Text>
+            </Pressable>
+          </View>
         </>
       )}
+      {points.length < 2 ? (
+        <Pressable
+          style={({ pressed }) => [styles.reset, pressed && styles.pressed]}
+          onPress={() => setEditing(true)}
+          accessibilityRole="button"
+        >
+          <Text
+            style={styles.resetText}
+            numberOfLines={1}
+          >
+            Set rate
+          </Text>
+        </Pressable>
+      ) : null}
+      {editing ? (
+        <NeedRateDialog
+          emptyHours={config.emptyHours}
+          onClose={() => setEditing(false)}
+          onSubmit={hours => {
+            setEditing(false);
+            setEmptyHours(needId, hours);
+          }}
+        />
+      ) : null}
     </View>
   );
 }
@@ -77,6 +123,7 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     paddingHorizontal: 4,
   },
+  buttons: { flexDirection: 'row', gap: 8 },
   reset: {
     alignSelf: 'flex-start',
     borderRadius: 8,

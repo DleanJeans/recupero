@@ -104,6 +104,8 @@ export interface NeedsStore {
   setEnabled: (needId: NeedId, enabled: boolean) => void;
   /** Sets the words that make a body sensation lower this need. Undefined restores the default words. */
   setBodyWords: (needId: NeedId, words: string | undefined) => void;
+  /** Sets the full-to-empty time by hand; recorded in the rate history like a learned change. */
+  setEmptyHours: (needId: NeedId, emptyHours: number) => void;
   resetLearning: (needId: NeedId) => void;
 }
 
@@ -291,6 +293,18 @@ export const useNeedsStore = create<NeedsStore>()(
         set(state => ({ needs: { ...state.needs, [needId]: { ...state.needs[needId], bodyWords } } })),
       setEnabled: (needId, enabled) =>
         set(state => ({ needs: { ...state.needs, [needId]: { ...state.needs[needId], enabled } } })),
+      setEmptyHours: (needId, emptyHours) =>
+        set(state => {
+          const config = state.needs[needId];
+          if (config.emptyHours === emptyHours) return state;
+          return {
+            rateHistory: {
+              ...state.rateHistory,
+              [needId]: appendRate(state.rateHistory[needId], Date.now(), emptyHours),
+            },
+            needs: { ...state.needs, [needId]: { ...config, emptyHours, learnedFrom: config.learnedFrom + 1 } },
+          };
+        }),
       resetLearning: needId =>
         set(state => ({
           rateHistory: {
