@@ -30,7 +30,10 @@ export interface OverlayTimer extends OverlayExtras {
   start: number;
   /** The item being worked on (e.g. the Shopping task "Buy MacBook case"). The pill shows it instead of the name. */
   note?: string;
+  /** The first of `needs`, for older builds that draw a single need. */
   need?: OverlayNeed;
+  /** Every need this behavior fills while the timer runs (lowest first is up to the pill). */
+  needs?: OverlayNeed[];
 }
 
 /** Timers that are counting right now (started and not stopped or paused), named for the floating pill. */
@@ -42,6 +45,7 @@ export function getRunningOverlayTimers(
   getName: (behaviorId: string) => string | undefined,
   getNeed?: (behaviorName: string) => OverlayNeed | undefined,
   getExtras?: (behaviorId: string) => OverlayExtras | undefined,
+  getNeeds?: (behaviorName: string) => OverlayNeed[],
 ): OverlayTimer[] {
   const timers: OverlayTimer[] = [];
   for (const session of sessions) {
@@ -51,11 +55,13 @@ export function getRunningOverlayTimers(
       const note = session.initialNotes?.trim();
       const extras = getExtras?.(session.lockedBehaviorId);
       const appPackage = session.appPackage ?? extras?.appPackage;
+      const needs = getNeeds?.(name) ?? [];
       timers.push({
         name,
         start: session.startTimestamp,
         ...(note ? { note } : {}),
-        need: getNeed?.(name),
+        need: needs[0] ?? getNeed?.(name),
+        ...(needs.length > 0 ? { needs } : {}),
         ...extras,
         ...(appPackage ? { appPackage } : {}),
       });

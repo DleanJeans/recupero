@@ -36,19 +36,7 @@ export function useTimerOverlay(enabled: boolean) {
       getRunningOverlayTimers(
         sessions,
         id => names.get(id),
-        name => {
-          const need = needs.find(n => n.timerBehaviorNames?.includes(name) && n.timerFullInMs != null);
-          const info = need ? NEED_INFO[need.id] : undefined;
-          return need && info
-            ? {
-                emoji: info.emoji,
-                label: info.label,
-                level: need.level ?? 0,
-                fullInMs: need.timerFullInMs ?? 0,
-                at: now,
-              }
-            : undefined;
-        },
+        () => undefined,
         id => {
           const behavior = byId.get(id);
           if (!behavior) return undefined;
@@ -63,6 +51,22 @@ export function useTimerOverlay(enabled: boolean) {
             level: xp == null ? undefined : { inLevel: getLevelXp(xp), forLevel: xpRequiredForLevel(getLevel(xp)) },
           };
         },
+        // Every need this behavior fills, so a behavior that fills several shows one row each.
+        name =>
+          needs.flatMap(need => {
+            const info = NEED_INFO[need.id];
+            return info && need.timerBehaviorNames?.includes(name) && need.timerFullInMs != null
+              ? [
+                  {
+                    emoji: info.emoji,
+                    label: info.label,
+                    level: need.level ?? 0,
+                    fullInMs: need.timerFullInMs,
+                    at: now,
+                  },
+                ]
+              : [];
+          }),
       ),
     );
   }, [

@@ -44,7 +44,22 @@ class TimerOverlayService : Service() {
   /** The behavior's level before this timer started: XP into the level and the level's size (1 XP per timer minute). */
   private class Level(val inLevel: Double, val forLevel: Double)
 
-  private class Timer(val name: String, val start: Long, val fill: Fill?, val icon: String?, val level: Level?, val note: String?, val tracksApp: Boolean, val appPackage: String? = null)
+  private class Timer(val name: String, val start: Long, val fill: Fill?, val icon: String?, val level: Level?, val note: String?, val tracksApp: Boolean, val appPackage: String? = null, val moreFills: List<Fill> = emptyList()) {
+    /** Every need this timer fills (a behavior can fill several). */
+    val fills: List<Fill> get() = listOfNotNull(fill) + moreFills
+  }
+
+  /** One need's row in the card: emoji, name, filling bar, % (or a dimmed tick once full). */
+  private class NeedRow(
+    val row: LinearLayout,
+    val emoji: TextView,
+    val label: TextView,
+    val bar: BarView,
+    val percent: TextView,
+  )
+
+  /** What a need row shows right now. */
+  private class RowData(val emoji: String, val label: String, val share: Float, val color: Int, val full: Boolean)
 
   /**
    * One timer's card. Row 1: the behavior's icon (the tracked app's launcher icon, else its emoji), name and time.
@@ -57,17 +72,16 @@ class TimerOverlayService : Service() {
     val iconEmoji: TextView,
     val name: TextView,
     val time: TextView,
+    /** Holds one NeedRow per need under the name row. */
     val extra: LinearLayout,
-    val extraEmoji: TextView,
-    val extraLabel: TextView,
-    val bar: BarView,
-    val percent: TextView,
-    /** Docked mode: just the app icon and the need's ring, in a slim column. */
+    /** Docked mode: the app icon over up to three need rings (+N for the rest), in a slim column. */
     val tab: LinearLayout,
     val tabImage: ImageView,
     val tabEmoji: TextView,
-    val tabRing: RingView,
+    val tabRings: List<RingView>,
+    val tabMore: TextView,
   ) {
+    val rows = mutableListOf<NeedRow>()
     var hasExtra = false
   }
 
@@ -273,22 +287,23 @@ class TimerOverlayService : Service() {
       bubble.iconImage.visibility = if (image != null) View.VISIBLE else View.GONE
       bubble.iconEmoji.text = timer.icon ?: timer.fill?.emoji ?: "⏱"
       bubble.iconEmoji.visibility = if (image != null) View.GONE else View.VISIBLE
-      val share = ringShare(timer, now, elapsed)
-      val color = if (timer.fill != null) GREEN else YELLOW
-      bubble.hasExtra = timer.fill != null || timer.level != null
-      if (bubble.hasExtra) {
-        bubble.tabRing.share = share
-        bubble.tabRing.color = color
-        bubble.tabRing.emoji = timer.fill?.emoji ?: "⭐"
-        bubble.tabRing.invalidate()
-        bubble.extraEmoji.text = timer.fill?.emoji ?: "⭐"
-        bubble.extraLabel.text = timer.fill?.label ?: "Level"
-        bubble.bar.share = share
-        bubble.bar.color = color
-        bubble.bar.invalidate()
-        bubble.percent.text = "${Math.round(share * 100)}%"
-        bubble.percent.setTextColor(color)
+      val data = rowData(timer, now, elapsed)
+      bubble.hasExtra = data.isNotEmpty()
+      syncRows(bubble, data)
+      for (i in bubble.tabRings.indices) {
+        val ring = bubble.tabRings[i]
+        val item = data.getOrNull(i)
+        ring.visibility = if (item != null) View.VISIBLE else View.GONE
+        if (item != null) {
+          ring.share = item.share
+          ring.color = item.color
+          ring.emoji = item.emoji
+          ring.invalidate()
+        }
       }
+      val hidden = data.size - bubble.tabRings.size
+      bubble.tabMore.visibility = if (hidden > 0) View.VISIBLE else View.GONE
+      bubble.tabMore.text = "+$hidden"
       bubble.time.text = format(elapsed)
       // The item being worked on (a Shopping task) beats the behavior's name.
       bubble.name.text = timer.note ?: timer.name
@@ -315,6 +330,84 @@ class TimerOverlayService : Service() {
     }
   }
 
+  /** The rows to show: every need it fills (lowest first, full ones last), else the behavior's level progress. */
+  private fun rowData(timer: Timer, now: Long, elapsedMs: Long): List<RowData> {
+    val fills = timer.fills
+    if (fills.isNotEmpty()) {
+      return fills.map {
+        val share = (levelNow(it, now) / 100.0).toFloat()
+        RowData(it.emoji, it.label, share, GREEN, share >= 0.995f)
+      }.sortedWith(compareBy<RowData>({ it.full }, { it.share }))
+    }
+    if (timer.level == null) return emptyList()
+    return listOf(RowData("⭐", "Level", ringShare(timer, now, elapsedMs), YELLOW, false))
+  }
+
+  /** Makes the card hold exactly one row per entry and fills them in. */
+  private fun syncRows(bubble: Bubble, data: List<RowData>) {
+    while (bubble.rows.size < data.size) {
+      val row = needRow()
+      bubble.extra.addView(row.row)
+      bubble.rows.add(row)
+    }
+    while (bubble.rows.size > data.size) {
+      val last = bubble.rows.removeAt(bubble.rows.size - 1)
+      bubble.extra.removeView(last.row)
+    }
+    for (i in data.indices) {
+      val item = data[i]
+      val row = bubble.rows[i]
+      row.emoji.text = item.emoji
+      row.label.text = item.label
+      row.bar.share = item.share
+      row.bar.color = item.color
+      row.bar.invalidate()
+      row.percent.text = if (item.full) "✓" else "${Math.round(item.share * 100)}%"
+      row.percent.setTextColor(item.color)
+      row.row.alpha = if (item.full) 0.55f else 1f
+    }
+  }
+
+  /** One need row: emoji, name, filling bar, %. */
+  private fun needRow(): NeedRow {
+    val row = LinearLayout(this)
+    row.orientation = LinearLayout.HORIZONTAL
+    row.gravity = Gravity.CENTER_VERTICAL
+    row.layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+      .also { it.topMargin = dp(6) }
+
+    val emoji = TextView(this)
+    emoji.gravity = Gravity.CENTER
+    emoji.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+    emoji.setSingleLine(true)
+    row.addView(emoji, LinearLayout.LayoutParams(dp(24), LinearLayout.LayoutParams.WRAP_CONTENT))
+
+    val label = TextView(this)
+    label.setTextColor(Color.parseColor("#CFE9D7"))
+    label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+    label.setSingleLine(true)
+    label.ellipsize = android.text.TextUtils.TruncateAt.END
+    label.maxWidth = dp(90)
+    row.addView(label, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).also { it.leftMargin = dp(8) })
+
+    val bar = BarView(this)
+    row.addView(bar, LinearLayout.LayoutParams(dp(60), dp(7)).also {
+      it.leftMargin = dp(7)
+      it.rightMargin = dp(7)
+    })
+
+    val percent = TextView(this)
+    percent.setTextColor(GREEN)
+    percent.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+    percent.typeface = android.graphics.Typeface.DEFAULT_BOLD
+    percent.fontFeatureSettings = "tnum"
+    percent.setSingleLine(true)
+    percent.minWidth = dp(32)
+    percent.gravity = Gravity.END
+    row.addView(percent, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+    return NeedRow(row, emoji, label, bar, percent)
+  }
+
   /** Docked (and not peeking): only the slim tab shows. Otherwise the full card, rounded on the docked side only. */
   private fun applyModes() {
     val tabMode = docked != 0 && !peek
@@ -322,7 +415,6 @@ class TimerOverlayService : Service() {
       bubble.top.visibility = if (tabMode) View.GONE else View.VISIBLE
       bubble.extra.visibility = if (!tabMode && bubble.hasExtra) View.VISIBLE else View.GONE
       bubble.tab.visibility = if (tabMode) View.VISIBLE else View.GONE
-      bubble.tabRing.visibility = if (bubble.hasExtra) View.VISIBLE else View.GONE
       if (tabMode) bubble.root.setPadding(dp(5), dp(8), dp(5), dp(8)) else bubble.root.setPadding(dp(12), dp(8), dp(12), dp(9))
       val background = GradientDrawable()
       background.setColor(Color.parseColor("#EE151515"))
@@ -351,19 +443,28 @@ class TimerOverlayService : Service() {
 
   /** The card is as wide as row 1 (name + gap + time). Row 2's bar takes whatever its icon, name and % leave. */
   private fun fitBar(bubble: Bubble) {
-    if (bubble.extra.visibility != View.VISIBLE) return
+    if (bubble.extra.visibility != View.VISIBLE || bubble.rows.isEmpty()) return
     val unspecified = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
     bubble.top.measure(unspecified, unspecified)
-    bubble.extraEmoji.measure(unspecified, unspecified)
-    bubble.extraLabel.measure(unspecified, unspecified)
-    bubble.percent.measure(unspecified, unspecified)
-    val params = bubble.bar.layoutParams as LinearLayout.LayoutParams
-    val used = bubble.extraEmoji.measuredWidth + bubble.extraLabel.measuredWidth + bubble.percent.measuredWidth +
-      (bubble.extraLabel.layoutParams as LinearLayout.LayoutParams).leftMargin + params.leftMargin + params.rightMargin
-    val width = Math.max(dp(36), bubble.top.measuredWidth - used)
-    if (params.width != width) {
-      params.width = width
-      bubble.bar.layoutParams = params
+    // Same label width on every row so the bars line up.
+    var labelWidth = 0
+    for (row in bubble.rows) {
+      row.label.minWidth = 0
+      row.label.measure(unspecified, unspecified)
+      labelWidth = Math.max(labelWidth, row.label.measuredWidth)
+    }
+    for (row in bubble.rows) {
+      row.label.minWidth = labelWidth
+      row.emoji.measure(unspecified, unspecified)
+      row.percent.measure(unspecified, unspecified)
+      val params = row.bar.layoutParams as LinearLayout.LayoutParams
+      val used = row.emoji.measuredWidth + labelWidth + row.percent.measuredWidth +
+        (row.label.layoutParams as LinearLayout.LayoutParams).leftMargin + params.leftMargin + params.rightMargin
+      val width = Math.max(dp(36), bubble.top.measuredWidth - used)
+      if (params.width != width) {
+        params.width = width
+        row.bar.layoutParams = params
+      }
     }
   }
 
@@ -396,7 +497,7 @@ class TimerOverlayService : Service() {
 
   private fun notificationText(now: Long): String =
     timers.mapNotNull { timer ->
-      timer.fill?.let { fill ->
+      timer.fills.takeIf { it.isNotEmpty() }?.joinToString("\n") { fill ->
         val left = Math.max(0.0, fill.fullInMs - (now - fill.at))
         val minutes = Math.round(left / 60000.0)
         "${fill.emoji} ${fill.label} ${Math.round(levelNow(fill, now))}%" +
@@ -468,47 +569,12 @@ class TimerOverlayService : Service() {
     timeParams.leftMargin = dp(14)
     top.addView(time, timeParams)
 
-    // Row 2: need icon, need name, filling bar, %.
+    // Under row 1: one row per need (added as needed in syncRows).
     val extra = LinearLayout(this)
-    extra.orientation = LinearLayout.HORIZONTAL
-    extra.gravity = Gravity.CENTER_VERTICAL
-    val extraParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-    extraParams.topMargin = dp(6)
-    root.addView(extra, extraParams)
+    extra.orientation = LinearLayout.VERTICAL
+    root.addView(extra, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
 
-    val extraEmoji = TextView(this)
-    extraEmoji.gravity = Gravity.CENTER
-    extraEmoji.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
-    extraEmoji.setSingleLine(true)
-    extra.addView(extraEmoji, LinearLayout.LayoutParams(dp(24), LinearLayout.LayoutParams.WRAP_CONTENT))
-
-    val extraLabel = TextView(this)
-    extraLabel.setTextColor(Color.parseColor("#CFE9D7"))
-    extraLabel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
-    extraLabel.setSingleLine(true)
-    extraLabel.ellipsize = android.text.TextUtils.TruncateAt.END
-    extraLabel.maxWidth = dp(90)
-    val labelParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-    labelParams.leftMargin = dp(8)
-    extra.addView(extraLabel, labelParams)
-
-    val bar = BarView(this)
-    val barParams = LinearLayout.LayoutParams(dp(60), dp(7))
-    barParams.leftMargin = dp(7)
-    barParams.rightMargin = dp(7)
-    extra.addView(bar, barParams)
-
-    val percent = TextView(this)
-    percent.setTextColor(GREEN)
-    percent.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
-    percent.typeface = android.graphics.Typeface.DEFAULT_BOLD
-    percent.fontFeatureSettings = "tnum"
-    percent.setSingleLine(true)
-    percent.minWidth = dp(32)
-    percent.gravity = Gravity.END
-    extra.addView(percent, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
-
-    // Docked tab: app icon over the need ring.
+    // Docked tab: app icon over the need rings.
     val tab = LinearLayout(this)
     tab.orientation = LinearLayout.VERTICAL
     tab.gravity = Gravity.CENTER_HORIZONTAL
@@ -524,12 +590,20 @@ class TimerOverlayService : Service() {
     tabEmoji.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
     tabEmoji.setSingleLine(true)
     tabBox.addView(tabEmoji, FrameLayout.LayoutParams(dp(28), dp(28)))
-    val tabRing = RingView(this)
-    val ringParams = LinearLayout.LayoutParams(dp(30), dp(30))
-    ringParams.topMargin = dp(6)
-    tab.addView(tabRing, ringParams)
+    val tabRings = (0 until 3).map {
+      val ring = RingView(this)
+      tab.addView(ring, LinearLayout.LayoutParams(dp(30), dp(30)).also { params -> params.topMargin = dp(5) })
+      ring
+    }
+    val tabMore = TextView(this)
+    tabMore.setTextColor(GREEN)
+    tabMore.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+    tabMore.typeface = android.graphics.Typeface.DEFAULT_BOLD
+    tabMore.setSingleLine(true)
+    tabMore.visibility = View.GONE
+    tab.addView(tabMore, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
 
-    return Bubble(root, top, iconImage, iconEmoji, name, time, extra, extraEmoji, extraLabel, bar, percent, tab, tabImage, tabEmoji, tabRing)
+    return Bubble(root, top, iconImage, iconEmoji, name, time, extra, tab, tabImage, tabEmoji, tabRings, tabMore)
   }
 
   /** A progress ring (clockwise from the top) around an emoji; used by the docked tab. */
@@ -875,14 +949,20 @@ class TimerOverlayService : Service() {
     val array = JSONArray(json)
     return (0 until array.length()).map {
       val item = array.getJSONObject(it)
-      val need = item.optJSONObject("need")
-      val fill = need?.let {
+      fun fillOf(it: JSONObject) =
         Fill(it.getString("emoji"), it.getString("label"), it.getDouble("level"), it.getDouble("fullInMs"), it.getLong("at"))
+      // Every need the behavior fills ("needs"); older JS only sends the first as "need".
+      val needs = item.optJSONArray("needs")
+      val fills = if (needs != null && needs.length() > 0) {
+        (0 until needs.length()).map { index -> fillOf(needs.getJSONObject(index)) }
+      } else {
+        listOfNotNull(item.optJSONObject("need")?.let { fillOf(it) })
       }
+      val fill = fills.firstOrNull()
       val level = item.optJSONObject("level")?.let { Level(it.optDouble("inLevel", 0.0), it.optDouble("forLevel", 0.0)) }
       val icon = item.optString("icon", "").ifEmpty { null }
       val note = item.optString("note", "").ifEmpty { null }
-      Timer(item.getString("name"), item.getLong("start"), fill, icon, level, note, item.optBoolean("tracksApp", false), item.optString("appPackage", "").ifEmpty { null })
+      Timer(item.getString("name"), item.getLong("start"), fill, icon, level, note, item.optBoolean("tracksApp", false), item.optString("appPackage", "").ifEmpty { null }, fills.drop(1))
     }
   }
 
