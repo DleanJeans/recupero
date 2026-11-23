@@ -74,6 +74,11 @@ export const DEFAULT_LAYER: Omit<StackLayer, 'emoji'> = {
   mirror: false,
 };
 
+/** An image already on the phone (an installed app's icon), as stored on a behavior. */
+export function isLocalImageUri(value: string): boolean {
+  return /^file:\/\/\S+$/i.test(value.trim());
+}
+
 export function isImageUrl(value: string): boolean {
   return /^https?:\/\/\S+$/i.test(value.trim());
 }

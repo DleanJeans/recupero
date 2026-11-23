@@ -8,6 +8,7 @@ import {
   type ImageCrop,
   imageIcon,
   isImageUrl,
+  isLocalImageUri,
   parseIcon,
 } from '../../utils/icon-utils';
 import { Button } from '../button';
@@ -84,7 +85,7 @@ export function ImagePanel({ value, nameHint, onUse }: Props) {
     }
   };
 
-  const valid = isImageUrl(url);
+  const valid = isImageUrl(url) || isLocalImageUri(url);
 
   return (
     <View style={styles.panel}>
@@ -121,7 +122,7 @@ export function ImagePanel({ value, nameHint, onUse }: Props) {
         />
         {url.trim() !== '' && !valid && <Text style={styles.error}>Links start with https://</Text>}
 
-        {isImageUrl(preview) && preview === url.trim() ? (
+        {(isImageUrl(preview) || isLocalImageUri(preview)) && preview === url.trim() ? (
           <ImageCropEditor
             url={preview}
             crop={crop}
