@@ -25,6 +25,8 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import org.json.JSONArray
@@ -44,8 +46,22 @@ class TimerOverlayService : Service() {
 
   private class Timer(val name: String, val start: Long, val fill: Fill?, val icon: String?, val level: Level?, val note: String?, val tracksApp: Boolean, val appPackage: String? = null)
 
-  /** One timer's bubble: a ring (need fill, else level) around the icon, the time, and the name underneath. */
-  private class Bubble(val root: LinearLayout, val ring: RingView, val time: TextView, val name: TextView)
+  /**
+   * One timer's card. Row 1: the behavior's icon (the tracked app's launcher icon, else its emoji), name and time.
+   * Row 2: the need it fills (emoji, name, a filling bar, %), or the behavior's level progress without a need.
+   */
+  private class Bubble(
+    val root: LinearLayout,
+    val iconImage: ImageView,
+    val iconEmoji: TextView,
+    val name: TextView,
+    val time: TextView,
+    val extra: LinearLayout,
+    val extraEmoji: TextView,
+    val extraLabel: TextView,
+    val bar: BarView,
+    val percent: TextView,
+  )
 
 
   private val handler = Handler(Looper.getMainLooper())
@@ -224,11 +240,26 @@ class TimerOverlayService : Service() {
       val timer = timers[index]
       val bubble = bubbles[index]
       val elapsed = now - timer.start
-      bubble.ring.emoji = timer.icon ?: timer.fill?.emoji ?: "⏱"
       // The app being used (e.g. Shopee for a Shopping task) beats the emoji.
-      bubble.ring.image = timer.appPackage?.let { appIcon(it) }
-      bubble.ring.share = ringShare(timer, now, elapsed)
-      bubble.ring.invalidate()
+      val image = timer.appPackage?.let { appIcon(it) }
+      bubble.iconImage.setImageDrawable(image)
+      bubble.iconImage.visibility = if (image != null) View.VISIBLE else View.GONE
+      bubble.iconEmoji.text = timer.icon ?: timer.fill?.emoji ?: "⏱"
+      bubble.iconEmoji.visibility = if (image != null) View.GONE else View.VISIBLE
+      val share = ringShare(timer, now, elapsed)
+      val color = if (timer.fill != null) GREEN else YELLOW
+      if (timer.fill != null || timer.level != null) {
+        bubble.extra.visibility = View.VISIBLE
+        bubble.extraEmoji.text = timer.fill?.emoji ?: "⭐"
+        bubble.extraLabel.text = timer.fill?.label ?: "Level"
+        bubble.bar.share = share
+        bubble.bar.color = color
+        bubble.bar.invalidate()
+        bubble.percent.text = "${Math.round(share * 100)}%"
+        bubble.percent.setTextColor(color)
+      } else {
+        bubble.extra.visibility = View.GONE
+      }
       bubble.time.text = format(elapsed)
       // The item being worked on (a Shopping task) beats the behavior's name.
       bubble.name.text = timer.note ?: timer.name
@@ -307,30 +338,45 @@ class TimerOverlayService : Service() {
 
   private fun bubble(): Bubble {
     val root = LinearLayout(this)
-    root.orientation = LinearLayout.HORIZONTAL
-    root.gravity = Gravity.CENTER_VERTICAL
-    root.setPadding(dp(4), dp(4), dp(12), dp(4))
+    root.orientation = LinearLayout.VERTICAL
+    root.setPadding(dp(12), dp(8), dp(12), dp(9))
     val background = GradientDrawable()
-    background.setColor(Color.parseColor("#E61E1E1E"))
-    background.cornerRadius = dp(24).toFloat()
-    background.setStroke(dp(1), GREEN)
+    background.setColor(Color.parseColor("#EE151515"))
+    background.cornerRadius = dp(18).toFloat()
+    background.setStroke(dp(2), GREEN)
     root.background = background
+    root.minimumWidth = dp(230)
     root.layoutParams = LinearLayout.LayoutParams(
       LinearLayout.LayoutParams.WRAP_CONTENT,
       LinearLayout.LayoutParams.WRAP_CONTENT,
     )
 
-    val ring = RingView(this)
-    root.addView(ring, LinearLayout.LayoutParams(dp(36), dp(36)))
+    // Row 1: icon, name (shrinks, ends in an ellipsis), time (never shrinks or wraps).
+    val top = LinearLayout(this)
+    top.orientation = LinearLayout.HORIZONTAL
+    top.gravity = Gravity.CENTER_VERTICAL
+    root.addView(top)
 
-    val texts = LinearLayout(this)
-    texts.orientation = LinearLayout.VERTICAL
-    val textsParams = LinearLayout.LayoutParams(
-      LinearLayout.LayoutParams.WRAP_CONTENT,
-      LinearLayout.LayoutParams.WRAP_CONTENT,
-    )
-    textsParams.leftMargin = dp(8)
-    root.addView(texts, textsParams)
+    val iconBox = FrameLayout(this)
+    top.addView(iconBox, LinearLayout.LayoutParams(dp(24), dp(24)))
+    val iconImage = ImageView(this)
+    iconImage.scaleType = ImageView.ScaleType.FIT_CENTER
+    iconBox.addView(iconImage, FrameLayout.LayoutParams(dp(24), dp(24)))
+    val iconEmoji = TextView(this)
+    iconEmoji.gravity = Gravity.CENTER
+    iconEmoji.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
+    iconEmoji.setSingleLine(true)
+    iconBox.addView(iconEmoji, FrameLayout.LayoutParams(dp(24), dp(24)))
+
+    val name = TextView(this)
+    name.setTextColor(Color.parseColor("#E8F5EC"))
+    name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+    name.setSingleLine(true)
+    name.ellipsize = android.text.TextUtils.TruncateAt.END
+    name.maxWidth = dp(190)
+    val nameParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+    nameParams.leftMargin = dp(8)
+    top.addView(name, nameParams)
 
     val time = TextView(this)
     time.setTextColor(GREEN)
@@ -338,59 +384,72 @@ class TimerOverlayService : Service() {
     time.typeface = android.graphics.Typeface.DEFAULT_BOLD
     time.fontFeatureSettings = "tnum"
     time.setSingleLine(true)
-    texts.addView(time)
+    val timeParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+    timeParams.leftMargin = dp(8)
+    top.addView(time, timeParams)
 
-    val name = TextView(this)
-    name.setTextColor(Color.parseColor("#9FD8B0"))
-    name.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
-    name.setSingleLine(true)
-    name.maxWidth = dp(220)
-    name.ellipsize = android.text.TextUtils.TruncateAt.END
-    texts.addView(name)
+    // Row 2: need icon, need name, filling bar, %.
+    val extra = LinearLayout(this)
+    extra.orientation = LinearLayout.HORIZONTAL
+    extra.gravity = Gravity.CENTER_VERTICAL
+    val extraParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+    extraParams.topMargin = dp(6)
+    root.addView(extra, extraParams)
 
-    return Bubble(root, ring, time, name)
+    val extraEmoji = TextView(this)
+    extraEmoji.gravity = Gravity.CENTER
+    extraEmoji.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+    extraEmoji.setSingleLine(true)
+    extra.addView(extraEmoji, LinearLayout.LayoutParams(dp(24), LinearLayout.LayoutParams.WRAP_CONTENT))
+
+    val extraLabel = TextView(this)
+    extraLabel.setTextColor(Color.parseColor("#CFE9D7"))
+    extraLabel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+    extraLabel.setSingleLine(true)
+    extraLabel.ellipsize = android.text.TextUtils.TruncateAt.END
+    extraLabel.maxWidth = dp(90)
+    val labelParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+    labelParams.leftMargin = dp(8)
+    extra.addView(extraLabel, labelParams)
+
+    val bar = BarView(this)
+    val barParams = LinearLayout.LayoutParams(0, dp(7), 1f)
+    barParams.leftMargin = dp(7)
+    barParams.rightMargin = dp(7)
+    extra.addView(bar, barParams)
+    bar.minimumWidth = dp(60)
+
+    val percent = TextView(this)
+    percent.setTextColor(GREEN)
+    percent.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+    percent.typeface = android.graphics.Typeface.DEFAULT_BOLD
+    percent.fontFeatureSettings = "tnum"
+    percent.setSingleLine(true)
+    percent.minWidth = dp(32)
+    percent.gravity = Gravity.END
+    extra.addView(percent, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+
+    return Bubble(root, iconImage, iconEmoji, name, time, extra, extraEmoji, extraLabel, bar, percent)
   }
 
-  /** A progress ring around an emoji, filling clockwise from the top. */
-  private class RingView(context: Context) : View(context) {
+  /** A rounded progress bar filling left to right. */
+  private class BarView(context: Context) : View(context) {
     var share = 0f
-    var emoji = "⏱"
-    /** An app's launcher icon drawn in place of the emoji. */
-    var image: Drawable? = null
-    private val density = context.resources.displayMetrics.density
-    private val stroke = 3f * density
-    private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-      style = Paint.Style.STROKE
-      strokeWidth = stroke
-      color = Color.parseColor("#33FFFFFF")
-    }
-    private val arc = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-      style = Paint.Style.STROKE
-      strokeWidth = stroke
-      strokeCap = Paint.Cap.ROUND
-      color = GREEN
-    }
-    private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-      textAlign = Paint.Align.CENTER
-      textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 17f, context.resources.displayMetrics)
-    }
-    private val bounds = RectF()
+    var color = GREEN
+    private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = Color.parseColor("#1FFFFFFF") }
+    private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val rect = RectF()
 
     override fun onDraw(canvas: Canvas) {
       super.onDraw(canvas)
-      val inset = stroke / 2 + density
-      bounds.set(inset, inset, width - inset, height - inset)
-      canvas.drawOval(bounds, track)
-      val sweep = 360f * share.coerceIn(0f, 1f)
-      if (sweep > 0f) canvas.drawArc(bounds, -90f, sweep, false, arc)
-      val baseline = height / 2f - (text.descent() + text.ascent()) / 2f
-      val picture = image
-      if (picture != null) {
-        val half = (Math.min(width, height) / 2f - stroke - density * 2).toInt()
-        picture.setBounds(width / 2 - half, height / 2 - half, width / 2 + half, height / 2 + half)
-        picture.draw(canvas)
-      } else {
-        canvas.drawText(emoji, width / 2f, baseline, text)
+      val radius = height / 2f
+      rect.set(0f, 0f, width.toFloat(), height.toFloat())
+      canvas.drawRoundRect(rect, radius, radius, track)
+      val filled = width * share.coerceIn(0f, 1f)
+      if (filled > 0f) {
+        fill.color = color
+        rect.set(0f, 0f, Math.max(filled, height.toFloat()), height.toFloat())
+        canvas.drawRoundRect(rect, radius, radius, fill)
       }
     }
   }
@@ -535,6 +594,7 @@ class TimerOverlayService : Service() {
 
   companion object {
     private val GREEN = Color.parseColor("#4ADE80")
+    private val YELLOW = Color.parseColor("#FACC15")
     const val EXTRA_TIMERS = "timers"
     const val EXTRA_VISIBLE = "visible"
     const val ACTION_APP_ENTER = "expo.modules.appusage.APP_OVERLAY_ENTER"
