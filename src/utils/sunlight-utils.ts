@@ -257,11 +257,12 @@ export function getSunlightPresence(
   /** Last time something confirmed you were at one of the places in `inside` (a GPS check or an arrival). */
   let lastAt: number | null = null;
 
-  const close = (end: number) => {
+  /** A stretch still running counts from its first second; only one that ended is dropped when under 2 min. */
+  const close = (end: number, ongoing = false) => {
     if (outSince == null) return;
     const capped = Math.min(end, outSince + MAX_OUTDOOR_STRETCH_MS);
     const start = Math.max(outSince, since);
-    if (capped - start >= MIN_OUTDOOR_MS) ranges.push({ start, end: capped });
+    if (capped > start && (ongoing || capped - start >= MIN_OUTDOOR_MS)) ranges.push({ start, end: capped });
     outSince = null;
   };
   /** Whether getting from every one of `from` to `to` means going outside (they're not the same building). */
@@ -313,7 +314,7 @@ export function getSunlightPresence(
     }
   }
   const currentOutSince = outSince ?? undefined;
-  if (outSince != null) close(now);
+  if (outSince != null) close(now, true);
   return {
     outSince: currentOutSince,
     ranges: ranges.filter(range => range.end > since),

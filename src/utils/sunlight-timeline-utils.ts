@@ -257,3 +257,29 @@ export function addStayGapRanges(ranges: SunlightRange[], stays: SunlightPlaceSt
   }
   return added.length === 0 ? ranges : [...ranges, ...added].sort((a, b) => a.start - b.start);
 }
+
+/** A late position check or geofence event can start "outside" minutes after the place stay actually ended. */
+const MAX_START_BACKDATE_MS = 10 * 60_000;
+
+/**
+ * Starts the session running now when the last stay at a place ended, if that was just before the position said
+ * you were out (so a session shows from "Left Home 10:22", not from the later check at 10:24).
+ */
+export function backdateOngoingOutside<T extends { outSince?: number; ranges: SunlightRange[] }>(
+  presence: T,
+  stays: SunlightPlaceStay[],
+  now: number,
+): T {
+  const outSince = presence.outSince;
+  if (outSince == null || stays.some(stay => stay.ongoing)) return presence;
+  const ended = stays.filter(stay => stay.end <= outSince && outSince - stay.end <= MAX_START_BACKDATE_MS);
+  if (ended.length === 0) return presence;
+  const start = Math.max(...ended.map(stay => stay.end));
+  if (start >= outSince) return presence;
+  const last = presence.ranges.at(-1);
+  const ranges =
+    last && last.start === outSince && last.end >= now - 1
+      ? [...presence.ranges.slice(0, -1), { ...last, start }]
+      : presence.ranges;
+  return { ...presence, outSince: start, ranges };
+}

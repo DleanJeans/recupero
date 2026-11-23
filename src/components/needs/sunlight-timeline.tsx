@@ -49,7 +49,7 @@ export function SunlightTimeline({ items, pendingSince, onEdit }: SunlightTimeli
           <View style={[styles.session, styles.live]}>
             <View style={styles.sessionText}>
               <Text style={styles.time}>{`${formatTime(pendingSince)} – now`}</Text>
-              <Text style={styles.detail}>Just started · counts after 2 min</Text>
+              <Text style={styles.detail}>Just started</Text>
             </View>
             <Text style={styles.minutes}>0 min</Text>
           </View>
