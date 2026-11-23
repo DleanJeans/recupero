@@ -10,6 +10,7 @@ import { AppIcon } from '../../components/app-icon';
 import { BehaviorIcon } from '../../components/behavior-icon';
 import { Button } from '../../components/button';
 import { CueSectionLabel } from '../../components/cues/cue-section-label';
+import { CalorieBalanceCard } from '../../components/needs/calorie-balance-card';
 import { FitbitConnectRow } from '../../components/needs/fitbit-connect-row';
 import { NeedAmountDialog } from '../../components/needs/need-amount-dialog';
 import { NeedAppSourceModal } from '../../components/needs/need-app-source-modal';
@@ -27,6 +28,7 @@ import type { BehaviorEntry } from '../../types/behavior';
 import type { RootStackParamList } from '../../types/navigation';
 import type { NeedId, NeedRefill } from '../../types/need';
 import { getActiveBehaviors } from '../../utils/archive-utils';
+import { kcalToPercent } from '../../utils/calorie-balance-utils';
 import { Colors } from '../../utils/colors';
 import { toDateString } from '../../utils/date-utils';
 import {
@@ -44,6 +46,7 @@ import {
   getSuggestedRefillIds,
   NEED_INFO,
   NEED_UPDATE_AMOUNTS,
+  NEED_UPDATE_KCAL_AMOUNTS,
   NEED_UPDATE_QUESTIONS,
   type NeedRefillEntry,
 } from '../../utils/need-utils';
@@ -104,6 +107,7 @@ export function NeedScreen() {
       need.source,
       ts => toDateString(new Date(ts), dayCutoffHour) === today,
       checkIns.filter(entry => entry.needId === need.id),
+      need.id === 'hunger' && need.source ? 'kcal' : undefined,
     );
   }, [behaviors, checkIns, dayCutoffHour, need, now]);
   const suggestedIds = useMemo(
@@ -135,6 +139,8 @@ export function NeedScreen() {
   if (!need) return null;
 
   const info = NEED_INFO[need.id];
+  /** Hunger with a kcal source: top-ups are typed in kcal (100% = the source's full amount). */
+  const kcalFull = need.id === 'hunger' && need.source ? need.source.fullAmount : undefined;
   const sourceFields = need.source
     ? getSourceFieldKeys(need.source).flatMap(key => findMetadataField(categories, key) ?? [])
     : [];
@@ -239,6 +245,13 @@ export function NeedScreen() {
               : ' · default'}
           </Text>
 
+          {need.id === 'hunger' && need.source ? (
+            <CalorieBalanceCard
+              source={need.source}
+              now={now}
+            />
+          ) : null}
+
           <NeedHistorySection
             needId={need.id}
             onEditLog={editLog}
@@ -291,17 +304,31 @@ export function NeedScreen() {
 
           <CueSectionLabel>{NEED_UPDATE_QUESTIONS[need.id]}</CueSectionLabel>
           <View style={styles.checkIns}>
-            {NEED_UPDATE_AMOUNTS.map(amount => (
-              <Pressable
-                key={amount}
-                style={({ pressed }) => [styles.checkIn, pressed && styles.pressed]}
-                onPress={() => updateLevel(need.id, amount)}
-                accessibilityRole="button"
-                accessibilityLabel={amount >= 100 ? `Fill ${info.label}` : `Add ${amount}% to ${info.label}`}
-              >
-                <Text style={styles.updateAmount}>{amount >= 100 ? 'Full' : `+${amount}%`}</Text>
-              </Pressable>
-            ))}
+            {(kcalFull != null ? NEED_UPDATE_KCAL_AMOUNTS : NEED_UPDATE_AMOUNTS).map(amount => {
+              const full = amount >= 100 && kcalFull == null;
+              const points = kcalFull != null ? kcalToPercent(amount, kcalFull) : amount;
+              const isFull = full || points >= 100;
+              return (
+                <Pressable
+                  key={amount}
+                  style={({ pressed }) => [styles.checkIn, pressed && styles.pressed]}
+                  onPress={() => updateLevel(need.id, Math.min(100, points))}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    isFull ? `Fill ${info.label}` : `Add ${amount}${kcalFull != null ? ' kcal' : '%'} to ${info.label}`
+                  }
+                >
+                  <Text
+                    style={styles.updateAmount}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
+                    {isFull ? 'Full' : kcalFull != null ? `+${amount} kcal` : `+${amount}%`}
+                  </Text>
+                </Pressable>
+              );
+            })}
             <Pressable
               style={({ pressed }) => [styles.checkIn, pressed && styles.pressed]}
               onPress={() => setCustomDialog('update')}
@@ -662,12 +689,16 @@ export function NeedScreen() {
       {customDialog === 'update' ? (
         <NeedAmountDialog
           title={NEED_UPDATE_QUESTIONS[need.id]}
-          hint={`Type how many points to add to ${info.label}. 100 fills it.`}
+          hint={
+            kcalFull != null
+              ? `Type how many kcal you ate. ${kcalFull} kcal fills ${info.label}.`
+              : `Type how many points to add to ${info.label}. 100 fills it.`
+          }
           min={1}
-          max={100}
-          suffix="%"
+          max={kcalFull != null ? 5000 : 100}
+          suffix={kcalFull != null ? 'kcal' : '%'}
           onSubmit={value => {
-            updateLevel(need.id, value);
+            updateLevel(need.id, kcalFull != null ? kcalToPercent(value, kcalFull) : value);
             setCustomDialog(undefined);
           }}
           onClose={() => setCustomDialog(undefined)}

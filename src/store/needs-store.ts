@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type {
   CustomNeedDef,
+  EnergyProfile,
   NeedCheckIn,
   NeedCheckInSource,
   NeedConfig,
@@ -67,6 +68,9 @@ export interface NeedsStore {
   needOrder: PanelRowKey[];
   /** How needs are ordered where they are listed. */
   needSortMode: NeedSortMode;
+  /** Body details for the Hunger screen's calorie balance. Undefined until set. */
+  energyProfile?: EnergyProfile;
+  setEnergyProfile: (profile: EnergyProfile | undefined) => void;
   setNeedSortMode: (mode: NeedSortMode) => void;
   /** Moves a need one place up (-1) or down (1) in the list. */
   moveNeed: (id: PanelRowKey, direction: -1 | 1) => void;
@@ -166,6 +170,7 @@ export const useNeedsStore = create<NeedsStore>()(
       emojiOverrides: {},
       needOrder: [],
       needSortMode: 'manual',
+      setEnergyProfile: profile => set({ energyProfile: profile }),
       setNeedSortMode: mode => set({ needSortMode: mode }),
       moveNeed: (id, direction) =>
         set(state => {

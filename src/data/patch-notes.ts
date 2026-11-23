@@ -38,6 +38,18 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-23',
     items: [
       {
+        text: 'The Hunger screen has a new Calorie balance card: it adds up the kcal of your food logs and compares them with the kcal you burn (estimated from your age, weight, height and activity, which you type once; you can also type your own daily burn). Switch between 1d, 7d and 30d to see a deficit or surplus per day and the total. Days with no food logged are left out, and today only counts the part of the day that has passed.',
+        screen: 'Need',
+        params: { needId: 'hunger' },
+        linkPhrase: 'Hunger screen',
+      },
+      {
+        text: 'On the Hunger screen, "Ate something you didn\'t log?" now adds kcal instead of percent (+100, +250, +500 kcal, Full or a custom number). 100% of Hunger is the Hunger full amount from Needs settings (800 kcal by default), and unlogged kcal also count in the Calorie balance.',
+        screen: 'Need',
+        params: { needId: 'hunger' },
+        linkPhrase: 'Hunger screen',
+      },
+      {
         text: 'Number fields can now be worked out by a formula. In Edit category, tap a Base or Manual field and type a formula like Before - After (field names turn into pills; + − × ÷ and brackets work). Before and After can tap Base next to the unit to use g or ml, whichever the behavior uses.',
         screen: 'CategoryForm',
         linkPhrase: 'Edit category',

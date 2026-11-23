@@ -79,3 +79,17 @@ export interface NeedConfig {
   /** How many check-ins have adjusted the rate since the last reset. */
   learnedFrom: number;
 }
+
+export type EnergySex = 'male' | 'female';
+
+/** What the calorie balance on the Hunger screen needs to estimate the energy you burn. */
+export interface EnergyProfile {
+  sex: EnergySex;
+  age: number;
+  weightKg: number;
+  heightCm: number;
+  /** Multiplier on BMR for everyday activity (1.2 sedentary ... 1.725 very active). */
+  activity: number;
+  /** A burn per day typed by hand (kcal). When set it replaces the estimate. */
+  fixedKcal?: number;
+}

@@ -781,6 +781,9 @@ export function isNeedNotificationData(data: unknown): data is NeedNotificationD
 /** Top-ups offered in the need sheet for refills you didn't log; 100 fills it. */
 export const NEED_UPDATE_AMOUNTS: readonly number[] = [10, 25, 50, 100];
 
+/** Hunger top-ups in kcal (Infinity = Full). Converted with the source's full amount. */
+export const NEED_UPDATE_KCAL_AMOUNTS: readonly number[] = [100, 250, 500, Number.POSITIVE_INFINITY];
+
 /** "Ate something you didn't log?" */
 export const NEED_UPDATE_QUESTIONS: Record<NeedId, string> = {
   hunger: "Ate something you didn't log?",
@@ -822,6 +825,8 @@ export function getNeedRefillHistory(
   source: NeedMetadataSource | undefined,
   isToday: (ts: number) => boolean,
   updates: NeedCheckIn[] = [],
+  /** Unit of the source's field (e.g. "kcal"): top-ups are then labelled in it instead of %. */
+  sourceUnit?: string,
 ): { entries: NeedRefillEntry[]; today: boolean } {
   const checkIns: NeedRefillEntry[] = updates
     .filter(entry => entry.amount == null && isToday(entry.ts))
@@ -837,7 +842,12 @@ export function getNeedRefillHistory(
       logId: update.id,
       update: true,
       ts: update.ts,
-      amountLabel: (update.amount ?? 0) >= 100 ? 'Full' : `+${Math.round(update.amount ?? 0)}%`,
+      amountLabel:
+        (update.amount ?? 0) >= 100
+          ? 'Full'
+          : source && source.fullAmount > 0 && /kcal/i.test(sourceUnit ?? '')
+            ? `+${Math.round((((update.amount ?? 0) / 100) * source.fullAmount) / 5) * 5} kcal`
+            : `+${Math.round(update.amount ?? 0)}%`,
     }));
   for (const behavior of behaviors) {
     const behaviorSource = getSourceForBehavior(source, behavior);
