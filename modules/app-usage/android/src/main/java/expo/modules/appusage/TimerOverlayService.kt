@@ -288,7 +288,7 @@ class TimerOverlayService : Service() {
     }
   }
 
-  /** The card is as wide as row 1 (name + gap + time); stretch row 2's bar to fill what its icon, name and % leave. */
+  /** The card is as wide as row 1 (name + gap + time). Row 2's bar takes whatever its icon, name and % leave. */
   private fun fitBar(bubble: Bubble) {
     if (bubble.extra.visibility != View.VISIBLE) return
     val unspecified = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
