@@ -70,7 +70,7 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
   );
   const hasReward = xp != null || money != null;
   const energyScore = useMemo(() => getSleepEnergyScore(log, energyRefill), [energyRefill, log]);
-  const hasSide = hasReward || big != null || texts.length > 0 || energyScore != null;
+  const hasSide = hasReward || big != null || energyScore != null;
 
   const handlePress = useCallback(() => onEdit(), [onEdit]);
 
@@ -108,17 +108,6 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
                 <Text style={styles.bigUnit}>{formatMetadataValueUnit(big.field)}</Text>
               </Text>
             ) : null}
-            {texts.length > 0 ? (
-              <Text style={styles.textLine}>
-                {texts
-                  .map(item =>
-                    item.field.calculation === 'amount'
-                      ? `${item.text}${formatMetadataValueUnit(item.field)}`
-                      : `${item.field.label} ${item.text}${formatMetadataValueUnit(item.field)}`,
-                  )
-                  .join('  ·  ')}
-              </Text>
-            ) : null}
           </View>
         ) : null}
       </View>
@@ -127,6 +116,20 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
           fields={metadataFields}
           metadata={log.metadata}
         />
+      ) : null}
+      {texts.length > 0 ? (
+        <View style={styles.textLine}>
+          {texts.map(item => (
+            <Text
+              key={item.field.key}
+              style={styles.textItem}
+            >
+              {item.field.calculation === 'amount'
+                ? `${item.text}${formatMetadataValueUnit(item.field)}`
+                : `${item.field.label} ${item.text}${formatMetadataValueUnit(item.field)}`}
+            </Text>
+          ))}
+        </View>
       ) : null}
       {bars.length > 0 ? (
         <View style={styles.barSection}>
@@ -224,9 +227,14 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   textLine: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    columnGap: 14,
+    rowGap: 2,
+  },
+  textItem: {
     color: Colors.text.light,
     fontSize: 13,
-    textAlign: 'right',
     fontVariant: ['tabular-nums'],
   },
   barSection: {
