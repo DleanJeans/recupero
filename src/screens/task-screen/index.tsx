@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, BackHandler, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import type { LaunchableApp } from '../../../modules/app-usage';
+import { AppUsage, type LaunchableApp } from '../../../modules/app-usage';
 import { Button } from '../../components/button';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { TabHeader } from '../../components/tab-header';
@@ -242,6 +242,30 @@ export function TaskScreen() {
     resetComposer();
     setStars(1);
     setComposerOpen(true);
+    if (tab === 'shopping') applyShoppingDefaults();
+  };
+
+  /** "Add to buy" starts on Shopee (or the Settings choice) so only the item name is left to type. */
+  const applyShoppingDefaults = () => {
+    const { shoppingDefaultsEnabled, shoppingDefaultApp, shoppingDefaultBehaviorId } = useSettingsStore.getState();
+    if (!shoppingDefaultsEnabled) return;
+    const behaviorsNow = useBehaviorStore.getState().behaviors;
+    const behavior = shoppingDefaultBehaviorId
+      ? behaviorsNow.find(b => b.id === shoppingDefaultBehaviorId && !b.archivedAt)
+      : shoppingDefaultApp
+        ? undefined
+        : behaviorsNow.find(b => !b.archivedAt && !b.autoTrackApp && /shopee/i.test(b.name));
+    if (behavior) setSelectedBehaviorId(behavior.id);
+    if (shoppingDefaultApp) {
+      setSelectedApp(shoppingDefaultApp);
+      return;
+    }
+    AppUsage?.getLaunchableApps?.()
+      .then(apps => {
+        const shopee = apps.find(a => /shopee/i.test(a.label) || /shopee/i.test(a.packageName));
+        if (shopee) setSelectedApp(current => current ?? shopee);
+      })
+      .catch(() => {});
   };
 
   const openEditComposer = (task: TaskEntry) => {

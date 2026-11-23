@@ -40,6 +40,14 @@ interface SettingsStore {
   /** App opened by the play button on Shopping tab tasks (after the timer starts). null = just start the timer. */
   shoppingTimerApp: { packageName: string; label: string } | null;
   setShoppingTimerApp: (app: { packageName: string; label: string } | null) => void;
+  /** "Add to buy" starts with these. Null = auto-pick Shopee (its installed app / a behavior named Shopee). */
+  shoppingDefaultApp: { packageName: string; label: string } | null;
+  shoppingDefaultBehaviorId: string | null;
+  /** Off = "Add to buy" starts empty. */
+  shoppingDefaultsEnabled: boolean;
+  setShoppingDefaultApp: (app: { packageName: string; label: string } | null) => void;
+  setShoppingDefaultBehaviorId: (id: string | null) => void;
+  setShoppingDefaultsEnabled: (v: boolean) => void;
   /** Habit reminders that fire while the app is open show as a toast card instead of a system notification. */
   reminderToastEnabled: boolean;
   setReminderToastEnabled: (v: boolean) => void;
@@ -63,6 +71,9 @@ export const useSettingsStore = create<SettingsStore>()(
       placeDwellMin: DEFAULT_PLACE_DWELL_MIN,
       cookBatchCategoryIds: null,
       shoppingTimerApp: null,
+      shoppingDefaultApp: null,
+      shoppingDefaultBehaviorId: null,
+      shoppingDefaultsEnabled: true,
       reminderToastEnabled: true,
       reminderToastPosition: DEFAULT_TOAST_POSITION,
       setTimeFormat: format => set({ timeFormat: format }),
@@ -76,6 +87,9 @@ export const useSettingsStore = create<SettingsStore>()(
       setPlaceDwellMin: v => set({ placeDwellMin: v }),
       setCookBatchCategoryIds: v => set({ cookBatchCategoryIds: v }),
       setShoppingTimerApp: app => set({ shoppingTimerApp: app }),
+      setShoppingDefaultApp: app => set({ shoppingDefaultApp: app }),
+      setShoppingDefaultBehaviorId: id => set({ shoppingDefaultBehaviorId: id }),
+      setShoppingDefaultsEnabled: v => set({ shoppingDefaultsEnabled: v }),
       setReminderToastEnabled: v => set({ reminderToastEnabled: v }),
       setReminderToastPosition: v => set({ reminderToastPosition: v }),
     }),

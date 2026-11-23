@@ -13,6 +13,7 @@ import { MoneyRewardsSection } from './components/money-rewards-section';
 import { PatchNotesButton } from './components/patch-notes-button';
 import { PrivateBehaviorSection } from './components/private-behavior-section';
 import { ReminderToastSection } from './components/reminder-toast-section';
+import { ShoppingDefaultsSection } from './components/shopping-defaults-section';
 import { ShoppingTimerAppSection } from './components/shopping-timer-app-section';
 import { TimeFormatPicker } from './components/time-format-picker';
 
@@ -35,6 +36,7 @@ export function SettingsScreen() {
         <ReminderToastSection />
         <CookBatchSection />
         <ShoppingTimerAppSection />
+        <ShoppingDefaultsSection />
         <PrivateBehaviorSection />
         <DataTransferSection />
         <AppVersionSection />
