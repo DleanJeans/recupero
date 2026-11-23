@@ -597,6 +597,13 @@ export function NeedScreen() {
           suffix="min"
           linkedRate
           initial={rateEdit.minutes}
+          resetLabel="1 log = Full"
+          onReset={() => {
+            const refill: NeedRefill = { mode: 'set' };
+            if (rateEdit.behaviorId) setRefill(need.id, rateEdit.behaviorId, refill);
+            else if (rateEdit.categoryId) setCategoryRefill(need.id, rateEdit.categoryId, refill);
+            setRateEdit(undefined);
+          }}
           onSubmit={value => {
             const refill: NeedRefill = { mode: 'duration', fullMinutes: value };
             if (rateEdit.behaviorId) setRefill(need.id, rateEdit.behaviorId, refill);
@@ -711,7 +718,12 @@ function CategoryRefillRow({ emoji, name, count, amount, onPress, onAmountPress,
           accessibilityRole="button"
           accessibilityLabel={`Refill amount ${amount}, tap to change`}
         >
-          <Text style={styles.amountText}>{amount}</Text>
+          <Text
+            style={styles.amountText}
+            numberOfLines={1}
+          >
+            {amount}
+          </Text>
         </Pressable>
       ) : (
         <Text style={styles.rowAction}>Add ›</Text>
@@ -780,7 +792,12 @@ function RefillRow({
           accessibilityRole="button"
           accessibilityLabel={`Refill amount ${amount}, tap to change`}
         >
-          <Text style={styles.amountText}>{amount}</Text>
+          <Text
+            style={styles.amountText}
+            numberOfLines={1}
+          >
+            {amount}
+          </Text>
         </Pressable>
       ) : null}
       <Text style={styles.rowAction}>{actionLabel} ›</Text>

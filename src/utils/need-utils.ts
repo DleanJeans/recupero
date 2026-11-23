@@ -554,7 +554,7 @@ export function formatNextCraving(
 }
 
 export function formatRefill(refill: NeedRefill): string {
-  if (refill.mode === 'set') return 'Full';
+  if (refill.mode === 'set') return '1 log = Full';
   if (refill.mode === 'add') return `+${Math.round(refill.amount)}%`;
   return `Full after ${formatHoursMinutes(refill.fullMinutes * 60_000)}`;
 }
