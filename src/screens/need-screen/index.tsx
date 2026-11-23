@@ -485,6 +485,9 @@ export function NeedScreen() {
                 }
                 onRemove={refill ? () => setRefill(need.id, id, undefined) : undefined}
                 onPress={() => logBehavior(id)}
+                onNamePress={() =>
+                  navigation.navigate('BehaviorLog', { behaviorId: id, initialMode: 'details' })
+                }
               />
             );
           })}
@@ -752,6 +755,8 @@ interface RefillRowProps {
   amount?: string;
   actionLabel?: string;
   onPress: () => void;
+  /** Tapping the icon and name; defaults to `onPress`. */
+  onNamePress?: () => void;
   onAmountPress?: () => void;
   onRemove?: () => void;
 }
@@ -762,6 +767,7 @@ function RefillRow({
   amount,
   actionLabel = 'Log',
   onPress,
+  onNamePress,
   onAmountPress,
   onRemove,
 }: RefillRowProps) {
@@ -771,19 +777,25 @@ function RefillRow({
       onPress={onPress}
       accessibilityRole="button"
     >
-      <BehaviorIcon
-        behavior={behavior}
-        size={24}
-      />
-      <View style={styles.rowText}>
-        <Text
-          style={styles.rowName}
-          numberOfLines={1}
-        >
-          {behavior.name}
-        </Text>
-        {detail ? <Text style={styles.rowDetail}>{detail}</Text> : null}
-      </View>
+      <Pressable
+        style={styles.rowLeft}
+        onPress={onNamePress ?? onPress}
+        accessibilityRole="button"
+      >
+        <BehaviorIcon
+          behavior={behavior}
+          size={24}
+        />
+        <View style={styles.rowText}>
+          <Text
+            style={styles.rowName}
+            numberOfLines={1}
+          >
+            {behavior.name}
+          </Text>
+          {detail ? <Text style={styles.rowDetail}>{detail}</Text> : null}
+        </View>
+      </Pressable>
       {amount ? (
         <Pressable
           style={({ pressed }) => [styles.amount, pressed && styles.pressed]}
@@ -894,6 +906,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     width: 24,
     textAlign: 'center',
+  },
+  rowLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   rowText: {
     flex: 1,
