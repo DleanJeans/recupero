@@ -494,22 +494,38 @@ class TimerOverlayService : Service() {
           val dy = (event.rawY - downY).toInt()
           if (Math.abs(dx) > dp(6) || Math.abs(dy) > dp(6)) moved = true
           if (moved) {
-            layout.x = startX + dx
-            layout.y = startY + dy
-            posX = layout.x
-            posY = layout.y
+            showCloseTarget()
+            var x = startX + dx
+            var y = startY + dy
+            val over = overCloseTarget(x, y, view.height)
+            setCloseTargetActive(over)
+            if (over) {
+              // Snap onto the X like a Messenger bubble.
+              x = 0
+              y = closeCenterY() - view.height / 2
+            }
+            layout.x = x
+            layout.y = y
+            posX = x
+            posY = y
             windowManager?.updateViewLayout(view, layout)
           }
         }
-        MotionEvent.ACTION_UP -> {
-          if (moved && layout.y <= dp(8)) {
-            // Dragged all the way to the top edge: hide until Recupero is opened again or "Show overlay" is tapped.
+        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+          val dropped = moved && overCloseTarget(layout.x, layout.y, view.height)
+          hideCloseTarget()
+          if (dropped) {
+            // Dropped on the X: hide until Recupero is opened again or "Show overlay" is tapped. It comes back where it was.
+            posX = startX
+            posY = startY
+            layout.x = startX
+            layout.y = startY
             dismissed = true
             handler.post {
               render()
               refreshNotification()
             }
-          } else if (!moved) {
+          } else if (!moved && event.action == MotionEvent.ACTION_UP) {
             packageManager.getLaunchIntentForPackage(packageName)?.let {
               it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
               startActivity(it)
@@ -519,6 +535,73 @@ class TimerOverlayService : Service() {
       }
       return true
     }
+  }
+
+  private var closeView: TextView? = null
+  private var closeShown = false
+
+  private fun screenWidth(): Int = resources.displayMetrics.widthPixels
+  private fun screenHeight(): Int = resources.displayMetrics.heightPixels
+  /** The X sits at the bottom centre, 64 dp above the edge. */
+  private fun closeCenterY(): Int = screenHeight() - dp(64) - dp(28)
+
+  /** True when the card's centre is within reach of the X. `x` is the card's offset from the screen centre. */
+  private fun overCloseTarget(x: Int, y: Int, height: Int): Boolean {
+    val dx = x.toDouble()
+    val dy = (y + height / 2 - closeCenterY()).toDouble()
+    return Math.hypot(dx, dy) < dp(80)
+  }
+
+  private fun showCloseTarget() {
+    if (closeShown) return
+    val view = closeView ?: TextView(this).also {
+      it.text = "✕"
+      it.gravity = Gravity.CENTER
+      it.setTextColor(Color.WHITE)
+      it.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
+      closeView = it
+    }
+    setCloseTargetActive(false)
+    val layout = WindowManager.LayoutParams(
+      dp(56),
+      dp(56),
+      WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+        WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+      PixelFormat.TRANSLUCENT,
+    )
+    layout.gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+    layout.y = dp(64)
+    try {
+      windowManager?.addView(view, layout)
+      closeShown = true
+    } catch (error: Exception) {
+      Log.w(TAG, "close target refused", error)
+    }
+  }
+
+  private fun setCloseTargetActive(active: Boolean) {
+    val view = closeView ?: return
+    val background = GradientDrawable()
+    background.shape = GradientDrawable.OVAL
+    background.setColor(if (active) Color.parseColor("#EEDC2626") else Color.parseColor("#CC222222"))
+    background.setStroke(dp(2), if (active) Color.WHITE else Color.parseColor("#88FFFFFF"))
+    view.background = background
+    view.scaleX = if (active) 1.25f else 1f
+    view.scaleY = if (active) 1.25f else 1f
+  }
+
+  private fun hideCloseTarget() {
+    val view = closeView
+    if (view != null && closeShown) {
+      try {
+        windowManager?.removeView(view)
+      } catch (error: Exception) {
+        Log.w(TAG, "remove close target failed", error)
+      }
+    }
+    closeShown = false
   }
 
   private fun detach() {
@@ -577,6 +660,7 @@ class TimerOverlayService : Service() {
 
   override fun onDestroy() {
     handler.removeCallbacks(tick)
+    hideCloseTarget()
     detach()
     container = null
     bubbles.clear()
