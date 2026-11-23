@@ -27,7 +27,8 @@ export function TaskSelectionBar({ count, onCancel, onEdit, onMove }: TaskSelect
 
   return (
     <>
-      <View style={[styles.bar, { paddingBottom: 12 + insets.bottom }]}>
+      {/* The bottom nav sits below this screen and already pads for the system inset. */}
+      <View style={styles.bar}>
         <Button
           variant="ghost"
           size="sm"
@@ -102,7 +103,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingVertical: 12,
     backgroundColor: Colors.bg.card,
     borderTopWidth: 1,
     borderTopColor: Colors.border.default,
