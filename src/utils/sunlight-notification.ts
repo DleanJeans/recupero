@@ -1,7 +1,8 @@
 import { SunlightNotification } from '../../modules/sunlight-notification';
 import { useCuesStore } from '../store/cues-store';
+import { useSettingsStore } from '../store/settings-store';
 import { useSunlightStore } from '../store/sunlight-store';
-import { startOfLocalDay } from './sun-utils';
+import { startOfOperationalDay } from './sun-utils';
 import { addStayGapRanges, backdateOngoingOutside, getPlaceStays } from './sunlight-timeline-utils';
 import {
   calibrateWeather,
@@ -56,7 +57,7 @@ export function syncSunlightNotification(): void {
     );
     const point = getSunReferencePoint(samples, places);
     const today = getSunlightDay(
-      startOfLocalDay(now),
+      startOfOperationalDay(now, useSettingsStore.getState().dayCutoffHour),
       subtractSunlightRanges(addStayGapRanges(presence.ranges, stays), [
         ...deletedRanges,
         ...getPausedRanges(pauses, pause),

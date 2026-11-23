@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-23',
     items: [
+      "Sunlight now follows your day cut-off setting: before the cut-off hour (4 AM for you) the bar and notification still show yesterday's sunlight instead of restarting at 0.",
       {
         text: 'The Hunger screen has a new Calorie balance card: it adds up the kcal of your food logs and compares them with the kcal you burn (estimated from your age, weight, height and activity, which you type once; you can also type your own daily burn). Switch between 1d, 7d and 30d to see a deficit or surplus per day and the total. Days with no food logged are left out, and today only counts the part of the day that has passed.',
         screen: 'Need',

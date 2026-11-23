@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AppState } from 'react-native';
 import { useCuesStore } from '../store/cues-store';
+import { useSettingsStore } from '../store/settings-store';
 import { useSunlightStore } from '../store/sunlight-store';
 import type {
   SunlightDay,
@@ -11,7 +12,7 @@ import type {
 } from '../types/sunlight';
 import type { GeoPoint } from '../utils/geofence-utils';
 import { hasBackgroundLocationPermission } from '../utils/reminder-geofencing';
-import { addLocalDays, getSunTimes, startOfLocalDay } from '../utils/sun-utils';
+import { addLocalDays, getSunTimes, startOfOperationalDay } from '../utils/sun-utils';
 import { addStayGapRanges, backdateOngoingOutside, getPlaceStays } from '../utils/sunlight-timeline-utils';
 import {
   calibrateWeather,
@@ -107,6 +108,7 @@ export function useSunlight(): SunlightSnapshot {
   const eyeLevelFactors = useSunlightStore(state => state.eyeLevelFactors);
   const trackingSince = useSunlightStore(state => state.trackingSince);
   const locationAllowed = useBackgroundLocationAllowed();
+  const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -130,8 +132,10 @@ export function useSunlight(): SunlightSnapshot {
       ...deletedRanges,
       ...getPausedRanges(pauses, pause),
     ]);
-    const days = getSunlightDays(ranges, point, weather, now, undefined, manualSessions);
-    const tomorrow = point ? getSunTimes(addLocalDays(startOfLocalDay(now), 1), point.lat, point.lng) : undefined;
+    const days = getSunlightDays(ranges, point, weather, now, undefined, manualSessions, dayCutoffHour);
+    const tomorrow = point
+      ? getSunTimes(addLocalDays(startOfOperationalDay(now, dayCutoffHour), 1), point.lat, point.lng)
+      : undefined;
     const manualSession = getRunningManualSession(manualSessions, now);
     const autoStatus = getSunlightStatus(
       presence.insidePlaceIds,
@@ -196,6 +200,7 @@ export function useSunlight(): SunlightSnapshot {
     rawWeather,
     luxCalibrations,
     eyeLevelFactors,
+    dayCutoffHour,
     tick,
   ]);
 }

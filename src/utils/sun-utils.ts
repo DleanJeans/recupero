@@ -66,6 +66,13 @@ export function startOfLocalDay(ts: number): number {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 }
 
+/** Local midnight of the app's current day: before the day cut-off hour (e.g. 4 AM) it is still yesterday. */
+export function startOfOperationalDay(ts: number, dayCutoffHour = 0): number {
+  const date = new Date(ts);
+  const offset = date.getHours() < dayCutoffHour ? 1 : 0;
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() - offset).getTime();
+}
+
 /** Local midnight `days` days after the one at `dayStart` (DST-safe). */
 export function addLocalDays(dayStart: number, days: number): number {
   const date = new Date(dayStart);

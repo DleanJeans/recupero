@@ -14,7 +14,7 @@ import type {
 } from '../types/sunlight';
 import { distanceMeters, type GeoPoint } from './geofence-utils';
 import type { ReminderGeofenceRegion } from './reminder-utils';
-import { addLocalDays, getDaylightRange, getSunTimes, startOfLocalDay } from './sun-utils';
+import { addLocalDays, getDaylightRange, getSunTimes, startOfLocalDay, startOfOperationalDay } from './sun-utils';
 
 const MS_PER_MINUTE = 60_000;
 const MS_PER_HOUR = 3_600_000;
@@ -613,8 +613,9 @@ export function getSunlightDays(
   now: number,
   count = SUNLIGHT_HISTORY_DAYS,
   manualSessions: SunlightManualSession[] = [],
+  dayCutoffHour = 0,
 ): SunlightDay[] {
-  const today = startOfLocalDay(now);
+  const today = startOfOperationalDay(now, dayCutoffHour);
   return Array.from({ length: count }, (_, index) =>
     getSunlightDay(addLocalDays(today, -index), outdoorRanges, point, weather, now, manualSessions),
   );
