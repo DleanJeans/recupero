@@ -35,6 +35,12 @@ export interface PatchNotesDay {
  */
 export const PATCH_NOTES: PatchNotesDay[] = [
   {
+    date: '2026-11-23',
+    items: [
+      'The task editor has a new Icon row. Tap it to pick an emoji, Mix or image icon with the same icon editor as behaviours; the icon shows on the task in the list.',
+    ],
+  },
+  {
     date: '2026-11-22',
     items: [
       {

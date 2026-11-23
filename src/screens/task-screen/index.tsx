@@ -78,6 +78,7 @@ export function TaskScreen() {
   const [placeDwellMin, setPlaceDwellMin] = useState(DEFAULT_PLACE_DWELL_MIN);
   const [selectedApp, setSelectedApp] = useState<LaunchableApp>();
   const [timed, setTimed] = useState(false);
+  const [icon, setIcon] = useState('');
   const [composerOpen, setComposerOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | undefined>();
   const [menuTaskId, setMenuTaskId] = useState<string | undefined>();
@@ -187,6 +188,7 @@ export function TaskScreen() {
     setSelectedBehaviorId(undefined);
     setSelectedApp(undefined);
     setTimed(false);
+    setIcon('');
     setSelectedPlaceId(undefined);
     setPlaceDwellMin(DEFAULT_PLACE_DWELL_MIN);
     setEditingTaskId(undefined);
@@ -218,6 +220,7 @@ export function TaskScreen() {
       appPackage: app?.packageName,
       appLabel: app?.label,
       timed: isTimed ? (true as const) : undefined,
+      icon: icon || undefined,
     };
 
     if (editingTaskId) {
@@ -277,6 +280,7 @@ export function TaskScreen() {
       task.appPackage ? { packageName: task.appPackage, label: task.appLabel ?? task.appPackage } : undefined,
     );
     setTimed(task.timed === true);
+    setIcon(task.icon ?? '');
     setPlaceDwellMin(getPlaceDwellMin(task));
     setEditingTaskId(task.id);
     setComposerOpen(true);
@@ -534,6 +538,8 @@ export function TaskScreen() {
           onPlaceDwellChange={setPlaceDwellMin}
           timed={timed}
           onTimedChange={setTimed}
+          icon={icon}
+          onIconChange={setIcon}
           onSubmit={handleSubmitTask}
           onCancel={closeComposer}
         />

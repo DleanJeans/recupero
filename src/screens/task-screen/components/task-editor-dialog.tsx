@@ -8,6 +8,7 @@ import { AppPickerModal } from '../../../components/app-picker-modal';
 import { BehaviorIcon } from '../../../components/behavior-icon';
 import { Button } from '../../../components/button';
 import { CheckboxRow } from '../../../components/checkbox-row';
+import { IconPickerSheet } from '../../../components/icon-picker/icon-picker-sheet';
 import { Text, TextInput } from '../../../components/text';
 import { useKeyboardVisible } from '../../../hooks/use-keyboard-visible';
 import { useBehaviorStore } from '../../../store/behavior-store';
@@ -41,11 +42,13 @@ interface TaskEditorDialogProps {
   onPlaceDwellChange: (minutes: number) => void;
   timed: boolean;
   onTimedChange: (timed: boolean) => void;
+  icon: string;
+  onIconChange: (icon: string) => void;
   onSubmit: () => void;
   onCancel: () => void;
 }
 
-type Picker = 'behavior' | 'app' | 'place';
+type Picker = 'behavior' | 'app' | 'place' | 'icon';
 
 /** Add / edit a task in a dialog over the Tasks screen. Centred; docks to the top only while the keyboard is up. */
 export function TaskEditorDialog({
@@ -66,6 +69,8 @@ export function TaskEditorDialog({
   onPlaceDwellChange,
   timed,
   onTimedChange,
+  icon,
+  onIconChange,
   onSubmit,
   onCancel,
 }: TaskEditorDialogProps) {
@@ -125,6 +130,26 @@ export function TaskEditorDialog({
           />
 
           <View style={styles.rows}>
+            <AttachRow
+              icon={
+                icon ? (
+                  <AppIcon
+                    value={icon}
+                    size={18}
+                  />
+                ) : (
+                  <Ionicons
+                    name="happy-outline"
+                    size={18}
+                    color={Colors.text.muted}
+                  />
+                )
+              }
+              label="Icon"
+              value={icon ? 'Custom' : undefined}
+              onPress={() => setPicker('icon')}
+              onClear={icon ? () => onIconChange('') : undefined}
+            />
             <AttachRow
               icon={
                 selectedBehavior ? (
@@ -259,6 +284,14 @@ export function TaskEditorDialog({
           setPicker(undefined);
         }}
       />
+      {picker === 'icon' && (
+        <IconPickerSheet
+          value={icon}
+          nameHint={title || selectedBehavior?.name}
+          onChange={onIconChange}
+          onClose={() => setPicker(undefined)}
+        />
+      )}
       {picker === 'place' && (
         <TaskPlaceScreen
           places={places}

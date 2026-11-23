@@ -18,6 +18,8 @@ export interface TaskEntry {
   appPackage?: string;
   /** App name, kept so it shows even if the app is uninstalled. */
   appLabel?: string;
+  /** Icon picked in the task editor (emoji, mix, stack or image, see icon-utils). Shown on the task row. */
+  icon?: string;
   /** "Track duration": the task shows a ▶ timer button, and ticking it while that timer runs logs the time. */
   timed?: true;
   /** Tasks tab this task lives on. Unset means derived, see getTaskList. */
@@ -42,5 +44,6 @@ export interface AddTaskInput {
   appPackage?: string;
   appLabel?: string;
   timed?: true;
+  icon?: string;
   list?: TaskList;
 }

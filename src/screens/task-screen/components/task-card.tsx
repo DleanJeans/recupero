@@ -4,6 +4,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
+import { AppIcon } from '../../../components/app-icon';
 import { BehaviorIcon } from '../../../components/behavior-icon';
 import { Button } from '../../../components/button';
 import { Text } from '../../../components/text';
@@ -93,7 +94,12 @@ function TaskCardComponent({
         />
         <View style={styles.taskTextStack}>
           <View style={styles.taskTitleRow}>
-            {behavior ? (
+            {task.icon ? (
+              <AppIcon
+                value={task.icon}
+                size={18}
+              />
+            ) : behavior ? (
               <BehaviorIcon
                 behavior={behavior}
                 size={18}

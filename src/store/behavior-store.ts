@@ -176,6 +176,7 @@ interface BehaviorStore {
         | 'appPackage'
         | 'appLabel'
         | 'timed'
+        | 'icon'
         | 'list'
       >
     >,
@@ -552,6 +553,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               appPackage: input.appPackage,
               appLabel: input.appLabel,
               timed: input.timed,
+              icon: input.icon,
               list: input.list,
               completedDates: [],
               completedAtByDate: undefined,
