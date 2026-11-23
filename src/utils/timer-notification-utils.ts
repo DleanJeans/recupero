@@ -55,7 +55,7 @@ export function getTimerStoppedContent(
   stoppedAt: number,
 ): { title: string; body: string } {
   return {
-    title: `⏹ ${behaviorName}: ${formatElapsed(stoppedAt - startedAt)}`,
+    title: `${behaviorName}: ${formatElapsed(stoppedAt - startedAt)}`,
     body: 'Timer stopped. Tap to log it.',
   };
 }

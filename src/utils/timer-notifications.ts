@@ -17,7 +17,7 @@ let categoryPromise: Promise<unknown> | null = null;
 function ensureRunningCategory(): Promise<unknown> {
   if (!categoryPromise) {
     categoryPromise = Notifications.setNotificationCategoryAsync(TIMER_RUNNING_CATEGORY, [
-      { identifier: TIMER_STOP_ACTION_ID, buttonTitle: '⏹ Stop', options: { opensAppToForeground: false } },
+      { identifier: TIMER_STOP_ACTION_ID, buttonTitle: 'Stop', options: { opensAppToForeground: false } },
     ]).catch(error => {
       categoryPromise = null;
       throw error;

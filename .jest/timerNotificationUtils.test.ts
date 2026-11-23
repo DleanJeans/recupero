@@ -27,7 +27,7 @@ describe('timer notification copy', () => {
     expect(formatElapsed(25 * 60_000)).toBe('25 min');
     expect(formatElapsed(60 * 60_000)).toBe('1 h');
     expect(formatElapsed(95 * 60_000)).toBe('1 h 35 min');
-    expect(getTimerStoppedContent('German', 0, 25 * 60_000).title).toBe('⏹ German: 25 min');
+    expect(getTimerStoppedContent('German', 0, 25 * 60_000).title).toBe('German: 25 min');
   });
 });
 
