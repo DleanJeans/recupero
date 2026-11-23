@@ -12,7 +12,7 @@ let categoryPromise: Promise<unknown> | null = null;
 function ensureCategory(): Promise<unknown> {
   if (!categoryPromise) {
     categoryPromise = Notifications.setNotificationCategoryAsync(OUTSIDE_MODE_CATEGORY, [
-      { identifier: OUTSIDE_MODE_STOP_ACTION_ID, buttonTitle: '⏹ Stop', options: { opensAppToForeground: false } },
+      { identifier: OUTSIDE_MODE_STOP_ACTION_ID, buttonTitle: 'Stop', options: { opensAppToForeground: false } },
     ]).catch(error => {
       categoryPromise = null;
       throw error;
