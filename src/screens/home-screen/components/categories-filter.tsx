@@ -2,8 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useMemo, useRef, useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { PanResponder, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { AppIcon } from '../../../components/app-icon';
 import { ToggleNamesButton } from '../../../components/category-picker/toggle-names-button';
@@ -22,7 +21,7 @@ import { computeBehaviorCounts } from '../../../utils/behavior-counts';
 import { Colors } from '../../../utils/colors';
 
 const CATEGORY_GRID_ANIMATION_DURATION = 240;
-const SWIPE_ACTIVATE_DISTANCE = 18;
+const SWIPE_ACTIVATE_DISTANCE = 8;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface Props {
@@ -44,7 +43,6 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
   const collapsedGridHeight = useSharedValue(0);
   const expandedGridHeight = useSharedValue(0);
   const expandedRef = useRef(false);
-  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const transitionIdRef = useRef(0);
   const animatedGridStyle = useAnimatedStyle(() => ({
     height: gridHeight.value || undefined,
@@ -137,38 +135,21 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
     });
   };
 
-  // Swipe down on the chips = Show more, swipe up = Show less. Activates only for a mostly-vertical move in the
-  // direction that changes state, so horizontal moves and the parent's vertical scroll keep working.
-  const swipeGesture = Gesture.Pan()
-    .runOnJS(true)
-    .manualActivation(true)
-    .onTouchesDown((event, manager) => {
-      swipeStartRef.current = event.allTouches[0]
-        ? { x: event.allTouches[0].absoluteX, y: event.allTouches[0].absoluteY }
-        : null;
-      void manager;
-    })
-    .onTouchesMove((event, manager) => {
-      const start = swipeStartRef.current;
-      const touch = event.allTouches[0];
-      if (!start || !touch) return;
-      const dx = touch.absoluteX - start.x;
-      const dy = touch.absoluteY - start.y;
-      if (Math.abs(dx) > SWIPE_ACTIVATE_DISTANCE && Math.abs(dx) > Math.abs(dy)) {
-        manager.fail();
-        return;
-      }
-      if (Math.abs(dy) < SWIPE_ACTIVATE_DISTANCE || Math.abs(dy) < Math.abs(dx) * 2) return;
-      const wantsExpand = dy > 0;
-      if (canExpand && wantsExpand !== expandedRef.current) {
-        manager.activate();
-      } else {
-        manager.fail();
-      }
-    })
-    .onStart(() => {
-      handleToggleExpanded();
-    });
+  // Swipe down on the chips = Show more, swipe up = Show less. Captures only a mostly-vertical move in the
+  // direction that changes state, so taps, long-presses and the chips' own touches keep working.
+  const swipeStateRef = useRef({ canExpand, toggle: handleToggleExpanded });
+  swipeStateRef.current = { canExpand, toggle: handleToggleExpanded };
+  const swipeResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponderCapture: (_event, gesture) => {
+        const { dx, dy } = gesture;
+        if (Math.abs(dy) < SWIPE_ACTIVATE_DISTANCE || Math.abs(dy) < Math.abs(dx) * 1.5) return false;
+        return swipeStateRef.current.canExpand && dy > 0 !== expandedRef.current;
+      },
+      onPanResponderGrant: () => swipeStateRef.current.toggle(),
+      onPanResponderTerminationRequest: () => false,
+    }),
+  ).current;
 
   return (
     <View style={styles.container}>
@@ -185,60 +166,61 @@ export const CategoriesFilter = React.memo(function CategoriesFilter({ selectedC
         )}
       </View>
 
-      <GestureDetector gesture={swipeGesture}>
-        <Animated.View style={[styles.gridViewport, animatedGridStyle]}>
-          <View
-            onLayout={(event: LayoutChangeEvent) => {
-              const { height, width } = event.nativeEvent.layout;
-              setGridWidth(width);
+      <Animated.View
+        {...swipeResponder.panHandlers}
+        style={[styles.gridViewport, animatedGridStyle]}
+      >
+        <View
+          onLayout={(event: LayoutChangeEvent) => {
+            const { height, width } = event.nativeEvent.layout;
+            setGridWidth(width);
 
-              const measuredHeight = renderExpanded ? expandedGridHeight : collapsedGridHeight;
-              measuredHeight.value = height;
-              if (gridHeight.value === 0) {
-                gridHeight.value = height;
-                gridAnimationTarget.value = height;
-              } else if (gridAnimationTarget.value !== height) {
-                gridAnimationTarget.value = height;
-                gridHeight.value = withTiming(height, { duration: CATEGORY_GRID_ANIMATION_DURATION });
-              }
-            }}
-            style={styles.grid}
-          >
+            const measuredHeight = renderExpanded ? expandedGridHeight : collapsedGridHeight;
+            measuredHeight.value = height;
+            if (gridHeight.value === 0) {
+              gridHeight.value = height;
+              gridAnimationTarget.value = height;
+            } else if (gridAnimationTarget.value !== height) {
+              gridAnimationTarget.value = height;
+              gridHeight.value = withTiming(height, { duration: CATEGORY_GRID_ANIMATION_DURATION });
+            }
+          }}
+          style={styles.grid}
+        >
+          <CategoryChip
+            label="All"
+            count={allCount}
+            active={selectedCategoryId === null}
+            iconOnly={hideNames}
+            onLayout={event => handleChipLayout('all', event)}
+            onPress={() => onSelectCategory(null)}
+          />
+          {visibleCategories.map(category => (
             <CategoryChip
-              label="All"
-              count={allCount}
-              active={selectedCategoryId === null}
+              key={category.id}
+              icon={category.emoji}
+              label={category.name}
+              count={behaviorCounts[category.id] ?? 0}
+              active={selectedCategoryId === category.id}
               iconOnly={hideNames}
-              onLayout={event => handleChipLayout('all', event)}
-              onPress={() => onSelectCategory(null)}
+              onLayout={event => handleChipLayout(category.id, event)}
+              onPress={() => onSelectCategory(category.id)}
+              onLongPress={() => handleCategoryLongPress(category)}
             />
-            {visibleCategories.map(category => (
-              <CategoryChip
-                key={category.id}
-                icon={category.emoji}
-                label={category.name}
-                count={behaviorCounts[category.id] ?? 0}
-                active={selectedCategoryId === category.id}
-                iconOnly={hideNames}
-                onLayout={event => handleChipLayout(category.id, event)}
-                onPress={() => onSelectCategory(category.id)}
-                onLongPress={() => handleCategoryLongPress(category)}
-              />
-            ))}
-            {showArchivedChip && (
-              <CategoryChip
-                icon="🗄️"
-                label={ARCHIVED_FILTER_LABEL}
-                count={archivedCount}
-                active={archivedSelected}
-                iconOnly={hideNames}
-                dashed
-                onPress={() => onSelectCategory(archivedSelected ? null : ARCHIVED_CATEGORY_FILTER_ID)}
-              />
-            )}
-          </View>
-        </Animated.View>
-      </GestureDetector>
+          ))}
+          {showArchivedChip && (
+            <CategoryChip
+              icon="🗄️"
+              label={ARCHIVED_FILTER_LABEL}
+              count={archivedCount}
+              active={archivedSelected}
+              iconOnly={hideNames}
+              dashed
+              onPress={() => onSelectCategory(archivedSelected ? null : ARCHIVED_CATEGORY_FILTER_ID)}
+            />
+          )}
+        </View>
+      </Animated.View>
     </View>
   );
 });
