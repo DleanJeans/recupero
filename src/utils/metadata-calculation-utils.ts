@@ -28,6 +28,10 @@ export function parseDecimalInput(value: string): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+export function isLinkMetadataField(field: MetadataField): boolean {
+  return field.type != null && field.type !== 'number';
+}
+
 export function getMetadataFieldCalculation(field: MetadataField): MetadataFieldCalculation {
   return field.calculation ?? 'manual';
 }
@@ -36,8 +40,9 @@ export function getAmountMetadataFields(fields: MetadataField[]): MetadataField[
   return fields.filter(field => getMetadataFieldCalculation(field) === 'amount');
 }
 
+/** Number inputs the user types. Task/behavior/person link fields are left out (see metadata-link-utils). */
 export function getManualMetadataFields(fields: MetadataField[]): MetadataField[] {
-  return fields.filter(field => getMetadataFieldCalculation(field) === 'manual');
+  return fields.filter(field => !isLinkMetadataField(field) && getMetadataFieldCalculation(field) === 'manual');
 }
 
 export function getCalculatedMetadataFields(fields: MetadataField[]): MetadataField[] {
@@ -324,7 +329,13 @@ export function buildLogMetadata({
     const value = values[field.key];
     return value === undefined ? undefined : parseDecimalInput(value);
   };
-  const inputFields = amountField ? [amountField, ...getManualMetadataFields(fields)] : fields;
+  for (const field of fields) {
+    const linked = isLinkMetadataField(field) ? values[field.key]?.trim() : undefined;
+    if (linked) metadata[field.key] = linked;
+  }
+  const inputFields = amountField
+    ? [amountField, ...getManualMetadataFields(fields)]
+    : fields.filter(field => !isLinkMetadataField(field));
   for (const field of inputFields) {
     const parsed = parse(field);
     if (parsed != null) metadata[field.key] = parsed;

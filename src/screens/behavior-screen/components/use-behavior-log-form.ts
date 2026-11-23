@@ -38,10 +38,12 @@ import {
   getInitialLogMetadataValues,
   getManualMetadataFields,
   getSelectedAmountMetadataField,
+  isLinkMetadataField,
   NO_AMOUNT_FIELD_KEY,
   parseDecimalInput,
   type StackedLog,
 } from '../../../utils/metadata-calculation-utils';
+import { getFirstLinkField } from '../../../utils/metadata-link-utils';
 import { getMoneyRewardForLog, getStarMoneyMultiplierForLog } from '../../../utils/money-utils';
 import { formatDuration } from '../../../utils/time-utils';
 import { getLogXp, XP_PER_LOG } from '../../../utils/xp-utils';
@@ -54,6 +56,8 @@ export interface BehaviorLogFormProps {
   /** Prefill from a log saved for later; logging it removes it. */
   pendingLogId?: string;
   initialNotes?: string;
+  /** Task the log is for (e.g. from the Tasks timer): fills the category's Task field. */
+  initialTaskId?: string;
   initialCues?: CueRef[];
   /** Opened from a checklist row: the log joins today's checklist run and ticks the item. */
   checklistItem?: { checklistId: string; itemId: string };
@@ -68,6 +72,7 @@ export function useBehaviorLogForm({
   editLogId,
   pendingLogId,
   initialNotes,
+  initialTaskId,
   initialCues,
   checklistItem,
   timerStartTimestamp,
@@ -129,7 +134,12 @@ export function useBehaviorLogForm({
   const [startSeconds, setStartSeconds] = useState(initialStartSeconds);
   const [endSeconds, setEndSeconds] = useState(initialEndSeconds);
   const notesRef = useRef<import('react-native').TextInput>(null);
-  const [notes, setNotes] = useState(String(existingLog?.metadata?.notes ?? pendingLog?.notes ?? initialNotes ?? ''));
+  const taskField = getFirstLinkField(category?.metadataFields, 'task');
+  // With a Task field the task is linked there, so its name does not also go into the notes.
+  const linkedInitialTaskId = taskField && initialTaskId ? initialTaskId : undefined;
+  const [notes, setNotes] = useState(
+    String(existingLog?.metadata?.notes ?? pendingLog?.notes ?? (linkedInitialTaskId ? '' : (initialNotes ?? ''))),
+  );
   const [selectedCues, setSelectedCues] = useState<CueRef[]>(() =>
     existingLog ? (existingLog.cues ?? []) : (pendingLog?.cues ?? initialCues ?? []),
   );
@@ -169,7 +179,10 @@ export function useBehaviorLogForm({
   /** "None" amount unit: hide the amount and per-100 fields, which can't be filled or calculated without an amount. */
   const amountOptedOut = behavior.metadataAmountFieldKey === NO_AMOUNT_FIELD_KEY;
   const visibleMetadataFields = useMemo(
-    () => (amountOptedOut ? getManualMetadataFields(metadataFields) : metadataFields),
+    () =>
+      amountOptedOut
+        ? metadataFields.filter(field => isLinkMetadataField(field) || getManualMetadataFields([field]).length > 0)
+        : metadataFields,
     [amountOptedOut, metadataFields],
   );
   const calculatedMetadataFields = useMemo(
@@ -187,6 +200,7 @@ export function useBehaviorLogForm({
       Object.assign(values, pendingLog.metadataValues);
     } else {
       Object.assign(values, getInitialLogMetadataValues(metadataFields, amountField, behavior.defaultMetadata));
+      if (taskField && linkedInitialTaskId) values[taskField.key] = linkedInitialTaskId;
     }
     return values;
   });

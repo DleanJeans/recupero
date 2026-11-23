@@ -27,6 +27,7 @@ export function BehaviorScreen() {
     behaviorId,
     initialMode,
     initialNotes,
+    initialTaskId,
     initialCues,
     checklistItem,
     logId,
@@ -199,6 +200,7 @@ export function BehaviorScreen() {
           editLogId={editLogId}
           pendingLogId={pendingLogId}
           initialNotes={initialNotes}
+          initialTaskId={initialTaskId}
           initialCues={initialCues}
           checklistItem={checklistItem}
           timerStartTimestamp={timerStartTimestamp}

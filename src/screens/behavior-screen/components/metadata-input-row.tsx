@@ -6,6 +6,8 @@ import type { MetadataField } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 import type { DailyGoalProgress } from '../../../utils/metadata-calculation-utils';
 import { evaluateDecimalInput, sanitizeDecimalInput } from '../../../utils/metadata-calculation-utils';
+import { getFieldLinkType } from '../../../utils/metadata-link-utils';
+import { LinkMetadataRow } from './link-metadata-row';
 
 interface MetadataInputRowProps {
   field: MetadataField;
@@ -18,6 +20,8 @@ interface MetadataInputRowProps {
   /** When set and the field has a `dailyGoal`, render a small progress bar
    *  under the input showing today's progress and the after-log delta. */
   progress?: DailyGoalProgress | null;
+  /** Behavior the log is for; used by Behavior link fields. */
+  behaviorId?: string;
 }
 
 export function MetadataInputRow({
@@ -29,7 +33,22 @@ export function MetadataInputRow({
   onBlur,
   progress,
   style,
+  behaviorId,
 }: MetadataInputRowProps) {
+  const linkType = getFieldLinkType(field);
+  if (linkType) {
+    return (
+      <LinkMetadataRow
+        field={field}
+        type={linkType}
+        value={value}
+        onChange={onChange}
+        onFocus={onFocus}
+        behaviorId={behaviorId}
+        style={style}
+      />
+    );
+  }
   return (
     <View
       key={field.key}

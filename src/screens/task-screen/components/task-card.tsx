@@ -70,7 +70,7 @@ function TaskCardComponent({
   const handlePlay = () => {
     if (!behavior || !canTrack) return;
     const opened = openAppPackage ? launchApp(openAppPackage) : false;
-    startTimer(behavior.id, Date.now(), task.title, opened ? openAppPackage : undefined);
+    startTimer(behavior.id, Date.now(), task.title, opened ? openAppPackage : undefined, task.id);
     navigation.navigate('Timer');
   };
 

@@ -169,6 +169,7 @@ export function BehaviorLogForm({ form }: Props) {
                   onFocus={handleCollapseTime}
                   onBlur={handleInputBlur}
                   progress={progressByField[field.key]}
+                  behaviorId={behavior.id}
                   style={itemStyle}
                 />
               );

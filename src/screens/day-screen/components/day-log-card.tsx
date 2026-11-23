@@ -3,11 +3,13 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { BehaviorIcon } from '../../../components/behavior-icon';
 import { StarRow } from '../../../components/star-row';
 import { Text } from '../../../components/text';
+import { useLinkTargets } from '../../../hooks/use-link-targets';
 import type { Category } from '../../../types/behavior';
 import type { DayLogEntry } from '../../../utils/behavior-utils';
 import { Colors } from '../../../utils/colors';
 import { getLogDurationMs, hasTimedLogRange } from '../../../utils/log-utils';
 import { formatMetadataValueUnit } from '../../../utils/metadata-calculation-utils';
+import { getFieldLinkType, resolveLinkTarget } from '../../../utils/metadata-link-utils';
 import { roundTo2 } from '../../../utils/number-utils';
 import { formatDuration, formatTime, formatTimeRange } from '../../../utils/time-utils';
 
@@ -22,14 +24,20 @@ export function DayLogCard({ entry, selectedDate, categories, onEditLog }: DayLo
   const { behavior, log } = entry;
   const category = categories.find(item => item.id === behavior.categoryId);
   const metadataFields = category?.metadataFields ?? [];
+  const targets = useLinkTargets();
   const metadataRows = metadataFields
-    .filter(field => field.key !== 'notes' && log.metadata?.[field.key] != null)
+    .filter(field => field.key !== 'notes' && log.metadata?.[field.key] != null && log.metadata[field.key] !== '')
     .map(field => {
       const value = log.metadata?.[field.key];
+      const linkType = getFieldLinkType(field);
       return {
         key: field.key,
         label: field.label,
-        value: typeof value === 'number' ? roundTo2(value) : String(value),
+        value: linkType
+          ? (resolveLinkTarget(linkType, value, targets)?.label ?? `Deleted ${linkType}`)
+          : typeof value === 'number'
+            ? roundTo2(value)
+            : String(value),
         unit: formatMetadataValueUnit(field),
       };
     });

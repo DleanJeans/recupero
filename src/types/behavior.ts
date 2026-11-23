@@ -5,8 +5,13 @@ export type MetadataFieldCalculation = 'manual' | 'amount' | 'per100';
 /** How a field shows on log cards. Undefined means 'text'. */
 export type MetadataFieldListDisplay = 'big' | 'bar' | 'text' | 'hidden';
 
+/** What a metadata field holds. Undefined means 'number'. The other types hold the id of a task, behavior or person. */
+export type MetadataFieldType = 'number' | 'task' | 'behavior' | 'person';
+
 export interface MetadataField {
   key: string;
+  /** Undefined = a number. Link types store the linked item's id (as text) in the log's metadata. */
+  type?: MetadataFieldType;
   label: string;
   unit?: string;
   calculation?: MetadataFieldCalculation;

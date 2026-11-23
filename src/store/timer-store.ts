@@ -12,6 +12,8 @@ export interface TimerSession {
   pausedAt: number | undefined;
   /** App opened with this timer. Leaving that app stops the timer and logs it (see useAppTimerAutoStop). */
   appPackage?: string;
+  /** Task this timer is for. Logged into the category's Task field when there is one, else its title goes in the notes. */
+  taskId?: string;
 }
 
 interface TimerStore {
@@ -43,7 +45,9 @@ interface TimerStore {
   pausedAt: number | undefined;
   /** App opened with the current timer, if any. */
   appPackage: string | undefined;
-  start: (behaviorId: string, timestamp?: number, initialNotes?: string, appPackage?: string) => void;
+  /** Task the current timer is for, if any. */
+  taskId: string | undefined;
+  start: (behaviorId: string, timestamp?: number, initialNotes?: string, appPackage?: string, taskId?: string) => void;
   setLockedBehavior: (behaviorId: string) => void;
   setStart: (timestamp: number) => void;
   /** Moves the start of the running segment (keeps a pending stop). */
@@ -66,6 +70,7 @@ const EMPTY_CURRENT = {
   pendingLogBehaviorLogCount: undefined,
   pausedAt: undefined,
   appPackage: undefined,
+  taskId: undefined,
 };
 
 /** A timer that has started or is paused; a behavior merely picked on the Timer screen is not worth keeping. */
@@ -83,6 +88,7 @@ function currentSession(state: TimerStore): TimerSession | undefined {
     pendingLogBehaviorLogCount: state.pendingLogBehaviorLogCount,
     pausedAt: state.pausedAt,
     appPackage: state.appPackage,
+    taskId: state.taskId,
   };
 }
 
@@ -128,7 +134,8 @@ export const useTimerStore = create<TimerStore>()(
       pendingLogBehaviorLogCount: undefined,
       pausedAt: undefined,
       appPackage: undefined,
-      start: (behaviorId, timestamp = Date.now(), initialNotes, appPackage) => {
+      taskId: undefined,
+      start: (behaviorId, timestamp = Date.now(), initialNotes, appPackage, taskId) => {
         const state = get();
         // Already open in the background: bring it forward instead of starting it twice.
         if (state.parked.some(session => session.lockedBehaviorId === behaviorId)) {
@@ -141,6 +148,7 @@ export const useTimerStore = create<TimerStore>()(
           lockedBehaviorId: behaviorId,
           initialNotes,
           appPackage,
+          taskId,
           startTimestamp: timestamp,
           stopTimestamp: undefined,
           pendingLogBehaviorLogCount: undefined,
@@ -180,6 +188,7 @@ export const useTimerStore = create<TimerStore>()(
           pendingLogBehaviorLogCount: undefined,
           pausedAt: undefined,
           appPackage: undefined,
+          taskId: undefined,
         }),
     }),
     {

@@ -11,8 +11,8 @@ import { useSettingsStore } from '../../store/settings-store';
 import { useTimerStore } from '../../store/timer-store';
 import type { RootStackParamList } from '../../types/navigation';
 import { isArchived } from '../../utils/archive-utils';
-import { buildQuickLogMetadata } from '../../utils/checklist-utils';
 import { Colors } from '../../utils/colors';
+import { buildTimerLogMetadata } from '../../utils/metadata-link-utils';
 import { shouldLogTimerSegment } from '../../utils/timer-utils';
 import { TimerOtherTimers } from './components/timer-other-timers';
 import { TimerPicker } from './components/timer-picker';
@@ -25,6 +25,7 @@ export function TimerScreen() {
   const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
   const lockedBehaviorId = useTimerStore(state => state.lockedBehaviorId);
   const initialNotes = useTimerStore(state => state.initialNotes);
+  const taskId = useTimerStore(state => state.taskId);
   const startTimestamp = useTimerStore(state => state.startTimestamp);
   const stopTimestamp = useTimerStore(state => state.stopTimestamp);
   const pendingLogBehaviorLogCount = useTimerStore(state => state.pendingLogBehaviorLogCount);
@@ -119,9 +120,12 @@ export function TimerScreen() {
     const { behaviors: latestBehaviors, categories, logBehavior } = useBehaviorStore.getState();
     const behavior = latestBehaviors.find(candidate => candidate.id === lockedBehaviorId);
     if (!behavior) return;
-    const metadata = buildQuickLogMetadata(behavior, categories);
-    const notes = initialNotes?.trim();
-    logBehavior(behavior.id, segmentStart, notes ? { ...metadata, notes } : metadata, segmentEnd);
+    logBehavior(
+      behavior.id,
+      segmentStart,
+      buildTimerLogMetadata(behavior, categories, initialNotes, taskId),
+      segmentEnd,
+    );
   };
 
   // Pause logs the segment so far; Resume starts a new segment, so paused time is never counted.
@@ -190,6 +194,7 @@ export function TimerScreen() {
       behaviorId: lockedBehavior.id,
       initialMode: 'log',
       initialNotes,
+      initialTaskId: taskId,
       timerStartTimestamp: startTimestamp,
       timerEndTimestamp: stoppedAt,
     });

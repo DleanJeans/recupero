@@ -2,8 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
-import type { MetadataField, MetadataFieldCalculation, MetadataFieldListDisplay } from '../../../types/behavior';
+import type {
+  MetadataField,
+  MetadataFieldCalculation,
+  MetadataFieldListDisplay,
+  MetadataFieldType,
+} from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
+import { METADATA_FIELD_TYPE_LABELS } from '../../../utils/metadata-link-utils';
 import {
   getMetadataFieldListDisplay,
   METADATA_CALCULATION_LABELS,
@@ -16,6 +22,8 @@ const METADATA_FIELD_ROW_LAYOUT = LinearTransition.duration(220);
 
 const CALCULATION_OPTIONS: MetadataFieldCalculation[] = ['manual', 'amount', 'per100'];
 const LIST_DISPLAY_OPTIONS: MetadataFieldListDisplay[] = ['big', 'bar', 'text', 'hidden'];
+const LINK_LIST_DISPLAY_OPTIONS: MetadataFieldListDisplay[] = ['text', 'hidden'];
+const FIELD_TYPE_OPTIONS: MetadataFieldType[] = ['number', 'task', 'behavior', 'person'];
 
 interface MetadataFieldRowProps {
   field: MetadataField;
@@ -29,6 +37,7 @@ interface MetadataFieldRowProps {
   onUnitChange: (index: number, value: string) => void;
   onCalculationChange: (index: number, calculation: MetadataFieldCalculation) => void;
   onListDisplayChange: (index: number, listDisplay: MetadataFieldListDisplay) => void;
+  onTypeChange: (index: number, type: MetadataFieldType) => void;
   onMove: (index: number, offset: number) => void;
   onRemove: (index: number) => void;
   isSorting: boolean;
@@ -46,10 +55,13 @@ export function MetadataFieldRow({
   onUnitChange,
   onCalculationChange,
   onListDisplayChange,
+  onTypeChange,
   onMove,
   onRemove,
   isSorting,
 }: MetadataFieldRowProps) {
+  const type = field.type ?? 'number';
+  const isLink = type !== 'number';
   const calculation = field.calculation ?? 'manual';
   const listDisplay = getMetadataFieldListDisplay(field);
   const showEditor = expanded && !isSorting;
@@ -77,7 +89,9 @@ export function MetadataFieldRow({
         {!showEditor && (
           <View style={styles.tags}>
             {field.dailyGoal != null ? <Text style={styles.tag}>Goal: {field.dailyGoal}</Text> : null}
-            <Text style={styles.tag}>{METADATA_CALCULATION_LABELS[calculation]}</Text>
+            <Text style={styles.tag}>
+              {isLink ? METADATA_FIELD_TYPE_LABELS[type] : METADATA_CALCULATION_LABELS[calculation]}
+            </Text>
             <Text
               style={[
                 styles.tag,
@@ -127,6 +141,19 @@ export function MetadataFieldRow({
 
       {showEditor && (
         <View style={styles.editor}>
+          <View style={styles.optionGroup}>
+            <Text style={styles.optionLabel}>Holds</Text>
+            <View style={styles.pillRow}>
+              {FIELD_TYPE_OPTIONS.map(option => (
+                <CalculationPill
+                  key={option}
+                  label={METADATA_FIELD_TYPE_LABELS[option]}
+                  active={type === option}
+                  onPress={() => onTypeChange(index, option)}
+                />
+              ))}
+            </View>
+          </View>
           <View style={styles.inputRow}>
             <TextInput
               style={[styles.fieldInput, styles.labelInput]}
@@ -135,43 +162,49 @@ export function MetadataFieldRow({
               value={field.label}
               onChangeText={v => onLabelChange(index, v)}
             />
-            <TextInput
-              style={[styles.fieldInput, styles.dailyGoalInput]}
-              placeholder="Daily goal"
-              placeholderTextColor={Colors.text.faint}
-              value={field.dailyGoal != null ? String(field.dailyGoal) : ''}
-              onChangeText={v => onDailyGoalChange(index, v)}
-              keyboardType="decimal-pad"
-              returnKeyType="done"
-            />
-            <TextInput
-              style={[styles.fieldInput, styles.unitInput]}
-              placeholder="Unit"
-              placeholderTextColor={Colors.text.faint}
-              value={field.unit ?? ''}
-              onChangeText={v => onUnitChange(index, v)}
-            />
+            {isLink ? null : (
+              <TextInput
+                style={[styles.fieldInput, styles.dailyGoalInput]}
+                placeholder="Daily goal"
+                placeholderTextColor={Colors.text.faint}
+                value={field.dailyGoal != null ? String(field.dailyGoal) : ''}
+                onChangeText={v => onDailyGoalChange(index, v)}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+              />
+            )}
+            {isLink ? null : (
+              <TextInput
+                style={[styles.fieldInput, styles.unitInput]}
+                placeholder="Unit"
+                placeholderTextColor={Colors.text.faint}
+                value={field.unit ?? ''}
+                onChangeText={v => onUnitChange(index, v)}
+              />
+            )}
           </View>
-          <View style={styles.optionGroup}>
-            <Text style={styles.optionLabel}>Value</Text>
-            <View style={styles.pillRow}>
-              {CALCULATION_OPTIONS.map(option => (
-                <CalculationPill
-                  key={option}
-                  label={METADATA_CALCULATION_LABELS[option]}
-                  active={calculation === option}
-                  onPress={() => onCalculationChange(index, option)}
-                />
-              ))}
+          {isLink ? null : (
+            <View style={styles.optionGroup}>
+              <Text style={styles.optionLabel}>Value</Text>
+              <View style={styles.pillRow}>
+                {CALCULATION_OPTIONS.map(option => (
+                  <CalculationPill
+                    key={option}
+                    label={METADATA_CALCULATION_LABELS[option]}
+                    active={calculation === option}
+                    onPress={() => onCalculationChange(index, option)}
+                  />
+                ))}
+              </View>
             </View>
-          </View>
+          )}
           <View style={styles.optionGroup}>
             <Text style={styles.optionLabel}>In log list</Text>
             <View style={styles.pillRow}>
-              {LIST_DISPLAY_OPTIONS.map(option => (
+              {(isLink ? LINK_LIST_DISPLAY_OPTIONS : LIST_DISPLAY_OPTIONS).map(option => (
                 <CalculationPill
                   key={option}
-                  label={METADATA_LIST_DISPLAY_LABELS[option]}
+                  label={isLink && option === 'text' ? 'Show' : METADATA_LIST_DISPLAY_LABELS[option]}
                   active={listDisplay === option}
                   onPress={() => onListDisplayChange(index, option)}
                 />

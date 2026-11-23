@@ -28,6 +28,7 @@ import {
   getSelectedAmountMetadataField,
   syncBehaviorLogMetadata,
 } from '../utils/metadata-calculation-utils';
+import { buildTaskLogMetadata } from '../utils/metadata-link-utils';
 import { DEFAULT_MONEY_REWARD } from '../utils/money-utils';
 import { isTaskCompleteOnDate, timestampForTaskDate } from '../utils/task-utils';
 import { toggleSkippedDate } from '../utils/weekly-goal-utils';
@@ -632,7 +633,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
                   const category = b.categoryId ? state.categories.find(c => c.id === b.categoryId) : undefined;
                   const metadata = {
                     ...getLoggableDefaultMetadata(b.defaultMetadata, category?.metadataFields),
-                    ...(task.source !== 'behavior' ? { notes: task.title } : {}),
+                    ...(task.source !== 'behavior' ? buildTaskLogMetadata(category?.metadataFields, task) : {}),
                   };
                   return {
                     ...b,

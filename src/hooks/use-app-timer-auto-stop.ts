@@ -4,7 +4,7 @@ import { AppUsage } from '../../modules/app-usage';
 import { useBehaviorStore } from '../store/behavior-store';
 import { type TimerSession, useTimerStore } from '../store/timer-store';
 import { getAppClosedAt } from '../utils/app-usage-utils';
-import { buildQuickLogMetadata } from '../utils/checklist-utils';
+import { buildTimerLogMetadata } from '../utils/metadata-link-utils';
 import { shouldLogTimerSegment } from '../utils/timer-utils';
 
 const CHECK_EVERY_MS = 30_000;
@@ -30,6 +30,7 @@ export async function stopTimersForClosedApps(now = Date.now()): Promise<void> {
             startTimestamp: timer.startTimestamp,
             stopTimestamp: timer.stopTimestamp,
             initialNotes: timer.initialNotes,
+            taskId: timer.taskId,
           },
         ]
       : []),
@@ -53,9 +54,12 @@ export async function stopTimersForClosedApps(now = Date.now()): Promise<void> {
       const { behaviors, categories, logBehavior } = useBehaviorStore.getState();
       const behavior = behaviors.find(candidate => candidate.id === session.lockedBehaviorId);
       if (!behavior) continue;
-      const metadata = buildQuickLogMetadata(behavior, categories);
-      const notes = session.initialNotes?.trim();
-      logBehavior(behavior.id, range.start, notes ? { ...metadata, notes } : metadata, range.end);
+      logBehavior(
+        behavior.id,
+        range.start,
+        buildTimerLogMetadata(behavior, categories, session.initialNotes, session.taskId),
+        range.end,
+      );
     }
   } catch (error) {
     console.warn('Timer auto-stop check failed', error);

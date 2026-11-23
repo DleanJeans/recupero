@@ -2,7 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { useBehaviorStore } from '../../../store/behavior-store';
-import type { MetadataField, MetadataFieldCalculation, MetadataFieldListDisplay } from '../../../types/behavior';
+import type {
+  MetadataField,
+  MetadataFieldCalculation,
+  MetadataFieldListDisplay,
+  MetadataFieldType,
+} from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 import { sanitizeDecimalInput } from '../../../utils/metadata-calculation-utils';
 import {
@@ -139,6 +144,30 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
     [onChange],
   );
 
+  const handleTypeChange = useCallback(
+    (index: number, type: MetadataFieldType) => {
+      const next = latestRef.current.map((field, i) => {
+        if (i !== index) return field;
+        // Links hold an id, not a number: no goal, unit or calculation, and Bar makes no sense for them.
+        if (type !== 'number') {
+          return {
+            ...field,
+            type,
+            unit: undefined,
+            dailyGoal: undefined,
+            calculation: undefined,
+            listDisplay: field.listDisplay === 'hidden' ? ('hidden' as const) : undefined,
+          };
+        }
+        return { ...field, type: undefined };
+      });
+      latestRef.current = next;
+      setLocalFields(next);
+      onChange(next);
+    },
+    [onChange],
+  );
+
   const handleListDisplayChange = useCallback(
     (index: number, listDisplay: MetadataFieldListDisplay) => {
       const next = setMetadataFieldListDisplay(latestRef.current, index, listDisplay);
@@ -165,7 +194,7 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <Text style={styles.headerLabel}>Track numeric values</Text>
+        <Text style={styles.headerLabel}>Track values</Text>
         <View style={styles.headerActions}>
           {localFields.length > 0 && (
             <Pressable
@@ -208,6 +237,7 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
           onUnitChange={handleUnitChange}
           onCalculationChange={handleCalculationChange}
           onListDisplayChange={handleListDisplayChange}
+          onTypeChange={handleTypeChange}
           onMove={handleMoveField}
           onRemove={handleRemoveField}
           isSorting={isSorting}

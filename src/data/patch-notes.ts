@@ -37,6 +37,12 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-23',
     items: [
+      {
+        text: 'Categories can now track links, not just numbers. In Edit category, tap a field and choose Holds: Task, Behavior or Person. When you log, tap the field to search and pick the task, behavior or person (new people can be added from the search). Logs show them as small chips.',
+        screen: 'CategoryForm',
+        linkPhrase: 'Edit category',
+      },
+      'A category with a Task field now gets the task linked when you log from a task (timer or ticking it), instead of the task name being typed into Notes. Categories without a Task field still use Notes. Backups now include your people too.',
       'The task editor has a new Icon row. Tap it to pick an emoji, Mix or image icon with the same icon editor as behaviours; the icon shows on the task in the list.',
     ],
   },

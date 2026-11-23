@@ -13,6 +13,7 @@ import {
   getBehaviorMetadataFields,
   getCalculatedMetadataFields,
   getManualMetadataFields,
+  isLinkMetadataField,
   parseDecimalInput,
   type StackedLog,
 } from '../../../utils/metadata-calculation-utils';
@@ -40,7 +41,11 @@ export function StackedBehaviorCard({ stacked, onChange, onRemove, onFocus }: St
     [behavior, fields],
   );
   const inputFields = useMemo(
-    () => (amountField ? [amountField, ...getManualMetadataFields(fields)] : getManualMetadataFields(fields)),
+    () => [
+      ...(amountField ? [amountField] : []),
+      ...getManualMetadataFields(fields),
+      ...fields.filter(isLinkMetadataField),
+    ],
     [amountField, fields],
   );
   const calculatedFields = useMemo(
@@ -99,6 +104,7 @@ export function StackedBehaviorCard({ stacked, onChange, onRemove, onFocus }: St
           onChange={setValues}
           onFocus={onFocus}
           onBlur={noop}
+          behaviorId={stacked.behaviorId}
           style={styles.input}
         />
       ))}

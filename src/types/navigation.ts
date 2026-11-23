@@ -14,6 +14,8 @@ export type RootStackParamList = {
     logId?: string;
     initialTimestamp?: number;
     initialNotes?: string;
+    /** Task the log is for; fills the category's Task field instead of the notes. */
+    initialTaskId?: string;
     timerStartTimestamp?: number;
     timerEndTimestamp?: number;
     /** Cues to pre-select on a new log, e.g. the mood that suggested this behaviour. */

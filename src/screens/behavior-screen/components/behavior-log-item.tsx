@@ -8,11 +8,13 @@ import type { NeedRefill } from '../../../types/need';
 import { Colors } from '../../../utils/colors';
 import { getLogDurationMs, getLogEndTimestamp, hasTimedLogRange } from '../../../utils/log-utils';
 import { formatMetadataValueUnit } from '../../../utils/metadata-calculation-utils';
+import { getFieldLinkType } from '../../../utils/metadata-link-utils';
 import { buildLogMetadataDisplay } from '../../../utils/metadata-list-display-utils';
 import { getMoneyRewardForLog, getStarMoneyMultiplierForLog } from '../../../utils/money-utils';
 import { getSleepEnergyScore } from '../../../utils/need-utils';
 import { formatDuration, formatElapsedNumeric, formatTimeRange } from '../../../utils/time-utils';
 import { getLogXp } from '../../../utils/xp-utils';
+import { LogLinkChips } from './log-link-chips';
 import { SleepEnergyAmount, SleepEnergyBreakdown } from './sleep-energy-score';
 
 interface Props {
@@ -62,6 +64,10 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
   );
   const { big, bars, texts } = metadataDisplay;
   const notes = log.metadata?.notes ? String(log.metadata.notes) : undefined;
+  const hasLinks = useMemo(
+    () => (metadataFields ?? []).some(field => getFieldLinkType(field) && log.metadata?.[field.key]),
+    [log.metadata, metadataFields],
+  );
   const hasReward = xp != null || money != null;
   const energyScore = useMemo(() => getSleepEnergyScore(log, energyRefill), [energyRefill, log]);
   const hasSide = hasReward || big != null || texts.length > 0 || energyScore != null;
@@ -116,6 +122,12 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
           </View>
         ) : null}
       </View>
+      {hasLinks && metadataFields ? (
+        <LogLinkChips
+          fields={metadataFields}
+          metadata={log.metadata}
+        />
+      ) : null}
       {bars.length > 0 ? (
         <View style={styles.barSection}>
           <View style={styles.bar}>
