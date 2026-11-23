@@ -16,6 +16,7 @@ import type { TaskEntry } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
 import { getPlaceIconText } from '../../../utils/cue-utils';
 import { launchApp } from '../../../utils/launch-app';
+import { formatTaskTime } from '../../../utils/task-time-utils';
 import { TaskCheckbox } from './task-checkbox';
 import { TaskRewardChip } from './task-reward-chip';
 
@@ -32,6 +33,8 @@ interface TaskCardProps {
   focused?: boolean;
   /** App to open right after the timer starts: the task's own app, else (Shopping tab) the Shopping timer app setting. */
   openAppPackage?: string;
+  /** Total time spent on the task over all its timed logs; the chip is hidden under a minute. */
+  timeSpentMs?: number;
   /** Extra text for the second line, e.g. "Got it Nov 18". */
   note?: string;
   /** Select mode: the box shows whether the task is selected (undefined = not selecting). */
@@ -48,6 +51,7 @@ function TaskCardComponent({
   focused,
   note,
   openAppPackage,
+  timeSpentMs,
   selected,
   onToggle,
   onLongPress,
@@ -61,6 +65,7 @@ function TaskCardComponent({
     place ? `${getPlaceIconText(place)} ${place.name}` : undefined,
     note,
   ].filter((part): part is string => Boolean(part));
+  const timeLabel = timeSpentMs != null ? formatTaskTime(timeSpentMs) : undefined;
   const canTrack =
     selected === undefined &&
     !complete &&
@@ -121,6 +126,21 @@ function TaskCardComponent({
             </Text>
           )}
         </View>
+        {timeLabel && (
+          <View style={styles.timeChip}>
+            <Ionicons
+              name="time-outline"
+              size={12}
+              color={Colors.text.muted}
+            />
+            <Text
+              style={styles.timeText}
+              numberOfLines={1}
+            >
+              {timeLabel}
+            </Text>
+          </View>
+        )}
         {task.stars > 0 && (
           <TaskRewardChip
             stars={task.stars}
@@ -202,6 +222,23 @@ const styles = StyleSheet.create({
     color: Colors.text.faint,
     fontSize: 11,
     fontWeight: '600',
+  },
+  timeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    flexShrink: 0,
+    minWidth: 40,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    backgroundColor: Colors.bg.darker,
+  },
+  timeText: {
+    color: Colors.text.muted,
+    fontSize: 11,
+    fontWeight: '700',
+    flexShrink: 0,
   },
   playButton: {
     alignSelf: 'stretch',

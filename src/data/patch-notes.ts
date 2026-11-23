@@ -38,6 +38,11 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-23',
     items: [
       {
+        text: "Unfinished tasks on the Tasks screen now show a small clock chip with the total time spent on them across all timer sessions (e.g. 1h 20m), and the task editor shows it too. A running timer counts live. Timers need the category of the task's behavior to have a Task field, or the task to be ticked with its timer.",
+        screen: 'Tasks',
+        linkPhrase: 'Tasks screen',
+      },
+      {
         text: 'Categories can now track links, not just numbers. In Edit category, tap a field and choose Holds: Task, Behavior or Person. When you log, tap the field to search and pick the task, behavior or person (new people can be added from the search). Logs show them as small chips.',
         screen: 'CategoryForm',
         linkPhrase: 'Edit category',

@@ -8,6 +8,7 @@ import { Text } from '../../components/text';
 import { useDeferredComputation } from '../../hooks/use-deferred-computation';
 import { useFabCollapse } from '../../hooks/use-fab-collapse';
 import { resyncReminders } from '../../hooks/use-reminder-engine';
+import { useTaskTimeSpent } from '../../hooks/use-task-time-spent';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useCuesStore } from '../../store/cues-store';
 import { type TaskTab, useScreenUiStore } from '../../store/screen-ui-store';
@@ -90,6 +91,7 @@ export function TaskScreen() {
   const { collapsed: fabCollapsed, onScroll } = useFabCollapse();
 
   const behaviors = useBehaviorStore(s => s.behaviors);
+  const timeSpent = useTaskTimeSpent();
   const tasks = useBehaviorStore(s => s.tasks);
   const addTask = useBehaviorStore(s => s.addTask);
   const updateTask = useBehaviorStore(s => s.updateTask);
@@ -381,6 +383,7 @@ export function TaskScreen() {
       focused={options.focused}
       note={options.note}
       openAppPackage={task.appPackage ?? options.openAppPackage}
+      timeSpentMs={complete ? undefined : timeSpent.get(task.id)}
       selected={selectedIds ? selectedIds.includes(task.id) : undefined}
       onToggle={selecting ? toggleSelected : onToggle}
       onLongPress={selecting ? toggleSelected : openMenu}
@@ -522,6 +525,7 @@ export function TaskScreen() {
       {composerOpen && (
         <TaskEditorDialog
           editing={editingTaskId != null}
+          timeSpentMs={editingTaskId ? timeSpent.get(editingTaskId) : undefined}
           title={title}
           onTitleChange={setTitle}
           stars={stars}

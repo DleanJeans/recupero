@@ -19,6 +19,7 @@ import { findAutoTrackedBehavior } from '../../../utils/app-usage-utils';
 import { Colors } from '../../../utils/colors';
 import { getPlaceEmoji } from '../../../utils/cue-utils';
 import { formatPlaceDwell } from '../../../utils/place-task-utils';
+import { formatTaskTime } from '../../../utils/task-time-utils';
 import { StarPicker } from './star-picker';
 import { AttachRow } from './task-attach-row';
 import { TaskBehaviorPicker } from './task-behavior-picker';
@@ -26,6 +27,8 @@ import { TaskPlaceScreen } from './task-place-screen';
 
 interface TaskEditorDialogProps {
   editing: boolean;
+  /** Total time spent on the task so far (editing only). */
+  timeSpentMs?: number;
   title: string;
   onTitleChange: (title: string) => void;
   stars: TaskStarValue;
@@ -53,6 +56,7 @@ type Picker = 'behavior' | 'app' | 'place' | 'icon';
 /** Add / edit a task in a dialog over the Tasks screen. Centred; docks to the top only while the keyboard is up. */
 export function TaskEditorDialog({
   editing,
+  timeSpentMs,
   title,
   onTitleChange,
   stars,
@@ -119,6 +123,14 @@ export function TaskEditorDialog({
               />
             </Pressable>
           </View>
+          {editing && timeSpentMs != null && formatTaskTime(timeSpentMs) && (
+            <Text
+              style={styles.timeSpent}
+              numberOfLines={1}
+            >
+              {`Time spent: ${formatTaskTime(timeSpentMs)}`}
+            </Text>
+          )}
           <TextInput
             style={styles.titleInput}
             placeholder="Task name"
@@ -312,6 +324,11 @@ const styles = StyleSheet.create({
   sheet: { backgroundColor: Colors.bg.card, borderRadius: 18, padding: 16, gap: 12 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   heading: { color: Colors.text.primary, fontSize: 17, fontWeight: '700' },
+  timeSpent: {
+    color: Colors.text.muted,
+    fontSize: 12,
+    fontWeight: '600',
+  },
   titleInput: {
     height: 46,
     backgroundColor: Colors.bg.input,
