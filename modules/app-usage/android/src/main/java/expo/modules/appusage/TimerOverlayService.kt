@@ -62,7 +62,14 @@ class TimerOverlayService : Service() {
     val extraLabel: TextView,
     val bar: BarView,
     val percent: TextView,
-  )
+    /** Docked mode: just the app icon and the need's ring, in a slim column. */
+    val tab: LinearLayout,
+    val tabImage: ImageView,
+    val tabEmoji: TextView,
+    val tabRing: RingView,
+  ) {
+    var hasExtra = false
+  }
 
 
   private val handler = Handler(Looper.getMainLooper())
@@ -88,6 +95,16 @@ class TimerOverlayService : Service() {
   private var lastNotificationText = ""
   private var posX = 0
   private var posY = 0
+  /** Still at the default spot, centred at the top (posX is only used once the user moved it). */
+  private var centered = true
+  /** -1 docked to the left edge, 1 to the right edge, 0 free. A docked timer shows as a slim tab. */
+  private var docked = 0
+  /** A docked tab tapped open as the full card for a few seconds. */
+  private var peek = false
+  private val unpeek = Runnable {
+    peek = false
+    applyModes()
+  }
 
   private val tick = object : Runnable {
     override fun run() {
@@ -102,8 +119,12 @@ class TimerOverlayService : Service() {
     super.onCreate()
     instance = this
     windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-    posX = 0 // offset from the horizontal centre: top centre by default
-    posY = dp(48)
+    // Where the user left it (position, docked side) survives restarts; the default is top centre.
+    val saved = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    centered = saved.getBoolean("centered", true)
+    docked = saved.getInt("docked", 0)
+    posX = saved.getInt("posX", 0)
+    posY = saved.getInt("posY", dp(48))
   }
 
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -243,14 +264,23 @@ class TimerOverlayService : Service() {
       val elapsed = now - timer.start
       // The app being used (e.g. Shopee for a Shopping task) beats the emoji.
       val image = timer.appPackage?.let { appIcon(it) }
+      val tabImage = timer.appPackage?.let { appIcon(it, "tab") }
+      bubble.tabImage.setImageDrawable(tabImage)
+      bubble.tabImage.visibility = if (tabImage != null) View.VISIBLE else View.GONE
+      bubble.tabEmoji.text = timer.icon ?: timer.fill?.emoji ?: "⏱"
+      bubble.tabEmoji.visibility = if (tabImage != null) View.GONE else View.VISIBLE
       bubble.iconImage.setImageDrawable(image)
       bubble.iconImage.visibility = if (image != null) View.VISIBLE else View.GONE
       bubble.iconEmoji.text = timer.icon ?: timer.fill?.emoji ?: "⏱"
       bubble.iconEmoji.visibility = if (image != null) View.GONE else View.VISIBLE
       val share = ringShare(timer, now, elapsed)
       val color = if (timer.fill != null) GREEN else YELLOW
-      if (timer.fill != null || timer.level != null) {
-        bubble.extra.visibility = View.VISIBLE
+      bubble.hasExtra = timer.fill != null || timer.level != null
+      if (bubble.hasExtra) {
+        bubble.tabRing.share = share
+        bubble.tabRing.color = color
+        bubble.tabRing.emoji = timer.fill?.emoji ?: "⭐"
+        bubble.tabRing.invalidate()
         bubble.extraEmoji.text = timer.fill?.emoji ?: "⭐"
         bubble.extraLabel.text = timer.fill?.label ?: "Level"
         bubble.bar.share = share
@@ -258,13 +288,12 @@ class TimerOverlayService : Service() {
         bubble.bar.invalidate()
         bubble.percent.text = "${Math.round(share * 100)}%"
         bubble.percent.setTextColor(color)
-      } else {
-        bubble.extra.visibility = View.GONE
       }
       bubble.time.text = format(elapsed)
       // The item being worked on (a Shopping task) beats the behavior's name.
       bubble.name.text = timer.note ?: timer.name
     }
+    applyModes()
     for (bubble in bubbles) fitBar(bubble)
     refreshNotification(now)
     if (!attached) {
@@ -275,9 +304,7 @@ class TimerOverlayService : Service() {
         WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
         PixelFormat.TRANSLUCENT,
       )
-      layout.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-      layout.x = posX
-      layout.y = posY
+      applyPlacement(layout)
       params = layout
       try {
         windowManager?.addView(view, layout)
@@ -286,6 +313,40 @@ class TimerOverlayService : Service() {
         Log.w(TAG, "overlay refused", error)
       }
     }
+  }
+
+  /** Docked (and not peeking): only the slim tab shows. Otherwise the full card, rounded on the docked side only. */
+  private fun applyModes() {
+    val tabMode = docked != 0 && !peek
+    for (bubble in bubbles) {
+      bubble.top.visibility = if (tabMode) View.GONE else View.VISIBLE
+      bubble.extra.visibility = if (!tabMode && bubble.hasExtra) View.VISIBLE else View.GONE
+      bubble.tab.visibility = if (tabMode) View.VISIBLE else View.GONE
+      bubble.tabRing.visibility = if (bubble.hasExtra) View.VISIBLE else View.GONE
+      if (tabMode) bubble.root.setPadding(dp(5), dp(8), dp(5), dp(8)) else bubble.root.setPadding(dp(12), dp(8), dp(12), dp(9))
+      val background = GradientDrawable()
+      background.setColor(Color.parseColor("#EE151515"))
+      background.setStroke(dp(2), GREEN)
+      val big = dp(18).toFloat()
+      background.cornerRadii = when (docked) {
+        // top-left, top-right, bottom-right, bottom-left (x, y each)
+        -1 -> floatArrayOf(0f, 0f, big, big, big, big, 0f, 0f)
+        1 -> floatArrayOf(big, big, 0f, 0f, 0f, 0f, big, big)
+        else -> floatArrayOf(big, big, big, big, big, big, big, big)
+      }
+      bubble.root.background = background
+    }
+  }
+
+  /** Puts the window where the saved state says: docked to an edge, centred at the top, or at posX. */
+  private fun applyPlacement(layout: WindowManager.LayoutParams) {
+    when {
+      docked < 0 -> { layout.gravity = Gravity.TOP or Gravity.START; layout.x = 0 }
+      docked > 0 -> { layout.gravity = Gravity.TOP or Gravity.END; layout.x = 0 }
+      centered -> { layout.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL; layout.x = 0 }
+      else -> { layout.gravity = Gravity.TOP or Gravity.START; layout.x = posX }
+    }
+    layout.y = posY
   }
 
   /** The card is as wide as row 1 (name + gap + time). Row 2's bar takes whatever its icon, name and % leave. */
@@ -309,8 +370,8 @@ class TimerOverlayService : Service() {
   private val appIcons = HashMap<String, Drawable?>()
 
   /** The launcher icon of an installed app, cached; null if it can't be found. */
-  private fun appIcon(packageName: String): Drawable? =
-    appIcons.getOrPut(packageName) {
+  private fun appIcon(packageName: String, slot: String = ""): Drawable? =
+    appIcons.getOrPut("$packageName#$slot") {
       try {
         packageManager.getApplicationIcon(packageName).constantState?.newDrawable()?.mutate()
       } catch (error: Exception) {
@@ -447,7 +508,66 @@ class TimerOverlayService : Service() {
     percent.gravity = Gravity.END
     extra.addView(percent, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
 
-    return Bubble(root, top, iconImage, iconEmoji, name, time, extra, extraEmoji, extraLabel, bar, percent)
+    // Docked tab: app icon over the need ring.
+    val tab = LinearLayout(this)
+    tab.orientation = LinearLayout.VERTICAL
+    tab.gravity = Gravity.CENTER_HORIZONTAL
+    tab.visibility = View.GONE
+    root.addView(tab, LinearLayout.LayoutParams(dp(36), LinearLayout.LayoutParams.WRAP_CONTENT))
+    val tabBox = FrameLayout(this)
+    tab.addView(tabBox, LinearLayout.LayoutParams(dp(28), dp(28)))
+    val tabImage = ImageView(this)
+    tabImage.scaleType = ImageView.ScaleType.FIT_CENTER
+    tabBox.addView(tabImage, FrameLayout.LayoutParams(dp(28), dp(28)))
+    val tabEmoji = TextView(this)
+    tabEmoji.gravity = Gravity.CENTER
+    tabEmoji.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+    tabEmoji.setSingleLine(true)
+    tabBox.addView(tabEmoji, FrameLayout.LayoutParams(dp(28), dp(28)))
+    val tabRing = RingView(this)
+    val ringParams = LinearLayout.LayoutParams(dp(30), dp(30))
+    ringParams.topMargin = dp(6)
+    tab.addView(tabRing, ringParams)
+
+    return Bubble(root, top, iconImage, iconEmoji, name, time, extra, extraEmoji, extraLabel, bar, percent, tab, tabImage, tabEmoji, tabRing)
+  }
+
+  /** A progress ring (clockwise from the top) around an emoji; used by the docked tab. */
+  private class RingView(context: Context) : View(context) {
+    var share = 0f
+    var color = GREEN
+    var emoji = ""
+    private val density = context.resources.displayMetrics.density
+    private val stroke = 3f * density
+    private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+      style = Paint.Style.STROKE
+      strokeWidth = stroke
+      this.color = Color.parseColor("#33FFFFFF")
+    }
+    private val arc = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+      style = Paint.Style.STROKE
+      strokeWidth = stroke
+      strokeCap = Paint.Cap.ROUND
+    }
+    private val text = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+      textAlign = Paint.Align.CENTER
+      textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 13f, context.resources.displayMetrics)
+    }
+    private val bounds = RectF()
+
+    override fun onDraw(canvas: Canvas) {
+      super.onDraw(canvas)
+      val inset = stroke / 2 + density
+      bounds.set(inset, inset, width - inset, height - inset)
+      canvas.drawOval(bounds, track)
+      val sweep = 360f * share.coerceIn(0f, 1f)
+      if (sweep > 0f) {
+        arc.color = color
+        canvas.drawArc(bounds, -90f, sweep, false, arc)
+      }
+      val baseline = height / 2f - (text.descent() + text.ascent()) / 2f
+      canvas.drawText(emoji, width / 2f, baseline, text)
+    }
   }
 
   /** A rounded progress bar filling left to right. */
@@ -478,6 +598,11 @@ class TimerOverlayService : Service() {
     private var startX = 0
     private var startY = 0
     private var moved = false
+    private var wasDocked = 0
+    private var wasCentered = true
+    private var wasX = 0
+    private var wasY = 0
+    private val location = IntArray(2)
 
     override fun onTouch(view: View, event: MotionEvent): Boolean {
       val layout = params ?: return false
@@ -485,9 +610,17 @@ class TimerOverlayService : Service() {
         MotionEvent.ACTION_DOWN -> {
           downX = event.rawX
           downY = event.rawY
+          moved = false
+          wasDocked = docked
+          wasCentered = centered
+          wasX = posX
+          wasY = posY
+          // Drag in plain screen coordinates whatever the window was anchored to.
+          view.getLocationOnScreen(location)
+          layout.gravity = Gravity.TOP or Gravity.START
+          layout.x = location[0]
           startX = layout.x
           startY = layout.y
-          moved = false
         }
         MotionEvent.ACTION_MOVE -> {
           val dx = (event.rawX - downX).toInt()
@@ -497,43 +630,100 @@ class TimerOverlayService : Service() {
             showCloseTarget()
             var x = startX + dx
             var y = startY + dy
-            val over = overCloseTarget(x, y, view.height)
+            val over = overCloseTarget(x, y, view.width, view.height)
             setCloseTargetActive(over)
             if (over) {
-              // Snap onto the X like a Messenger bubble.
-              x = 0
-              y = closeCenterY() - view.height / 2
+              // Snap above the Dismiss pill, a bit smaller, like a Messenger bubble.
+              x = (screenWidth() - view.width) / 2
+              y = closeCenterY() - dp(64) - view.height / 2
             }
+            view.scaleX = if (over) 0.62f else 1f
+            view.scaleY = if (over) 0.62f else 1f
             layout.x = x
             layout.y = y
-            posX = x
-            posY = y
             windowManager?.updateViewLayout(view, layout)
           }
         }
         MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-          val dropped = moved && overCloseTarget(layout.x, layout.y, view.height)
+          val dropped = moved && overCloseTarget(layout.x, layout.y, view.width, view.height)
           hideCloseTarget()
+          view.scaleX = 1f
+          view.scaleY = 1f
           if (dropped) {
-            // Dropped on the X: hide until Recupero is opened again or "Show overlay" is tapped. It comes back where it was.
-            posX = startX
-            posY = startY
-            layout.x = startX
-            layout.y = startY
+            // Dropped on Dismiss: hide until Recupero is opened again or "Show overlay" is tapped. It comes back where it was.
+            docked = wasDocked
+            centered = wasCentered
+            posX = wasX
+            posY = wasY
+            applyPlacement(layout)
             dismissed = true
             handler.post {
               render()
               refreshNotification()
             }
-          } else if (!moved && event.action == MotionEvent.ACTION_UP) {
-            packageManager.getLaunchIntentForPackage(packageName)?.let {
-              it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-              startActivity(it)
-            }
+          } else if (moved) {
+            settle(view, layout)
+          } else {
+            applyPlacement(layout)
+            windowManager?.updateViewLayout(view, layout)
+            if (event.action == MotionEvent.ACTION_UP) onTap(view, layout)
           }
         }
       }
       return true
+    }
+  }
+
+  /** After a drag: dock to an edge when released within 48 dp of it, otherwise stay free where it was dropped. */
+  private fun settle(view: View, layout: WindowManager.LayoutParams) {
+    val width = screenWidth()
+    val w = view.width
+    handler.removeCallbacks(unpeek)
+    peek = false
+    posY = layout.y.coerceIn(0, Math.max(0, screenHeight() - view.height))
+    when {
+      layout.x <= dp(48) -> docked = -1
+      layout.x + w >= width - dp(48) -> docked = 1
+      else -> {
+        docked = 0
+        centered = false
+        posX = layout.x.coerceIn(0, Math.max(0, width - w))
+      }
+    }
+    applyPlacement(layout)
+    applyModes()
+    windowManager?.updateViewLayout(view, layout)
+    getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+      .putBoolean("centered", centered).putInt("docked", docked).putInt("posX", posX).putInt("posY", posY)
+      .apply()
+    if (docked == 0) {
+      // The card is wider than the tab was: keep it on screen once it has been laid out.
+      view.post {
+        val fixed = layout.x.coerceIn(0, Math.max(0, screenWidth() - view.width))
+        if (fixed != layout.x) {
+          layout.x = fixed
+          posX = fixed
+          windowManager?.updateViewLayout(view, layout)
+        }
+      }
+    }
+  }
+
+  /** Tap on a docked tab peeks the full card for 4 s; tap on the card (or when free) opens Recupero. */
+  private fun onTap(view: View, layout: WindowManager.LayoutParams) {
+    if (docked != 0 && !peek) {
+      peek = true
+      handler.removeCallbacks(unpeek)
+      handler.postDelayed(unpeek, 4000)
+      applyModes()
+      return
+    }
+    handler.removeCallbacks(unpeek)
+    peek = false
+    applyModes()
+    packageManager.getLaunchIntentForPackage(packageName)?.let {
+      it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      startActivity(it)
     }
   }
 
@@ -542,29 +732,31 @@ class TimerOverlayService : Service() {
 
   private fun screenWidth(): Int = resources.displayMetrics.widthPixels
   private fun screenHeight(): Int = resources.displayMetrics.heightPixels
-  /** The X sits at the bottom centre, 64 dp above the edge. */
-  private fun closeCenterY(): Int = screenHeight() - dp(64) - dp(28)
+  /** The Dismiss pill sits at the bottom centre; this is its centre line. */
+  private fun closeCenterY(): Int = screenHeight() - dp(84) - dp(24)
 
-  /** True when the card's centre is within reach of the X. `x` is the card's offset from the screen centre. */
-  private fun overCloseTarget(x: Int, y: Int, height: Int): Boolean {
-    val dx = x.toDouble()
+  /** True when the dragged card's centre is within reach of the Dismiss pill. */
+  private fun overCloseTarget(x: Int, y: Int, width: Int, height: Int): Boolean {
+    val dx = (x + width / 2 - screenWidth() / 2).toDouble()
     val dy = (y + height / 2 - closeCenterY()).toDouble()
-    return Math.hypot(dx, dy) < dp(80)
+    return Math.hypot(dx, dy) < dp(110)
   }
 
   private fun showCloseTarget() {
     if (closeShown) return
     val view = closeView ?: TextView(this).also {
-      it.text = "✕"
+      it.text = "✕  Dismiss"
       it.gravity = Gravity.CENTER
       it.setTextColor(Color.WHITE)
-      it.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
+      it.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
+      it.setSingleLine(true)
+      it.setPadding(dp(24), dp(12), dp(24), dp(12))
       closeView = it
     }
     setCloseTargetActive(false)
     val layout = WindowManager.LayoutParams(
-      dp(56),
-      dp(56),
+      WindowManager.LayoutParams.WRAP_CONTENT,
+      WindowManager.LayoutParams.WRAP_CONTENT,
       WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
       WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
         WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
@@ -572,24 +764,23 @@ class TimerOverlayService : Service() {
       PixelFormat.TRANSLUCENT,
     )
     layout.gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-    layout.y = dp(64)
+    layout.y = dp(84) - dp(24)
     try {
       windowManager?.addView(view, layout)
       closeShown = true
     } catch (error: Exception) {
-      Log.w(TAG, "close target refused", error)
+      Log.w(TAG, "dismiss target refused", error)
     }
   }
 
   private fun setCloseTargetActive(active: Boolean) {
     val view = closeView ?: return
     val background = GradientDrawable()
-    background.shape = GradientDrawable.OVAL
-    background.setColor(if (active) Color.parseColor("#EEDC2626") else Color.parseColor("#CC222222"))
-    background.setStroke(dp(2), if (active) Color.WHITE else Color.parseColor("#88FFFFFF"))
+    background.cornerRadius = dp(30).toFloat()
+    background.setColor(if (active) Color.parseColor("#F0E0335A") else Color.parseColor("#E6444444"))
     view.background = background
-    view.scaleX = if (active) 1.25f else 1f
-    view.scaleY = if (active) 1.25f else 1f
+    view.scaleX = if (active) 1.12f else 1f
+    view.scaleY = if (active) 1.12f else 1f
   }
 
   private fun hideCloseTarget() {
@@ -598,7 +789,7 @@ class TimerOverlayService : Service() {
       try {
         windowManager?.removeView(view)
       } catch (error: Exception) {
-        Log.w(TAG, "remove close target failed", error)
+        Log.w(TAG, "remove dismiss target failed", error)
       }
     }
     closeShown = false
@@ -660,6 +851,7 @@ class TimerOverlayService : Service() {
 
   override fun onDestroy() {
     handler.removeCallbacks(tick)
+    handler.removeCallbacks(unpeek)
     hideCloseTarget()
     detach()
     container = null
@@ -708,6 +900,7 @@ class TimerOverlayService : Service() {
     private const val CHANNEL_ID = "recupero-timer-overlay"
     private const val NOTIFICATION_ID = 7421
     private const val TAG = "TimerOverlay"
+    private const val PREFS = "timer-overlay"
     @Volatile var instance: TimerOverlayService? = null
   }
 }
