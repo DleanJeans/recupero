@@ -101,8 +101,8 @@ class TimerOverlayService : Service() {
     super.onCreate()
     instance = this
     windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-    posX = dp(16)
-    posY = dp(140)
+    posX = 0 // offset from the horizontal centre: top centre by default
+    posY = dp(48)
   }
 
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -273,7 +273,7 @@ class TimerOverlayService : Service() {
         WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
         PixelFormat.TRANSLUCENT,
       )
-      layout.gravity = Gravity.TOP or Gravity.START
+      layout.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
       layout.x = posX
       layout.y = posY
       params = layout
