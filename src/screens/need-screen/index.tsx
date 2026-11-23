@@ -485,9 +485,7 @@ export function NeedScreen() {
                 }
                 onRemove={refill ? () => setRefill(need.id, id, undefined) : undefined}
                 onPress={() => logBehavior(id)}
-                onNamePress={() =>
-                  navigation.navigate('BehaviorLog', { behaviorId: id, initialMode: 'details' })
-                }
+                onNamePress={() => navigation.navigate('BehaviorLog', { behaviorId: id, initialMode: 'details' })}
               />
             );
           })}
