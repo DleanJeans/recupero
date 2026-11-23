@@ -484,8 +484,8 @@ class TimerOverlayService : Service() {
           }
         }
         MotionEvent.ACTION_UP -> {
-          if (moved && startY - layout.y > dp(64)) {
-            // Swiped up: hide until Recupero is opened again or "Show overlay" is tapped.
+          if (moved && layout.y <= dp(8)) {
+            // Dragged all the way to the top edge: hide until Recupero is opened again or "Show overlay" is tapped.
             dismissed = true
             handler.post {
               render()
