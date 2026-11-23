@@ -52,6 +52,7 @@ class TimerOverlayService : Service() {
    */
   private class Bubble(
     val root: LinearLayout,
+    val top: LinearLayout,
     val iconImage: ImageView,
     val iconEmoji: TextView,
     val name: TextView,
@@ -264,6 +265,7 @@ class TimerOverlayService : Service() {
       // The item being worked on (a Shopping task) beats the behavior's name.
       bubble.name.text = timer.note ?: timer.name
     }
+    for (bubble in bubbles) fitBar(bubble)
     refreshNotification(now)
     if (!attached) {
       val layout = WindowManager.LayoutParams(
@@ -283,6 +285,24 @@ class TimerOverlayService : Service() {
       } catch (error: Exception) {
         Log.w(TAG, "overlay refused", error)
       }
+    }
+  }
+
+  /** The card is as wide as row 1 (name + gap + time); stretch row 2's bar to fill what its icon, name and % leave. */
+  private fun fitBar(bubble: Bubble) {
+    if (bubble.extra.visibility != View.VISIBLE) return
+    val unspecified = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+    bubble.top.measure(unspecified, unspecified)
+    bubble.extraEmoji.measure(unspecified, unspecified)
+    bubble.extraLabel.measure(unspecified, unspecified)
+    bubble.percent.measure(unspecified, unspecified)
+    val params = bubble.bar.layoutParams as LinearLayout.LayoutParams
+    val used = bubble.extraEmoji.measuredWidth + bubble.extraLabel.measuredWidth + bubble.percent.measuredWidth +
+      (bubble.extraLabel.layoutParams as LinearLayout.LayoutParams).leftMargin + params.leftMargin + params.rightMargin
+    val width = Math.max(dp(36), bubble.top.measuredWidth - used)
+    if (params.width != width) {
+      params.width = width
+      bubble.bar.layoutParams = params
     }
   }
 
@@ -345,7 +365,6 @@ class TimerOverlayService : Service() {
     background.cornerRadius = dp(18).toFloat()
     background.setStroke(dp(2), GREEN)
     root.background = background
-    root.minimumWidth = dp(230)
     root.layoutParams = LinearLayout.LayoutParams(
       LinearLayout.LayoutParams.WRAP_CONTENT,
       LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -374,7 +393,7 @@ class TimerOverlayService : Service() {
     name.setSingleLine(true)
     name.ellipsize = android.text.TextUtils.TruncateAt.END
     name.maxWidth = dp(190)
-    val nameParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+    val nameParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
     nameParams.leftMargin = dp(8)
     top.addView(name, nameParams)
 
@@ -385,7 +404,7 @@ class TimerOverlayService : Service() {
     time.fontFeatureSettings = "tnum"
     time.setSingleLine(true)
     val timeParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-    timeParams.leftMargin = dp(8)
+    timeParams.leftMargin = dp(14)
     top.addView(time, timeParams)
 
     // Row 2: need icon, need name, filling bar, %.
@@ -413,11 +432,10 @@ class TimerOverlayService : Service() {
     extra.addView(extraLabel, labelParams)
 
     val bar = BarView(this)
-    val barParams = LinearLayout.LayoutParams(0, dp(7), 1f)
+    val barParams = LinearLayout.LayoutParams(dp(60), dp(7))
     barParams.leftMargin = dp(7)
     barParams.rightMargin = dp(7)
     extra.addView(bar, barParams)
-    bar.minimumWidth = dp(60)
 
     val percent = TextView(this)
     percent.setTextColor(GREEN)
@@ -429,7 +447,7 @@ class TimerOverlayService : Service() {
     percent.gravity = Gravity.END
     extra.addView(percent, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
 
-    return Bubble(root, iconImage, iconEmoji, name, time, extra, extraEmoji, extraLabel, bar, percent)
+    return Bubble(root, top, iconImage, iconEmoji, name, time, extra, extraEmoji, extraLabel, bar, percent)
   }
 
   /** A rounded progress bar filling left to right. */
