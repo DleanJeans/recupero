@@ -104,6 +104,7 @@ interface BehaviorStore {
       defaultMetadata?: Record<string, number>;
       metadataAmountFieldKey?: string;
       metadataRateBasis?: number | undefined;
+      metadataTypedFormulaKeys?: string[] | undefined;
       starThresholds?: [number, number | null, number | null] | undefined;
       starPeriod?: StarPeriod | undefined;
       starMoneyMultipliers?: BehaviorEntry['starMoneyMultipliers'];

@@ -43,6 +43,15 @@ import {
   parseDecimalInput,
   type StackedLog,
 } from '../../../utils/metadata-calculation-utils';
+import {
+  applyFormulaValues,
+  evaluateFormula,
+  getActiveFormulaFields,
+  getFieldFormula,
+  getFormulaInputKeys,
+  isLogFormulaValueTyped,
+  resolveMetadataFieldUnits,
+} from '../../../utils/metadata-formula-utils';
 import { getFirstLinkField } from '../../../utils/metadata-link-utils';
 import { getMoneyRewardForLog, getStarMoneyMultiplierForLog } from '../../../utils/money-utils';
 import { formatDuration } from '../../../utils/time-utils';
@@ -169,11 +178,16 @@ export function useBehaviorLogForm({
   }, []);
   const [timePickerCollapsed, setTimePickerCollapsed] = useState(true);
 
-  const metadataFields = useMemo(() => category?.metadataFields ?? [], [category?.metadataFields]);
+  const categoryFields = useMemo(() => category?.metadataFields ?? [], [category?.metadataFields]);
   const amountField = useMemo(
     () =>
-      getSelectedAmountMetadataField(metadataFields, behavior.metadataAmountFieldKey, behavior.metadataQuantityUnit),
-    [behavior.metadataAmountFieldKey, behavior.metadataQuantityUnit, metadataFields],
+      getSelectedAmountMetadataField(categoryFields, behavior.metadataAmountFieldKey, behavior.metadataQuantityUnit),
+    [behavior.metadataAmountFieldKey, behavior.metadataQuantityUnit, categoryFields],
+  );
+  /** Fields with "Unit from Base" show this behaviour's Base unit (g for Weight, ml for Volume). */
+  const metadataFields = useMemo(
+    () => resolveMetadataFieldUnits(categoryFields, amountField),
+    [amountField, categoryFields],
   );
   const manualMetadataFields = useMemo(() => getManualMetadataFields(metadataFields), [metadataFields]);
   /** "None" amount unit: hide the amount and per-100 fields, which can't be filled or calculated without an amount. */
@@ -188,6 +202,23 @@ export function useBehaviorLogForm({
   const calculatedMetadataFields = useMemo(
     () => (amountOptedOut ? [] : getCalculatedMetadataFields(metadataFields)),
     [amountOptedOut, metadataFields],
+  );
+  /** Fields filled by a formula (e.g. Weight = Before - After) and the fields their formulas use. */
+  const formulaFields = useMemo(
+    () => getActiveFormulaFields(metadataFields, amountField, amountOptedOut),
+    [amountField, amountOptedOut, metadataFields],
+  );
+  const formulaInputKeys = useMemo(() => getFormulaInputKeys(formulaFields), [formulaFields]);
+  /** Formula fields in Type mode. An edited log opens the way it was saved; a new one the way this behaviour
+   *  was last logged. */
+  const [typedFormulaKeys, setTypedFormulaKeys] = useState<string[]>(() =>
+    formulaFields
+      .filter(field =>
+        existingLog
+          ? isLogFormulaValueTyped(field, existingLog.metadata)
+          : behavior.metadataTypedFormulaKeys?.includes(field.key) === true,
+      )
+      .map(field => field.key),
   );
   const [metadataValues, setMetadataValues] = useState<Record<string, string>>(() => {
     const values: Record<string, string> = {};
@@ -255,9 +286,27 @@ export function useBehaviorLogForm({
     },
     [],
   );
+  /** What gets saved: the typed values with formula results filled in. */
+  const effectiveMetadataValues = useMemo(
+    () => applyFormulaValues(metadataValues, formulaFields, typedFormulaKeys),
+    [formulaFields, metadataValues, typedFormulaKeys],
+  );
+  const setFormulaTyped = useCallback(
+    (key: string, typed: boolean) => {
+      setTypedFormulaKeys(current =>
+        typed ? (current.includes(key) ? current : [...current, key]) : current.filter(item => item !== key),
+      );
+      if (!typed) return;
+      // Switching to Type starts from the formula's result, so it can be nudged instead of retyped.
+      const formula = formulaFields.find(field => field.key === key);
+      const result = formula ? evaluateFormula(getFieldFormula(formula) ?? '', metadataValues).result : undefined;
+      if (result != null) setMetadataValues(current => ({ ...current, [key]: String(result) }));
+    },
+    [formulaFields, metadataValues],
+  );
   const calculatedMetadataValues = useMemo(() => {
     if (!amountField) return {};
-    const amountValue = metadataValues[amountField.key];
+    const amountValue = effectiveMetadataValues[amountField.key];
     if (amountValue === undefined || amountValue === '') return {};
     return buildCalculatedMetadata(
       metadataFields,
@@ -265,7 +314,7 @@ export function useBehaviorLogForm({
       parseDecimalInput(amountValue),
       behavior.metadataRateBasis,
     );
-  }, [amountField, behavior.defaultMetadata, behavior.metadataRateBasis, metadataFields, metadataValues]);
+  }, [amountField, behavior.defaultMetadata, behavior.metadataRateBasis, metadataFields, effectiveMetadataValues]);
 
   const progressByField = useMemo<Record<string, DailyGoalProgress | null>>(() => {
     const map: Record<string, DailyGoalProgress | null> = {};
@@ -274,7 +323,7 @@ export function useBehaviorLogForm({
       if (field.calculation === 'per100') {
         newValue = calculatedMetadataValues[field.key];
       } else {
-        const raw = metadataValues[field.key];
+        const raw = effectiveMetadataValues[field.key];
         newValue = raw === undefined ? undefined : parseDecimalInput(raw);
       }
       map[field.key] = getDailyGoalProgress({
@@ -294,8 +343,8 @@ export function useBehaviorLogForm({
     categoryBehaviors,
     dayCutoffHour,
     editLogId,
+    effectiveMetadataValues,
     metadataFields,
-    metadataValues,
     selectedDate,
   ]);
 
@@ -432,6 +481,18 @@ export function useBehaviorLogForm({
     startSecond,
     timePickerCollapsed,
   ]);
+  /** Remembers Type vs Formula per behaviour, so the next log opens the same way. */
+  const rememberFormulaMode = useCallback(() => {
+    if (formulaFields.length === 0) return;
+    const formulaKeys = new Set(formulaFields.map(field => field.key));
+    const kept = (behavior.metadataTypedFormulaKeys ?? []).filter(key => !formulaKeys.has(key));
+    const next = [...kept, ...typedFormulaKeys.filter(key => formulaKeys.has(key))].sort();
+    const previous = [...(behavior.metadataTypedFormulaKeys ?? [])].sort();
+    if (next.join(',') === previous.join(',')) return;
+    useBehaviorStore
+      .getState()
+      .updateBehavior(behaviorId, { metadataTypedFormulaKeys: next.length > 0 ? next : undefined });
+  }, [behavior.metadataTypedFormulaKeys, behaviorId, formulaFields, typedFormulaKeys]);
   const handleConfirm = useCallback(() => {
     const logHour = showTimeRange ? startHour : endHour;
     const logMinute = showTimeRange ? startMinute : endMinute;
@@ -463,11 +524,12 @@ export function useBehaviorLogForm({
     const metadataOrUndefined = buildLogMetadata({
       fields: metadataFields,
       amountField,
-      values: metadataValues,
+      values: effectiveMetadataValues,
       defaultMetadata: behavior.defaultMetadata,
       rateBasis: behavior.metadataRateBasis,
       notes,
     });
+    rememberFormulaMode();
 
     if (editLogId) {
       updateLog(behaviorId, editLogId, startTimestamp, metadataOrUndefined, saveEndTimestamp, selectedCues);
@@ -534,6 +596,7 @@ export function useBehaviorLogForm({
     categories,
     checklistItem,
     editLogId,
+    effectiveMetadataValues,
     endHour,
     endMinute,
     endSecond,
@@ -542,7 +605,7 @@ export function useBehaviorLogForm({
     logBehavior,
     maxTimestampForDate,
     metadataFields,
-    metadataValues,
+    rememberFormulaMode,
     notes,
     onSaved,
     pendingLogId,
@@ -620,6 +683,7 @@ export function useBehaviorLogForm({
     visibleMetadataFields,
     durationMs,
     editLogId,
+    effectiveMetadataValues,
     endDateLabel,
     endsNextDay,
     endHour,
@@ -633,6 +697,8 @@ export function useBehaviorLogForm({
     handleSaveForLater,
     handleStartTimer,
     hasTimerRange,
+    formulaFields,
+    formulaInputKeys,
     manualMetadataFields,
     metadataFields,
     metadataValues,
@@ -647,6 +713,7 @@ export function useBehaviorLogForm({
     renderTimePicker,
     selectedCues,
     selectedDate,
+    setFormulaTyped,
     setMetadataValues,
     setNotes,
     setSelectedDate,
@@ -659,6 +726,7 @@ export function useBehaviorLogForm({
     startSecond,
     todayStr,
     toggleCue,
+    typedFormulaKeys,
   };
 }
 

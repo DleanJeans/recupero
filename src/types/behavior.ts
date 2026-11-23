@@ -17,6 +17,12 @@ export interface MetadataField {
   calculation?: MetadataFieldCalculation;
   dailyGoal?: number;
   listDisplay?: MetadataFieldListDisplay;
+  /** Fills this number field from other Manual fields, e.g. "{before} - {after}": field keys in braces with
+   *  + - * / ( ) and numbers. Only Base and Manual fields use it, and it can still be typed over.
+   *  Undefined = always typed. */
+  formula?: string;
+  /** Uses the unit of the behaviour's Base field (e.g. g for Weight, ml for Volume) instead of `unit`. */
+  unitFromBase?: true;
 }
 
 export interface Category {
@@ -139,6 +145,9 @@ export interface BehaviorEntry {
    *  portion. Undefined = 100 (per 100 g). */
   metadataRateBasis?: number;
   metadataQuantityUnit?: string;
+  /** Formula fields this behaviour last logged by typing the value instead of using the formula (remembered
+   *  Type mode). Undefined = formula mode for every formula field. */
+  metadataTypedFormulaKeys?: string[];
   /** Set on behaviours made by "Cook a batch". Undefined for ordinary behaviours. */
   batch?: MealBatch;
   logs: LogEntry[];

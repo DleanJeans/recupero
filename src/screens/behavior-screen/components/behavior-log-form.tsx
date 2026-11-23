@@ -9,6 +9,7 @@ import { Colors } from '../../../utils/colors';
 import { formatMetadataFieldLabel, getMetadataFieldCalculation } from '../../../utils/metadata-calculation-utils';
 import { formatDuration } from '../../../utils/time-utils';
 import { CalculatedMetadataFields } from './calculated-metadata-fields';
+import { FormulaMetadataRow } from './formula-metadata-row';
 import { MetadataInputRow } from './metadata-input-row';
 import { StackedBehaviorsSection } from './stacked-behaviors-section';
 import type { BehaviorLogFormModel } from './use-behavior-log-form';
@@ -33,6 +34,8 @@ export function BehaviorLogForm({ form }: Props) {
     endHour,
     endMinute,
     endSecond,
+    formulaFields,
+    formulaInputKeys,
     handleCollapseTime,
     handleInputBlur,
     visibleMetadataFields,
@@ -43,6 +46,7 @@ export function BehaviorLogForm({ form }: Props) {
     renderTimePicker,
     selectedCues,
     selectedDate,
+    setFormulaTyped,
     setMetadataValues,
     setNotes,
     setSelectedDate,
@@ -53,6 +57,8 @@ export function BehaviorLogForm({ form }: Props) {
     startSecond,
     todayStr,
     toggleCue,
+    typedFormulaKeys,
+    metadataFields,
   } = form;
 
   return (
@@ -137,6 +143,25 @@ export function BehaviorLogForm({ form }: Props) {
             {visibleMetadataFields.map(field => {
               if (getMetadataFieldCalculation(field) === 'amount' && field.key !== amountField?.key) {
                 return null;
+              }
+              // Fields a formula uses are typed inside that formula's row.
+              if (formulaInputKeys.has(field.key)) return null;
+              if (formulaFields.some(formulaField => formulaField.key === field.key)) {
+                return (
+                  <FormulaMetadataRow
+                    key={field.key}
+                    field={field}
+                    fields={metadataFields}
+                    values={metadataValues}
+                    onChange={setMetadataValues}
+                    typed={typedFormulaKeys.includes(field.key)}
+                    onTypedChange={setFormulaTyped}
+                    onFocus={handleCollapseTime}
+                    onBlur={handleInputBlur}
+                    progress={progressByField[field.key]}
+                    style={styles.metadataFullWidthItem}
+                  />
+                );
               }
 
               const isCalculatedField = getMetadataFieldCalculation(field) === 'per100';

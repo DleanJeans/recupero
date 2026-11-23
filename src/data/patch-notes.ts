@@ -38,6 +38,13 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-23',
     items: [
       {
+        text: 'Number fields can now be worked out by a formula. In Edit category, tap a Base or Manual field and type a formula like Before - After (field names turn into pills; + − × ÷ and brackets work). Before and After can tap Base next to the unit to use g or ml, whichever the behavior uses.',
+        screen: 'CategoryForm',
+        linkPhrase: 'Edit category',
+      },
+      'When you log, a formula field shows a Type | Formula switch. Formula lays it out with a box per field, e.g. [350] − [170] = 180 g, and Calories etc. follow the result. Type lets you enter the value yourself; each behavior remembers which you used last.',
+      'You can save a log with only Before filled in and add After later: the log shows "After pending" until then. If After is more than Before, the result stays empty and says so.',
+      {
         text: "Unfinished tasks on the Tasks screen now show a small clock chip with the total time spent on them across all timer sessions (e.g. 1h 20m), and the task editor shows it too. A running timer counts live. Timers need the category of the task's behavior to have a Task field, or the task to be ticked with its timer.",
         screen: 'Tasks',
         linkPhrase: 'Tasks screen',

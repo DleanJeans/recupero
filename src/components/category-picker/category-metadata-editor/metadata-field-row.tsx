@@ -9,6 +9,8 @@ import type {
   MetadataFieldType,
 } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
+import { getMetadataFieldCalculation } from '../../../utils/metadata-calculation-utils';
+import { canFieldHaveFormula, getBaseUnitsSummary, getFieldFormula } from '../../../utils/metadata-formula-utils';
 import { METADATA_FIELD_TYPE_LABELS } from '../../../utils/metadata-link-utils';
 import {
   getMetadataFieldListDisplay,
@@ -17,6 +19,7 @@ import {
 } from '../../../utils/metadata-list-display-utils';
 import { Text, TextInput } from '../../text';
 import { CalculationPill } from './calculation-pill';
+import { FormulaEditor } from './formula-editor';
 
 const METADATA_FIELD_ROW_LAYOUT = LinearTransition.duration(220);
 
@@ -27,6 +30,8 @@ const FIELD_TYPE_OPTIONS: MetadataFieldType[] = ['number', 'task', 'behavior', '
 
 interface MetadataFieldRowProps {
   field: MetadataField;
+  /** Every field of the category, for the formula and the Base unit. */
+  fields: MetadataField[];
   index: number;
   isLast: boolean;
   expanded: boolean;
@@ -38,6 +43,8 @@ interface MetadataFieldRowProps {
   onCalculationChange: (index: number, calculation: MetadataFieldCalculation) => void;
   onListDisplayChange: (index: number, listDisplay: MetadataFieldListDisplay) => void;
   onTypeChange: (index: number, type: MetadataFieldType) => void;
+  onFormulaChange: (index: number, formula: string | undefined) => void;
+  onUnitFromBaseChange: (index: number, unitFromBase: boolean) => void;
   onMove: (index: number, offset: number) => void;
   onRemove: (index: number) => void;
   isSorting: boolean;
@@ -45,6 +52,7 @@ interface MetadataFieldRowProps {
 
 export function MetadataFieldRow({
   field,
+  fields,
   index,
   isLast,
   expanded,
@@ -56,6 +64,8 @@ export function MetadataFieldRow({
   onCalculationChange,
   onListDisplayChange,
   onTypeChange,
+  onFormulaChange,
+  onUnitFromBaseChange,
   onMove,
   onRemove,
   isSorting,
@@ -65,6 +75,12 @@ export function MetadataFieldRow({
   const calculation = field.calculation ?? 'manual';
   const listDisplay = getMetadataFieldListDisplay(field);
   const showEditor = expanded && !isSorting;
+  const hasFormula = getFieldFormula(field) != null;
+  const baseUnits = getBaseUnitsSummary(fields);
+  /** "Base" unit: only Manual number fields, and only when the category has a Base field with a unit. */
+  const canUseBaseUnit = !isLink && getMetadataFieldCalculation(field) === 'manual' && baseUnits !== '';
+  const unitFromBase = canUseBaseUnit && field.unitFromBase === true;
+  const summaryUnit = unitFromBase ? baseUnits : field.unit;
 
   return (
     <Animated.View
@@ -84,7 +100,7 @@ export function MetadataFieldRow({
           numberOfLines={1}
         >
           {field.label || 'New field'}
-          {field.unit ? <Text style={styles.summaryUnit}> {field.unit}</Text> : null}
+          {summaryUnit ? <Text style={styles.summaryUnit}> {summaryUnit}</Text> : null}
         </Text>
         {!showEditor && (
           <View style={styles.tags}>
@@ -92,6 +108,7 @@ export function MetadataFieldRow({
             <Text style={styles.tag}>
               {isLink ? METADATA_FIELD_TYPE_LABELS[type] : METADATA_CALCULATION_LABELS[calculation]}
             </Text>
+            {hasFormula ? <Text style={[styles.tag, styles.tagFormula]}>ƒ</Text> : null}
             <Text
               style={[
                 styles.tag,
@@ -173,7 +190,7 @@ export function MetadataFieldRow({
                 returnKeyType="done"
               />
             )}
-            {isLink ? null : (
+            {isLink || unitFromBase ? null : (
               <TextInput
                 style={[styles.fieldInput, styles.unitInput]}
                 placeholder="Unit"
@@ -182,7 +199,26 @@ export function MetadataFieldRow({
                 onChangeText={v => onUnitChange(index, v)}
               />
             )}
+            {canUseBaseUnit ? (
+              <Pressable
+                onPress={() => onUnitFromBaseChange(index, !unitFromBase)}
+                style={[styles.baseUnitChip, unitFromBase && styles.baseUnitChipActive]}
+                accessibilityRole="button"
+                accessibilityLabel={unitFromBase ? 'Type your own unit' : "Use the behavior's Base unit"}
+                accessibilityState={{ selected: unitFromBase }}
+              >
+                <Text
+                  style={[styles.baseUnitText, unitFromBase && styles.baseUnitTextActive]}
+                  numberOfLines={1}
+                >
+                  {unitFromBase ? 'Base ✕' : 'Base'}
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
+          {unitFromBase ? (
+            <Text style={styles.hint}>Unit follows the behavior's Base: {baseUnits.replace(' · ', ' or ')}.</Text>
+          ) : null}
           {isLink ? null : (
             <View style={styles.optionGroup}>
               <Text style={styles.optionLabel}>Value</Text>
@@ -198,6 +234,14 @@ export function MetadataFieldRow({
               </View>
             </View>
           )}
+          {canFieldHaveFormula(field) ? (
+            <FormulaEditor
+              field={field}
+              fields={fields}
+              index={index}
+              onFormulaChange={onFormulaChange}
+            />
+          ) : null}
           <View style={styles.optionGroup}>
             <Text style={styles.optionLabel}>In log list</Text>
             <View style={styles.pillRow}>
@@ -277,6 +321,38 @@ const styles = StyleSheet.create({
   },
   tagBar: {
     color: Colors.bg.primary,
+  },
+  tagFormula: {
+    color: Colors.type.desirable,
+  },
+  baseUnitChip: {
+    height: 46,
+    minWidth: 52,
+    borderRadius: 11,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border.default,
+  },
+  baseUnitChipActive: {
+    minWidth: 76,
+    borderColor: Colors.type.desirable,
+    backgroundColor: Colors.bg.input,
+  },
+  baseUnitText: {
+    color: Colors.text.light,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  baseUnitTextActive: {
+    color: Colors.type.desirable,
+  },
+  hint: {
+    color: Colors.text.faint,
+    fontSize: 12,
+    paddingLeft: 4,
+    marginTop: -4,
   },
   editor: {
     gap: 10,

@@ -7,7 +7,12 @@ import type { BehaviorEntry, LogEntry, MetadataField } from '../../../types/beha
 import type { NeedRefill } from '../../../types/need';
 import { Colors } from '../../../utils/colors';
 import { getLogDurationMs, getLogEndTimestamp, hasTimedLogRange } from '../../../utils/log-utils';
-import { formatMetadataValueUnit } from '../../../utils/metadata-calculation-utils';
+import {
+  formatMetadataValueUnit,
+  getBehaviorAmountField,
+  NO_AMOUNT_FIELD_KEY,
+} from '../../../utils/metadata-calculation-utils';
+import { getPendingFormulaLabels, resolveMetadataFieldUnits } from '../../../utils/metadata-formula-utils';
 import { getFieldLinkType } from '../../../utils/metadata-link-utils';
 import { buildLogMetadataDisplay } from '../../../utils/metadata-list-display-utils';
 import { getMoneyRewardForLog, getStarMoneyMultiplierForLog } from '../../../utils/money-utils';
@@ -33,12 +38,29 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
   behavior,
   log,
   onEdit,
-  metadataFields,
+  metadataFields: categoryFields,
   elapsedTick,
   isDecayed = false,
   energyRefill,
   style,
 }: Props) {
+  const amountField = useMemo(
+    () => (categoryFields ? getBehaviorAmountField(behavior, categoryFields) : undefined),
+    [behavior, categoryFields],
+  );
+  /** "Unit from Base" fields show this behaviour's Base unit (g or ml). */
+  const metadataFields = useMemo(
+    () => (categoryFields ? resolveMetadataFieldUnits(categoryFields, amountField) : undefined),
+    [amountField, categoryFields],
+  );
+  /** Formula inputs still missing, e.g. After when only Before was weighed. */
+  const pendingLabels = useMemo(
+    () =>
+      metadataFields && behavior.metadataAmountFieldKey !== NO_AMOUNT_FIELD_KEY
+        ? getPendingFormulaLabels(metadataFields, amountField, log.metadata)
+        : [],
+    [amountField, behavior.metadataAmountFieldKey, log.metadata, metadataFields],
+  );
   const timeFormat = useSettingsStore(state => state.timeFormat);
   const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
   const moneyRewardsEnabled = useSettingsStore(state => state.moneyRewardsEnabled);
@@ -117,6 +139,9 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
           metadata={log.metadata}
         />
       ) : null}
+      {pendingLabels.length > 0 ? (
+        <Text style={styles.pendingText}>⏳ {pendingLabels.join(', ')} pending · tap to add</Text>
+      ) : null}
       {texts.length > 0 ? (
         <View style={styles.textLine}>
           {texts.map(item => (
@@ -187,6 +212,11 @@ export const BehaviorLogItem = React.memo(function BehaviorLogItem({
 });
 
 const styles = StyleSheet.create({
+  pendingText: {
+    color: Colors.star.filled,
+    fontSize: 13,
+    fontWeight: '600',
+  },
   logItem: {
     backgroundColor: Colors.bg.card,
     borderRadius: 12,

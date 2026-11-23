@@ -75,7 +75,7 @@ export function MetadataInputRow({
   );
 }
 
-function ProgressIndicator({ progress }: { progress: DailyGoalProgress }) {
+export function ProgressIndicator({ progress }: { progress: DailyGoalProgress }) {
   return (
     <View style={styles.progressRow}>
       <View style={styles.progressBar}>

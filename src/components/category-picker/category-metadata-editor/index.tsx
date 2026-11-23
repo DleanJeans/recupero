@@ -10,6 +10,7 @@ import type {
 } from '../../../types/behavior';
 import { Colors } from '../../../utils/colors';
 import { sanitizeDecimalInput } from '../../../utils/metadata-calculation-utils';
+import { getFormulaFieldKeys } from '../../../utils/metadata-formula-utils';
 import {
   getLatestLogWithMetadata,
   getMetadataBarColors,
@@ -63,7 +64,12 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
       if (!field) return;
 
       const removeField = () => {
-        const next = latestRef.current.filter((_, i) => i !== index);
+        // A formula that used the deleted field can't work any more, so it is cleared.
+        const next = latestRef.current
+          .filter((_, i) => i !== index)
+          .map(other =>
+            getFormulaFieldKeys(other.formula).includes(field.key) ? { ...other, formula: undefined } : other,
+          );
         latestRef.current = next;
         setLocalFields(next);
         onChange(next);
@@ -135,6 +141,9 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
         return {
           ...field,
           calculation: calculation === 'manual' ? undefined : calculation,
+          // Calculated fields come from rates, so they can't have a formula; only Manual fields follow the Base unit.
+          formula: calculation === 'per100' ? undefined : field.formula,
+          unitFromBase: calculation === 'manual' ? field.unitFromBase : undefined,
         };
       });
       latestRef.current = next;
@@ -156,11 +165,35 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
             unit: undefined,
             dailyGoal: undefined,
             calculation: undefined,
+            formula: undefined,
+            unitFromBase: undefined,
             listDisplay: field.listDisplay === 'hidden' ? ('hidden' as const) : undefined,
           };
         }
         return { ...field, type: undefined };
       });
+      latestRef.current = next;
+      setLocalFields(next);
+      onChange(next);
+    },
+    [onChange],
+  );
+
+  const handleFormulaChange = useCallback(
+    (index: number, formula: string | undefined) => {
+      const next = latestRef.current.map((field, i) => (i === index ? { ...field, formula } : field));
+      latestRef.current = next;
+      setLocalFields(next);
+      onChange(next);
+    },
+    [onChange],
+  );
+
+  const handleUnitFromBaseChange = useCallback(
+    (index: number, unitFromBase: boolean) => {
+      const next = latestRef.current.map((field, i) =>
+        i === index ? { ...field, unitFromBase: unitFromBase ? (true as const) : undefined } : field,
+      );
       latestRef.current = next;
       setLocalFields(next);
       onChange(next);
@@ -227,6 +260,7 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
         <MetadataFieldRow
           key={field.key}
           field={field}
+          fields={localFields}
           index={index}
           isLast={index === localFields.length - 1}
           expanded={expandedKey === field.key}
@@ -238,6 +272,8 @@ function CategoryMetadataEditor({ categoryId, fields, onChange }: Props) {
           onCalculationChange={handleCalculationChange}
           onListDisplayChange={handleListDisplayChange}
           onTypeChange={handleTypeChange}
+          onFormulaChange={handleFormulaChange}
+          onUnitFromBaseChange={handleUnitFromBaseChange}
           onMove={handleMoveField}
           onRemove={handleRemoveField}
           isSorting={isSorting}
