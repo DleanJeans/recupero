@@ -12,6 +12,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.PixelFormat
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Handler
@@ -224,6 +225,8 @@ class TimerOverlayService : Service() {
       val bubble = bubbles[index]
       val elapsed = now - timer.start
       bubble.ring.emoji = timer.icon ?: timer.fill?.emoji ?: "⏱"
+      // The app being used (e.g. Shopee for a Shopping task) beats the emoji.
+      bubble.ring.image = timer.appPackage?.let { appIcon(it) }
       bubble.ring.share = ringShare(timer, now, elapsed)
       bubble.ring.invalidate()
       bubble.time.text = format(elapsed)
@@ -251,6 +254,18 @@ class TimerOverlayService : Service() {
       }
     }
   }
+
+  private val appIcons = HashMap<String, Drawable?>()
+
+  /** The launcher icon of an installed app, cached; null if it can't be found. */
+  private fun appIcon(packageName: String): Drawable? =
+    appIcons.getOrPut(packageName) {
+      try {
+        packageManager.getApplicationIcon(packageName).constantState?.newDrawable()?.mutate()
+      } catch (error: Exception) {
+        null
+      }
+    }
 
   private fun levelNow(fill: Fill, now: Long): Double {
     if (fill.fullInMs <= 0) return 100.0
@@ -340,6 +355,8 @@ class TimerOverlayService : Service() {
   private class RingView(context: Context) : View(context) {
     var share = 0f
     var emoji = "⏱"
+    /** An app's launcher icon drawn in place of the emoji. */
+    var image: Drawable? = null
     private val density = context.resources.displayMetrics.density
     private val stroke = 3f * density
     private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -367,7 +384,14 @@ class TimerOverlayService : Service() {
       val sweep = 360f * share.coerceIn(0f, 1f)
       if (sweep > 0f) canvas.drawArc(bounds, -90f, sweep, false, arc)
       val baseline = height / 2f - (text.descent() + text.ascent()) / 2f
-      canvas.drawText(emoji, width / 2f, baseline, text)
+      val picture = image
+      if (picture != null) {
+        val half = (Math.min(width, height) / 2f - stroke - density * 2).toInt()
+        picture.setBounds(width / 2 - half, height / 2 - half, width / 2 + half, height / 2 + half)
+        picture.draw(canvas)
+      } else {
+        canvas.drawText(emoji, width / 2f, baseline, text)
+      }
     }
   }
 

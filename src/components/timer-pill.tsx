@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { Pressable, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { useAppLauncherIcon } from '../hooks/use-app-launcher-icon';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useSettingsStore } from '../store/settings-store';
 import type { TimerSession } from '../store/timer-store';
@@ -9,6 +10,7 @@ import { Colors } from '../utils/colors';
 import { formatStopwatchDuration } from '../utils/stopwatch-utils';
 import { getTimerLevelProgress } from '../utils/timer-utils';
 import { getEffectiveXp, getTimerXp } from '../utils/xp-utils';
+import { AppIcon } from './app-icon';
 import { BehaviorIcon } from './behavior-icon';
 import { ProgressRing } from './progress-ring';
 import { Text } from './text';
@@ -31,6 +33,8 @@ export function TimerPill({ session, onPress, style, compact = false }: TimerPil
   const behavior = useBehaviorStore(s => s.behaviors.find(b => b.id === lockedBehaviorId));
   const dayCutoffHour = useSettingsStore(s => s.dayCutoffHour);
   const isRunning = startTimestamp != null && stopTimestamp == null;
+  // The app being used (e.g. Shopee for a Shopping task) shows instead of the behavior's icon.
+  const appIconUri = useAppLauncherIcon(session.appPackage);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -51,7 +55,12 @@ export function TimerPill({ session, onPress, style, compact = false }: TimerPil
     ? getTimerLevelProgress(getEffectiveXp(behavior, now, dayCutoffHour), getTimerXp(elapsedMs))
     : undefined;
   const textColor = isRunning ? Colors.typeText.desirable : Colors.text.secondary;
-  const icon = (
+  const icon = appIconUri ? (
+    <AppIcon
+      value={{ uri: appIconUri }}
+      size={compact ? 20 : 14}
+    />
+  ) : (
     <BehaviorIcon
       behavior={behavior}
       size={compact ? 20 : 14}
