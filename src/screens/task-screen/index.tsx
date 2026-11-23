@@ -269,12 +269,9 @@ export function TaskScreen() {
   };
 
   const openEditComposer = (task: TaskEntry) => {
-    const behavior = behaviorOf(task);
     setTitle(task.source === 'behavior' ? '' : task.title);
     setStars(task.stars === 0 ? 1 : task.stars);
-    // A behavior that only came from the task's app shows on the App row, not again on the Behavior row.
-    const behaviorIsApp = task.appPackage != null && behavior?.autoTrackApp?.packageName === task.appPackage;
-    setSelectedBehaviorId(behaviorIsApp ? undefined : task.behaviorId);
+    setSelectedBehaviorId(task.behaviorId);
     setSelectedPlaceId(task.placeId);
     setSelectedApp(
       task.appPackage ? { packageName: task.appPackage, label: task.appLabel ?? task.appPackage } : undefined,
