@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../../../components/button';
@@ -6,7 +7,10 @@ import { Text } from '../../../components/text';
 import { useKeyboardVisible } from '../../../hooks/use-keyboard-visible';
 import type { TaskBug, TaskEntry } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
-import { BUG_TAGS, getBugCount, getBugHeat, getBugWhenOptions } from '../../../utils/task-bug-utils';
+import { BUG_TAGS, getBugCount, getBugHeat } from '../../../utils/task-bug-utils';
+import { formatTime } from '../../../utils/time-utils';
+
+const IS_ANDROID = process.env.EXPO_OS === 'android';
 
 interface BugLogSheetProps {
   task: TaskEntry;
@@ -24,9 +28,9 @@ function ordinal(n: number): string {
 export function BugLogSheet({ task, onSave, onClose }: BugLogSheetProps) {
   const insets = useSafeAreaInsets();
   const keyboardVisible = useKeyboardVisible();
-  const whenOptions = useMemo(() => getBugWhenOptions(Date.now()), []);
   const [tags, setTags] = useState<string[]>([]);
-  const [whenIndex, setWhenIndex] = useState(0);
+  /** When it happened; undefined means now (taken when saved). */
+  const [at, setAt] = useState<number | undefined>();
   const [noteOpen, setNoteOpen] = useState(false);
   const [note, setNote] = useState('');
   const nextCount = getBugCount(task) + 1;
@@ -35,10 +39,38 @@ export function BugLogSheet({ task, onSave, onClose }: BugLogSheetProps) {
   const toggleTag = (tag: string) =>
     setTags(prev => (prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]));
 
+  /** Android: pick the day, then the time. A time in the future is held back to now when saved. */
+  const pickTime = () => {
+    const start = new Date(at ?? Date.now());
+    if (!IS_ANDROID) {
+      setAt(start.getTime());
+      return;
+    }
+    DateTimePickerAndroid.open({
+      value: start,
+      mode: 'date',
+      maximumDate: new Date(),
+      onChange: (dateEvent, day) => {
+        if (dateEvent.type !== 'set' || !day) return;
+        DateTimePickerAndroid.open({
+          value: start,
+          mode: 'time',
+          is24Hour: false,
+          onChange: (timeEvent, time) => {
+            if (timeEvent.type !== 'set' || !time) return;
+            const picked = new Date(day);
+            picked.setHours(time.getHours(), time.getMinutes(), 0, 0);
+            setAt(Math.min(picked.getTime(), Date.now()));
+          },
+        });
+      },
+    });
+  };
+
   const handleSave = () => {
     const trimmed = note.trim();
     onSave({
-      at: whenOptions[whenIndex]?.at ?? Date.now(),
+      at: Math.min(at ?? Date.now(), Date.now()),
       note: trimmed || undefined,
       tags: tags.length > 0 ? tags : undefined,
     });
@@ -112,14 +144,28 @@ export function BugLogSheet({ task, onSave, onClose }: BugLogSheetProps) {
 
           <Text style={styles.label}>WHEN</Text>
           <View style={styles.chips}>
-            {whenOptions.map((option, index) => (
-              <Chip
-                key={option.label}
-                label={option.label}
-                on={index === whenIndex}
-                onPress={() => setWhenIndex(index)}
+            <Chip
+              label="Now"
+              on={at === undefined}
+              onPress={() => setAt(undefined)}
+            />
+            <Chip
+              label={
+                at === undefined
+                  ? 'Pick date & time'
+                  : `${new Date(at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ${formatTime(at)}`
+              }
+              on={at !== undefined}
+              onPress={pickTime}
+            />
+            {!IS_ANDROID && at !== undefined && (
+              <DateTimePicker
+                value={new Date(at)}
+                mode="datetime"
+                maximumDate={new Date()}
+                onChange={(_, date) => date && setAt(date.getTime())}
               />
-            ))}
+            )}
           </View>
 
           <View style={styles.footer}>

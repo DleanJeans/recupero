@@ -130,7 +130,7 @@ function TaskCardComponent({
               {task.title}
             </Text>
           </View>
-          {!complete && <BugHeatBar heat={bugHeat} />}
+          {bugSummary && <BugHeatBar heat={bugHeat} />}
           {(bugSummary || metaParts.length > 0) && (
             <Text
               style={styles.taskMeta}

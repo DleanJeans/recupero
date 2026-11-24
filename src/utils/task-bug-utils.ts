@@ -120,24 +120,3 @@ export function formatBugSummary(task: Pick<TaskEntry, 'bugs'>, now: number): st
   if (count === 0 || last == null) return undefined;
   return `${count} ${count === 1 ? 'bug' : 'bugs'} · ${formatBugAgo(last, now)}`;
 }
-
-export interface BugWhenOption {
-  label: string;
-  at: number;
-}
-
-/** "When did it happen" choices for the log sheet. "This morning" is left out when it would be under an hour ago. */
-export function getBugWhenOptions(now: number): BugWhenOption[] {
-  const options: BugWhenOption[] = [
-    { label: 'Now', at: now },
-    { label: '1 h ago', at: now - 60 * 60 * 1000 },
-  ];
-  const morning = new Date(now);
-  morning.setHours(8, 0, 0, 0);
-  if (morning.getTime() < now - 2 * 60 * 60 * 1000) options.push({ label: 'This morning', at: morning.getTime() });
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  yesterday.setHours(12, 0, 0, 0);
-  options.push({ label: 'Yesterday', at: yesterday.getTime() });
-  return options;
-}
