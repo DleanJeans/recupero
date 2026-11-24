@@ -104,6 +104,16 @@ describe('getOutdoorRanges', () => {
     expect(getOutdoorRanges(activity, samples, [home], 0, t0 + 4 * HOUR)).toEqual([{ start: t0, end: t0 + HOUR }]);
   });
 
+  it('ignores a brief visit to another place that a check at home contradicts', () => {
+    const activity = [
+      event('enter', 'home', t0),
+      event('enter', 'office', t0 + 2 * HOUR),
+      event('exit', 'office', t0 + 2 * HOUR + 2 * MIN),
+    ];
+    const samples = [{ ts: t0 + 2 * HOUR + 3 * MIN, placeId: 'home' }];
+    expect(getOutdoorRanges(activity, samples, [home, office], 0, t0 + 4 * HOUR)).toEqual([]);
+  });
+
   it('keeps counting while still out', () => {
     const activity = [event('exit', 'home', t0)];
     expect(getOutdoorRanges(activity, [], [home], 0, t0 + 30 * MIN)).toEqual([{ start: t0, end: t0 + 30 * MIN }]);

@@ -163,6 +163,26 @@ export function isWobbleSample(sample: SunlightPresenceSample): boolean {
   return sample.edgeM <= wobble;
 }
 
+/** A geofence report the next GPS check, soon after, contradicts by finding you at a different place. */
+const CONTRADICTION_WINDOW_MS = 20 * 60_000;
+
+/**
+ * An enter/exit for one place followed within minutes by a check at another indoor place is geofence noise
+ * (e.g. a shop a few hundred metres from home "visited" for two minutes while you sat at home).
+ */
+function isContradictedByNextFix(
+  event: { ts: number; placeId?: string },
+  sortedSamples: SunlightPresenceSample[],
+  indoorIds: Set<string>,
+): boolean {
+  const next = sortedSamples.find(sample => sample.ts > event.ts);
+  // A check at the same place just before means you really were there (this may be a real trip on).
+  const previous = [...sortedSamples].reverse().find(sample => sample.ts <= event.ts);
+  if (previous && previous.placeId === event.placeId && event.ts - previous.ts <= CONTRADICTION_WINDOW_MS) return false;
+  if (!next || next.ts - event.ts > CONTRADICTION_WINDOW_MS) return false;
+  return next.placeId != null && next.placeId !== event.placeId && indoorIds.has(next.placeId);
+}
+
 export function getPresenceEvents(
   activity: PlaceEvent[],
   samples: SunlightPresenceSample[],
@@ -172,7 +192,9 @@ export function getPresenceEvents(
   const placeEvents = activity.filter(
     event => (event.kind === 'enter' || event.kind === 'exit') && event.placeId && indoorIds.has(event.placeId),
   );
+  const sortedForCheck = [...samples].sort((a, b) => a.ts - b.ts);
   for (const event of dropGeofenceBursts(placeEvents)) {
+    if (isContradictedByNextFix(event, sortedForCheck, indoorIds)) continue;
     events.push({ ts: event.ts, kind: event.kind as 'enter' | 'exit', placeId: event.placeId as string });
   }
   const sortedSamples = [...samples].sort((a, b) => a.ts - b.ts);
