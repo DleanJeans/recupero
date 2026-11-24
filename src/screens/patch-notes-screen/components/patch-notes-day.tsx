@@ -77,17 +77,21 @@ export function PatchNotesDay({ day, newTexts }: { day: PatchNotesDayData; newTe
                 color={done ? Colors.text.primary : Colors.border.light}
               />
               <View style={styles.itemBody}>
-                {isNew ? (
-                  <View style={styles.newPill}>
-                    <Text
-                      style={styles.newPillText}
-                      numberOfLines={1}
-                    >
-                      NEW
-                    </Text>
-                  </View>
-                ) : null}
-                <Text style={styles.item}>{renderText(item, text, done)}</Text>
+                <Text style={styles.item}>
+                  {isNew ? (
+                    <>
+                      <View style={styles.newPill}>
+                        <Text
+                          style={styles.newPillText}
+                          numberOfLines={1}
+                        >
+                          NEW
+                        </Text>
+                      </View>{' '}
+                    </>
+                  ) : null}
+                  {renderText(item, text, done)}
+                </Text>
               </View>
             </Pressable>
           </View>
@@ -104,12 +108,13 @@ const styles = StyleSheet.create({
   checkRow: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   item: { color: Colors.text.white, fontSize: 14, lineHeight: 22 },
   itemDone: { opacity: 0.5, textDecorationLine: 'line-through' },
-  itemBody: { flex: 1, gap: 3 },
+  itemBody: { flex: 1 },
   newPill: {
-    alignSelf: 'flex-start',
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 1,
+    marginRight: 4,
+    transform: [{ translateY: 3 }],
     backgroundColor: Colors.status.success,
   },
   newPillText: { color: Colors.text.white, fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
