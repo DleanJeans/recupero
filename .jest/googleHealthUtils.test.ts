@@ -5,6 +5,7 @@ import {
   getAzmGoalDaysThisWeek,
   getAzmRollUpBody,
   getAzmWeekTotal,
+  getFreshWakeSleep,
   getGoogleRedirectScheme,
   getHealthSyncStart,
   getSleepBehaviorChoices,
@@ -255,5 +256,26 @@ describe('stepAzmGoal', () => {
   it('never goes below 1', () => {
     expect(stepAzmGoal(3, -1)).toBe(1);
     expect(stepAzmGoal(1, -1)).toBe(1);
+  });
+});
+
+describe('getFreshWakeSleep', () => {
+  const now = 10 * 3_600_000;
+  const sleep = (id: string, endAgoH: number, asleepMinutes: number): HealthSleep => ({
+    id,
+    start: now - endAgoH * 3_600_000 - asleepMinutes * 60_000,
+    end: now - endAgoH * 3_600_000,
+    asleepMinutes,
+  });
+
+  it('picks a recent main sleep once', () => {
+    const night = sleep('a', 1, 420);
+    expect(getFreshWakeSleep([night], [], now)?.id).toBe('a');
+    expect(getFreshWakeSleep([night], ['a'], now)).toBeUndefined();
+  });
+
+  it('ignores naps and old sleeps', () => {
+    expect(getFreshWakeSleep([sleep('nap', 0.5, 60)], [], now)).toBeUndefined();
+    expect(getFreshWakeSleep([sleep('old', 6, 420)], [], now)).toBeUndefined();
   });
 });

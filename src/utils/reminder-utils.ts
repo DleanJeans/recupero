@@ -78,8 +78,16 @@ export interface ReminderNotificationData {
 /** Whether the app can fire this trigger on its own (rather than only showing suggestions in-app). */
 export function canTriggerFireAutomatically(trigger: CueTrigger): boolean {
   if (trigger.type === 'location' || trigger.type === 'habit' || trigger.type === 'app') return true;
-  if (trigger.type === 'time') return trigger.mode === 'simple' || trigger.pattern === 'afterBehavior';
+  if (trigger.type === 'time')
+    return trigger.mode === 'simple' || trigger.pattern === 'afterBehavior' || trigger.pattern === 'wakeup';
   return false;
+}
+
+/** Enabled push reminders that start when Fitbit shows you woke up. */
+export function getWakeupReminders(cues: Cue[]): Cue[] {
+  return getActivePushReminders(cues).filter(
+    cue => cue.trigger.type === 'time' && cue.trigger.mode === 'auto' && cue.trigger.pattern === 'wakeup',
+  );
 }
 
 /** Enabled reminders with push on whose trigger the app can fire automatically. */

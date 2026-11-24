@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { HealthTokens } from '../types/health';
-import { DEFAULT_AZM_DAILY_GOAL } from '../utils/google-health-utils';
+import { DEFAULT_AZM_DAILY_GOAL, MAX_WAKE_SLEEP_IDS } from '../utils/google-health-utils';
 import { getDefaultRefill } from '../utils/need-utils';
 import { useNeedsStore } from './needs-store';
 
@@ -17,6 +17,8 @@ export interface HealthStore {
   azmByDay: Record<string, number>;
   /** Sleep data points already turned into logs, so a deleted log isn't re-created. */
   importedSleepIds: string[];
+  /** Sleeps that already fired "Wake up" reminders, so each wake-up fires once. */
+  wakeFiredSleepIds: string[];
   lastSyncAt?: number;
   lastError?: string;
   /** Not saved. */
@@ -25,6 +27,7 @@ export interface HealthStore {
   /** Also makes the behaviour refill Energy by time asleep, unless it already has an Energy refill. */
   setSleepBehavior: (behaviorId: string | undefined) => void;
   setAzmDailyGoal: (goal: number) => void;
+  markWakeFired: (sleepId: string) => void;
   setSyncing: (syncing: boolean) => void;
   recordSync: (result: {
     at: number;
@@ -41,6 +44,7 @@ export const useHealthStore = create<HealthStore>()(
       azmDailyGoal: DEFAULT_AZM_DAILY_GOAL,
       azmByDay: {},
       importedSleepIds: [],
+      wakeFiredSleepIds: [],
       syncing: false,
       setTokens: tokens => set({ tokens }),
       setSleepBehavior: behaviorId => {
@@ -53,6 +57,8 @@ export const useHealthStore = create<HealthStore>()(
         set({ sleepBehaviorId: behaviorId });
       },
       setAzmDailyGoal: goal => set({ azmDailyGoal: Math.max(1, Math.round(goal)) }),
+      markWakeFired: sleepId =>
+        set(state => ({ wakeFiredSleepIds: [...state.wakeFiredSleepIds, sleepId].slice(-MAX_WAKE_SLEEP_IDS) })),
       setSyncing: syncing => set({ syncing }),
       recordSync: ({ at, azmByDay, importedSleepIds, error }) =>
         set(state => ({

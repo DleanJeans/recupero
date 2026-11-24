@@ -50,7 +50,7 @@ describe('canTriggerFireAutomatically', () => {
         delayMin: 5,
       }),
     ).toBe(true);
-    expect(canTriggerFireAutomatically({ type: 'time', mode: 'auto', pattern: 'wakeup' })).toBe(false);
+    expect(canTriggerFireAutomatically({ type: 'time', mode: 'auto', pattern: 'wakeup' })).toBe(true);
     expect(canTriggerFireAutomatically({ type: 'mood', moods: ['low'] })).toBe(false);
     expect(canTriggerFireAutomatically({ type: 'body', sensations: ['thirsty'] })).toBe(false);
   });

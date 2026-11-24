@@ -282,3 +282,23 @@ export function stepAzmGoal(goal: number, direction: 1 | -1, step = 5): number {
   const next = direction > 0 ? (Math.floor(goal / step) + 1) * step : (Math.ceil(goal / step) - 1) * step;
   return Math.max(1, next);
 }
+
+/** Sleeps shorter than this count as naps and don't trigger "Wake up". */
+export const WAKE_MIN_SLEEP_MINUTES = 180;
+/** A sleep that ended longer ago than this is old news (e.g. synced late), so it doesn't trigger "Wake up". */
+export const WAKE_MAX_AGE_MS = 4 * 3_600_000;
+export const MAX_WAKE_SLEEP_IDS = 30;
+
+/** The sleep to treat as a fresh wake-up: the latest main sleep that ended recently and hasn't fired yet. */
+export function getFreshWakeSleep(sleeps: HealthSleep[], firedIds: string[], now: number): HealthSleep | undefined {
+  const fired = new Set(firedIds);
+  return sleeps
+    .filter(
+      sleep =>
+        !fired.has(sleep.id) &&
+        sleep.asleepMinutes >= WAKE_MIN_SLEEP_MINUTES &&
+        sleep.end <= now &&
+        now - sleep.end <= WAKE_MAX_AGE_MS,
+    )
+    .sort((a, b) => b.end - a.end)[0];
+}

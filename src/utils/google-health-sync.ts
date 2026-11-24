@@ -1,9 +1,13 @@
 import { useBehaviorStore } from '../store/behavior-store';
+import { useCuesStore } from '../store/cues-store';
 import { useHealthStore } from '../store/health-store';
+import type { HealthSleep } from '../types/health';
 import { toDateString } from './date-utils';
 import { checkGoogleHealthIdentity, fetchAzmDays, fetchSleeps, GoogleHealthError } from './google-health-api';
 import { getFreshTokens, revokeGoogleHealth, signInToGoogleHealth } from './google-health-auth';
-import { getHealthSyncStart, HEALTH_AUTO_SYNC_GAP_MS, mergeAzmDays } from './google-health-utils';
+import { getFreshWakeSleep, getHealthSyncStart, HEALTH_AUTO_SYNC_GAP_MS, mergeAzmDays } from './google-health-utils';
+import { presentReminderNotification } from './reminder-notifications';
+import { getWakeupReminders } from './reminder-utils';
 
 let syncInFlight: Promise<void> | null = null;
 
@@ -54,6 +58,21 @@ export function syncGoogleHealth(options: { force?: boolean } = {}): Promise<voi
   return syncInFlight;
 }
 
+/** A fresh main sleep that just ended means you woke up: fire the "Wake up" reminders once for it. */
+async function fireWakeupReminders(sleeps: HealthSleep[], now: number): Promise<void> {
+  const health = useHealthStore.getState();
+  const sleep = getFreshWakeSleep(sleeps, health.wakeFiredSleepIds, now);
+  if (!sleep) return;
+  health.markWakeFired(sleep.id);
+  const { cues, places } = useCuesStore.getState();
+  const { behaviors } = useBehaviorStore.getState();
+  for (const cue of getWakeupReminders(cues)) {
+    await presentReminderNotification(cue, places, behaviors, now).catch(error =>
+      console.warn('Wake-up reminder failed', error),
+    );
+  }
+}
+
 async function runSync(): Promise<void> {
   const health = useHealthStore.getState();
   if (!health.tokens) return;
@@ -81,12 +100,16 @@ async function runSync(): Promise<void> {
   const sleepBehavior = sleepBehaviorId
     ? useBehaviorStore.getState().behaviors.find(b => b.id === sleepBehaviorId)
     : undefined;
-  if (sleepBehavior) {
+  const hasWakeReminders = getWakeupReminders(useCuesStore.getState().cues).length > 0;
+  if (sleepBehavior || hasWakeReminders) {
     try {
       const sleeps = await fetchSleeps(accessToken, since);
-      importedSleepIds = useBehaviorStore
-        .getState()
-        .applyHealthSleeps(sleepBehavior.id, sleeps, useHealthStore.getState().importedSleepIds);
+      if (sleepBehavior) {
+        importedSleepIds = useBehaviorStore
+          .getState()
+          .applyHealthSleeps(sleepBehavior.id, sleeps, useHealthStore.getState().importedSleepIds);
+      }
+      await fireWakeupReminders(sleeps, now);
     } catch (error) {
       errors.push(`Sleep: ${describeError(error)}`);
     }

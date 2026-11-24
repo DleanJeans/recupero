@@ -52,16 +52,16 @@ export function CueFormScreen() {
   const canNotify = canTriggerFireAutomatically(trigger);
   const triggerPlace = trigger.type === 'location' ? places.find(place => place.id === trigger.placeId) : undefined;
   const notifyDetail = !canNotify
-    ? trigger.type === 'time'
-      ? 'Wake-up detection is not automatic yet, so this one only shows as a suggestion.'
-      : 'Shows as a suggestion when you log this, no notification needed.'
+    ? 'Shows as a suggestion when you log this, no notification needed.'
     : triggerPlace && minRadiusM !== triggerPlace.radiusM
       ? `The notification watches a ${minRadiusM} m area around ${triggerPlace.name} (change it under the map). Log tagging still uses ${triggerPlace.radiusM} m.`
       : trigger.type === 'location'
         ? 'Notifies you in the background, even when Recupero is closed.'
-        : trigger.type === 'app'
-          ? 'Notifies you as soon as you open the app, even when Recupero is closed.'
-          : 'Sends a notification you can tap to log.';
+        : trigger.type === 'time' && trigger.mode === 'auto' && trigger.pattern === 'wakeup'
+          ? 'Notifies you when your Fitbit sleep ends. Needs Google Health connected, and checks when you open Recupero.'
+          : trigger.type === 'app'
+            ? 'Notifies you as soon as you open the app, even when Recupero is closed.'
+            : 'Sends a notification you can tap to log.';
 
   const changeTriggerType = (type: CueTriggerType) => {
     setTrigger(createDefaultCueTrigger(type, defaultOptions));
