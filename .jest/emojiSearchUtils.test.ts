@@ -34,4 +34,24 @@ describe('searchEmojiCategories', () => {
     expect(hasEmoji('🍕')).toBe(true);
     expect(hasEmoji('pizza')).toBe(false);
   });
+
+  it('ranks exact name matches first and merges categories into one list', () => {
+    const data = [
+      {
+        title: 'smileys_emotion' as const,
+        data: [{ emoji: '😴', name: 'sleeping face', v: '1', toneEnabled: false, keywords: ['bed', 'bedtime'] }],
+      },
+      {
+        title: 'people_body' as const,
+        data: [{ emoji: '🛌', name: 'person in bed', v: '1', toneEnabled: false, keywords: ['bed'] }],
+      },
+      {
+        title: 'objects' as const,
+        data: [{ emoji: '🛏️', name: 'bed', v: '1', toneEnabled: false, keywords: ['hotel'] }],
+      },
+    ];
+    const result = searchEmojiCategories(data, 'bed');
+    expect(result).toHaveLength(1);
+    expect(result[0].data.map(d => d.emoji)).toEqual(['🛏️', '🛌', '😴']);
+  });
 });

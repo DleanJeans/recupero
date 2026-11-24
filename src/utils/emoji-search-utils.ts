@@ -25,9 +25,26 @@ function matchEmoji(item: Item, query: string): boolean {
   return exact(true) || exact(false);
 }
 
-function matchText(item: Item, words: string[]): boolean {
-  const haystack = `${item.name} ${(item as { keywords?: string[] }).keywords?.join(' ') ?? ''}`.toLowerCase();
-  return words.every(word => haystack.includes(word));
+/** Lower is better: exact name, whole-word in name, exact keyword, then prefix, then loose substring. Null = no match. */
+function scoreWord(item: Item, word: string): number | null {
+  const name = item.name.toLowerCase();
+  const keywords = ((item as { keywords?: string[] }).keywords ?? []).map(keyword => keyword.toLowerCase());
+  if (name === word) return 0;
+  if (name.split(/[\s-]+/).includes(word)) return 1;
+  if (keywords.includes(word)) return 2;
+  if (name.startsWith(word) || keywords.some(keyword => keyword.startsWith(word))) return 3;
+  if (name.includes(word) || keywords.some(keyword => keyword.includes(word))) return 4;
+  return null;
+}
+
+function scoreText(item: Item, words: string[]): number | null {
+  let total = 0;
+  for (const word of words) {
+    const score = scoreWord(item, word);
+    if (score === null) return null;
+    total += score;
+  }
+  return total;
 }
 
 /**
@@ -47,12 +64,21 @@ export function searchEmojiCategories(categories: EmojisByCategory[], rawQuery: 
       const flat = normalize(query, false);
       predicate = item => flat.includes(normalize(item.emoji, false));
     }
-  } else {
-    const words = query.toLowerCase().split(/\s+/);
-    predicate = item => matchText(item, words);
+    return categories
+      .map(category => ({ ...category, data: category.data.filter(predicate) }))
+      .filter(category => category.data.length > 0);
   }
 
-  return categories
-    .map(category => ({ ...category, data: category.data.filter(predicate) }))
-    .filter(category => category.data.length > 0);
+  // The keyboard shows one category per page and has no tab header here, so return a single ranked list.
+  const words = query.toLowerCase().split(/\s+/);
+  const ranked: { item: Item; score: number }[] = [];
+  for (const category of categories) {
+    for (const item of category.data) {
+      const score = scoreText(item, words);
+      if (score !== null) ranked.push({ item, score });
+    }
+  }
+  if (ranked.length === 0) return [];
+  ranked.sort((a, b) => a.score - b.score);
+  return [{ title: categories[0].title, data: ranked.map(entry => entry.item) }];
 }
