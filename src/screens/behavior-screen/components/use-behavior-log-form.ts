@@ -533,6 +533,19 @@ export function useBehaviorLogForm({
 
     if (editLogId) {
       updateLog(behaviorId, editLogId, startTimestamp, metadataOrUndefined, saveEndTimestamp, selectedCues);
+      // Logs saved together with this one follow its new time and cues.
+      if (existingLog?.stackId) {
+        useBehaviorStore
+          .getState()
+          .syncStackedLogs(
+            existingLog.stackId,
+            editLogId,
+            existingLog.timestamp,
+            startTimestamp,
+            saveEndTimestamp,
+            selectedCues,
+          );
+      }
       onSaved();
       return;
     }
@@ -602,6 +615,7 @@ export function useBehaviorLogForm({
     endSecond,
     endsNextDay,
     dayCutoffHour,
+    existingLog,
     logBehavior,
     maxTimestampForDate,
     metadataFields,

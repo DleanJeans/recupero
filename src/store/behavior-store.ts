@@ -155,6 +155,15 @@ interface BehaviorStore {
     /** Omit to keep the log's cues; pass [] to clear them. */
     cues?: CueRef[],
   ) => void;
+  /** After editing a log, move the logs it was stacked with (same stackId, same start time) to its new time and cues. */
+  syncStackedLogs: (
+    stackId: string,
+    excludeLogId: string,
+    fromTimestamp: number,
+    timestamp: number,
+    endTimestamp?: number,
+    cues?: CueRef[],
+  ) => void;
   getBehaviorLogs: (behaviorId: string) => BehaviorEntry['logs'];
   addCategory: (name: string, emoji: string, metadataFields?: MetadataField[]) => void;
   removeCategory: (id: string) => void;
@@ -719,6 +728,26 @@ export const useBehaviorStore = create<BehaviorStore>()(
                 }
               : b,
           ),
+        })),
+      syncStackedLogs: (stackId, excludeLogId, fromTimestamp, timestamp, endTimestamp, cues) =>
+        set(state => ({
+          behaviors: state.behaviors.map(b => {
+            const isSibling = (log: BehaviorEntry['logs'][number]) =>
+              log.stackId === stackId && log.id !== excludeLogId && log.timestamp === fromTimestamp;
+            if (!b.logs.some(isSibling)) return b;
+            const logs = b.logs.map(log =>
+              isSibling(log)
+                ? {
+                    ...log,
+                    timestamp,
+                    endTimestamp,
+                    ...(log.source ? { editedAt: Date.now() } : {}),
+                    cues: cues === undefined ? log.cues : cues.length > 0 ? cues : undefined,
+                  }
+                : log,
+            );
+            return { ...b, logs, lastTimestamp: Math.max(...logs.map(getLogEndTimestamp)) };
+          }),
         })),
       getBehaviorLogs: behaviorId => {
         const behavior = get().behaviors.find(b => b.id === behaviorId);
