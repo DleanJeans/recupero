@@ -14,7 +14,16 @@ export interface TaskBatchEdits {
 export type TaskBatchUpdates = Partial<
   Pick<
     TaskEntry,
-    'title' | 'stars' | 'source' | 'behaviorId' | 'placeId' | 'placeDwellMin' | 'appPackage' | 'appLabel' | 'timed'
+    | 'title'
+    | 'stars'
+    | 'source'
+    | 'behaviorId'
+    | 'placeId'
+    | 'oneOffPlace'
+    | 'placeDwellMin'
+    | 'appPackage'
+    | 'appLabel'
+    | 'timed'
   >
 >;
 
@@ -75,6 +84,7 @@ export function buildBatchUpdates(
   }
   if (edits.place) {
     updates.placeId = edits.place.id;
+    updates.oneOffPlace = undefined;
     updates.placeDwellMin = edits.place.id ? edits.place.dwellMin : undefined;
   }
   if (edits.stars != null) updates.stars = edits.stars;

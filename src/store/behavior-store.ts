@@ -174,6 +174,7 @@ interface BehaviorStore {
         | 'source'
         | 'behaviorId'
         | 'placeId'
+        | 'oneOffPlace'
         | 'placeDwellMin'
         | 'appPackage'
         | 'appLabel'
@@ -551,6 +552,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
               source: input.source,
               behaviorId: input.behaviorId,
               placeId: input.placeId,
+              oneOffPlace: input.oneOffPlace,
               placeDwellMin: input.placeDwellMin,
               appPackage: input.appPackage,
               appLabel: input.appLabel,

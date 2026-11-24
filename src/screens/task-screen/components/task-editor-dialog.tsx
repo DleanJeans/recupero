@@ -14,7 +14,7 @@ import { useKeyboardVisible } from '../../../hooks/use-keyboard-visible';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import type { BehaviorEntry } from '../../../types/behavior';
 import type { SavedPlace } from '../../../types/cue';
-import type { TaskStarValue } from '../../../types/task';
+import type { OneOffPlace, TaskStarValue } from '../../../types/task';
 import { findAutoTrackedBehavior } from '../../../utils/app-usage-utils';
 import { Colors } from '../../../utils/colors';
 import { getPlaceEmoji } from '../../../utils/cue-utils';
@@ -23,6 +23,7 @@ import { formatTaskTime } from '../../../utils/task-time-utils';
 import { StarPicker } from './star-picker';
 import { AttachRow } from './task-attach-row';
 import { TaskBehaviorPicker } from './task-behavior-picker';
+import { TaskOneOffPlaceScreen } from './task-one-off-place-screen';
 import { TaskPlaceScreen } from './task-place-screen';
 
 interface TaskEditorDialogProps {
@@ -41,6 +42,8 @@ interface TaskEditorDialogProps {
   places: SavedPlace[];
   selectedPlace: SavedPlace | undefined;
   onPlaceSelect: (placeId: string | undefined) => void;
+  oneOffPlace: OneOffPlace | undefined;
+  onOneOffPlaceChange: (place: OneOffPlace | undefined) => void;
   placeDwellMin: number;
   onPlaceDwellChange: (minutes: number) => void;
   timed: boolean;
@@ -51,7 +54,7 @@ interface TaskEditorDialogProps {
   onCancel: () => void;
 }
 
-type Picker = 'behavior' | 'app' | 'place' | 'icon';
+type Picker = 'behavior' | 'app' | 'place' | 'oneOffPlace' | 'icon';
 
 /** Add / edit a task in a dialog over the Tasks screen. Centred; docks to the top only while the keyboard is up. */
 export function TaskEditorDialog({
@@ -69,6 +72,8 @@ export function TaskEditorDialog({
   places,
   selectedPlace,
   onPlaceSelect,
+  oneOffPlace,
+  onOneOffPlaceChange,
   placeDwellMin,
   onPlaceDwellChange,
   timed,
@@ -200,9 +205,9 @@ export function TaskEditorDialog({
             )}
             <AttachRow
               icon={
-                selectedPlace ? (
+                selectedPlace || oneOffPlace ? (
                   <AppIcon
-                    value={getPlaceEmoji(selectedPlace)}
+                    value={selectedPlace ? getPlaceEmoji(selectedPlace) : '📍'}
                     style={styles.placeEmoji}
                   />
                 ) : (
@@ -215,14 +220,14 @@ export function TaskEditorDialog({
               }
               label="Place"
               value={
-                selectedPlace
+                selectedPlace || oneOffPlace
                   ? placeDwellMin > 0
-                    ? `${selectedPlace.name} · ${formatPlaceDwell(placeDwellMin)}`
-                    : selectedPlace.name
+                    ? `${(selectedPlace ?? oneOffPlace)?.name} · ${formatPlaceDwell(placeDwellMin)}`
+                    : (selectedPlace ?? oneOffPlace)?.name
                   : undefined
               }
               onPress={() => setPicker('place')}
-              onClear={selectedPlace ? () => onPlaceSelect(undefined) : undefined}
+              onClear={selectedPlace || oneOffPlace ? () => onPlaceSelect(undefined) : undefined}
               last
             />
           </View>
@@ -304,11 +309,23 @@ export function TaskEditorDialog({
           onClose={() => setPicker(undefined)}
         />
       )}
+      {picker === 'oneOffPlace' && (
+        <TaskOneOffPlaceScreen
+          value={oneOffPlace}
+          onSave={place => {
+            onOneOffPlaceChange(place);
+            setPicker('place');
+          }}
+          onClose={() => setPicker('place')}
+        />
+      )}
       {picker === 'place' && (
         <TaskPlaceScreen
           places={places}
           selectedPlaceId={selectedPlace?.id}
           onSelect={onPlaceSelect}
+          oneOffPlace={oneOffPlace}
+          onPickOneOff={() => setPicker('oneOffPlace')}
           dwellMin={placeDwellMin}
           onDwellChange={onPlaceDwellChange}
           onClose={() => setPicker(undefined)}

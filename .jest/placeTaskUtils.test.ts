@@ -2,11 +2,13 @@ import type { TaskEntry } from '../src/types/task';
 import { toDateString } from '../src/utils/date-utils';
 import {
   formatPlaceDwell,
+  getOneOffPlaceGeofenceRegions,
   getPlaceDwellMin,
   getPlaceTaskGeofenceWatches,
   getPlaceTaskNotificationContent,
   getPlaceTasksDueByDwell,
   getPlaceTasksForArrival,
+  getTaskPlaceKey,
   pruneStalePlaceArrivals,
 } from '../src/utils/place-task-utils';
 
@@ -95,5 +97,24 @@ describe('place task dwell', () => {
 
   it('drops arrivals we never saw the exit for', () => {
     expect(pruneStalePlaceArrivals({ old: now - 25 * 60 * min, fresh: now - min }, now)).toEqual({ fresh: now - min });
+  });
+});
+
+describe('one-off places', () => {
+  const oneOffPlace = { name: 'Dentist', lat: 1, lng: 2, radiusM: 40 };
+
+  it('gives a task-only place its own geofence region and key', () => {
+    const tasks = [task('a', { oneOffPlace }), task('b', { oneOffPlace, archived: true }), task('c')];
+    const regions = getOneOffPlaceGeofenceRegions(tasks);
+    expect(regions.map(region => region.identifier)).toEqual(['taskplace:a']);
+    expect(regions[0]).toMatchObject({ latitude: 1, longitude: 2, notifyOnEnter: true, notifyOnExit: true });
+    expect(getTaskPlaceKey(tasks[0])).toBe('taskplace:a');
+    expect(getTaskPlaceKey(tasks[2])).toBeUndefined();
+  });
+
+  it('ticks a one-off place task on arrival at its key only', () => {
+    const tasks = [task('a', { oneOffPlace })];
+    expect(getPlaceTasksForArrival(tasks, 'taskplace:a', today).map(t => t.id)).toEqual(['a']);
+    expect(getPlaceTasksForArrival(tasks, 'taskplace:b', today)).toEqual([]);
   });
 });

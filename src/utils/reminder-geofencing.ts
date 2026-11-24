@@ -11,6 +11,7 @@ import { toDateString } from './date-utils';
 import {
   getPlaceTaskNotificationContent,
   getPlaceTasksDueByDwell,
+  isOneOffPlaceKey,
   type PlaceArrivals,
   pruneStalePlaceArrivals,
 } from './place-task-utils';
@@ -111,7 +112,8 @@ async function handleGeofenceEvent({ eventType, region }: GeofenceTaskData): Pro
 
   const { cues, places, addActivityEvent } = useCuesStore.getState();
   const place = places.find(candidate => candidate.id === placeId);
-  if (!place) return;
+  const isOneOff = isOneOffPlaceKey(placeId);
+  if (!place && !isOneOff) return;
   // Android reports every place at once whenever the regions are re-registered, and "left" for places the
   // user never entered. Only trust an exit for a place we know the user was inside, and ignore repeats.
   const now = Date.now();
@@ -120,7 +122,8 @@ async function handleGeofenceEvent({ eventType, region }: GeofenceTaskData): Pro
   if (direction === 'exit' && !wasInside) return;
   if (direction === 'enter' && wasInside) return;
   await trackPlaceTaskStay(placeId, direction);
-  if (initialReport) return;
+  // A task's own place has no reminders or activity log, only the task to tick off.
+  if (initialReport || isOneOff) return;
   addActivityEvent({ kind: direction, placeId });
 
   const behaviors = useBehaviorStore.getState().behaviors;
@@ -171,6 +174,12 @@ export async function completeDuePlaceTasks(now = Date.now(), arrivals?: PlaceAr
     const placeTasks = due.filter(task => task.placeId === place.id);
     if (placeTasks.length === 0) continue;
     await presentPlaceTaskNotification(getPlaceTaskNotificationContent(placeTasks, place)).catch(error =>
+      console.warn('Place task notification failed', error),
+    );
+  }
+  for (const task of due) {
+    if (task.placeId || !task.oneOffPlace) continue;
+    await presentPlaceTaskNotification(getPlaceTaskNotificationContent([task], task.oneOffPlace)).catch(error =>
       console.warn('Place task notification failed', error),
     );
   }

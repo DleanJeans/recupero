@@ -3,6 +3,15 @@ export type TaskSource = 'oneOff' | 'behavior';
 /** Which Tasks tab the task lives on. Unset = derived (Shopping when linked to a shopping app/behavior, else Next up). */
 export type TaskList = 'next' | 'shopping' | 'someday';
 
+/** A place picked just for one task (not in saved places). Arrival works like a saved place. */
+export interface OneOffPlace {
+  name: string;
+  emoji?: string;
+  lat: number;
+  lng: number;
+  radiusM: number;
+}
+
 export interface TaskEntry {
   id: string;
   title: string;
@@ -12,6 +21,8 @@ export interface TaskEntry {
   behaviorId?: string;
   /** "Go to this location": ticks itself off when the user arrives at this saved place. */
   placeId?: string;
+  /** "Go to this location" with a place that is stored on the task only. Used instead of placeId. */
+  oneOffPlace?: OneOffPlace;
   /** Minutes to stay at the place before the task ticks itself off. Unset means the default (5). */
   placeDwellMin?: number;
   /** App opened when the task's timer starts. Its auto-tracked behavior is the task's behavior unless one was picked. */
@@ -40,6 +51,7 @@ export interface AddTaskInput {
   source?: TaskSource;
   behaviorId?: string;
   placeId?: string;
+  oneOffPlace?: OneOffPlace;
   placeDwellMin?: number;
   appPackage?: string;
   appLabel?: string;

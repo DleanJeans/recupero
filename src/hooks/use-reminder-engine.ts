@@ -11,7 +11,11 @@ import { useTimerStore } from '../store/timer-store';
 import type { RootStackParamList } from '../types/navigation';
 import { syncAppOpenWatches } from '../utils/app-open-watches';
 import { handleBackgroundNotificationAction, isBackgroundNotificationAction } from '../utils/notification-actions';
-import { getPlaceTaskGeofenceWatches, PLACE_TASK_NOTIFICATION_KIND } from '../utils/place-task-utils';
+import {
+  getOneOffPlaceGeofenceRegions,
+  getPlaceTaskGeofenceWatches,
+  PLACE_TASK_NOTIFICATION_KIND,
+} from '../utils/place-task-utils';
 import { completeDuePlaceTasks, syncReminderGeofences } from '../utils/reminder-geofencing';
 import {
   scheduleDelayedReminder,
@@ -43,6 +47,7 @@ function getExtraGeofenceRegions() {
   const { places } = useCuesStore.getState();
   const { enabled, outdoorPlaceIds, radiusM, pause } = useSunlightStore.getState();
   return [
+    ...getOneOffPlaceGeofenceRegions(useBehaviorStore.getState().tasks),
     ...getSunlightGeofenceRegions(enabled, places, outdoorPlaceIds, radiusM),
     ...(enabled ? getSunlightPinGeofenceRegions(pause, radiusM, Date.now()) : []),
   ];

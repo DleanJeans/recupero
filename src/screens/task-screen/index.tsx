@@ -14,7 +14,7 @@ import { useCuesStore } from '../../store/cues-store';
 import { type TaskTab, useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
 import { useTimerStore } from '../../store/timer-store';
-import type { TaskEntry, TaskList, TaskStarValue } from '../../types/task';
+import type { OneOffPlace, TaskEntry, TaskList, TaskStarValue } from '../../types/task';
 import { ensureAppBehavior } from '../../utils/app-behavior';
 import { syncAppUsage } from '../../utils/app-usage-sync';
 import { getActiveBehaviors } from '../../utils/archive-utils';
@@ -76,6 +76,7 @@ export function TaskScreen() {
   const [stars, setStars] = useState<TaskStarValue>(1);
   const [selectedBehaviorId, setSelectedBehaviorId] = useState<string | undefined>();
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | undefined>();
+  const [oneOffPlace, setOneOffPlace] = useState<OneOffPlace | undefined>();
   const [placeDwellMin, setPlaceDwellMin] = useState(DEFAULT_PLACE_DWELL_MIN);
   const [selectedApp, setSelectedApp] = useState<LaunchableApp>();
   const [timed, setTimed] = useState(false);
@@ -192,6 +193,7 @@ export function TaskScreen() {
     setTimed(false);
     setIcon('');
     setSelectedPlaceId(undefined);
+    setOneOffPlace(undefined);
     setPlaceDwellMin(DEFAULT_PLACE_DWELL_MIN);
     setEditingTaskId(undefined);
   };
@@ -211,13 +213,16 @@ export function TaskScreen() {
     const appBehaviorId = app ? await ensureAppBehavior(app, { trackDuration: true }) : undefined;
     const behaviorId = selectedBehavior?.id ?? appBehaviorId;
     const isBehaviorOnlyTask = !trimmedTitle && behaviorId != null;
-    const hasPlace = selectedPlaceId != null && placeById.has(selectedPlaceId);
+    const savedPlaceId = selectedPlaceId != null && placeById.has(selectedPlaceId) ? selectedPlaceId : undefined;
+    const taskOneOffPlace = savedPlaceId ? undefined : oneOffPlace;
+    const hasPlace = savedPlaceId != null || taskOneOffPlace != null;
     const nextTask = {
       title: taskTitle,
       stars: stars === 0 ? (1 as const) : stars,
       source: isBehaviorOnlyTask ? ('behavior' as const) : ('oneOff' as const),
       behaviorId,
-      placeId: hasPlace ? selectedPlaceId : undefined,
+      placeId: savedPlaceId,
+      oneOffPlace: taskOneOffPlace,
       placeDwellMin: hasPlace ? placeDwellMin : undefined,
       appPackage: app?.packageName,
       appLabel: app?.label,
@@ -236,7 +241,7 @@ export function TaskScreen() {
     }
     closeComposer();
     if (app && appBehaviorId && !selectedBehavior) syncAppUsage();
-    if (nextTask.placeId) {
+    if (hasPlace) {
       requestPlaceTaskPermissions()
         .then(() => resyncReminders())
         .catch(error => console.warn('Place task permissions failed', error));
@@ -278,6 +283,7 @@ export function TaskScreen() {
     setStars(task.stars === 0 ? 1 : task.stars);
     setSelectedBehaviorId(task.behaviorId);
     setSelectedPlaceId(task.placeId);
+    setOneOffPlace(task.oneOffPlace);
     setSelectedApp(
       task.appPackage ? { packageName: task.appPackage, label: task.appLabel ?? task.appPackage } : undefined,
     );
@@ -537,7 +543,15 @@ export function TaskScreen() {
           onAppChange={setSelectedApp}
           places={places}
           selectedPlace={selectedPlaceId ? placeById.get(selectedPlaceId) : undefined}
-          onPlaceSelect={setSelectedPlaceId}
+          onPlaceSelect={placeId => {
+            setSelectedPlaceId(placeId);
+            setOneOffPlace(undefined);
+          }}
+          oneOffPlace={oneOffPlace}
+          onOneOffPlaceChange={place => {
+            setOneOffPlace(place);
+            if (place) setSelectedPlaceId(undefined);
+          }}
           placeDwellMin={placeDwellMin}
           onPlaceDwellChange={setPlaceDwellMin}
           timed={timed}

@@ -35,6 +35,16 @@ export interface PatchNotesDay {
  */
 export const PATCH_NOTES: PatchNotesDay[] = [
   {
+    date: '2026-11-24',
+    items: [
+      {
+        text: 'Tasks can now go to a one-off place: in the task editor, Place > "Pick a spot on the map (one-off)" lets you search or drop a pin and set a radius. It belongs to that task only and is not added to your saved places, and the task still ticks itself off after you stay there.',
+        screen: 'Tasks',
+        linkPhrase: 'Tasks',
+      },
+    ],
+  },
+  {
     date: '2026-11-23',
     items: [
       "Sunlight now follows your day cut-off setting: before the cut-off hour (4 AM for you) the bar and notification still show yesterday's sunlight instead of restarting at 0.",

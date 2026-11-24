@@ -7,6 +7,7 @@ import { Button } from '../../../components/button';
 import { FullScreenModal } from '../../../components/full-screen-modal';
 import { Text } from '../../../components/text';
 import type { SavedPlace } from '../../../types/cue';
+import type { OneOffPlace } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
 import { getPlaceEmoji } from '../../../utils/cue-utils';
 import { formatPlaceDwell, PLACE_DWELL_OPTIONS_MIN } from '../../../utils/place-task-utils';
@@ -15,6 +16,10 @@ interface TaskPlaceScreenProps {
   places: SavedPlace[];
   selectedPlaceId: string | undefined;
   onSelect: (placeId: string | undefined) => void;
+  /** A spot picked just for this task (not a saved place), and the handler that opens its map picker. */
+  oneOffPlace?: OneOffPlace;
+  /** Omit to hide the one-off option (e.g. batch edit). */
+  onPickOneOff?: () => void;
   dwellMin: number;
   onDwellChange: (minutes: number) => void;
   onClose: () => void;
@@ -25,12 +30,15 @@ export function TaskPlaceScreen({
   places,
   selectedPlaceId,
   onSelect,
+  oneOffPlace,
+  onPickOneOff,
   dwellMin,
   onDwellChange,
   onClose,
 }: TaskPlaceScreenProps) {
   const insets = useSafeAreaInsets();
   const selectedPlace = places.find(place => place.id === selectedPlaceId);
+  const selectedName = selectedPlace?.name ?? oneOffPlace?.name;
 
   return (
     <FullScreenModal
@@ -70,7 +78,34 @@ export function TaskPlaceScreen({
             </Pressable>
           );
         })}
-        {selectedPlace && (
+        {onPickOneOff && (
+          <Pressable
+            style={({ pressed }) => [styles.row, oneOffPlace && styles.rowSelected, pressed && styles.pressed]}
+            onPress={onPickOneOff}
+            accessibilityRole="button"
+            accessibilityState={{ selected: oneOffPlace != null }}
+          >
+            <Ionicons
+              name="map-outline"
+              size={20}
+              color={Colors.cue.location}
+            />
+            <Text
+              style={styles.name}
+              numberOfLines={1}
+            >
+              {oneOffPlace ? `${oneOffPlace.name} (one-off)` : 'Pick a spot on the map (one-off)'}
+            </Text>
+            {oneOffPlace && (
+              <Ionicons
+                name="checkmark"
+                size={20}
+                color={Colors.cue.location}
+              />
+            )}
+          </Pressable>
+        )}
+        {selectedName && (
           <>
             <Text style={styles.heading}>Stay before it ticks</Text>
             <View style={styles.chips}>
@@ -96,8 +131,8 @@ export function TaskPlaceScreen({
             </View>
             <Text style={styles.hint}>
               {dwellMin > 0
-                ? `Ticks itself off after you stay ${formatPlaceDwell(dwellMin)} at ${selectedPlace.name}.`
-                : `Ticks itself off as soon as you arrive at ${selectedPlace.name}.`}
+                ? `Ticks itself off after you stay ${formatPlaceDwell(dwellMin)} at ${selectedName}.`
+                : `Ticks itself off as soon as you arrive at ${selectedName}.`}
             </Text>
           </>
         )}

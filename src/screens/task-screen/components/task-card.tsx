@@ -62,7 +62,11 @@ function TaskCardComponent({
   const metaParts = [
     showBehaviorName ? behavior.name : undefined,
     task.appLabel && task.appLabel !== behavior?.name && task.appLabel !== task.title ? task.appLabel : undefined,
-    place ? `${getPlaceIconText(place)} ${place.name}` : undefined,
+    place
+      ? `${getPlaceIconText(place)} ${place.name}`
+      : task.oneOffPlace
+        ? `${getPlaceIconText({ emoji: task.oneOffPlace.emoji, isHome: false })} ${task.oneOffPlace.name}`
+        : undefined,
     note,
   ].filter((part): part is string => Boolean(part));
   const timeLabel = timeSpentMs != null ? formatTaskTime(timeSpentMs) : undefined;
