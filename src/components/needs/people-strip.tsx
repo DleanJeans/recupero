@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppUsage } from '../../../modules/app-usage';
 import { useAppUsagePermission } from '../../hooks/use-app-usage-permission';
+import { useChatPics } from '../../hooks/use-chat-pics';
 import { usePeopleStore } from '../../store/people-store';
 import type { Person } from '../../types/person';
 import { Colors } from '../../utils/colors';
@@ -15,6 +16,7 @@ import {
 } from '../../utils/people-utils';
 import { AppIcon } from '../app-icon';
 import { Text } from '../text';
+import { ChatPicsGallery } from './chat-pics-gallery';
 import { PersonDialog } from './person-dialog';
 
 const TONE_COLORS: Record<ContactTone, string> = {
@@ -35,6 +37,8 @@ export function PeopleStrip({ now }: PeopleStripProps) {
   const contacts = usePeopleStore(state => state.contacts);
   const [editing, setEditing] = useState<Person | 'new'>();
   const { mediaWatch } = useAppUsagePermission();
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const { pics } = useChatPics();
   const canAutoLog = AppUsage?.getChatEvents != null;
 
   return (
@@ -59,6 +63,8 @@ export function PeopleStrip({ now }: PeopleStripProps) {
               <AppIcon
                 value={person.emoji}
                 size={24}
+                boxSize={32}
+                imageRadius={16}
               />
               <Text
                 style={styles.name}
@@ -108,10 +114,22 @@ export function PeopleStrip({ now }: PeopleStripProps) {
           <Text style={styles.autoText}>
             {mediaWatch
               ? '💬 Auto-log on: when someone on this list messages you on WhatsApp or Messenger (matched by name, nickname or phone), it counts as contact.'
-              : '💬 Turn on Notification access to auto-log WhatsApp and Messenger chats with these people.'}
+              : '💬 Turn on Notification access to auto-log WhatsApp and Messenger chats with these people, and to save profile pics from chats.'}
           </Text>
         </Pressable>
       ) : null}
+      {AppUsage?.getChatPics && mediaWatch ? (
+        <Pressable
+          style={({ pressed }) => [styles.auto, pressed && styles.pressed]}
+          onPress={() => setGalleryOpen(true)}
+          accessibilityRole="button"
+        >
+          <Text style={styles.autoText}>
+            {`📷 Chat pics · ${pics.length} saved from WhatsApp, Messenger and Instagram. Tap to give them to your people.`}
+          </Text>
+        </Pressable>
+      ) : null}
+      {galleryOpen ? <ChatPicsGallery onClose={() => setGalleryOpen(false)} /> : null}
       {editing ? (
         <PersonDialog
           person={editing === 'new' ? undefined : editing}

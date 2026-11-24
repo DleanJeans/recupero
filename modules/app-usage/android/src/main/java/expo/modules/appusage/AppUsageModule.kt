@@ -114,6 +114,19 @@ class AppUsageModule : Module() {
       ChatEvents.read(context, start.toLong(), end.toLong())
     }
 
+    // Cached sender pics from WhatsApp, Messenger and Instagram, newest first, as { id, packageName, name, updatedAt, uri }.
+    AsyncFunction("getChatPics") {
+      ChatPics.list(context)
+    }
+
+    Function("deleteChatPic") { id: String? ->
+      ChatPics.delete(context, id)
+    }
+
+    Function("copyChatPicForPerson") { id: String ->
+      ChatPics.copyForPerson(context, id)
+    }
+
     Function("canDrawOverlays") {
       Settings.canDrawOverlays(context)
     }

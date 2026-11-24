@@ -38,6 +38,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-24',
     items: [
       'Wake up reminders now fire when your Fitbit sleep ends (checked when you open the app).',
+      'Social saves profile pics from WhatsApp, Messenger and Instagram chats, to give to your people (needs a new APK).',
       'Editing a log now moves the behaviours stacked with it to the same time and cues.',
       {
         text: 'Needs settings show body words as text, with an Edit button to change them.',

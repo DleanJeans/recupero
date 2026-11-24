@@ -47,6 +47,13 @@ class MediaWatchService : NotificationListenerService() {
   /** Notes who a WhatsApp or Messenger notification is from (title only, never the message text). */
   override fun onNotificationPosted(sbn: StatusBarNotification?) {
     val notification = sbn?.notification ?: return
+    if (sbn.packageName in ChatPics.PACKAGES) {
+      try {
+        ChatPics.onNotification(this, sbn)
+      } catch (e: Exception) {
+        // A bad avatar must never stop chat auto-log.
+      }
+    }
     if (sbn.packageName !in ChatEvents.PACKAGES) return
     if (notification.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
     val title = notification.extras?.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: return

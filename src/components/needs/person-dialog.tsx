@@ -3,6 +3,7 @@ import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import React, { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppUsage } from '../../../modules/app-usage';
 import { useKeyboardVisible } from '../../hooks/use-keyboard-visible';
 import { GeofenceMap } from '../../screens/location-edit-screen/components/geofence-map';
 import { EMPTY_PERSON, type PersonDraft, usePeopleStore } from '../../store/people-store';
@@ -28,6 +29,7 @@ import {
 import { Button } from '../button';
 import { EmojiPicker } from '../emoji-picker';
 import { Text, TextInput } from '../text';
+import { ChatPicsGallery } from './chat-pics-gallery';
 import { ContactLogDialog } from './contact-log-dialog';
 
 interface PersonDialogProps {
@@ -54,6 +56,7 @@ export function PersonDialog({ person, now, onClose }: PersonDialogProps) {
   const [pendingKind, setPendingKind] = useState<ContactKind>();
   const [dateLocale] = useState(getDateLocale);
   const [birthdayText, setBirthdayText] = useState(() => formatBirthdayInput(draft.birthday, dateLocale));
+  const [pickingPic, setPickingPic] = useState(false);
   const [searching, setSearching] = useState(false);
   const [locating, setLocating] = useState(false);
   const pinRequest = useRef(0);
@@ -202,6 +205,14 @@ export function PersonDialog({ person, now, onClose }: PersonDialogProps) {
                 autoFocus={!person}
               />
             </View>
+            {AppUsage?.getChatPics ? (
+              <Pressable
+                onPress={() => setPickingPic(true)}
+                accessibilityRole="button"
+              >
+                <Text style={styles.chatPicLink}>📷 Use a chat pic</Text>
+              </Pressable>
+            ) : null}
             <Field
               label="Also known as (nicknames, chat names)"
               value={draft.nicknames}
@@ -329,6 +340,17 @@ export function PersonDialog({ person, now, onClose }: PersonDialogProps) {
           }}
         />
       ) : null}
+      {pickingPic ? (
+        <ChatPicsGallery
+          forPerson={draft}
+          onPick={pic => {
+            const uri = AppUsage?.copyChatPicForPerson?.(pic.id);
+            if (uri) set({ emoji: uri });
+            setPickingPic(false);
+          }}
+          onClose={() => setPickingPic(false)}
+        />
+      ) : null}
     </Modal>
   );
 }
@@ -383,6 +405,7 @@ const styles = StyleSheet.create({
   invalidInput: { borderWidth: 1, borderColor: Colors.type.undesirable },
   multiline: { minHeight: 64, textAlignVertical: 'top' },
   nameRow: { flexDirection: 'row', gap: 8 },
+  chatPicLink: { color: Colors.type.desirable, fontSize: 13, fontWeight: '600' },
   emojiInput: { height: 46, borderRadius: 10 },
   addressRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   kinds: { flexDirection: 'row', gap: 8 },

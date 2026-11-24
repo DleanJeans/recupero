@@ -6,6 +6,14 @@ export interface LaunchableApp {
   label: string;
 }
 
+export interface ChatPic {
+  id: string;
+  packageName: string;
+  name: string;
+  updatedAt: number;
+  uri: string;
+}
+
 interface AppUsageNativeModule {
   hasPermission(): boolean;
   openPermissionSettings(): void;
@@ -32,6 +40,12 @@ interface AppUsageNativeModule {
   getMediaEvents?(start: number, end: number): Promise<MediaEvent[]>;
   /** Who messaged you in WhatsApp or Messenger (notification titles). Missing in builds made before People auto-log. */
   getChatEvents?(start: number, end: number): Promise<{ timestamp: number; packageName: string; title: string }[]>;
+  /** Cached sender pics from chat notifications, newest first. Missing in builds made before chat pics. */
+  getChatPics?(): Promise<ChatPic[]>;
+  /** Deletes one cached pic, or all when id is null. */
+  deleteChatPic?(id: string | null): void;
+  /** Copies a cached pic for a person and returns its file uri. */
+  copyChatPicForPerson?(id: string): string | null;
   /** JSON array of AppOpenWatch. Missing in builds made before app-open reminders. */
   setAppOpenWatches?(json: string): void;
   /** JSON array of NeedAppOverlayWatch: apps that show the timer overlay when opened. Missing in older builds. */
