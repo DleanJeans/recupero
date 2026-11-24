@@ -156,7 +156,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       'Adding or editing a task opens a dialog over the Tasks screen.',
       'Tasks can have an app; the ▶ button opens it with a timer.',
       'New "Track duration" checkbox on tasks adds a ▶ timer button.',
-      "A timer that opened an app now stops 2 minutes after you leave it.",
+      'A timer that opened an app now stops 2 minutes after you leave it.',
       '"Choose an app" is now one full-screen list everywhere, with your most-used apps first.',
     ],
   },
