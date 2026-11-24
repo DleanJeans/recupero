@@ -14,6 +14,7 @@ import android.graphics.RectF
 import android.graphics.PixelFormat
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.LayerDrawable
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -416,18 +417,39 @@ class TimerOverlayService : Service() {
       bubble.extra.visibility = if (!tabMode && bubble.hasExtra) View.VISIBLE else View.GONE
       bubble.tab.visibility = if (tabMode) View.VISIBLE else View.GONE
       if (tabMode) bubble.root.setPadding(dp(5), dp(8), dp(5), dp(8)) else bubble.root.setPadding(dp(12), dp(8), dp(12), dp(9))
-      val background = GradientDrawable()
-      background.setColor(Color.parseColor("#EE151515"))
-      background.setStroke(dp(2), GREEN)
-      val big = dp(18).toFloat()
-      background.cornerRadii = when (docked) {
-        // top-left, top-right, bottom-right, bottom-left (x, y each)
-        -1 -> floatArrayOf(0f, 0f, big, big, big, big, 0f, 0f)
-        1 -> floatArrayOf(big, big, 0f, 0f, 0f, 0f, big, big)
-        else -> floatArrayOf(big, big, big, big, big, big, big, big)
-      }
-      bubble.root.background = background
+      bubble.root.background = cardBackground()
     }
+  }
+
+  /**
+   * The card's green outline on a dark fill. Docked to a screen edge, the outline is left off on that side
+   * (it would otherwise show as a vertical line touching the edge): a green shape with the dark fill on top,
+   * inset by the stroke on every side except the edge.
+   */
+  private fun cardBackground(): Drawable {
+    val stroke = dp(2)
+    val big = dp(18).toFloat()
+    val inner = big - stroke
+    // top-left, top-right, bottom-right, bottom-left (x, y each)
+    val outerRadii = when (docked) {
+      -1 -> floatArrayOf(0f, 0f, big, big, big, big, 0f, 0f)
+      1 -> floatArrayOf(big, big, 0f, 0f, 0f, 0f, big, big)
+      else -> floatArrayOf(big, big, big, big, big, big, big, big)
+    }
+    val innerRadii = when (docked) {
+      -1 -> floatArrayOf(0f, 0f, inner, inner, inner, inner, 0f, 0f)
+      1 -> floatArrayOf(inner, inner, 0f, 0f, 0f, 0f, inner, inner)
+      else -> floatArrayOf(inner, inner, inner, inner, inner, inner, inner, inner)
+    }
+    val outline = GradientDrawable()
+    outline.setColor(GREEN)
+    outline.cornerRadii = outerRadii
+    val fill = GradientDrawable()
+    fill.setColor(Color.parseColor("#EE151515"))
+    fill.cornerRadii = innerRadii
+    val layers = LayerDrawable(arrayOf(outline, fill))
+    layers.setLayerInset(1, if (docked < 0) 0 else stroke, stroke, if (docked > 0) 0 else stroke, stroke)
+    return layers
   }
 
   /** Puts the window where the saved state says: docked to an edge, centred at the top, or at posX. */
