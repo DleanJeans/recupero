@@ -30,6 +30,8 @@ export const MIN_OUTDOOR_MS = 2 * MS_PER_MINUTE;
 /** With no event for this long, assume an arrival was missed and stop counting. */
 export const MAX_OUTDOOR_STRETCH_MS = 8 * MS_PER_HOUR;
 /** Two saved places at least this far apart can't be reached from one another without going outside. */
+/** An exit no GPS check ever saw you away after, ended by a check back at the same place: only believed this long. */
+export const MAX_UNCONFIRMED_OUT_MS = MS_PER_HOUR;
 export const MIN_TRIP_DISTANCE_M = 100;
 /** Clear-sky sunlight gives roughly 100-120 lux per W/m² of global horizontal irradiance. */
 export const LUX_PER_WM2 = 120;
@@ -256,6 +258,9 @@ export function getSunlightPresence(
   let outSince: number | null = null;
   /** Last time something confirmed you were at one of the places in `inside` (a GPS check or an arrival). */
   let lastAt: number | null = null;
+  /** Places the current stretch out began from, and whether any check actually found you away during it. */
+  let leftFrom: Set<string> | null = null;
+  let sawAway = false;
 
   /** A stretch still running counts from its first second; only one that ended is dropped when under 2 min. */
   const close = (end: number, ongoing = false) => {
@@ -279,6 +284,7 @@ export function getSunlightPresence(
   for (const event of getPresenceEvents(activity, samples, indoorIds)) {
     if (event.ts > now) break;
     const wasOut: boolean = inside != null && inside.size === 0;
+    const wasInside: Set<string> | null = inside ? new Set(inside) : null;
     // Showing up at a far-away place with no departure seen (a missed exit) means you travelled in between:
     // count from the last time you were seen at the old place.
     if (
@@ -303,10 +309,28 @@ export function getSunlightPresence(
     }
     const isOut = inside.size === 0;
     if (!isOut && event.placeId && event.kind !== 'exit') lastAt = event.ts;
-    if (!wasOut && isOut) outSince = event.ts;
-    else if (wasOut && !isOut) close(event.ts);
+    if (!wasOut && isOut) {
+      outSince = event.ts;
+      leftFrom = new Set(wasInside ?? []);
+      if (event.kind === 'exit' && event.placeId) leftFrom.add(event.placeId);
+      sawAway = event.kind === 'sample';
+    } else if (wasOut && !isOut) {
+      // Only a later check (no arrival event) put you back at the same place, and nothing ever saw you away:
+      // the "exit" was a geofence misfire (e.g. GPS drift while asleep), not a trip.
+      const falseExit =
+        event.kind === 'sample' &&
+        !sawAway &&
+        outSince != null &&
+        event.ts - outSince > MAX_UNCONFIRMED_OUT_MS &&
+        leftFrom != null &&
+        leftFrom.size > 0 &&
+        [...inside].every(id => leftFrom?.has(id));
+      if (falseExit) outSince = null;
+      else close(event.ts);
+    }
     // A check that finds you out after a long gap restarts the cap from here.
     else if (wasOut && isOut && event.kind === 'sample' && outSince != null) {
+      sawAway = true;
       if (event.ts - outSince > MAX_OUTDOOR_STRETCH_MS) {
         close(event.ts);
         outSince = event.ts;

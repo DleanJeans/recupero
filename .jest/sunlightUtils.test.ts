@@ -89,6 +89,21 @@ describe('getOutdoorRanges', () => {
     expect(getOutdoorRanges(activity, [], [home], 0, t0 + HOUR)).toEqual([]);
   });
 
+  it('drops an exit nothing confirmed when a later check finds you back at the same place', () => {
+    const activity = [event('exit', 'home', t0)];
+    const samples = [{ ts: t0 + 3 * HOUR, placeId: 'home' }];
+    expect(getOutdoorRanges(activity, samples, [home], 0, t0 + 4 * HOUR)).toEqual([]);
+  });
+
+  it('keeps an exit a check confirmed away', () => {
+    const activity = [event('exit', 'home', t0)];
+    const samples = [
+      { ts: t0 + 20 * MIN, placeId: null },
+      { ts: t0 + HOUR, placeId: 'home' },
+    ];
+    expect(getOutdoorRanges(activity, samples, [home], 0, t0 + 4 * HOUR)).toEqual([{ start: t0, end: t0 + HOUR }]);
+  });
+
   it('keeps counting while still out', () => {
     const activity = [event('exit', 'home', t0)];
     expect(getOutdoorRanges(activity, [], [home], 0, t0 + 30 * MIN)).toEqual([{ start: t0, end: t0 + 30 * MIN }]);
