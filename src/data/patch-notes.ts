@@ -38,6 +38,11 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-24',
     items: [
       {
+        text: 'Needs settings show body words as text, with an Edit button to change them.',
+        screen: 'NeedsSettings',
+        linkPhrase: 'Needs settings',
+      },
+      {
         text: 'Cravings now has Urges: bars for coping behaviours that rise until you do them. Long-press one to tune it.',
         screen: 'Cravings',
         linkPhrase: 'Cravings',

@@ -46,12 +46,15 @@ export function NeedSettingsRow({ needId, first, onPickSource, onEdit }: NeedSet
   );
   const [fullText, setFullText] = useState<string>();
   const [wordsText, setWordsText] = useState<string>();
+  const [editingWords, setEditingWords] = useState(false);
   const commitWords = () => {
     if (wordsText == null) return;
     const trimmed = wordsText.trim();
     setBodyWords(needId, trimmed === (DEFAULT_BODY_WORDS[needId] ?? '') ? undefined : trimmed);
     setWordsText(undefined);
+    setEditingWords(false);
   };
+  const words = config.bodyWords ?? DEFAULT_BODY_WORDS[needId] ?? '';
 
   const updateCustomNeed = useNeedsStore(state => state.updateCustomNeed);
   const changeEmoji = (next: string) => {
@@ -165,23 +168,45 @@ export function NeedSettingsRow({ needId, first, onPickSource, onEdit }: NeedSet
             </View>
           ) : null}
           <View style={styles.wordsBlock}>
-            <Text
-              style={styles.detailLabel}
-              numberOfLines={1}
-            >
-              Body words that lower it
-            </Text>
-            <TextInput
-              style={styles.wordsInput}
-              value={wordsText ?? config.bodyWords ?? DEFAULT_BODY_WORDS[needId] ?? ''}
-              onChangeText={setWordsText}
-              onBlur={commitWords}
-              onSubmitEditing={commitWords}
-              placeholder="e.g. itch, sweat (comma separated)"
-              placeholderTextColor={Colors.text.faint}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+            <View style={styles.wordsHeader}>
+              <Text
+                style={styles.detailLabel}
+                numberOfLines={1}
+              >
+                Body words that lower it
+              </Text>
+              {!editingWords && (
+                <Pressable
+                  onPress={() => setEditingWords(true)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit body words"
+                >
+                  <Text
+                    style={styles.detailValue}
+                    numberOfLines={1}
+                  >
+                    {words ? 'Edit' : 'Add'}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+            {editingWords ? (
+              <TextInput
+                style={styles.wordsInput}
+                value={wordsText ?? words}
+                onChangeText={setWordsText}
+                onBlur={commitWords}
+                onSubmitEditing={commitWords}
+                placeholder="e.g. itch, sweat (comma separated)"
+                placeholderTextColor={Colors.text.faint}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoFocus
+              />
+            ) : words ? (
+              <Text style={styles.wordsValue}>{words}</Text>
+            ) : null}
           </View>
           {builtInEmoji && info.emoji !== builtInEmoji ? (
             <Pressable
@@ -256,6 +281,8 @@ const styles = StyleSheet.create({
   detailLabel: { color: Colors.text.muted, fontSize: 13, flexShrink: 0, marginRight: 12 },
   detailValue: { color: Colors.text.light, fontSize: 13, fontWeight: '600' },
   wordsBlock: { gap: 4, paddingVertical: 4 },
+  wordsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  wordsValue: { color: Colors.text.light, fontSize: 13 },
   wordsInput: {
     color: Colors.text.light,
     fontSize: 13,
