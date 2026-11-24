@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { CueRef } from '../types/cue';
+import type { StackedLog } from '../utils/metadata-calculation-utils';
 
 /** A log whose details were entered up front ("Save for later"); it is logged, with the time it is finished, later. */
 export interface PendingLog {
@@ -14,6 +15,8 @@ export interface PendingLog {
   metadataValues: Record<string, string>;
   notes: string;
   cues: CueRef[];
+  /** Other behaviours stacked with this one; logged together with it. */
+  stacked?: StackedLog[];
 }
 
 interface PendingLogsState {

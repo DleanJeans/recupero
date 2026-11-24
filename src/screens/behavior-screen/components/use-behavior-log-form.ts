@@ -248,7 +248,7 @@ export function useBehaviorLogForm({
     setStackedLogs(current => current.filter(item => item.behaviorId !== behavior.id));
   }, [behavior.id]);
   /** Other behaviours logged together with this one (habit stacking). New logs only. */
-  const [stackedLogs, setStackedLogs] = useState<StackedLog[]>([]);
+  const [stackedLogs, setStackedLogs] = useState<StackedLog[]>(() => pendingLog?.stacked ?? []);
   const addStackedBehavior = useCallback(
     (stackedBehaviorId: string) => {
       const stackedBehavior = allBehaviors.find(b => b.id === stackedBehaviorId);
@@ -646,9 +646,10 @@ export function useBehaviorLogForm({
       metadataValues,
       notes,
       cues: selectedCues,
+      stacked: stackedLogs.length > 0 ? stackedLogs : undefined,
     });
     onSaved();
-  }, [behaviorId, metadataValues, notes, onSaved, pendingLogId, selectedCues]);
+  }, [behaviorId, metadataValues, notes, onSaved, pendingLogId, selectedCues, stackedLogs]);
 
   const handleDelete = useCallback(() => {
     if (!editLogId) return;
