@@ -85,7 +85,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-22',
     items: [
       {
-        text: 'On a need\'s What helps list, a behavior can now fill the need by minutes, e.g. 100 min of a game = Full.',
+        text: "On a need's What helps list, a behavior can now fill the need by minutes, e.g. 100 min of a game = Full.",
         screen: 'Need',
         params: { needId: 'fun' },
         linkPhrase: "need's What helps list",
@@ -97,7 +97,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-21',
     items: [
       'Behaviors linked to an app or website now turn on Track duration and Track XP by themselves.',
-      'The birthday field can be typed in your phone\'s date order, with a calendar button.',
+      "The birthday field can be typed in your phone's date order, with a calendar button.",
       'The birthday picker now goes back before 1970.',
       'The image browser has a Desktop mode button, and you can type a web address in its search box.',
       'Fixed the automatic timer overlay disappearing right after opening an app.',
@@ -112,7 +112,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       'In Cook a meal, the base behavior card has a play button for its timer.',
       'Tasks: long-press › Select to edit several tasks at once.',
       {
-        text: 'The Social need screen\'s person dialog now has the full icon editor, a map for the address and a birthday picker.',
+        text: "The Social need screen's person dialog now has the full icon editor, a map for the address and a birthday picker.",
         screen: 'Need',
         params: { needId: 'social' },
         linkPhrase: 'Social need screen',
@@ -173,7 +173,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
         screen: 'NeedsSettings',
         linkPhrase: 'Needs settings',
       },
-      'Timed logs in a need\'s Logged today list now show their duration and start - end time.',
+      "Timed logs in a need's Logged today list now show their duration and start - end time.",
       'New reminder: "After logging" can pick a whole behavior group.',
       'After-logging reminders now also start on "Save for later".',
     ],
@@ -210,7 +210,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       'Tasks has 3 tabs now: Today, Shopping and Later.',
       "Today's 3: pick up to 3 tasks a day; finishing all 3 gives +5 stars and a streak day.",
       'Every task now earns stars and money, shown as a +★ chip.',
-      'Long-press a task for its menu: Edit, Today\'s 3, move, or Delete.',
+      "Long-press a task for its menu: Edit, Today's 3, move, or Delete.",
       'Shopping: tick an item when bought and it moves to "Got it".',
       {
         text: 'New Settings option "Shopping timer app": the play button on a Shopping task opens that app with a timer.',
@@ -227,7 +227,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
         linkPhrase: 'Needs settings',
       },
       {
-        text: 'The icon picker\'s Image tab uses a copied image link, or opens Google Images.',
+        text: "The icon picker's Image tab uses a copied image link, or opens Google Images.",
         screen: 'Settings',
         linkLabel: 'Settings',
       },
