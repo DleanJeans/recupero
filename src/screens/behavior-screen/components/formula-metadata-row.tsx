@@ -93,16 +93,16 @@ export function FormulaMetadataRow({
           {field.unit ? ` (${field.unit})` : ''}
         </Text>
         <View style={styles.segment}>
-          {(['Type', 'Formula'] as const).map(option => {
-            const active = (option === 'Type') === typed;
+          {(['Manual', 'Formula'] as const).map(option => {
+            const active = (option === 'Manual') === typed;
             return (
               <Pressable
                 key={option}
-                onPress={() => onTypedChange(field.key, option === 'Type')}
+                onPress={() => onTypedChange(field.key, option === 'Manual')}
                 style={[styles.segmentItem, active && styles.segmentItemActive]}
                 accessibilityRole="button"
                 accessibilityState={{ selected: active }}
-                accessibilityLabel={option === 'Type' ? `Type ${field.label}` : `Work out ${field.label}`}
+                accessibilityLabel={option === 'Manual' ? `Type ${field.label}` : `Work out ${field.label}`}
               >
                 <Text
                   style={[styles.segmentText, active && styles.segmentTextActive]}

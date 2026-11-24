@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-24',
     items: [
+      'Weight-style fields in the Behavior Log now start as Manual instead of Formula.',
       'Tasks: swipe a task right to log "Bugged me +1" at any time; the hottest rise to Fix first.',
       'Tasks no longer show stars.',
       'Saved-for-later logs now keep their stacked behaviours and log them together.',

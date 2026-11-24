@@ -210,13 +210,13 @@ export function useBehaviorLogForm({
   );
   const formulaInputKeys = useMemo(() => getFormulaInputKeys(formulaFields), [formulaFields]);
   /** Formula fields in Type mode. An edited log opens the way it was saved; a new one the way this behaviour
-   *  was last logged. */
+   *  was last logged (Type/Manual when it was never chosen). */
   const [typedFormulaKeys, setTypedFormulaKeys] = useState<string[]>(() =>
     formulaFields
       .filter(field =>
         existingLog
           ? isLogFormulaValueTyped(field, existingLog.metadata)
-          : behavior.metadataTypedFormulaKeys?.includes(field.key) === true,
+          : behavior.metadataTypedFormulaKeys == null || behavior.metadataTypedFormulaKeys.includes(field.key),
       )
       .map(field => field.key),
   );
@@ -488,10 +488,8 @@ export function useBehaviorLogForm({
     const kept = (behavior.metadataTypedFormulaKeys ?? []).filter(key => !formulaKeys.has(key));
     const next = [...kept, ...typedFormulaKeys.filter(key => formulaKeys.has(key))].sort();
     const previous = [...(behavior.metadataTypedFormulaKeys ?? [])].sort();
-    if (next.join(',') === previous.join(',')) return;
-    useBehaviorStore
-      .getState()
-      .updateBehavior(behaviorId, { metadataTypedFormulaKeys: next.length > 0 ? next : undefined });
+    if (behavior.metadataTypedFormulaKeys != null && next.join(',') === previous.join(',')) return;
+    useBehaviorStore.getState().updateBehavior(behaviorId, { metadataTypedFormulaKeys: next });
   }, [behavior.metadataTypedFormulaKeys, behaviorId, formulaFields, typedFormulaKeys]);
   const handleConfirm = useCallback(() => {
     const logHour = showTimeRange ? startHour : endHour;
