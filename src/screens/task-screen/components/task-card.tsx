@@ -77,7 +77,7 @@ function TaskCardComponent({
   ].filter((part): part is string => Boolean(part));
   const now = Date.now();
   const bugSummary = complete ? undefined : formatBugSummary(task, now);
-  const bugHeat = bugSummary ? getBugHeat(task.bugs, now) : 0;
+  const bugHeat = getBugHeat(task.bugs, now);
   const timeLabel = timeSpentMs != null ? formatTaskTime(timeSpentMs) : undefined;
   const canTrack =
     selected === undefined &&
@@ -130,7 +130,7 @@ function TaskCardComponent({
               {task.title}
             </Text>
           </View>
-          {bugSummary && <BugHeatBar heat={bugHeat} />}
+          {!complete && <BugHeatBar heat={bugHeat} />}
           {(bugSummary || metaParts.length > 0) && (
             <Text
               style={styles.taskMeta}
@@ -189,12 +189,12 @@ function TaskCardComponent({
             style={styles.swipeText}
             numberOfLines={1}
           >
-            😣 Bugged me
+            Bugged me +1
           </Text>
         </View>
       )}
-      onSwipeableOpen={direction => {
-        if (direction !== 'left') return;
+      onSwipeableOpen={() => {
+        // Only left-side actions exist, so any open is the "Bugged me" swipe.
         swipeRef.current?.close();
         onBug(task);
       }}

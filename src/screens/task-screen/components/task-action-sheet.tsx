@@ -81,7 +81,7 @@ export function TaskActionSheet({
           {task.completedDates.length === 0 && (
             <SheetOption
               icon="flame-outline"
-              label="😣 Bugged me"
+              label="Bugged me +1"
               hint="Log that this bothered you again."
               onPress={onBug}
             />

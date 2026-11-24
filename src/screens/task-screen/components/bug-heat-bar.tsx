@@ -15,7 +15,7 @@ export function BugHeatBar({ heat }: BugHeatBarProps) {
       style={styles.track}
       accessibilityLabel={`Bug heat ${Math.round(fill * 100)} percent`}
     >
-      <View style={[styles.fill, { width: `${Math.max(4, Math.round(fill * 100))}%` }, fill >= 0.75 && styles.hot]} />
+      <View style={[styles.fill, { width: `${Math.round(fill * 100)}%` }, fill >= 0.75 && styles.hot]} />
     </View>
   );
 }

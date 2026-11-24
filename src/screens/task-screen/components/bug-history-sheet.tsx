@@ -125,7 +125,7 @@ export function BugHistorySheet({ task, onClose, onLogBug, onRemoveBug }: BugHis
             onPress={onLogBug}
             style={styles.logButton}
           >
-            😣 Bugged me
+            Bugged me +1
           </Button>
         </View>
       </View>
