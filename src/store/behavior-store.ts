@@ -15,7 +15,7 @@ import type {
 } from '../types/behavior';
 import type { CueRef } from '../types/cue';
 import type { HealthSleep } from '../types/health';
-import type { AddTaskInput, TaskEntry } from '../types/task';
+import type { AddTaskInput, TaskBug, TaskEntry } from '../types/task';
 import { mergeCloseAutoLogs, mergeTrackedSessionsIntoLogs, siteMatchesDomain } from '../utils/app-usage-utils';
 import { getGroupKey } from '../utils/behavior-group-utils';
 import { mergeSleepIntoLogs } from '../utils/google-health-utils';
@@ -197,6 +197,11 @@ interface BehaviorStore {
   toggleTaskCompletion: (taskId: string, dateStr: string, timed?: { start: number; end: number }) => void;
   /** Pick or unpick a task as one of "Today's 3" for the date. */
   toggleTaskFocus: (taskId: string, dateStr: string) => void;
+  /** "Bugged me": log one more time the task's problem bothered the user. */
+  addTaskBug: (taskId: string, bug: TaskBug) => void;
+  removeTaskBug: (taskId: string, at: number) => void;
+  /** Hides the "Add to Today's 3?" nudge until the task gets new bugs. */
+  dismissTaskBugNudge: (taskId: string) => void;
   removeTask: (taskId: string) => void;
 }
 
@@ -587,6 +592,26 @@ export const useBehaviorStore = create<BehaviorStore>()(
             ),
           };
         }),
+      addTaskBug: (taskId, bug) =>
+        set(state => ({
+          tasks: (state.tasks ?? []).map(task =>
+            task.id === taskId ? { ...task, bugs: [...(task.bugs ?? []), bug].sort((a, b) => a.at - b.at) } : task,
+          ),
+        })),
+      removeTaskBug: (taskId, at) =>
+        set(state => ({
+          tasks: (state.tasks ?? []).map(task => {
+            if (task.id !== taskId) return task;
+            const bugs = (task.bugs ?? []).filter(bug => bug.at !== at);
+            return { ...task, bugs: bugs.length > 0 ? bugs : undefined };
+          }),
+        })),
+      dismissTaskBugNudge: taskId =>
+        set(state => ({
+          tasks: (state.tasks ?? []).map(task =>
+            task.id === taskId ? { ...task, bugNudgeDismissedAt: Date.now() } : task,
+          ),
+        })),
       toggleTaskFocus: (taskId, dateStr) =>
         set(state => ({
           tasks: (state.tasks ?? []).map(task => {

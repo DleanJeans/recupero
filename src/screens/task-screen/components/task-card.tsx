@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React from 'react';
+import React, { useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { AppIcon } from '../../../components/app-icon';
 import { BehaviorIcon } from '../../../components/behavior-icon';
@@ -16,9 +17,10 @@ import type { TaskEntry } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
 import { getPlaceIconText } from '../../../utils/cue-utils';
 import { launchApp } from '../../../utils/launch-app';
+import { formatBugSummary, getBugHeat } from '../../../utils/task-bug-utils';
 import { formatTaskTime } from '../../../utils/task-time-utils';
+import { BugHeatBar } from './bug-heat-bar';
 import { TaskCheckbox } from './task-checkbox';
-import { TaskRewardChip } from './task-reward-chip';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -39,6 +41,8 @@ interface TaskCardProps {
   note?: string;
   /** Select mode: the box shows whether the task is selected (undefined = not selecting). */
   selected?: boolean;
+  /** Swipe right to log "Bugged me". Swiping is off when not set. */
+  onBug?: (task: TaskEntry) => void;
   onToggle: (task: TaskEntry) => void;
   onLongPress: (task: TaskEntry) => void;
 }
@@ -53,9 +57,11 @@ function TaskCardComponent({
   openAppPackage,
   timeSpentMs,
   selected,
+  onBug,
   onToggle,
   onLongPress,
 }: TaskCardProps) {
+  const swipeRef = useRef<SwipeableMethods>(null);
   const navigation = useNavigation<NavigationProp>();
   const startTimer = useTimerStore(s => s.start);
   const showBehaviorName = behavior != null && behavior.name.trim() !== task.title.trim();
@@ -69,6 +75,9 @@ function TaskCardComponent({
         : undefined,
     note,
   ].filter((part): part is string => Boolean(part));
+  const now = Date.now();
+  const bugSummary = complete ? undefined : formatBugSummary(task, now);
+  const bugHeat = bugSummary ? getBugHeat(task.bugs, now) : 0;
   const timeLabel = timeSpentMs != null ? formatTaskTime(timeSpentMs) : undefined;
   const canTrack =
     selected === undefined &&
@@ -83,7 +92,7 @@ function TaskCardComponent({
     navigation.navigate('Timer');
   };
 
-  return (
+  const card = (
     <Animated.View
       layout={TASK_CARD_LAYOUT}
       style={[styles.taskCard, focused && styles.focusCard, complete && styles.taskCardComplete]}
@@ -121,11 +130,14 @@ function TaskCardComponent({
               {task.title}
             </Text>
           </View>
-          {metaParts.length > 0 && (
+          {bugSummary && <BugHeatBar heat={bugHeat} />}
+          {(bugSummary || metaParts.length > 0) && (
             <Text
               style={styles.taskMeta}
               numberOfLines={1}
             >
+              {bugSummary && <Text style={bugHeat >= 1 ? styles.bugMetaHot : undefined}>{bugSummary}</Text>}
+              {bugSummary && metaParts.length > 0 ? ' · ' : ''}
               {metaParts.join(' · ')}
             </Text>
           )}
@@ -145,12 +157,6 @@ function TaskCardComponent({
             </Text>
           </View>
         )}
-        {task.stars > 0 && (
-          <TaskRewardChip
-            stars={task.stars}
-            earned={complete}
-          />
-        )}
       </Pressable>
       {canTrack && (
         <Button
@@ -167,6 +173,34 @@ function TaskCardComponent({
         </Button>
       )}
     </Animated.View>
+  );
+
+  if (!onBug || complete || selected !== undefined) return card;
+  return (
+    <ReanimatedSwipeable
+      ref={swipeRef}
+      friction={2}
+      overshootLeft={false}
+      leftThreshold={72}
+      containerStyle={styles.swipeContainer}
+      renderLeftActions={() => (
+        <View style={styles.swipeAction}>
+          <Text
+            style={styles.swipeText}
+            numberOfLines={1}
+          >
+            😣 Bugged me
+          </Text>
+        </View>
+      )}
+      onSwipeableOpen={direction => {
+        if (direction !== 'left') return;
+        swipeRef.current?.close();
+        onBug(task);
+      }}
+    >
+      {card}
+    </ReanimatedSwipeable>
   );
 }
 
@@ -221,6 +255,25 @@ const styles = StyleSheet.create({
   taskTitleComplete: {
     color: Colors.text.muted,
     textDecorationLine: 'line-through',
+  },
+  bugMetaHot: {
+    color: '#FDBA74',
+  },
+  swipeContainer: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  swipeAction: {
+    width: 150,
+    justifyContent: 'center',
+    paddingLeft: 16,
+    backgroundColor: '#C2410C',
+  },
+  swipeText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    flexShrink: 0,
   },
   taskMeta: {
     color: Colors.text.faint,

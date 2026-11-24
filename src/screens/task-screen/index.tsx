@@ -14,7 +14,7 @@ import { useCuesStore } from '../../store/cues-store';
 import { type TaskTab, useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
 import { useTimerStore } from '../../store/timer-store';
-import type { OneOffPlace, TaskEntry, TaskList, TaskStarValue } from '../../types/task';
+import type { OneOffPlace, TaskBug, TaskEntry, TaskList } from '../../types/task';
 import { ensureAppBehavior } from '../../utils/app-behavior';
 import { syncAppUsage } from '../../utils/app-usage-sync';
 import { getActiveBehaviors } from '../../utils/archive-utils';
@@ -24,12 +24,11 @@ import { formatDateDisplay, toDateString } from '../../utils/date-utils';
 import { DEFAULT_PLACE_DWELL_MIN, getPlaceDwellMin } from '../../utils/place-task-utils';
 import { requestPlaceTaskPermissions } from '../../utils/reminder-permissions';
 import { buildBatchUpdates, type TaskBatchEdits } from '../../utils/task-batch-utils';
+import { getBugNudgeTask, getFixFirstTasks, sortByBugHeat } from '../../utils/task-bug-utils';
 import {
-  FOCUS_BONUS_STARS,
   getFocusStreak,
   getFocusTasksForDate,
   getTaskList,
-  getTaskStarsForDate,
   getTasksForDate,
   hasFocusBonusOnDate,
   isTaskCompleteOnDate,
@@ -39,6 +38,9 @@ import {
 } from '../../utils/task-utils';
 import { DateNavigationRow } from '../components/date-navigation-row';
 import { AddBehaviorFab } from '../home-screen/components/add-behavior-fab';
+import { BugHistorySheet } from './components/bug-history-sheet';
+import { BugLogSheet } from './components/bug-log-sheet';
+import { BugNudgeCard } from './components/bug-nudge-card';
 import { FocusStreakStrip } from './components/focus-streak-strip';
 import { TaskActionSheet } from './components/task-action-sheet';
 import { TaskBatchEditDialog } from './components/task-batch-edit-dialog';
@@ -63,6 +65,8 @@ export function TaskScreen() {
   const taskScreenSelectedDate = useScreenUiStore(s => s.taskScreenSelectedDate);
   const setSelectedDate = useScreenUiStore(s => s.setTaskScreenSelectedDate);
   const tab = useScreenUiStore(s => s.taskScreenTab);
+  const sort = useScreenUiStore(s => s.taskScreenSort);
+  const setSort = useScreenUiStore(s => s.setTaskScreenSort);
   const setTaskTab = useScreenUiStore(s => s.setTaskScreenTab);
   const setTab = useCallback(
     (next: TaskTab) => {
@@ -73,7 +77,6 @@ export function TaskScreen() {
   );
   const selectedDate = taskScreenSelectedDate ?? todayStr;
   const [title, setTitle] = useState('');
-  const [stars, setStars] = useState<TaskStarValue>(1);
   const [selectedBehaviorId, setSelectedBehaviorId] = useState<string | undefined>();
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | undefined>();
   const [oneOffPlace, setOneOffPlace] = useState<OneOffPlace | undefined>();
@@ -85,6 +88,9 @@ export function TaskScreen() {
   const [editingTaskId, setEditingTaskId] = useState<string | undefined>();
   const [menuTaskId, setMenuTaskId] = useState<string | undefined>();
   const [pickOpen, setPickOpen] = useState(false);
+  /** Task whose "Bugged me" log sheet / bug history is open. */
+  const [bugTaskId, setBugTaskId] = useState<string | undefined>();
+  const [historyTaskId, setHistoryTaskId] = useState<string | undefined>();
   /** Select mode: ids of the picked tasks (undefined = not selecting). */
   const [selectedIds, setSelectedIds] = useState<string[]>();
   const [batchOpen, setBatchOpen] = useState(false);
@@ -99,6 +105,9 @@ export function TaskScreen() {
   const removeTask = useBehaviorStore(s => s.removeTask);
   const toggleTaskCompletion = useBehaviorStore(s => s.toggleTaskCompletion);
   const toggleTaskFocus = useBehaviorStore(s => s.toggleTaskFocus);
+  const addTaskBug = useBehaviorStore(s => s.addTaskBug);
+  const removeTaskBug = useBehaviorStore(s => s.removeTaskBug);
+  const dismissTaskBugNudge = useBehaviorStore(s => s.dismissTaskBugNudge);
   const hidePrivate = useSettingsStore(s => s.hidePrivate);
   const shoppingTimerApp = useSettingsStore(s => s.shoppingTimerApp);
   const places = useCuesStore(s => s.places);
@@ -126,20 +135,68 @@ export function TaskScreen() {
       getFocusTasksForDate(tasks, selectedDate).filter(task => isTaskVisibleOnDate(task, selectedDate, dayCutoffHour)),
     [tasks, selectedDate, dayCutoffHour],
   );
+  const isToday = selectedDate === todayStr;
+  // Hot tasks (from any tab but Later) that are not already picked for today.
+  const fixFirstTasks = useMemo(
+    () =>
+      isToday
+        ? getFixFirstTasks(
+            tasks ?? [],
+            Date.now(),
+            task => !isTaskFocusedOn(task, todayStr) && listOf(task) !== 'someday',
+          )
+        : [],
+    [isToday, tasks, todayStr, listOf],
+  );
+  const bugNudgeTask = useMemo(
+    () =>
+      isToday
+        ? getBugNudgeTask(
+            tasks ?? [],
+            Date.now(),
+            task => !isTaskFocusedOn(task, todayStr) && listOf(task) !== 'someday',
+          )
+        : undefined,
+    [isToday, tasks, todayStr, listOf],
+  );
+  /** Oldest first (the default) or hottest first. Done tasks stay at the bottom. */
+  const sortOpenFirst = useCallback(
+    (list: TaskEntry[], isDone: (task: TaskEntry) => boolean) => {
+      if (sort !== 'heat') return list;
+      return [
+        ...sortByBugHeat(
+          list.filter(task => !isDone(task)),
+          Date.now(),
+        ),
+        ...list.filter(isDone),
+      ];
+    },
+    [sort],
+  );
   const nextUpTasks = useMemo(
     () =>
-      getTasksForDate(tasks, selectedDate, dayCutoffHour).filter(
-        task => !isTaskFocusedOn(task, selectedDate) && listOf(task) === 'next',
+      sortOpenFirst(
+        getTasksForDate(tasks, selectedDate, dayCutoffHour).filter(
+          task =>
+            !isTaskFocusedOn(task, selectedDate) &&
+            listOf(task) === 'next' &&
+            !fixFirstTasks.some(hot => hot.id === task.id),
+        ),
+        task => isTaskCompleteOnDate(task, selectedDate),
       ),
-    [tasks, selectedDate, dayCutoffHour, listOf],
+    [tasks, selectedDate, dayCutoffHour, listOf, fixFirstTasks, sortOpenFirst],
   );
   const shoppingTasks = useMemo(
     () => (tasks ?? []).filter(task => !task.archived && listOf(task) === 'shopping'),
     [tasks, listOf],
   );
   const toBuyTasks = useMemo(
-    () => shoppingTasks.filter(task => task.completedDates.length === 0).sort((a, b) => a.createdAt - b.createdAt),
-    [shoppingTasks],
+    () =>
+      sortOpenFirst(
+        shoppingTasks.filter(task => task.completedDates.length === 0).sort((a, b) => a.createdAt - b.createdAt),
+        () => false,
+      ),
+    [shoppingTasks, sortOpenFirst],
   );
   const gotItTasks = useMemo(
     () =>
@@ -151,16 +208,18 @@ export function TaskScreen() {
   );
   const laterTasks = useMemo(
     () =>
-      (tasks ?? [])
-        .filter(task => !task.archived && task.completedDates.length === 0 && listOf(task) === 'someday')
-        .sort((a, b) => a.createdAt - b.createdAt),
-    [tasks, listOf],
+      sortOpenFirst(
+        (tasks ?? [])
+          .filter(task => !task.archived && task.completedDates.length === 0 && listOf(task) === 'someday')
+          .sort((a, b) => a.createdAt - b.createdAt),
+        () => false,
+      ),
+    [tasks, listOf, sortOpenFirst],
   );
 
   const focusDoneCount = focusTasks.filter(task => isTaskCompleteOnDate(task, selectedDate)).length;
   const bonusEarned = useMemo(() => hasFocusBonusOnDate(tasks, selectedDate), [tasks, selectedDate]);
   const streak = useMemo(() => getFocusStreak(tasks, todayStr), [tasks, todayStr]);
-  const starsOnDate = useMemo(() => getTaskStarsForDate(tasks, selectedDate), [tasks, selectedDate]);
   const calendarDayMetrics = useDeferredComputation(() => getCalendarTaskCompletionMetrics(tasks), [tasks]);
   const openNextUpCount = nextUpTasks.filter(task => !isTaskCompleteOnDate(task, selectedDate)).length;
   const tabCounts: Record<TaskTab, number> = {
@@ -184,6 +243,9 @@ export function TaskScreen() {
   const focusCountForPickDate = useMemo(() => getFocusTasksForDate(tasks, focusDate).length, [tasks, focusDate]);
 
   const selectedBehavior = selectedBehaviorId ? behaviorById.get(selectedBehaviorId) : undefined;
+  const editingTask = editingTaskId ? (tasks ?? []).find(task => task.id === editingTaskId) : undefined;
+  const bugTask = bugTaskId ? (tasks ?? []).find(task => task.id === bugTaskId) : undefined;
+  const historyTask = historyTaskId ? (tasks ?? []).find(task => task.id === historyTaskId) : undefined;
   const menuTask = menuTaskId ? (tasks ?? []).find(task => task.id === menuTaskId) : undefined;
 
   const resetComposer = () => {
@@ -218,7 +280,7 @@ export function TaskScreen() {
     const hasPlace = savedPlaceId != null || taskOneOffPlace != null;
     const nextTask = {
       title: taskTitle,
-      stars: stars === 0 ? (1 as const) : stars,
+      stars: editingTask && editingTask.stars > 0 ? editingTask.stars : (1 as const),
       source: isBehaviorOnlyTask ? ('behavior' as const) : ('oneOff' as const),
       behaviorId,
       placeId: savedPlaceId,
@@ -250,7 +312,6 @@ export function TaskScreen() {
 
   const openAddComposer = () => {
     resetComposer();
-    setStars(1);
     setComposerOpen(true);
     if (tab === 'shopping') applyShoppingDefaults();
   };
@@ -280,7 +341,6 @@ export function TaskScreen() {
 
   const openEditComposer = (task: TaskEntry) => {
     setTitle(task.source === 'behavior' ? '' : task.title);
-    setStars(task.stars === 0 ? 1 : task.stars);
     setSelectedBehaviorId(task.behaviorId);
     setSelectedPlaceId(task.placeId);
     setOneOffPlace(task.oneOffPlace);
@@ -332,6 +392,7 @@ export function TaskScreen() {
     (task: TaskEntry) => toggleTask(task, lastCompletedDate(task) ?? todayStr),
     [todayStr, toggleTask],
   );
+  const openBugLog = useCallback((task: TaskEntry) => setBugTaskId(task.id), []);
   const openMenu = useCallback((task: TaskEntry) => setMenuTaskId(task.id), []);
   const toggleSelected = useCallback(
     (task: TaskEntry) =>
@@ -391,13 +452,36 @@ export function TaskScreen() {
       openAppPackage={task.appPackage ?? options.openAppPackage}
       timeSpentMs={complete ? undefined : timeSpent.get(task.id)}
       selected={selectedIds ? selectedIds.includes(task.id) : undefined}
+      onBug={selecting ? undefined : openBugLog}
       onToggle={selecting ? toggleSelected : onToggle}
       onLongPress={selecting ? toggleSelected : openMenu}
     />
   );
 
+  const sortAction = sort === 'heat' ? 'Hottest first' : 'Oldest first';
+  const toggleSort = () => setSort(sort === 'heat' ? 'oldest' : 'heat');
+
+  const renderFixFirst = () => (
+    <>
+      <SectionHeader title="🔥 Fix first" />
+      {fixFirstTasks.map(task =>
+        task.list === 'shopping' || listOf(task) === 'shopping'
+          ? renderCard(task, false, handleListToggle, { openAppPackage: shoppingTimerApp?.packageName })
+          : renderCard(task, false, handleTodayToggle),
+      )}
+    </>
+  );
+
   const renderToday = () => (
     <>
+      {bugNudgeTask && focusTasks.length < TODAY_FOCUS_LIMIT && (
+        <BugNudgeCard
+          task={bugNudgeTask}
+          onAdd={() => toggleTaskFocus(bugNudgeTask.id, todayStr)}
+          onDismiss={() => dismissTaskBugNudge(bugNudgeTask.id)}
+        />
+      )}
+      {fixFirstTasks.length > 0 && renderFixFirst()}
       <SectionHeader
         title={`Today's ${TODAY_FOCUS_LIMIT}`}
         action={canPick ? (focusTasks.length > 0 ? 'Change' : 'Pick') : undefined}
@@ -407,7 +491,7 @@ export function TaskScreen() {
         <View style={styles.pickCard}>
           <Text style={styles.pickText}>
             {canPick
-              ? `Pick up to ${TODAY_FOCUS_LIMIT} tasks to focus on. Finish all ${TODAY_FOCUS_LIMIT} for +${FOCUS_BONUS_STARS} stars and a day on your streak.`
+              ? `Pick up to ${TODAY_FOCUS_LIMIT} tasks to focus on. Finish all ${TODAY_FOCUS_LIMIT} for a day on your streak.`
               : 'No tasks were picked on this day.'}
           </Text>
           {canPick && (
@@ -425,7 +509,11 @@ export function TaskScreen() {
           renderCard(task, isTaskCompleteOnDate(task, selectedDate), handleTodayToggle, { focused: true }),
         )
       )}
-      <SectionHeader title="Next up" />
+      <SectionHeader
+        title="Next up"
+        action={nextUpTasks.length > 1 ? sortAction : undefined}
+        onAction={toggleSort}
+      />
       {nextUpTasks.length === 0 ? (
         <Text style={styles.empty}>Nothing else for this day.</Text>
       ) : (
@@ -436,7 +524,11 @@ export function TaskScreen() {
 
   const renderShopping = () => (
     <>
-      <SectionHeader title="To buy" />
+      <SectionHeader
+        title="To buy"
+        action={toBuyTasks.length > 1 ? sortAction : undefined}
+        onAction={toggleSort}
+      />
       {toBuyTasks.length === 0 ? (
         <Text style={styles.empty}>Nothing to buy. Tap + to add something.</Text>
       ) : (
@@ -456,7 +548,11 @@ export function TaskScreen() {
 
   const renderLater = () => (
     <>
-      <SectionHeader title="Someday" />
+      <SectionHeader
+        title="Someday"
+        action={laterTasks.length > 1 ? sortAction : undefined}
+        onAction={toggleSort}
+      />
       <Text style={styles.hint}>Ideas for later. They never show up as due. Long-press one to move it to Today.</Text>
       {laterTasks.length === 0 ? (
         <Text style={styles.empty}>Nothing here yet.</Text>
@@ -497,7 +593,6 @@ export function TaskScreen() {
               pickedCount={focusTasks.length}
               doneCount={focusDoneCount}
               bonusEarned={bonusEarned}
-              starsToday={starsOnDate}
             />
           </View>
         </>
@@ -534,8 +629,6 @@ export function TaskScreen() {
           timeSpentMs={editingTaskId ? timeSpent.get(editingTaskId) : undefined}
           title={title}
           onTitleChange={setTitle}
-          stars={stars}
-          onStarsChange={setStars}
           behaviors={availableBehaviors}
           selectedBehavior={selectedBehavior}
           onBehaviorSelect={setSelectedBehaviorId}
@@ -604,6 +697,14 @@ export function TaskScreen() {
             setMenuTaskId(undefined);
             toggleTaskFocus(menuTask.id, focusDate);
           }}
+          onBug={() => {
+            setMenuTaskId(undefined);
+            setBugTaskId(menuTask.id);
+          }}
+          onBugHistory={() => {
+            setMenuTaskId(undefined);
+            setHistoryTaskId(menuTask.id);
+          }}
           onMove={list => {
             setMenuTaskId(undefined);
             updateTask(menuTask.id, { list });
@@ -612,6 +713,26 @@ export function TaskScreen() {
             setMenuTaskId(undefined);
             confirmRemove(menuTask);
           }}
+        />
+      )}
+
+      {bugTask && (
+        <BugLogSheet
+          task={bugTask}
+          onClose={() => setBugTaskId(undefined)}
+          onSave={(bug: TaskBug) => {
+            addTaskBug(bugTask.id, bug);
+            setBugTaskId(undefined);
+          }}
+        />
+      )}
+
+      {historyTask && !bugTask && (
+        <BugHistorySheet
+          task={historyTask}
+          onClose={() => setHistoryTaskId(undefined)}
+          onLogBug={() => setBugTaskId(historyTask.id)}
+          onRemoveBug={at => removeTaskBug(historyTask.id, at)}
         />
       )}
 

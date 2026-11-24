@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+export type TaskSort = 'oldest' | 'heat';
 export type DayTab = 'logs' | 'metadata';
 export type TaskTab = 'today' | 'shopping' | 'later';
 /** Metadata tab scope: totals for the selected day, or the last 7 days against each daily goal. */
@@ -21,6 +22,8 @@ interface ScreenUiStore {
   setTaskScreenSelectedDate: (date: string) => void;
   taskScreenTab: TaskTab;
   setTaskScreenTab: (tab: TaskTab) => void;
+  taskScreenSort: TaskSort;
+  setTaskScreenSort: (sort: TaskSort) => void;
 }
 
 export const useScreenUiStore = create<ScreenUiStore>()(set => ({
@@ -33,6 +36,8 @@ export const useScreenUiStore = create<ScreenUiStore>()(set => ({
   taskScreenSelectedDate: null,
   taskScreenTab: 'today',
   setTaskScreenTab: tab => set({ taskScreenTab: tab }),
+  taskScreenSort: 'oldest',
+  setTaskScreenSort: sort => set({ taskScreenSort: sort }),
   setHomeSelectedCategoryId: id => set({ homeSelectedCategoryId: id }),
   setDayScreenSelectedDate: date => set({ dayScreenSelectedDate: date }),
   setDayScreenSelectedTab: tab => set({ dayScreenSelectedTab: tab }),

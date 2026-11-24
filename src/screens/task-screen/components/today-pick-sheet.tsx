@@ -6,8 +6,7 @@ import { Button } from '../../../components/button';
 import { Text } from '../../../components/text';
 import type { TaskEntry, TaskList } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
-import { FOCUS_BONUS_STARS, TODAY_FOCUS_LIMIT } from '../../../utils/task-utils';
-import { TaskRewardChip } from './task-reward-chip';
+import { TODAY_FOCUS_LIMIT } from '../../../utils/task-utils';
 
 const LIST_LABELS: Record<TaskList, string> = {
   next: 'Next up',
@@ -58,7 +57,7 @@ export function TodayPickSheet({ candidates, onToggle, onClose }: TodayPickSheet
             style={styles.subtitle}
             numberOfLines={2}
           >
-            Finish all {TODAY_FOCUS_LIMIT} for +{FOCUS_BONUS_STARS} bonus stars and a day on your streak.
+            Finish all {TODAY_FOCUS_LIMIT} for a day on your streak.
           </Text>
           <ScrollView
             style={styles.list}
@@ -95,7 +94,6 @@ export function TodayPickSheet({ candidates, onToggle, onClose }: TodayPickSheet
                       {LIST_LABELS[list]}
                     </Text>
                   </View>
-                  {task.stars > 0 && <TaskRewardChip stars={task.stars} />}
                 </Pressable>
               );
             })}

@@ -12,6 +12,15 @@ export interface OneOffPlace {
   radiusM: number;
 }
 
+/** One time the task's problem bugged the user again ("Bugged me"). */
+export interface TaskBug {
+  /** When it happened (ms). */
+  at: number;
+  note?: string;
+  /** Quick tags picked in the log sheet, e.g. "Lost time". */
+  tags?: string[];
+}
+
 export interface TaskEntry {
   id: string;
   title: string;
@@ -37,6 +46,10 @@ export interface TaskEntry {
   list?: TaskList;
   /** Dates (yyyy-MM-dd) on which this task was picked as one of "Today's 3". */
   focusDates?: string[];
+  /** Every time this task's problem bugged the user again. More recent bugs raise its "heat". */
+  bugs?: TaskBug[];
+  /** When the "Add to Today's 3?" nudge was dismissed; only bugs after it count toward the next nudge. */
+  bugNudgeDismissedAt?: number;
   completedDates: string[];
   completedAtByDate?: Record<string, number>;
   completionLogIds?: Record<string, string>;

@@ -11,13 +11,12 @@ import { Text } from '../../../components/text';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import type { BehaviorEntry } from '../../../types/behavior';
 import type { SavedPlace } from '../../../types/cue';
-import type { TaskEntry, TaskStarValue } from '../../../types/task';
+import type { TaskEntry } from '../../../types/task';
 import { findAutoTrackedBehavior } from '../../../utils/app-usage-utils';
 import { Colors } from '../../../utils/colors';
 import { getPlaceEmoji } from '../../../utils/cue-utils';
 import { DEFAULT_PLACE_DWELL_MIN, formatPlaceDwell, getPlaceDwellMin } from '../../../utils/place-task-utils';
 import { getCommonValue, getTimedState, nextTimedValue, type TaskBatchEdits } from '../../../utils/task-batch-utils';
-import { StarPicker } from './star-picker';
 import { AttachRow } from './task-attach-row';
 import { TaskBehaviorPicker } from './task-behavior-picker';
 import { TaskPlaceScreen } from './task-place-screen';
@@ -306,31 +305,6 @@ export function TaskBatchEditDialog({ tasks, behaviors, places, onApply, onCance
           </Pressable>
 
           <View style={styles.footer}>
-            {edits.stars != null ? (
-              <StarPicker
-                value={edits.stars}
-                onChange={(stars: TaskStarValue) => setEdits(prev => ({ ...prev, stars }))}
-              />
-            ) : (
-              <Pressable
-                style={styles.keepStars}
-                onPress={() => setEdits(prev => ({ ...prev, stars: 1 }))}
-                accessibilityRole="button"
-                accessibilityLabel="Change stars for all"
-              >
-                <Ionicons
-                  name="star-outline"
-                  size={15}
-                  color={Colors.text.faint}
-                />
-                <Text
-                  style={styles.keepStarsText}
-                  numberOfLines={1}
-                >
-                  Keep
-                </Text>
-              </Pressable>
-            )}
             <View style={styles.spacer} />
             <Button
               variant="ghost"
@@ -430,16 +404,6 @@ const styles = StyleSheet.create({
   checkLabel: { color: Colors.text.primary, fontSize: 15 },
   checkHint: { color: Colors.text.muted, fontSize: 12, lineHeight: 17 },
   footer: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  keepStars: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    height: 42,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: Colors.bg.input,
-  },
-  keepStarsText: { color: Colors.text.faint, fontSize: 13 },
   spacer: { flex: 1 },
   footerButton: { minWidth: 72 },
   applyButton: { minWidth: 110 },

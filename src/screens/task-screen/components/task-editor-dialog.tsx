@@ -14,13 +14,12 @@ import { useKeyboardVisible } from '../../../hooks/use-keyboard-visible';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import type { BehaviorEntry } from '../../../types/behavior';
 import type { SavedPlace } from '../../../types/cue';
-import type { OneOffPlace, TaskStarValue } from '../../../types/task';
+import type { OneOffPlace } from '../../../types/task';
 import { findAutoTrackedBehavior } from '../../../utils/app-usage-utils';
 import { Colors } from '../../../utils/colors';
 import { getPlaceEmoji } from '../../../utils/cue-utils';
 import { formatPlaceDwell } from '../../../utils/place-task-utils';
 import { formatTaskTime } from '../../../utils/task-time-utils';
-import { StarPicker } from './star-picker';
 import { AttachRow } from './task-attach-row';
 import { TaskBehaviorPicker } from './task-behavior-picker';
 import { TaskOneOffPlaceScreen } from './task-one-off-place-screen';
@@ -32,8 +31,6 @@ interface TaskEditorDialogProps {
   timeSpentMs?: number;
   title: string;
   onTitleChange: (title: string) => void;
-  stars: TaskStarValue;
-  onStarsChange: (stars: TaskStarValue) => void;
   behaviors: BehaviorEntry[];
   selectedBehavior: BehaviorEntry | undefined;
   onBehaviorSelect: (behaviorId: string | undefined) => void;
@@ -62,8 +59,6 @@ export function TaskEditorDialog({
   timeSpentMs,
   title,
   onTitleChange,
-  stars,
-  onStarsChange,
   behaviors,
   selectedBehavior,
   onBehaviorSelect,
@@ -248,10 +243,6 @@ export function TaskEditorDialog({
           />
 
           <View style={styles.footer}>
-            <StarPicker
-              value={stars}
-              onChange={onStarsChange}
-            />
             <View style={styles.spacer} />
             <Button
               variant="ghost"

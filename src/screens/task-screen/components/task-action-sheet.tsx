@@ -27,6 +27,9 @@ interface TaskActionSheetProps {
   /** Starts select mode with this task ticked, to edit or move several at once. */
   onSelect: () => void;
   onToggleFocus: () => void;
+  /** Opens the "Bugged me" log sheet for this task. */
+  onBug: () => void;
+  onBugHistory: () => void;
   onMove: (list: TaskList) => void;
   onDelete: () => void;
 }
@@ -41,6 +44,8 @@ export function TaskActionSheet({
   onEdit,
   onSelect,
   onToggleFocus,
+  onBug,
+  onBugHistory,
   onMove,
   onDelete,
 }: TaskActionSheetProps) {
@@ -73,6 +78,21 @@ export function TaskActionSheet({
             label="Edit"
             onPress={onEdit}
           />
+          {task.completedDates.length === 0 && (
+            <SheetOption
+              icon="flame-outline"
+              label="😣 Bugged me"
+              hint="Log that this bothered you again."
+              onPress={onBug}
+            />
+          )}
+          {(task.bugs?.length ?? 0) > 0 && (
+            <SheetOption
+              icon="time-outline"
+              label={`Bug history (${task.bugs?.length})`}
+              onPress={onBugHistory}
+            />
+          )}
           <SheetOption
             icon="checkbox-outline"
             label="Select"
