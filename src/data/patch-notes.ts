@@ -38,6 +38,21 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-24',
     items: [
       {
+        text: 'Cravings now has Urges: bars for coping behaviours that rise until you do them. Long-press one to tune it.',
+        screen: 'Cravings',
+        linkPhrase: 'Cravings',
+      },
+      {
+        text: 'Needs moved from Cues to Cravings, with a "By need" view that groups urges under the need they cope for.',
+        screen: 'Cravings',
+        linkPhrase: 'Cravings',
+      },
+      {
+        text: 'Cues rows show XP as text only, without the bars.',
+        screen: 'Cues',
+        linkPhrase: 'Cues',
+      },
+      {
         text: 'Tasks can now have a one-off place picked on a map, without saving it to your places.',
         screen: 'Tasks',
         linkPhrase: 'Tasks',

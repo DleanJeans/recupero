@@ -18,8 +18,17 @@ import { AzmBarRow } from './azm-bar-row';
 import { NeedBarRow } from './need-bar-row';
 import { SunlightBarRow } from './sunlight-bar-row';
 
-/** Hunger, Thirst, Hygiene and Energy bars (plus today's sunlight) at the top of the Cues tab. */
-export function NeedsPanel() {
+interface NeedsPanelProps {
+  /** Section label. Defaults to "Needs". */
+  title?: string;
+  /** Rows to leave out, e.g. needs already shown with their coping urges. */
+  excludeIds?: string[];
+  /** Only these rows, without the header or card: for embedding one need inside another card. */
+  onlyIds?: string[];
+}
+
+/** Need bars (plus Cardio and today's sunlight) on the Cravings tab, with sort, History and settings. */
+export function NeedsPanel({ title = 'Needs', excludeIds, onlyIds }: NeedsPanelProps = {}) {
   const { needs, now } = useNeedLevels();
   const sunlight = useSunlight();
   const needOrder = useNeedsStore(state => state.needOrder);
@@ -40,18 +49,60 @@ export function NeedsPanel() {
     };
     const shown = manual.filter(
       key =>
-        (key === 'azm' && azmConnected) ||
-        (key === 'sunlight' && sunlight.enabled) ||
-        needs.some(need => need.id === key),
+        !excludeIds?.includes(key) &&
+        (!onlyIds || onlyIds.includes(key)) &&
+        ((key === 'azm' && azmConnected) ||
+          (key === 'sunlight' && sunlight.enabled) ||
+          needs.some(need => need.id === key)),
     );
     // Manual keeps the settings order; otherwise the least filled bar (need level or goal progress) is first.
     return sortMode === 'level' ? shown.sort((a, b) => ratioOf(a) - ratioOf(b)) : shown;
-  }, [needOrder, needs, now, azmConnected, azmByDay, azmGoal, sunlight, sortMode]);
+  }, [needOrder, needs, now, azmConnected, azmByDay, azmGoal, sunlight, sortMode, excludeIds, onlyIds]);
+
+  const rowViews = rows.map(key => {
+    if (key === 'azm')
+      return (
+        <AzmBarRow
+          key={key}
+          now={now}
+        />
+      );
+    if (key === 'sunlight') {
+      return (
+        <SunlightBarRow
+          key={key}
+          sunlight={sunlight}
+          onPress={() => navigation.navigate('Sunlight')}
+        />
+      );
+    }
+    const need = needs.find(item => item.id === key);
+    if (!need) return null;
+    return (
+      <NeedBarRow
+        key={key}
+        needId={need.id}
+        config={need.config}
+        level={need.level}
+        detail={
+          need.timerFullInMs != null
+            ? formatTimerFull(need.timerFullInMs)
+            : formatNextCraving(need.level, need.config, now, ts => formatTime(ts))
+        }
+        timerNames={need.timerBehaviorNames}
+        onPress={() =>
+          need.id === 'tidiness' ? navigation.navigate('Tidiness') : navigation.navigate('Need', { needId: need.id })
+        }
+      />
+    );
+  });
+
+  if (onlyIds) return <>{rowViews}</>;
 
   return (
     <View style={styles.group}>
       <View style={styles.header}>
-        <CueSectionLabel>Needs</CueSectionLabel>
+        <CueSectionLabel>{title}</CueSectionLabel>
         <View style={styles.actions}>
           <Pressable
             onPress={() => setSortMode(sortMode === 'manual' ? 'level' : 'manual')}
@@ -90,48 +141,10 @@ export function NeedsPanel() {
         </View>
       </View>
       <View style={styles.card}>
-        {needs.length === 0 && !sunlight.enabled && (
+        {rows.length === 0 && !excludeIds?.length && (
           <Text style={styles.empty}>All needs are off. Turn them on in settings.</Text>
         )}
-        {rows.map(key => {
-          if (key === 'azm')
-            return (
-              <AzmBarRow
-                key={key}
-                now={now}
-              />
-            );
-          if (key === 'sunlight') {
-            return (
-              <SunlightBarRow
-                key={key}
-                sunlight={sunlight}
-                onPress={() => navigation.navigate('Sunlight')}
-              />
-            );
-          }
-          const need = needs.find(item => item.id === key);
-          if (!need) return null;
-          return (
-            <NeedBarRow
-              key={key}
-              needId={need.id}
-              config={need.config}
-              level={need.level}
-              detail={
-                need.timerFullInMs != null
-                  ? formatTimerFull(need.timerFullInMs)
-                  : formatNextCraving(need.level, need.config, now, ts => formatTime(ts))
-              }
-              timerNames={need.timerBehaviorNames}
-              onPress={() =>
-                need.id === 'tidiness'
-                  ? navigation.navigate('Tidiness')
-                  : navigation.navigate('Need', { needId: need.id })
-              }
-            />
-          );
-        })}
+        {rowViews}
       </View>
     </View>
   );

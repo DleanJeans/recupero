@@ -7,7 +7,6 @@ import { type AddCueOptionKind, AddCueOptionModal } from '../../components/cues/
 import { CheckInCard } from '../../components/cues/check-in/check-in-card';
 import { CueSectionLabel } from '../../components/cues/cue-section-label';
 import { CueSegmentedControl } from '../../components/cues/cue-segmented-control';
-import { NeedsPanel } from '../../components/needs/needs-panel';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { TabHeader } from '../../components/tab-header';
 import { Text } from '../../components/text';
@@ -108,7 +107,6 @@ function CueSourcesTab() {
 
   const stats = useMemo(() => getCueXpStats(behaviors), [behaviors]);
   const sources = useMemo(() => getCueSources(places, custom), [places, custom]);
-  const maxXp = useMemo(() => Math.max(0, ...sources.map(source => stats.get(source.ref)?.xp ?? 0)), [sources, stats]);
   const byKind = useMemo(() => {
     const sorted = (kind: CueSourceKind) =>
       sources
@@ -134,7 +132,6 @@ function CueSourcesTab() {
         key={source.ref}
         source={source}
         stats={stats.get(source.ref) ?? EMPTY_STATS}
-        maxXp={maxXp}
         onPress={() => openSource(source)}
       />
     ));
@@ -142,8 +139,6 @@ function CueSourcesTab() {
   return (
     <>
       <CheckInCard />
-
-      <NeedsPanel />
 
       <Text style={styles.hint}>XP from behaviours you logged with each cue. Pick cues on the log screen.</Text>
 

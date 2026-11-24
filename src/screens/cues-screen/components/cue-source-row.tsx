@@ -10,15 +10,12 @@ import { type CueSource, type CueXpStats, cueKindToTriggerType, getCueAccent } f
 interface CueSourceRowProps {
   source: CueSource;
   stats: CueXpStats;
-  /** Highest XP across all cues, used to scale the bar. */
-  maxXp: number;
   onPress: () => void;
 }
 
-export function CueSourceRow({ source, stats, maxXp, onPress }: CueSourceRowProps) {
+export function CueSourceRow({ source, stats, onPress }: CueSourceRowProps) {
   const type = cueKindToTriggerType(source.kind);
   const accent = getCueAccent(type);
-  const fill = maxXp > 0 ? Math.max(stats.xp > 0 ? 0.04 : 0, stats.xp / maxXp) : 0;
   const logLabel = stats.logCount === 0 ? 'No logs yet' : `${stats.logCount} ${stats.logCount === 1 ? 'log' : 'logs'}`;
 
   return (
@@ -49,9 +46,6 @@ export function CueSourceRow({ source, stats, maxXp, onPress }: CueSourceRowProp
           </Text>
           <Text style={[styles.xp, stats.xp > 0 && { color: accent }]}>{Math.round(stats.xp)} XP</Text>
         </View>
-        <View style={styles.track}>
-          <View style={[styles.fill, { width: `${fill * 100}%`, backgroundColor: accent }]} />
-        </View>
         <Text style={styles.subtitle}>{logLabel}</Text>
       </View>
       <Ionicons
@@ -75,12 +69,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 11,
   },
-  copy: { flex: 1, minWidth: 0, gap: 5 },
+  copy: { flex: 1, minWidth: 0, gap: 2 },
   titleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
   title: { flex: 1, color: Colors.text.primary, fontSize: 14, fontWeight: '700' },
   xp: { color: Colors.text.faint, fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  track: { height: 4, borderRadius: 2, backgroundColor: Colors.bg.input, overflow: 'hidden' },
-  fill: { height: 4, borderRadius: 2 },
   subtitle: { color: Colors.text.faint, fontSize: 11 },
   pressed: { opacity: 0.72 },
 });

@@ -4,7 +4,9 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { CravingLog, CravingOutcome, UrgeLevel } from '../types/craving';
 import type { CueRef } from '../types/cue';
+import type { CopingUrge, CravingsView } from '../types/urge';
 import { DEFAULT_RIDE_MS } from '../utils/craving-utils';
+import { createCopingUrge } from '../utils/urge-utils';
 
 export interface CravingsStore {
   cravings: CravingLog[];
@@ -16,6 +18,14 @@ export interface CravingsStore {
   endCraving: (id: string, outcome: CravingOutcome, redirectBehaviorId?: string) => void;
   discardCraving: (id: string) => void;
   setAlternatives: (behaviorId: string, alternativeIds: string[]) => void;
+  /** Coping behaviours shown as rising urge bars on the Cravings tab, in the order added. */
+  urges: CopingUrge[];
+  /** Cravings tab layout: one board, or urges grouped under the need they cope for. */
+  view: CravingsView;
+  addUrges: (behaviorIds: string[]) => void;
+  updateUrge: (behaviorId: string, patch: Partial<Omit<CopingUrge, 'behaviorId' | 'addedAt'>>) => void;
+  removeUrge: (behaviorId: string) => void;
+  setView: (view: CravingsView) => void;
 }
 
 export const useCravingsStore = create<CravingsStore>()(
@@ -23,6 +33,21 @@ export const useCravingsStore = create<CravingsStore>()(
     set => ({
       cravings: [],
       alternatives: {},
+      urges: [],
+      view: 'board',
+      addUrges: behaviorIds =>
+        set(state => {
+          const known = new Set(state.urges.map(urge => urge.behaviorId));
+          const now = Date.now();
+          const added = behaviorIds.filter(id => !known.has(id)).map(id => createCopingUrge(id, now));
+          return added.length ? { urges: [...state.urges, ...added] } : {};
+        }),
+      updateUrge: (behaviorId, patch) =>
+        set(state => ({
+          urges: state.urges.map(urge => (urge.behaviorId === behaviorId ? { ...urge, ...patch } : urge)),
+        })),
+      removeUrge: behaviorId => set(state => ({ urges: state.urges.filter(urge => urge.behaviorId !== behaviorId) })),
+      setView: view => set({ view }),
       startCraving: (behaviorId, cues) => {
         const id = uuidv4();
         set(state => ({
@@ -77,10 +102,16 @@ export const useCravingsStore = create<CravingsStore>()(
     {
       name: 'recupero-cravings',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 1,
+      version: 2,
       migrate: persistedState => {
         const state = persistedState as Partial<CravingsStore>;
-        return { ...state, cravings: state.cravings ?? [], alternatives: state.alternatives ?? {} } as CravingsStore;
+        return {
+          ...state,
+          cravings: state.cravings ?? [],
+          alternatives: state.alternatives ?? {},
+          urges: state.urges ?? [],
+          view: state.view ?? 'board',
+        } as CravingsStore;
       },
     },
   ),
