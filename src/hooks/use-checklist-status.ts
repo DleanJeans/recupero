@@ -4,6 +4,7 @@ import { useChecklistsStore } from '../store/checklists-store';
 import { useSettingsStore } from '../store/settings-store';
 import type { Checklist } from '../types/checklist';
 import {
+  applyTodayLogs,
   describeChecklistStatus,
   getChecklistProgress,
   getRunnableItems,
@@ -22,7 +23,13 @@ export function useChecklistStatus(checklist: Checklist) {
 
   return useMemo(() => {
     const items = getRunnableItems(checklist, behaviors);
-    const run = pruneRun(getTodayRun(savedRun, today), behaviors);
+    const run = applyTodayLogs(
+      pruneRun(getTodayRun(savedRun, today), behaviors),
+      items,
+      behaviors,
+      today,
+      dayCutoffHour,
+    );
     const progress = getChecklistProgress(items, run);
     const done = isRunDone(run, progress);
     const finished = progress.done + progress.skipped;

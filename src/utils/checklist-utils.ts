@@ -43,6 +43,47 @@ export function pruneRun(run: ChecklistRun | undefined, behaviors: BehaviorEntry
   return changed ? { ...run, ticks, finishedAt: undefined } : run;
 }
 
+/**
+ * Today's run as the user sees it: saved ticks, plus a tick for every behaviour item that was logged today
+ * from anywhere else (e.g. the Routines screen). Skipped items stay skipped, and items the user unticked
+ * (dismissed) stay open. Dismissed markers are dropped from the result.
+ */
+export function applyTodayLogs(
+  run: ChecklistRun | undefined,
+  items: ChecklistItem[],
+  behaviors: BehaviorEntry[],
+  today: string,
+  dayCutoffHour: number,
+): ChecklistRun | undefined {
+  const ticks: ChecklistRun['ticks'] = {};
+  for (const [itemId, tick] of Object.entries(run?.ticks ?? {})) {
+    if (!tick.dismissed) ticks[itemId] = tick;
+  }
+  let added = false;
+  for (const item of items) {
+    if (item.kind !== 'behavior' || run?.ticks[item.id]) continue;
+    const behavior = behaviors.find(candidate => candidate.id === item.behaviorId);
+    let latest: BehaviorEntry['logs'][number] | undefined;
+    for (const log of behavior?.logs ?? []) {
+      if (toDateString(new Date(log.timestamp), dayCutoffHour) !== today) continue;
+      if (!latest || log.timestamp > latest.timestamp) latest = log;
+    }
+    if (!latest) continue;
+    ticks[item.id] = { at: latest.timestamp, logId: latest.id, behaviorId: item.behaviorId, external: true };
+    added = true;
+  }
+  if (!run && !added) return undefined;
+  if (!added && run && Object.keys(ticks).length === Object.keys(run.ticks).length) return run;
+  const times = Object.values(ticks).map(tick => tick.at);
+  return {
+    date: today,
+    startedAt: run?.startedAt ?? Math.min(...times),
+    stackId: run?.stackId ?? '',
+    finishedAt: run?.finishedAt,
+    ticks,
+  };
+}
+
 export interface ChecklistProgress {
   /** Items ticked (not skipped). */
   done: number;

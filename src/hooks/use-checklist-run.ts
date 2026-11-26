@@ -4,6 +4,7 @@ import { useChecklistsStore } from '../store/checklists-store';
 import { useSettingsStore } from '../store/settings-store';
 import type { ChecklistItem } from '../types/checklist';
 import {
+  applyTodayLogs,
   buildQuickLogMetadata,
   getChecklistProgress,
   getRunnableItems,
@@ -24,15 +25,20 @@ export function useChecklistRun(checklistId: string) {
   const today = toDateString(new Date(), dayCutoffHour);
 
   const items = useMemo(() => (checklist ? getRunnableItems(checklist, behaviors) : []), [behaviors, checklist]);
-  const run = useMemo(() => pruneRun(getTodayRun(savedRun, today), behaviors), [behaviors, savedRun, today]);
+  const run = useMemo(
+    () => applyTodayLogs(pruneRun(getTodayRun(savedRun, today), behaviors), items, behaviors, today, dayCutoffHour),
+    [behaviors, dayCutoffHour, items, savedRun, today],
+  );
   const progress = useMemo(() => getChecklistProgress(items, run), [items, run]);
   const done = isRunDone(run, progress);
 
   /** Finishes the run once every item is ticked or skipped. Reads the store directly so it sees the latest tick. */
   const finishIfComplete = useCallback(() => {
-    const latest = pruneRun(useChecklistsStore.getState().runs[checklistId], useBehaviorStore.getState().behaviors);
+    const latestBehaviors = useBehaviorStore.getState().behaviors;
+    const saved = pruneRun(getTodayRun(useChecklistsStore.getState().runs[checklistId], today), latestBehaviors);
+    const latest = applyTodayLogs(saved, items, latestBehaviors, today, dayCutoffHour);
     if (getChecklistProgress(items, latest).complete) useChecklistsStore.getState().finishRun(checklistId);
-  }, [checklistId, items]);
+  }, [checklistId, dayCutoffHour, items, today]);
 
   const tickItem = useCallback(
     (item: ChecklistItem) => {
@@ -60,15 +66,21 @@ export function useChecklistRun(checklistId: string) {
     [checklistId, finishIfComplete, today],
   );
 
-  /** Unticks an item, deleting the log its tick created. */
+  /** Unticks an item, deleting the log its tick created. A log made outside the checklist is kept. */
   const untickItem = useCallback(
     (item: ChecklistItem) => {
       const tick = run?.ticks[item.id];
       if (!tick) return;
+      if (tick.external) {
+        const { ensureRun, setTick } = useChecklistsStore.getState();
+        ensureRun(checklistId, today);
+        setTick(checklistId, item.id, { at: Date.now(), dismissed: true });
+        return;
+      }
       if (tick.logId && tick.behaviorId) useBehaviorStore.getState().removeLog(tick.behaviorId, tick.logId);
       useChecklistsStore.getState().setTick(checklistId, item.id, undefined);
     },
-    [checklistId, run],
+    [checklistId, run, today],
   );
 
   const toggleItem = useCallback(

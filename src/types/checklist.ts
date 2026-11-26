@@ -20,6 +20,10 @@ export interface ChecklistTick {
   logId?: string;
   behaviorId?: string;
   skipped?: boolean;
+  /** Derived from a log made outside the checklist today. Never saved. */
+  external?: boolean;
+  /** Saved when an externally logged item is unticked: the outside log stays, but the item shows open. */
+  dismissed?: boolean;
 }
 
 /** Today's progress through one checklist. Replaced by a fresh run on a new day. */

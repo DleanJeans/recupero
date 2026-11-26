@@ -1,6 +1,7 @@
 import type { BehaviorEntry } from '../src/types/behavior';
 import type { Checklist, ChecklistRun } from '../src/types/checklist';
 import {
+  applyTodayLogs,
   describeChecklistStatus,
   getChecklistProgress,
   getDragShift,
@@ -119,5 +120,29 @@ describe('checklist-utils', () => {
     expect(describeChecklistStatus({ ...checklist, lastCompletedAt: yesterday }, undefined, empty, 0)).toBe(
       'Done yesterday',
     );
+  });
+
+  describe('applyTodayLogs', () => {
+    const noon = new Date(2026, 10, 9, 12).getTime();
+    const items = checklist.items.slice(0, 3);
+    const logged = [behavior('teeth', { logs: [{ id: 'l1', timestamp: noon }] }), behavior('face')];
+
+    it('ticks behaviour items logged today from elsewhere', () => {
+      const result = applyTodayLogs(undefined, items, logged, '2026-11-09', 4);
+      expect(result?.ticks.i1).toMatchObject({ at: noon, logId: 'l1', external: true });
+      expect(result?.ticks.i2).toBeUndefined();
+      expect(getChecklistProgress(items, result).done).toBe(1);
+    });
+
+    it('ignores logs from other days', () => {
+      expect(applyTodayLogs(undefined, items, logged, '2026-11-10', 4)).toBeUndefined();
+    });
+
+    it('keeps skipped items skipped and dismissed items open', () => {
+      const skipped = applyTodayLogs(run({ i1: { at: 1, skipped: true } }), items, logged, '2026-11-09', 4);
+      expect(skipped?.ticks.i1.skipped).toBe(true);
+      const dismissed = applyTodayLogs(run({ i1: { at: 1, dismissed: true } }), items, logged, '2026-11-09', 4);
+      expect(dismissed?.ticks.i1).toBeUndefined();
+    });
   });
 });
