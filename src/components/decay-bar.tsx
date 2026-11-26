@@ -34,13 +34,14 @@ export function DecayBar({ behavior, motionEnabled = true, now = Date.now(), var
   const [showLabel, setShowLabel] = useState(false);
   const decay = getTimeUntilNextDecay(behavior, now);
   if (!decay) return null;
-  const { daysLeft, everyDays } = decay;
+  const { daysLeft, everyDays, unit } = decay;
   const isUndesirable = behavior.type === 'undesirable';
   // For desirable/neutral: bar empties as we approach decay (time remaining).
   // For undesirable: decay is a reward, so invert — bar fills as we approach it.
   const ratio = isUndesirable ? 1 - daysLeft / everyDays : daysLeft / everyDays;
   const type = behavior.type ?? 'neutral';
-  const color = type === 'desirable' ? DESIRABLE_DECAY_COLOR[getDecayUrgency(daysLeft, everyDays)] : DECAY_COLOR[type];
+  const color =
+    type === 'desirable' ? DESIRABLE_DECAY_COLOR[getDecayUrgency(daysLeft, everyDays, unit)] : DECAY_COLOR[type];
   const timeUntilNextDecayMs = daysLeft * MS_PER_DAY;
   const stripeMotionEnabled = motionEnabled && timeUntilNextDecayMs > STRIPE_ANIMATION_MIN_DURATION_MS;
 

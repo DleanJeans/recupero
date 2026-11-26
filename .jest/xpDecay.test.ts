@@ -647,17 +647,17 @@ describe('getDecayUrgency', () => {
   });
 
   it('uses half the window rounded down for green and a tenth rounded up for red', () => {
-    const cases: [number, number, number][] = [
-      [H, 30 * M, 10 * M],
-      [2 * H, 60 * M, 15 * M],
-      [6 * H, 3 * H, 40 * M],
-      [12 * H, 6 * H, 75 * M],
-      [1, 12 * H, 3 * H],
-      [7, 3, 1],
-      [30, 15, 3],
+    const cases: [number, number, number, ('hours' | 'days' | 'weeks' | 'months')?][] = [
+      [H, 30 * M, 10 * M, 'hours'],
+      [2 * H, 60 * M, 20 * M, 'hours'],
+      [6 * H, 3 * H, 60 * M, 'hours'],
+      [12 * H, 6 * H, 2 * H, 'hours'],
+      [1, 12 * H, 3 * H, 'days'],
+      [7, 3, 1, 'weeks'],
+      [30, 15, 3, 'months'],
     ];
-    for (const [everyDays, green, red] of cases) {
-      const t = getDecayThresholds(everyDays);
+    for (const [everyDays, green, red, unit] of cases) {
+      const t = getDecayThresholds(everyDays, unit);
       expect(t.greenDays).toBeCloseTo(green, 9);
       expect(t.redDays).toBeCloseTo(red, 9);
     }

@@ -338,6 +338,8 @@ export function getTimeUntilNextDecay(
 export const DECAY_GREEN_SHARE = 0.5;
 /** Share of the decay window left below which decay is urgent (red). */
 export const DECAY_RED_SHARE = 0.1;
+/** Red share for "every N hours" decay, which has short windows: a sixth of the window. */
+export const DECAY_RED_SHARE_HOURS = 1 / 6;
 
 export type DecayUrgency = 'calm' | 'soon' | 'urgent';
 
@@ -352,22 +354,24 @@ function decayThresholdStep(everyDays: number): number {
 }
 
 /** Time left (in days) at which decay turns amber and red: green from half the window (rounded
- *  down), red under a tenth of it (rounded up). Daily 12h / 3h, weekly 3d / 1d, monthly 15d / 3d. */
-export function getDecayThresholds(everyDays: number): { greenDays: number; redDays: number } {
+ *  down), red under a tenth of it (a sixth for hourly decay), rounded up.
+ *  Daily 12h / 3h, weekly 3d / 1d, monthly 15d / 3d, every 6h 3h / 1h. */
+export function getDecayThresholds(everyDays: number, unit?: XpDecayUnit): { greenDays: number; redDays: number } {
+  const redShare = unit === 'hours' ? DECAY_RED_SHARE_HOURS : DECAY_RED_SHARE;
   const step = decayThresholdStep(everyDays);
   // Tolerance keeps float noise (e.g. 30 * 0.1 = 3.0000000000000004) from jumping a step.
   const eps = 1e-9;
   return {
     greenDays: Math.floor((everyDays * DECAY_GREEN_SHARE) / step + eps) * step,
-    redDays: Math.max(1, Math.ceil((everyDays * DECAY_RED_SHARE) / step - eps)) * step,
+    redDays: Math.max(1, Math.ceil((everyDays * redShare) / step - eps)) * step,
   };
 }
 
 /** Urgency of the next decay, scaled to the decay window so the color means the same
  *  for hourly, daily, weekly and monthly decay (weekly: green >= 3d, red < 24h). */
-export function getDecayUrgency(daysLeft: number, everyDays: number): DecayUrgency {
+export function getDecayUrgency(daysLeft: number, everyDays: number, unit?: XpDecayUnit): DecayUrgency {
   if (!(everyDays > 0)) return 'calm';
-  const { greenDays, redDays } = getDecayThresholds(everyDays);
+  const { greenDays, redDays } = getDecayThresholds(everyDays, unit);
   // Small tolerance so float noise at an exact boundary (e.g. 3d left) stays on the calmer side.
   const left = daysLeft + 1e-9;
   if (left >= greenDays) return 'calm';
