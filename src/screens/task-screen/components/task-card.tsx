@@ -41,6 +41,8 @@ interface TaskCardProps {
   openAppPackage?: string;
   /** Total time spent on the task over all its timed logs; the chip is hidden under a minute. */
   timeSpentMs?: number;
+  /** The task's timer has been started: no play button, blue highlight. */
+  timerRunning?: boolean;
   /** Open task whose start time is behind us: drawn red with a chip offering the next start time. */
   startPassed?: boolean;
   /** Start time offered by the chip, "HH:mm". */
@@ -62,6 +64,7 @@ function TaskCardComponent({
   place,
   complete,
   todayStr,
+  timerRunning,
   startPassed,
   suggestedStart,
   onMoveStart,
@@ -101,6 +104,7 @@ function TaskCardComponent({
   const canTrack =
     selected === undefined &&
     !complete &&
+    !timerRunning &&
     behavior != null &&
     (task.timed === true || behavior.durationXpEnabled === true);
 
@@ -119,6 +123,7 @@ function TaskCardComponent({
         focused && styles.focusCard,
         deadlineState === 'today' && styles.dueTodayCard,
         (deadlineState === 'overdue' || (startPassed && !complete)) && styles.overdueCard,
+        timerRunning && !complete && styles.runningCard,
         complete && styles.taskCardComplete,
       ]}
     >
@@ -265,6 +270,11 @@ const styles = StyleSheet.create({
   },
   overdueCard: {
     backgroundColor: '#5a1f1f',
+  },
+  runningCard: {
+    backgroundColor: '#16283f',
+    borderWidth: 1,
+    borderColor: '#4a9eff',
   },
   taskCardComplete: {
     backgroundColor: Colors.bg.darker,

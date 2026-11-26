@@ -22,6 +22,9 @@ interface ScreenUiStore {
   setTaskScreenSelectedDate: (date: string) => void;
   taskScreenTab: TaskTab;
   setTaskScreenTab: (tab: TaskTab) => void;
+  /** A task ticked while its timer runs: the Timer screen marks it done once the time is logged. */
+  pendingTaskFinish: { taskId: string; date: string } | null;
+  setPendingTaskFinish: (finish: { taskId: string; date: string } | null) => void;
   taskScreenSort: TaskSort;
   setTaskScreenSort: (sort: TaskSort) => void;
 }
@@ -36,6 +39,8 @@ export const useScreenUiStore = create<ScreenUiStore>()(set => ({
   taskScreenSelectedDate: null,
   taskScreenTab: 'today',
   setTaskScreenTab: tab => set({ taskScreenTab: tab }),
+  pendingTaskFinish: null,
+  setPendingTaskFinish: finish => set({ pendingTaskFinish: finish }),
   taskScreenSort: 'oldest',
   setTaskScreenSort: sort => set({ taskScreenSort: sort }),
   setHomeSelectedCategoryId: id => set({ homeSelectedCategoryId: id }),

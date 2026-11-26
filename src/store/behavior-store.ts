@@ -199,6 +199,8 @@ interface BehaviorStore {
   ) => void;
   /** `timed` (a running task timer) makes the completion log span that time instead of being a single tick. */
   toggleTaskCompletion: (taskId: string, dateStr: string, timed?: { start: number; end: number }) => void;
+  /** Marks a task done with a log that already exists (the timer's log), so ticking adds no second log. */
+  completeTaskWithLog: (taskId: string, dateStr: string, logId: string | undefined, completedAt: number) => void;
   /** Pick or unpick a task as one of "Today's 3" for the date. */
   toggleTaskFocus: (taskId: string, dateStr: string) => void;
   /** "Bugged me": log one more time the task's problem bothered the user. */
@@ -629,6 +631,18 @@ export const useBehaviorStore = create<BehaviorStore>()(
               ? focusDates.filter(date => date !== dateStr)
               : [...focusDates, dateStr];
             return { ...task, focusDates: next.length > 0 ? next : undefined };
+          }),
+        })),
+      completeTaskWithLog: (taskId, dateStr, logId, completedAt) =>
+        set(state => ({
+          tasks: (state.tasks ?? []).map(task => {
+            if (task.id !== taskId || isTaskCompleteOnDate(task, dateStr)) return task;
+            return {
+              ...task,
+              completedDates: [...task.completedDates, dateStr],
+              completedAtByDate: { ...(task.completedAtByDate ?? {}), [dateStr]: completedAt },
+              completionLogIds: logId ? { ...(task.completionLogIds ?? {}), [dateStr]: logId } : task.completionLogIds,
+            };
           }),
         })),
       toggleTaskCompletion: (taskId, dateStr, timed) =>

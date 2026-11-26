@@ -7,6 +7,7 @@ import { MoneyBalance } from '../../components/money-balance';
 import { SafeAreaView } from '../../components/safe-area-view';
 import { ScreenTitle } from '../../components/screen-title';
 import { useBehaviorStore } from '../../store/behavior-store';
+import { useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
 import { useTimerStore } from '../../store/timer-store';
 import type { RootStackParamList } from '../../types/navigation';
@@ -88,6 +89,20 @@ export function TimerScreen() {
     pruneParked(new Set(behaviors.map(behavior => behavior.id)));
   }, [behaviors, pruneParked]);
 
+  /** A task ticked while this timer ran is marked done once its time is logged (or the timer is closed). */
+  const finishPendingTask = useCallback(
+    (logs: ReadonlyArray<{ id: string; timestamp: number }> | undefined, start: number | undefined) => {
+      const { pendingTaskFinish, setPendingTaskFinish } = useScreenUiStore.getState();
+      if (!pendingTaskFinish || pendingTaskFinish.taskId !== taskId) return;
+      const log = logs ? (logs.find(item => item.timestamp === start) ?? logs[logs.length - 1]) : undefined;
+      useBehaviorStore
+        .getState()
+        .completeTaskWithLog(pendingTaskFinish.taskId, pendingTaskFinish.date, log?.id, Date.now());
+      setPendingTaskFinish(null);
+    },
+    [taskId],
+  );
+
   // When the screen regains focus after the user was on the log form, check
   // whether the pending session was actually saved by comparing the locked
   // behavior's current log count against the snapshot taken at Stop time.
@@ -99,12 +114,13 @@ export function TimerScreen() {
       if (pendingLogBehaviorLogCount == null || lockedBehaviorId == null) return;
       const locked = useBehaviorStore.getState().behaviors.find(b => b.id === lockedBehaviorId);
       if (locked && locked.logs.length > pendingLogBehaviorLogCount) {
+        finishPendingTask(locked.logs, useTimerStore.getState().startTimestamp);
         resetTimer();
         leave();
       } else {
         clearPendingLog();
       }
-    }, [pendingLogBehaviorLogCount, lockedBehaviorId, resetTimer, clearPendingLog, leave]),
+    }, [pendingLogBehaviorLogCount, lockedBehaviorId, resetTimer, clearPendingLog, leave, finishPendingTask]),
   );
 
   const handleContinue = () => {
@@ -138,6 +154,7 @@ export function TimerScreen() {
   };
 
   const handleDone = () => {
+    finishPendingTask(undefined, undefined);
     resetTimer();
     setSelectedBehaviorId(undefined);
     setBehaviorQuery('');
@@ -151,6 +168,7 @@ export function TimerScreen() {
         text: 'Discard',
         style: 'destructive',
         onPress: () => {
+          useScreenUiStore.getState().setPendingTaskFinish(null);
           resetTimer();
           setSelectedBehaviorId(undefined);
           setBehaviorQuery('');

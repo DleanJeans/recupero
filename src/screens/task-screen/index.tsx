@@ -1,3 +1,5 @@
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, BackHandler, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AppUsage, type LaunchableApp } from '../../../modules/app-usage';
@@ -10,11 +12,13 @@ import { useFabCollapse } from '../../hooks/use-fab-collapse';
 import { useNeedLevels } from '../../hooks/use-need-levels';
 import { resyncReminders } from '../../hooks/use-reminder-engine';
 import { useTaskTimeSpent } from '../../hooks/use-task-time-spent';
+import { useTaskTimerIds } from '../../hooks/use-task-timer-ids';
 import { useBehaviorStore } from '../../store/behavior-store';
 import { useCuesStore } from '../../store/cues-store';
 import { type TaskTab, useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
 import { useTimerStore } from '../../store/timer-store';
+import type { RootStackParamList } from '../../types/navigation';
 import type { NeedId } from '../../types/need';
 import type { OneOffPlace, TaskBug, TaskEntry, TaskList } from '../../types/task';
 import { ensureAppBehavior } from '../../utils/app-behavior';
@@ -97,6 +101,8 @@ export function TaskScreen() {
   const [selectedApp, setSelectedApp] = useState<LaunchableApp>();
   const [timed, setTimed] = useState(false);
   const [icon, setIcon] = useState('');
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const taskTimerIds = useTaskTimerIds();
   const [now, setNow] = useState(() => new Date());
   const { needs: needLevels } = useNeedLevels();
   const [schedule, setSchedule] = useState<TaskSchedule>({ scheduledDate: todayStr });
@@ -422,17 +428,24 @@ export function TaskScreen() {
     ]);
   };
 
-  /** Ticking a timed task while its timer runs stops the timer and logs the time it ran. */
+  /** Ticking a task whose timer was started opens the Timer screen to log the time first; the task is marked done after. */
   const toggleTask = useCallback(
     (task: TaskEntry, date: string) => {
       const ticking = !isTaskCompleteOnDate(task, date);
-      const range =
-        ticking && task.timed && task.behaviorId
-          ? useTimerStore.getState().takeRunning(task.behaviorId, Date.now())
-          : undefined;
-      toggleTaskCompletion(task.id, date, range);
+      if (ticking) {
+        const timer = useTimerStore.getState();
+        const parkedSession = timer.parked.find(session => session.taskId === task.id);
+        const onScreen = timer.taskId === task.id && (timer.startTimestamp != null || timer.pausedAt != null);
+        if (onScreen || parkedSession) {
+          if (!onScreen && parkedSession) timer.switchTo(parkedSession.lockedBehaviorId);
+          useScreenUiStore.getState().setPendingTaskFinish({ taskId: task.id, date });
+          navigation.navigate('Timer');
+          return;
+        }
+      }
+      toggleTaskCompletion(task.id, date);
     },
-    [toggleTaskCompletion],
+    [toggleTaskCompletion, navigation],
   );
   const handleTodayToggle = useCallback(
     (task: TaskEntry) => toggleTask(task, selectedDate),
@@ -499,6 +512,7 @@ export function TaskScreen() {
       place={task.placeId ? placeById.get(task.placeId) : undefined}
       complete={complete}
       todayStr={todayStr}
+      timerRunning={taskTimerIds.has(task.id)}
       focused={options.focused}
       startPassed={options.startPassed}
       suggestedStart={options.startPassed ? getSuggestedStartTime(now) : undefined}
@@ -535,7 +549,7 @@ export function TaskScreen() {
   const renderTimeline = () => {
     const { done, open } = timelineTasks;
     const showNow = isToday;
-    type OpenItem = { key: string; ts?: number; task?: TaskEntry; needId?: NeedId };
+    type OpenItem = { key: string; ts?: number; task?: TaskEntry; needId?: NeedId; running?: boolean };
     const startOf = (task: TaskEntry) => {
       if (!task.startTime) return undefined;
       const [h, m] = task.startTime.split(':').map(Number);
@@ -543,14 +557,15 @@ export function TaskScreen() {
       date.setHours(h, m, 0, 0);
       return date.getTime();
     };
+    const running = open.filter(task => taskTimerIds.has(task.id));
     const items: OpenItem[] = [
-      ...open.map(task => ({ key: task.id, ts: startOf(task), task })),
+      ...open.filter(task => !taskTimerIds.has(task.id)).map(task => ({ key: task.id, ts: startOf(task), task })),
       ...needForecasts.map(forecast => ({ key: `need:${forecast.needId}`, ts: forecast.ts, needId: forecast.needId })),
     ];
     // Timed items (tasks with a start time, need forecasts) by time; tasks without a start time keep their order after.
     const timed = items.filter(item => item.ts != null).sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0));
     const untimed = items.filter(item => item.ts == null);
-    const ordered = [...timed, ...untimed];
+    const ordered: OpenItem[] = [...running.map(task => ({ key: task.id, task, running: true })), ...timed, ...untimed];
     const total = done.length + ordered.length + (showNow ? 1 : 0);
     if (total === 0) return <Text style={styles.empty}>Nothing for this day.</Text>;
     let index = 0;
@@ -594,11 +609,12 @@ export function TaskScreen() {
         );
       } else if (item.task) {
         const task = item.task;
-        const passed = isToday && isStartPassed(task, now, todayStr);
+        const passed = !item.running && isToday && isStartPassed(task, now, todayStr);
         rows.push(
           <TaskTimelineRow
             key={item.key}
-            dotColor={passed ? Colors.cooldown.red : undefined}
+            dotColor={item.running ? '#4a9eff' : passed ? Colors.cooldown.red : undefined}
+            filled={item.running}
             {...rowFlags()}
           >
             {renderCard(task, false, handleTodayToggle, {
