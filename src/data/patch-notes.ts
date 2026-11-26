@@ -36,7 +36,13 @@ export interface PatchNotesDay {
 export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-26',
-    items: ['Tasks: set a date, start time, estimate and deadline; the card turns red when the deadline comes.'],
+    items: [
+      'Tasks: set a date, start time, estimate and deadline; the card turns red when the deadline comes.',
+      'Tasks: a deadline can now have a time; the card turns red once it passes.',
+      'Tasks: Today is now a timeline by start time with a Now marker; late tasks turn red and offer a new start.',
+      'Tasks: pick a place by adding a new saved place right from the task editor.',
+      'Icon picker: each word of the name gets its own emoji suggestion; tap one to use it.',
+    ],
   },
   {
     date: '2026-11-24',
