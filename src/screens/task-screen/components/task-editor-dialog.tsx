@@ -214,7 +214,7 @@ export function TaskEditorDialog({
                 icon={
                   selectedPlace || oneOffPlace ? (
                     <AppIcon
-                      value={selectedPlace ? getPlaceEmoji(selectedPlace) : '📍'}
+                      value={selectedPlace ? getPlaceEmoji(selectedPlace) : oneOffPlace?.emoji || '📍'}
                       style={styles.placeEmoji}
                     />
                   ) : (

@@ -15,7 +15,7 @@ import type { SavedPlace } from '../../../types/cue';
 import type { RootStackParamList } from '../../../types/navigation';
 import type { TaskEntry } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
-import { getPlaceIconText } from '../../../utils/cue-utils';
+import { getPlaceEmoji } from '../../../utils/cue-utils';
 import { formatDateDisplay } from '../../../utils/date-utils';
 import { launchApp } from '../../../utils/launch-app';
 import { formatBugSummary, getBugHeat } from '../../../utils/task-bug-utils';
@@ -89,14 +89,12 @@ function TaskCardComponent({
   const showBehaviorName = behavior != null && behavior.name.trim() !== task.title.trim();
   const completedDate = complete ? task.completedDates.at(-1) : undefined;
   const actualTime = completedDate ? getTaskActualTime(task, behavior, completedDate) : undefined;
+  // The place's own icon (emoji, mix, stack or image) leads the second line instead of a pin character.
+  const placeName = place?.name ?? task.oneOffPlace?.name;
+  const placeIcon = place ? getPlaceEmoji(place) : task.oneOffPlace ? task.oneOffPlace.emoji || '📍' : undefined;
   const metaParts = [
     showBehaviorName ? behavior.name : undefined,
     task.appLabel && task.appLabel !== behavior?.name && task.appLabel !== task.title ? task.appLabel : undefined,
-    place
-      ? `${getPlaceIconText(place)} ${place.name}`
-      : task.oneOffPlace
-        ? `${getPlaceIconText({ emoji: task.oneOffPlace.emoji, isHome: false })} ${task.oneOffPlace.name}`
-        : undefined,
     actualTime
       ? `Done ${formatTimeRange(actualTime.start ?? actualTime.end, actualTime.start ? actualTime.end : undefined)}`
       : undefined,
@@ -188,15 +186,33 @@ function TaskCardComponent({
               </Text>
             </Pressable>
           )}
-          {(bugSummary || metaParts.length > 0) && (
-            <Text
-              style={styles.taskMeta}
-              numberOfLines={1}
-            >
-              {bugSummary && <Text style={bugHeat >= 1 ? styles.bugMetaHot : undefined}>{bugSummary}</Text>}
-              {bugSummary && metaParts.length > 0 ? ' · ' : ''}
-              {metaParts.join(' · ')}
-            </Text>
+          {(bugSummary || placeName || metaParts.length > 0) && (
+            <View style={styles.metaRow}>
+              {placeName && placeIcon && (
+                <View style={styles.placeChip}>
+                  <AppIcon
+                    value={placeIcon}
+                    size={11}
+                  />
+                  <Text
+                    style={styles.taskMeta}
+                    numberOfLines={1}
+                  >
+                    {placeName}
+                  </Text>
+                </View>
+              )}
+              {(bugSummary || metaParts.length > 0) && (
+                <Text
+                  style={[styles.taskMeta, styles.metaText]}
+                  numberOfLines={1}
+                >
+                  {bugSummary && <Text style={bugHeat >= 1 ? styles.bugMetaHot : undefined}>{bugSummary}</Text>}
+                  {bugSummary && metaParts.length > 0 ? ' · ' : ''}
+                  {metaParts.join(' · ')}
+                </Text>
+              )}
+            </View>
           )}
         </View>
         {timeLabel && (
@@ -352,6 +368,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#7a2a2a',
   },
   moveChipText: { color: '#ffd5d5', fontSize: 11, fontWeight: '700', flexShrink: 1 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  placeChip: { flexDirection: 'row', alignItems: 'center', gap: 3, flexShrink: 1, maxWidth: '55%' },
+  metaText: { flexShrink: 1 },
   taskMeta: {
     color: Colors.text.faint,
     fontSize: 11,
