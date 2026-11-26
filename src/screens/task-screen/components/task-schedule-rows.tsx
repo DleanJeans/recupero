@@ -1,22 +1,27 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
+import { useBehaviorStore } from '../../../store/behavior-store';
 import { Colors } from '../../../utils/colors';
 import { formatDateDisplay } from '../../../utils/date-utils';
+import { findPreviousStep } from '../../../utils/task-chain-utils';
 import { pickTaskDate, pickTaskTime } from '../../../utils/task-date-pick';
 import {
+  DEFAULT_ESTIMATE_MIN,
   ESTIMATE_STEP_MIN,
   formatEstimate,
   formatStartTime,
   MAX_ESTIMATE_MIN,
 } from '../../../utils/task-schedule-utils';
 import { AttachRow } from './task-attach-row';
+import { TaskNextStepSheet } from './task-next-step-sheet';
 
 export interface TaskSchedule {
   scheduledDate: string;
   startTime?: string;
   estimateMin?: number;
+  nextTaskId?: string;
   deadline?: string;
   deadlineTime?: string;
 }
@@ -26,6 +31,8 @@ interface TaskScheduleRowsProps {
   onChange: (schedule: TaskSchedule) => void;
   /** Average length of the selected behavior's timed logs, offered as the estimate. */
   suggestedMin?: number;
+  /** The task being edited (unset for a new task). */
+  taskId?: string;
 }
 
 const ICON_SIZE = 18;
@@ -41,12 +48,16 @@ function RowIcon({ name }: { name: React.ComponentProps<typeof Ionicons>['name']
 }
 
 /** Date, start time, estimated duration and deadline rows of the task editor. */
-export function TaskScheduleRows({ schedule, onChange, suggestedMin }: TaskScheduleRowsProps) {
-  const { scheduledDate, startTime, estimateMin, deadline, deadlineTime } = schedule;
+export function TaskScheduleRows({ schedule, onChange, suggestedMin, taskId }: TaskScheduleRowsProps) {
+  const { scheduledDate, startTime, nextTaskId, deadline, deadlineTime } = schedule;
+  const estimateMin = schedule.estimateMin ?? DEFAULT_ESTIMATE_MIN;
+  const tasks = useBehaviorStore(state => state.tasks);
+  const [pickingNext, setPickingNext] = useState(false);
+  const previousStep = taskId ? findPreviousStep(tasks ?? [], taskId) : undefined;
+  const nextTask = nextTaskId ? tasks?.find(task => task.id === nextTaskId) : undefined;
   const set = (patch: Partial<TaskSchedule>) => onChange({ ...schedule, ...patch });
   const stepEstimate = (delta: number) => {
-    const next = Math.max(0, Math.min(MAX_ESTIMATE_MIN, (estimateMin ?? 0) + delta));
-    set({ estimateMin: next > 0 ? next : undefined });
+    set({ estimateMin: Math.max(ESTIMATE_STEP_MIN, Math.min(MAX_ESTIMATE_MIN, estimateMin + delta)) });
   };
   const showSuggestion = suggestedMin != null && estimateMin !== suggestedMin;
 
@@ -62,9 +73,12 @@ export function TaskScheduleRows({ schedule, onChange, suggestedMin }: TaskSched
         <AttachRow
           icon={<RowIcon name="alarm-outline" />}
           label="Start"
-          value={startTime ? formatStartTime(startTime) : undefined}
-          onPress={() => pickTaskTime(startTime, time => set({ startTime: time }))}
-          onClear={startTime ? () => set({ startTime: undefined }) : undefined}
+          value={previousStep ? `After ${previousStep.title}` : startTime ? formatStartTime(startTime) : undefined}
+          onPress={() => {
+            // A next step starts when the previous task ends, so its start can't be picked.
+            if (!previousStep) pickTaskTime(startTime, time => set({ startTime: time }));
+          }}
+          onClear={!previousStep && startTime ? () => set({ startTime: undefined }) : undefined}
         />
         <View style={styles.estimateRow}>
           <View style={styles.rowIcon}>
@@ -77,10 +91,10 @@ export function TaskScheduleRows({ schedule, onChange, suggestedMin }: TaskSched
             Estimate
           </Text>
           <Text
-            style={[styles.estimateValue, estimateMin == null && styles.none]}
+            style={styles.estimateValue}
             numberOfLines={1}
           >
-            {estimateMin != null ? formatEstimate(estimateMin) : 'None'}
+            {formatEstimate(estimateMin)}
           </Text>
           <Pressable
             style={styles.stepper}
@@ -110,6 +124,13 @@ export function TaskScheduleRows({ schedule, onChange, suggestedMin }: TaskSched
           </Pressable>
         </View>
         <AttachRow
+          icon={<RowIcon name="arrow-down-outline" />}
+          label="Next step"
+          value={nextTask?.title}
+          onPress={() => setPickingNext(true)}
+          onClear={nextTaskId ? () => set({ nextTaskId: undefined }) : undefined}
+        />
+        <AttachRow
           icon={<RowIcon name="flag-outline" />}
           label="Deadline"
           value={
@@ -128,6 +149,16 @@ export function TaskScheduleRows({ schedule, onChange, suggestedMin }: TaskSched
           last
         />
       </View>
+      {pickingNext && (
+        <TaskNextStepSheet
+          taskId={taskId}
+          onPick={id => {
+            set({ nextTaskId: id });
+            setPickingNext(false);
+          }}
+          onClose={() => setPickingNext(false)}
+        />
+      )}
       {showSuggestion && (
         <Pressable
           style={styles.suggestion}
@@ -166,7 +197,6 @@ const styles = StyleSheet.create({
   rowIcon: { width: 26, alignItems: 'center' },
   rowLabel: { width: 68, color: Colors.text.muted, fontSize: 13 },
   estimateValue: { flex: 1, color: Colors.text.primary, fontSize: 15 },
-  none: { color: Colors.text.faint },
   stepper: {
     width: 34,
     height: 34,

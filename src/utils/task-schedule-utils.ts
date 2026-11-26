@@ -5,6 +5,13 @@ import type { TaskEntry } from '../types/task';
 export const MAX_ESTIMATE_MIN = 24 * 60;
 /** Step of the estimate stepper, in minutes. */
 export const ESTIMATE_STEP_MIN = 5;
+/** Duration assumed for a task without an estimate, in minutes. */
+export const DEFAULT_ESTIMATE_MIN = 5;
+
+/** The task's estimate, or the default when none is set. */
+export function getTaskEstimateMin(task: Pick<TaskEntry, 'estimateMin'>): number {
+  return task.estimateMin ?? DEFAULT_ESTIMATE_MIN;
+}
 
 /** Average length in whole minutes of the behavior's timed logs, or undefined when it has none. */
 export function getAverageDurationMin(behavior: Pick<BehaviorEntry, 'logs'> | undefined): number | undefined {

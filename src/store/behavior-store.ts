@@ -30,6 +30,7 @@ import {
 } from '../utils/metadata-calculation-utils';
 import { buildTaskLogMetadata } from '../utils/metadata-link-utils';
 import { DEFAULT_MONEY_REWARD } from '../utils/money-utils';
+import { resolveChains } from '../utils/task-chain-utils';
 import { isTaskCompleteOnDate, timestampForTaskDate } from '../utils/task-utils';
 import { toggleSkippedDate } from '../utils/weekly-goal-utils';
 import { useCuesStore } from './cues-store';
@@ -192,6 +193,7 @@ interface BehaviorStore {
         | 'list'
         | 'startTime'
         | 'estimateMin'
+        | 'nextTaskId'
         | 'deadline'
         | 'deadlineTime'
       >
@@ -566,7 +568,7 @@ export const useBehaviorStore = create<BehaviorStore>()(
         })),
       addTask: input =>
         set(state => ({
-          tasks: [
+          tasks: resolveChains([
             ...(state.tasks ?? []),
             {
               id: uuidv4(),
@@ -585,13 +587,14 @@ export const useBehaviorStore = create<BehaviorStore>()(
               list: input.list,
               startTime: input.startTime,
               estimateMin: input.estimateMin,
+              nextTaskId: input.nextTaskId,
               deadline: input.deadline,
               deadlineTime: input.deadlineTime,
               completedDates: [],
               completedAtByDate: undefined,
               createdAt: Date.now(),
             },
-          ],
+          ]),
         })),
       updateTask: (taskId, updates) =>
         set(state => {
@@ -600,9 +603,16 @@ export const useBehaviorStore = create<BehaviorStore>()(
 
           const safeUpdates =
             task.completedDates.length > 0 ? { ...updates, behaviorId: task.behaviorId, source: task.source } : updates;
+          const nextTaskId = 'nextTaskId' in safeUpdates ? safeUpdates.nextTaskId : task.nextTaskId;
           return {
-            tasks: (state.tasks ?? []).map(candidate =>
-              candidate.id === taskId ? { ...candidate, ...safeUpdates } : candidate,
+            tasks: resolveChains(
+              (state.tasks ?? []).map(candidate => {
+                if (candidate.id === taskId) return { ...candidate, ...safeUpdates };
+                // A task is the next step of only one task.
+                return nextTaskId && candidate.nextTaskId === nextTaskId
+                  ? { ...candidate, nextTaskId: undefined }
+                  : candidate;
+              }),
             ),
           };
         }),
@@ -806,7 +816,14 @@ export const useBehaviorStore = create<BehaviorStore>()(
                 });
 
           return {
-            tasks: (state.tasks ?? []).filter(candidate => candidate.id !== taskId),
+            // The task before the removed one takes over its next step, so the chain stays whole.
+            tasks: resolveChains(
+              (state.tasks ?? [])
+                .filter(candidate => candidate.id !== taskId)
+                .map(candidate =>
+                  candidate.nextTaskId === taskId ? { ...candidate, nextTaskId: task.nextTaskId } : candidate,
+                ),
+            ),
             behaviors,
           };
         }),

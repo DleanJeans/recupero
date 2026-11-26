@@ -30,6 +30,8 @@ import { type TaskSchedule, TaskScheduleRows } from './task-schedule-rows';
 
 interface TaskEditorDialogProps {
   editing: boolean;
+  /** Id of the task being edited. */
+  taskId?: string;
   /** Total time spent on the task so far (editing only). */
   timeSpentMs?: number;
   title: string;
@@ -61,6 +63,7 @@ type Picker = 'behavior' | 'app' | 'place' | 'oneOffPlace' | 'newPlace' | 'icon'
 /** Add / edit a task in a dialog over the Tasks screen. Centred; docks to the top only while the keyboard is up. */
 export function TaskEditorDialog({
   editing,
+  taskId,
   timeSpentMs,
   title,
   onTitleChange,
@@ -242,6 +245,7 @@ export function TaskEditorDialog({
             <TaskScheduleRows
               schedule={schedule}
               onChange={onScheduleChange}
+              taskId={taskId}
               suggestedMin={selectedBehavior?.durationXpEnabled ? getAverageDurationMin(selectedBehavior) : undefined}
             />
 

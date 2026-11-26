@@ -24,6 +24,7 @@ import {
   formatStartTime,
   getDeadlineState,
   getTaskActualTime,
+  getTaskEstimateMin,
 } from '../../../utils/task-schedule-utils';
 import { formatTaskTime } from '../../../utils/task-time-utils';
 import { formatTimeRange } from '../../../utils/time-utils';
@@ -99,7 +100,7 @@ function TaskCardComponent({
       ? `Done ${formatTimeRange(actualTime.start ?? actualTime.end, actualTime.start ? actualTime.end : undefined)}`
       : undefined,
     !complete && task.startTime ? formatStartTime(task.startTime) : undefined,
-    !complete && task.estimateMin ? `~${formatEstimate(task.estimateMin)}` : undefined,
+    !complete && (task.estimateMin || task.startTime) ? `~${formatEstimate(getTaskEstimateMin(task))}` : undefined,
     task.deadline && !complete
       ? `Due ${formatDateDisplay(task.deadline).replace(/, \d{4}$/, '')}${task.deadlineTime ? ` ${formatStartTime(task.deadlineTime)}` : ''}`
       : undefined,

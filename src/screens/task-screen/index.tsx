@@ -345,6 +345,7 @@ export function TaskScreen() {
       scheduledDate: schedule.scheduledDate,
       startTime: schedule.startTime,
       estimateMin: schedule.estimateMin,
+      nextTaskId: schedule.nextTaskId,
       deadline: schedule.deadline,
       deadlineTime: schedule.deadline ? schedule.deadlineTime : undefined,
     };
@@ -409,6 +410,7 @@ export function TaskScreen() {
       scheduledDate: task.scheduledDate,
       startTime: task.startTime,
       estimateMin: task.estimateMin,
+      nextTaskId: task.nextTaskId,
       deadline: task.deadline,
       deadlineTime: task.deadlineTime,
     });
@@ -796,6 +798,7 @@ export function TaskScreen() {
       {composerOpen && (
         <TaskEditorDialog
           editing={editingTaskId != null}
+          taskId={editingTaskId ?? undefined}
           timeSpentMs={editingTaskId ? timeSpent.get(editingTaskId) : undefined}
           title={title}
           onTitleChange={setTitle}

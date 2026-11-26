@@ -1,4 +1,5 @@
 import type { TaskEntry } from '../types/task';
+import { getTaskEstimateMin } from './task-schedule-utils';
 
 type Schedulable = Pick<TaskEntry, 'id' | 'startTime' | 'estimateMin' | 'createdAt'>;
 
@@ -36,12 +37,12 @@ export function cascadeReschedule(tasks: ReadonlyArray<Schedulable>, taskId: str
     .sort(byStart);
   const changes: StartChange[] = [{ id: taskId, startTime: newStart }];
   const movedIndex = planned.findIndex(task => task.id === taskId);
-  let previousEnd = toMinutes(newStart) + (moved.estimateMin ?? 0);
+  let previousEnd = toMinutes(newStart) + getTaskEstimateMin(moved);
   for (const task of planned.slice(movedIndex + 1)) {
     const start = toMinutes(task.startTime as string);
     const pushed = Math.min(LAST_MINUTE, Math.max(start, previousEnd));
     if (pushed !== start) changes.push({ id: task.id, startTime: toTime(pushed) });
-    previousEnd = pushed + (task.estimateMin ?? 0);
+    previousEnd = pushed + getTaskEstimateMin(task);
   }
   return changes;
 }
@@ -52,7 +53,7 @@ export function findOverlaps(tasks: ReadonlyArray<Schedulable>): Map<string, { s
   const planned = tasks.filter(task => task.startTime).sort(byStart);
   for (let i = 1; i < planned.length; i++) {
     const previous = planned[i - 1];
-    const previousEnd = toMinutes(previous.startTime as string) + (previous.estimateMin ?? 0);
+    const previousEnd = toMinutes(previous.startTime as string) + getTaskEstimateMin(previous);
     if (previousEnd > toMinutes(planned[i].startTime as string) && previousEnd <= LAST_MINUTE) {
       overlaps.set(planned[i].id, { suggestedStart: toTime(previousEnd) });
     }

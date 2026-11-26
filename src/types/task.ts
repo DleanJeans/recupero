@@ -44,8 +44,10 @@ export interface TaskEntry {
   timed?: true;
   /** Planned start time of day, "HH:mm" (24 h). With scheduledDate it says when to do the task. */
   startTime?: string;
-  /** Estimated duration in minutes. */
+  /** Estimated duration in minutes. Unset means the default (5). */
   estimateMin?: number;
+  /** "Next step": this task id always starts when this task ends and is scheduled on the same day. */
+  nextTaskId?: string;
   /** Last day (yyyy-MM-dd) to finish the task. The card turns red from that day on. */
   deadline?: string;
   /** Optional time of day of the deadline, "HH:mm". Without it the deadline lasts all day. */
@@ -81,6 +83,7 @@ export interface AddTaskInput {
   list?: TaskList;
   startTime?: string;
   estimateMin?: number;
+  nextTaskId?: string;
   deadline?: string;
   deadlineTime?: string;
 }

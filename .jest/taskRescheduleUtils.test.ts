@@ -14,8 +14,9 @@ describe('findOverlaps', () => {
     expect(overlaps.has('c')).toBe(false);
     expect(overlaps.has('a')).toBe(false);
   });
-  it('ignores tasks without an estimate as the earlier one', () => {
-    expect(findOverlaps([t('a', '09:00'), t('b', '09:00')]).size).toBe(0);
+  it('treats a task without an estimate as 5 min', () => {
+    expect(findOverlaps([t('a', '09:00'), t('b', '09:03')]).get('b')).toEqual({ suggestedStart: '09:05' });
+    expect(findOverlaps([t('a', '09:00'), t('b', '09:05')]).size).toBe(0);
   });
 });
 
