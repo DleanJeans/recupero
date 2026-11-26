@@ -48,7 +48,6 @@ export function SunlightPlacesMapView({
   const mapRef = useRef<MapView>(null);
   const places = useCuesStore(state => state.places);
   const outdoorPlaceIds = useSunlightStore(state => state.outdoorPlaceIds);
-  const radiusM = useSunlightStore(state => state.radiusM);
   const samples = useSunlightStore(state => state.samples);
   const [here, setHere] = useState<GeoPoint | null>(null);
   const fallback = useMemo(() => getSunReferencePoint(samples, places), [samples, places]);
@@ -110,7 +109,7 @@ export function SunlightPlacesMapView({
             <React.Fragment key={place.id}>
               <Circle
                 center={coordinate}
-                radius={outdoor ? place.radiusM : radiusM}
+                radius={place.radiusM}
                 fillColor={`${color}30`}
                 strokeColor={color}
                 strokeWidth={2}
@@ -119,7 +118,7 @@ export function SunlightPlacesMapView({
                 coordinate={coordinate}
                 icon={getPlaceEmoji(place)}
                 title={place.name}
-                description={outdoor ? 'Counts as outside' : `Paused within ${radiusM} m`}
+                description={outdoor ? 'Counts as outside' : `Paused within ${place.radiusM} m`}
                 color={color}
               />
             </React.Fragment>

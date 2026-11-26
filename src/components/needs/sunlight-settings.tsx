@@ -7,7 +7,6 @@ import { useSunlightStore } from '../../store/sunlight-store';
 import { Colors } from '../../utils/colors';
 import { formatSunlightMinutes, SUNLIGHT_GOAL_STEP_MINUTES } from '../../utils/sunlight-utils';
 import { AppIcon } from '../app-icon';
-import { RadiusSlider } from '../radius-slider';
 import { Text } from '../text';
 import { SUNLIGHT_COLOR } from './sunlight-bar-row';
 import { SunlightCalibration } from './sunlight-calibration';
@@ -25,8 +24,6 @@ export function SunlightSettings({ sunlight }: SunlightSettingsProps) {
   const outdoorPlaceIds = useSunlightStore(state => state.outdoorPlaceIds);
   const toggleOutdoorPlace = useSunlightStore(state => state.toggleOutdoorPlace);
   const setGoalMinutes = useSunlightStore(state => state.setGoalMinutes);
-  const radiusM = useSunlightStore(state => state.radiusM);
-  const setRadiusM = useSunlightStore(state => state.setRadiusM);
   const liveNotification = useSunlightStore(state => state.liveNotification);
   const setLiveNotification = useSunlightStore(state => state.setLiveNotification);
   const { goalMinutes, luxCalibration, eyeLevelFactor } = sunlight;
@@ -90,27 +87,14 @@ export function SunlightSettings({ sunlight }: SunlightSettingsProps) {
         />
         <Text style={styles.hint}>Light levels are estimated from hourly weather (Open-Meteo).</Text>
       </SunlightSettingRow>
-      <SunlightSettingRow
-        label="Pause within"
-        value={`${radiusM} m of a place's centre`}
-      >
-        <RadiusSlider
-          label="From each place's centre"
-          value={radiusM}
-          onChange={setRadiusM}
-          color={SUNLIGHT_COLOR}
-          revealOnTap
-        />
-        <Text style={styles.hint}>
-          {`Counts time more than ${radiusM} m from the centre of every saved place (the place's own radius is only for reminders), only between sunrise and sunset. Below about 50 m, phone GPS can wobble across the line, so very short trips (under 2 min) are ignored.`}
-        </Text>
-      </SunlightSettingRow>
       {places.length > 0 && (
         <SunlightSettingRow
           label="Places that count as outside"
           value={outdoorNames.length > 0 ? outdoorNames.join(', ') : 'None'}
         >
-          <Text style={styles.hint}>Time at these (a park, a running track) counts as outside.</Text>
+          <Text style={styles.hint}>
+            {`Time at these (a park, a running track) counts as outside. Time more than a place's own radius from its centre counts as outside too, between sunrise and sunset. Trips under 2 min are ignored.`}
+          </Text>
           <View style={styles.chips}>
             {places.map(place => {
               const outdoor = outdoorPlaceIds.includes(place.id);

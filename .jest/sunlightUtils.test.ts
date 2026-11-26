@@ -220,17 +220,17 @@ describe('weather helpers', () => {
 describe('places', () => {
   it('gives indoor places their own small sunlight geofences, only when on', () => {
     const places = [place('home'), place('park')];
-    expect(getSunlightGeofenceRegions(true, places, ['park'], 10)).toEqual([
+    expect(getSunlightGeofenceRegions(true, places, ['park'])).toEqual([
       {
         identifier: 'sunlight:home',
         latitude: 21.03,
         longitude: 105.85,
-        radius: 10,
+        radius: 30,
         notifyOnEnter: true,
         notifyOnExit: true,
       },
     ]);
-    expect(getSunlightGeofenceRegions(false, places, [], 10)).toEqual([]);
+    expect(getSunlightGeofenceRegions(false, places, [])).toEqual([]);
     expect(getSunlightRegionPlaceId('sunlight:home')).toBe('home');
     expect(getSunlightRegionPlaceId('home')).toBeUndefined();
   });

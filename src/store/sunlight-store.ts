@@ -10,13 +10,11 @@ import type {
   SunlightTrailPoint,
   SunlightWeather,
 } from '../types/sunlight';
-import { clampGeofenceRadius } from '../utils/geofence-utils';
 import { sunlightStorage } from '../utils/sunlight-persist';
 import { addTrailPoints } from '../utils/sunlight-timeline-utils';
 import {
   addCalibrationStep,
   DEFAULT_SUNLIGHT_GOAL_MINUTES,
-  DEFAULT_SUNLIGHT_RADIUS_M,
   getActivePause,
   getFreeSessionStart,
   MAX_MANUAL_SESSIONS,
@@ -36,8 +34,6 @@ export interface SunlightStore {
   goalMinutes: number;
   /** Saved places that count as being outside (a park, a running track). Every other place is indoors. */
   outdoorPlaceIds: string[];
-  /** Geofence radius around each indoor place; step past it and the counter starts. */
-  radiusM: number;
   /** Ongoing notification counting up while you're outside in daylight (Android). */
   liveNotification: boolean;
   /** Lux-meter calibrations, each applying from when it was made onwards (earlier days keep their old factor). */
@@ -92,7 +88,6 @@ export interface SunlightStore {
   setEnabled: (enabled: boolean) => void;
   setGoalMinutes: (minutes: number) => void;
   toggleOutdoorPlace: (placeId: string) => void;
-  setRadiusM: (radiusM: number) => void;
   addEvent: (event: SunlightGeofenceEvent) => void;
   addSample: (sample: SunlightPresenceSample) => void;
   setWeather: (weather: SunlightWeather) => void;
@@ -105,7 +100,6 @@ export const useSunlightStore = create<SunlightStore>()(
       trackingSince: Date.now(),
       goalMinutes: DEFAULT_SUNLIGHT_GOAL_MINUTES,
       outdoorPlaceIds: [],
-      radiusM: DEFAULT_SUNLIGHT_RADIUS_M,
       liveNotification: true,
       luxCalibrations: [],
       setLuxCalibration: factor =>
@@ -215,7 +209,6 @@ export const useSunlightStore = create<SunlightStore>()(
             ? state.outdoorPlaceIds.filter(id => id !== placeId)
             : [...state.outdoorPlaceIds, placeId],
         })),
-      setRadiusM: radiusM => set({ radiusM: clampGeofenceRadius(Math.round(radiusM)) }),
       addEvent: event => set(state => ({ events: [...state.events, event].slice(-MAX_SUNLIGHT_EVENTS) })),
       addSample: sample => set(state => ({ samples: [...state.samples, sample].slice(-MAX_SUNLIGHT_SAMPLES) })),
       setWeather: weather => set({ weather }),

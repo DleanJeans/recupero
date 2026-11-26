@@ -27,10 +27,10 @@ async function handleLocations(locations: Location.LocationObject[]): Promise<vo
   void noteSunlightTaskRun('precise', AppState.currentState);
   await waitForHydration(useSunlightStore);
   await waitForHydration(useCuesStore);
-  const { enabled, preciseTracking, outdoorPlaceIds, radiusM, samples } = useSunlightStore.getState();
+  const { enabled, preciseTracking, outdoorPlaceIds, samples } = useSunlightStore.getState();
   if (!enabled || !preciseTracking) return;
   const places = useCuesStore.getState().places;
-  const indoor = getIndoorPlaces(places, outdoorPlaceIds).map(place => ({ ...place, radiusM }));
+  const indoor = getIndoorPlaces(places, outdoorPlaceIds);
   const describe = ({ coords }: Location.LocationObject) =>
     describeSunlightFix(indoor, { lat: coords.latitude, lng: coords.longitude }, coords.accuracy);
   const isNew = (location: Location.LocationObject) => {

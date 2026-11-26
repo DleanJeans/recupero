@@ -21,7 +21,8 @@ const MS_PER_HOUR = 3_600_000;
 
 export const DEFAULT_SUNLIGHT_GOAL_MINUTES = 30;
 /** Small enough that a walk around the block counts. */
-export const DEFAULT_SUNLIGHT_RADIUS_M = 10;
+/** Radius of the temporary pause pin (indoor places use their own radius). */
+export const SUNLIGHT_PIN_RADIUS_M = 10;
 export const SUNLIGHT_GOAL_STEP_MINUTES = 5;
 export const MIN_SUNLIGHT_GOAL_MINUTES = 5;
 export const MAX_SUNLIGHT_GOAL_MINUTES = 240;
@@ -64,21 +65,20 @@ export function getIndoorPlaces(places: SavedPlace[], outdoorPlaceIds: string[])
 export const SUNLIGHT_REGION_PREFIX = 'sunlight:';
 
 /**
- * Sunlight's own geofence around every indoor place, at its own radius (reminders floor theirs to 100 m,
- * which would hide a walk around the block). Events land in the sunlight store, not the cue activity log.
+ * Sunlight's own geofence around every indoor place, at the place's own radius (reminders floor theirs to
+ * 100 m, which would hide a small walk). Events land in the sunlight store, not the cue activity log.
  */
 export function getSunlightGeofenceRegions(
   enabled: boolean,
   places: SavedPlace[],
   outdoorPlaceIds: string[],
-  radiusM: number,
 ): ReminderGeofenceRegion[] {
   if (!enabled) return [];
   return getIndoorPlaces(places, outdoorPlaceIds).map(place => ({
     identifier: `${SUNLIGHT_REGION_PREFIX}${place.id}`,
     latitude: place.lat,
     longitude: place.lng,
-    radius: radiusM,
+    radius: place.radiusM,
     notifyOnEnter: true,
     notifyOnExit: true,
   }));

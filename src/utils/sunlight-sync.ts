@@ -13,6 +13,7 @@ import {
   isUsableSunlightFix,
   parseWeatherHours,
   roundCoordinate,
+  SUNLIGHT_PIN_RADIUS_M,
   shouldRefreshWeather,
 } from './sunlight-utils';
 
@@ -21,7 +22,7 @@ const SAMPLE_COORD_DECIMALS = 3;
 
 /** Checks where the phone is now (only if location is already allowed) and records whether it's at a tracked place. */
 async function samplePresence(now: number, force: boolean): Promise<void> {
-  const { samples, outdoorPlaceIds, radiusM, addSample, pause, resumeSunlight } = useSunlightStore.getState();
+  const { samples, outdoorPlaceIds, addSample, pause, resumeSunlight } = useSunlightStore.getState();
   const last = samples[samples.length - 1];
   if (!force && last && now - last.ts < MIN_SAMPLE_GAP_MS) return;
   const { status } = await Location.getForegroundPermissionsAsync();
@@ -30,9 +31,10 @@ async function samplePresence(now: number, force: boolean): Promise<void> {
   const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
   const { latitude, longitude, accuracy } = position.coords;
   // A pinned pause ends (and its pin goes) once you're outside the pin's radius.
-  if (pause?.pin && hasLeftPausePin(pause.pin, { lat: latitude, lng: longitude }, radiusM, accuracy)) resumeSunlight();
+  if (pause?.pin && hasLeftPausePin(pause.pin, { lat: latitude, lng: longitude }, SUNLIGHT_PIN_RADIUS_M, accuracy))
+    resumeSunlight();
   // Judge by the fix's centre (the blue dot), not its accuracy circle, so being down the street counts as out.
-  const indoor = getIndoorPlaces(useCuesStore.getState().places, outdoorPlaceIds).map(place => ({ ...place, radiusM }));
+  const indoor = getIndoorPlaces(useCuesStore.getState().places, outdoorPlaceIds);
   const fix = describeSunlightFix(indoor, { lat: latitude, lng: longitude }, accuracy);
   if (!isUsableSunlightFix(fix, accuracy)) return;
   addSample({
@@ -75,7 +77,7 @@ const MAX_NEW_PLACE_ACCURACY_M = 150;
  * now, not whenever the next geofence event or position check happens to notice, so time already counted stays.
  */
 export async function closeOutdoorStretchAtNewPlace(place: SavedPlace, addedAt: number): Promise<void> {
-  const { enabled, radiusM, outdoorPlaceIds, addSample } = useSunlightStore.getState();
+  const { enabled, outdoorPlaceIds, addSample } = useSunlightStore.getState();
   if (!enabled || outdoorPlaceIds.includes(place.id)) return;
   const { status } = await Location.getForegroundPermissionsAsync();
   if (status !== 'granted') return;
@@ -87,7 +89,7 @@ export async function closeOutdoorStretchAtNewPlace(place: SavedPlace, addedAt: 
   // Judged leniently on purpose: indoors the fix is often vague, and you're adding the place where you stand.
   const slack = Math.min(accuracy ?? 0, MAX_NEW_PLACE_ACCURACY_M);
   const inside =
-    distanceMeters({ lat: latitude, lng: longitude }, { lat: place.lat, lng: place.lng }) <= radiusM + slack;
+    distanceMeters({ lat: latitude, lng: longitude }, { lat: place.lat, lng: place.lng }) <= place.radiusM + slack;
   if (!inside) return;
   addSample({
     ts: addedAt,

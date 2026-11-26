@@ -5,7 +5,12 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { resyncReminders } from '../../hooks/use-reminder-engine';
 import { useSunlightStore } from '../../store/sunlight-store';
 import { Colors } from '../../utils/colors';
-import { getPauseUntil, SUNLIGHT_PAUSE_OPTIONS, SUNLIGHT_PIN_MAX_MS } from '../../utils/sunlight-utils';
+import {
+  getPauseUntil,
+  SUNLIGHT_PAUSE_OPTIONS,
+  SUNLIGHT_PIN_MAX_MS,
+  SUNLIGHT_PIN_RADIUS_M,
+} from '../../utils/sunlight-utils';
 import { Text } from '../text';
 
 /**
@@ -15,7 +20,6 @@ import { Text } from '../text';
  */
 export function SunlightPauseCard() {
   const pauseUntil = useSunlightStore(state => state.pauseUntil);
-  const radiusM = useSunlightStore(state => state.radiusM);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -39,7 +43,7 @@ export function SunlightPauseCard() {
     <View style={styles.card}>
       <Text style={styles.title}>Pause here</Text>
       <Text style={styles.detail}>
-        {`Somewhere you haven't saved as a place? Drops a temporary pin here (${radiusM} m). Counting resumes and the pin is removed when you leave it.`}
+        {`Somewhere you haven't saved as a place? Drops a temporary pin here (${SUNLIGHT_PIN_RADIUS_M} m). Counting resumes and the pin is removed when you leave it.`}
       </Text>
       <Pressable
         style={({ pressed }) => [styles.chip, pressed && styles.pressed]}

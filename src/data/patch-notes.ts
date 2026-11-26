@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-26',
     items: [
+      "Sunlight now uses each place's own radius instead of one shared radius.",
       'Decay pill turns green, amber, then red as decay nears, scaled to its hourly, daily, weekly or monthly window.',
       {
         text: 'Checklist items now show as done when you log that behavior from Routines or anywhere else today.',
