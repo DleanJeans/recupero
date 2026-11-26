@@ -37,6 +37,11 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-26',
     items: [
+      {
+        text: 'Location screen: Save is now a floating button that only appears once you change something.',
+        screen: 'LocationEdit',
+        linkPhrase: 'Location screen',
+      },
       "Sunlight now uses each place's own radius instead of one shared radius.",
       'Decay pill turns green, amber, then red as decay nears, scaled to its hourly, daily, weekly or monthly window.',
       {

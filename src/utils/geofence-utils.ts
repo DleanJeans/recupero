@@ -116,3 +116,37 @@ export function findPlaceAtPoint<T extends GeoPoint & { radiusM: number }>(
   }
   return best?.place;
 }
+
+export interface PlaceFormValues {
+  name: string;
+  emoji: string;
+  address: string;
+  radiusM: number;
+  isHome: boolean;
+  point: GeoPoint | null;
+}
+
+/** Whether the location form should offer Save: a new place once it is valid, an existing one once something changed. */
+export function hasPlaceFormChanges(
+  form: PlaceFormValues,
+  saved?: {
+    name: string;
+    emoji?: string;
+    address?: string;
+    lat: number;
+    lng: number;
+    radiusM: number;
+    isHome: boolean;
+  },
+): boolean {
+  if (!saved) return form.name.trim() !== '' && form.point !== null;
+  return (
+    form.name.trim() !== saved.name ||
+    form.emoji.trim() !== (saved.emoji ?? '') ||
+    form.address.trim() !== (saved.address ?? '') ||
+    clampGeofenceRadius(form.radiusM) !== clampGeofenceRadius(saved.radiusM) ||
+    form.isHome !== saved.isHome ||
+    form.point?.lat !== saved.lat ||
+    form.point?.lng !== saved.lng
+  );
+}

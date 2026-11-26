@@ -14,7 +14,7 @@ import { Text, TextInput } from '../../components/text';
 import { useCuesStore } from '../../store/cues-store';
 import type { RootStackParamList } from '../../types/navigation';
 import { Colors } from '../../utils/colors';
-import { clampGeofenceRadius, type GeoPoint } from '../../utils/geofence-utils';
+import { clampGeofenceRadius, type GeoPoint, hasPlaceFormChanges } from '../../utils/geofence-utils';
 import { geocodeAddress, getCurrentPoint, reverseGeocodePoint } from '../../utils/location-utils';
 import { GeofenceMap } from './components/geofence-map';
 
@@ -110,6 +110,8 @@ export function LocationEditScreen() {
     navigation.goBack();
   };
 
+  const showSave = hasPlaceFormChanges({ name, emoji, address, radiusM, isHome, point }, existingPlace);
+
   const handleDelete = () => {
     if (!existingPlace) return;
     Alert.alert('Delete location?', 'Cues using this place will be turned off.', [
@@ -136,7 +138,7 @@ export function LocationEditScreen() {
       />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={[styles.content, { paddingBottom: 32 + insets.bottom }]}
+        contentContainerStyle={[styles.content, { paddingBottom: 96 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.searchBar}>
@@ -225,12 +227,6 @@ export function LocationEditScreen() {
           />
         </View>
 
-        <Button
-          variant="primary"
-          onPress={handleSave}
-        >
-          Save location
-        </Button>
         {existingPlace && (
           <Button
             variant="danger"
@@ -240,6 +236,16 @@ export function LocationEditScreen() {
           </Button>
         )}
       </ScrollView>
+      {showSave && (
+        <Button
+          variant="primary"
+          fab
+          onPress={handleSave}
+          style={{ bottom: 16 + insets.bottom }}
+        >
+          Save location
+        </Button>
+      )}
     </SafeAreaView>
   );
 }
