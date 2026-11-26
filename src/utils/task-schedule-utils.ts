@@ -69,14 +69,16 @@ export function getDeadlineState(
   return task.deadlineTime && task.deadlineTime < toStartTime(now) ? 'overdue' : 'today';
 }
 
-/** True when the task's start time (on its scheduled date) is already behind `now`. */
+/**
+ * True when the task's start time is already behind `now`. A task left over from an earlier day still shows today,
+ * so its time of day counts as today's (an unfinished 5 PM task isn't late at 4 PM).
+ */
 export function isStartPassed(
   task: Pick<TaskEntry, 'startTime' | 'scheduledDate'>,
   now: Date,
   todayStr: string,
 ): boolean {
   if (!task.startTime) return false;
-  if (task.scheduledDate < todayStr) return true;
   if (task.scheduledDate > todayStr) return false;
   return task.startTime < toStartTime(now);
 }

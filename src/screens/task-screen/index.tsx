@@ -613,7 +613,8 @@ export function TaskScreen() {
     const startOf = (task: TaskEntry) => {
       if (!task.startTime) return undefined;
       const [h, m] = task.startTime.split(':').map(Number);
-      const date = new Date(`${task.scheduledDate}T00:00:00`);
+      // Tasks left over from an earlier day sit on today's timeline at their time of day.
+      const date = new Date(`${task.scheduledDate < todayStr ? todayStr : task.scheduledDate}T00:00:00`);
       date.setHours(h, m, 0, 0);
       return date.getTime();
     };

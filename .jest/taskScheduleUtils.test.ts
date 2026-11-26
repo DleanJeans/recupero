@@ -43,6 +43,7 @@ describe('task schedule utils', () => {
     expect(isStartPassed({ startTime: '13:00', scheduledDate: '2026-11-26' }, now, '2026-11-26')).toBe(true);
     expect(isStartPassed({ startTime: '14:00', scheduledDate: '2026-11-26' }, now, '2026-11-26')).toBe(false);
     expect(isStartPassed({ startTime: '09:00', scheduledDate: '2026-11-25' }, now, '2026-11-26')).toBe(true);
+    expect(isStartPassed({ startTime: '17:00', scheduledDate: '2026-11-25' }, now, '2026-11-26')).toBe(false);
     expect(isStartPassed({ scheduledDate: '2026-11-26' }, now, '2026-11-26')).toBe(false);
     expect(getSuggestedStartTime(now)).toBe('13:30');
     expect(getSuggestedStartTime(new Date(2026, 10, 26, 23, 50))).toBe('23:45');
