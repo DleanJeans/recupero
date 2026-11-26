@@ -57,6 +57,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       'Tasks: Track duration works without a behavior or app; the ▶ times the task itself.',
       'Tasks: 🚗 Drive button on place tasks logs Driving until you arrive; drives show on the timeline.',
       'Tasks: long-press a place task to log a past drive.',
+      'Tasks: the drive node is a card with Start; tap it to edit the estimate or open the route in Google Maps.',
       "Tasks: a leftover task from a past day isn't flagged behind schedule before its time of day today.",
       'Tasks: long-press a task with a place and choose Open in Google Maps.',
       'Tasks: long-press a done task to edit its done time or use another log; un-ticking keeps timer logs.',

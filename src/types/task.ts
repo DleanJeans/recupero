@@ -64,6 +64,8 @@ export interface TaskEntry {
   completedAtByDate?: Record<string, number>;
   /** When work on the task began (ms), per done day, for tasks timed without a behavior log. */
   completedStartByDate?: Record<string, number>;
+  /** Minutes the user set for the drive to this task's place; used before any estimate. */
+  driveEstimateMin?: number;
   /** Latest drive to the task's place (ms). Logged on the Driving behavior and shown on the timeline. */
   drive?: { start: number; end: number };
   /** Set while the task's own ▶ timer runs (a timed task with no behavior or app). */

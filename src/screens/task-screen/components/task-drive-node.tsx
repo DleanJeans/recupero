@@ -1,5 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 import { formatStartTime, toStartTime } from '../../../utils/task-schedule-utils';
@@ -12,46 +13,97 @@ interface TaskDriveNodeProps {
   leaveAt?: number;
   /** Finished drive. */
   range?: { start: number; end: number };
-  /** Tap to start the drive (planned drives only). */
-  onPress?: () => void;
+  /** Planned drive: starts the Driving timer. */
+  onStart?: () => void;
+  /** Planned drive: tapping the card opens its menu (edit estimate, open Google Maps). */
+  onOpenMenu?: () => void;
 }
 
-/** Timeline marker for the drive to a task's place: planned (leave by) or done (when it happened). */
-export function TaskDriveNode({ placeName, minutes, leaveAt, range, onPress }: TaskDriveNodeProps) {
+/** Timeline card for the drive to a task's place: planned (leave time and a Start pill) or done (when it happened). */
+export function TaskDriveNode({ placeName, minutes, leaveAt, range, onStart, onOpenMenu }: TaskDriveNodeProps) {
   const done = range != null;
-  const label = `${done ? 'Drove to' : 'Drive to'} ${placeName} · ${minutes}m`;
+  const detail = range
+    ? `${minutes}m · ${formatTimeRange(range.start, range.end)}`
+    : `~${minutes}m${leaveAt != null ? ` · Leave ${formatStartTime(toStartTime(new Date(leaveAt)))}` : ''}`;
   return (
     <Pressable
-      style={styles.row}
-      onPress={onPress}
-      disabled={!onPress}
-      accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={onPress ? `Start driving to ${placeName}` : undefined}
+      style={[styles.card, done && styles.cardDone]}
+      onPress={onOpenMenu}
+      disabled={!onOpenMenu}
+      accessibilityRole={onOpenMenu ? 'button' : undefined}
+      accessibilityLabel={onOpenMenu ? `Drive to ${placeName} options` : undefined}
     >
       <Text style={styles.emoji}>🚗</Text>
-      <Text
-        style={styles.text}
-        numberOfLines={1}
-      >
-        {label}
-      </Text>
-      <Text
-        style={styles.time}
-        numberOfLines={1}
-      >
-        {range
-          ? formatTimeRange(range.start, range.end)
-          : leaveAt != null
-            ? `Leave ${formatStartTime(toStartTime(new Date(leaveAt)))}`
-            : ''}
-      </Text>
+      <View style={styles.text}>
+        <Text
+          style={[styles.title, done && styles.titleDone]}
+          numberOfLines={1}
+        >
+          {`${done ? 'Drove to' : 'Drive to'} ${placeName}`}
+        </Text>
+        <Text
+          style={[styles.detail, done && styles.detailDone]}
+          numberOfLines={1}
+        >
+          {detail}
+        </Text>
+      </View>
+      {onStart && (
+        <Pressable
+          style={({ pressed }) => [styles.start, pressed && styles.pressed]}
+          onPress={onStart}
+          hitSlop={6}
+          accessibilityRole="button"
+          accessibilityLabel={`Start driving to ${placeName}`}
+        >
+          <Ionicons
+            name="play"
+            size={13}
+            color="#fff"
+          />
+          <Text
+            style={styles.startText}
+            numberOfLines={1}
+          >
+            Start
+          </Text>
+        </Pressable>
+      )}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8, height: 32 },
-  emoji: { fontSize: 16 },
-  text: { flex: 1, color: Colors.text.muted, fontSize: 13, fontWeight: '600' },
-  time: { color: Colors.text.faint, fontSize: 12, fontWeight: '700', flexShrink: 0, textAlign: 'right' },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#14202e',
+    borderWidth: 1,
+    borderColor: '#23415f',
+    borderRadius: 14,
+    paddingVertical: 6,
+    paddingLeft: 12,
+    paddingRight: 6,
+    minHeight: 48,
+  },
+  cardDone: { backgroundColor: Colors.bg.card, borderColor: Colors.bg.input },
+  emoji: { fontSize: 20 },
+  text: { flex: 1, minWidth: 0 },
+  title: { color: '#dbeafe', fontSize: 14, fontWeight: '700' },
+  titleDone: { color: Colors.text.muted },
+  detail: { color: '#93c5fd', fontSize: 12, marginTop: 2 },
+  detailDone: { color: Colors.text.faint },
+  start: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#2563eb',
+    borderRadius: 16,
+    height: 32,
+    paddingHorizontal: 14,
+    flexShrink: 0,
+  },
+  startText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  pressed: { opacity: 0.7 },
 });

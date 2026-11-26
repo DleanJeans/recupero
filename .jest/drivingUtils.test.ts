@@ -22,6 +22,13 @@ describe('getDriveEstimateMin', () => {
     expect(getDriveEstimateMin(task('a', { placeId: 'p' }), tasks, undefined)).toBe(25);
   });
 
+  it('uses a value set by hand first, and remembers it for the place', () => {
+    expect(getDriveEstimateMin(task('a', { placeId: 'p', driveEstimateMin: 30 }), [], undefined)).toBe(30);
+    const other = task('b', { placeId: 'p', driveEstimateMin: 45, createdAt: 5 });
+    expect(getDriveEstimateMin(task('a', { placeId: 'p' }), [other], undefined)).toBe(45);
+    expect(getDriveEstimateMin(task('a', { placeId: 'q' }), [other], undefined)).toBe(DEFAULT_DRIVE_MIN);
+  });
+
   it('falls back to the average of all Driving logs', () => {
     const driving = { logs: [{ id: '1', timestamp: 0, endTimestamp: 40 * MIN }] } as unknown as BehaviorEntry;
     expect(getDriveEstimateMin(task('a', { placeId: 'p' }), [], driving)).toBe(40);

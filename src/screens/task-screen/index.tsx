@@ -27,10 +27,10 @@ import { getActiveBehaviors } from '../../utils/archive-utils';
 import { getCalendarTaskCompletionMetrics } from '../../utils/calendar-metrics';
 import { Colors } from '../../utils/colors';
 import { formatDateDisplay, toDateString } from '../../utils/date-utils';
-import { getDriveEstimateMin } from '../../utils/drive-estimate-utils';
+import { getDriveEstimateMin, getPlaceDriveAverageMin } from '../../utils/drive-estimate-utils';
 import { findDrivingBehaviorId, startDrive } from '../../utils/driving-utils';
 import { getNeedLowForecasts } from '../../utils/need-utils';
-import { openInMaps } from '../../utils/open-in-maps';
+import { openDirectionsInMaps, openInMaps } from '../../utils/open-in-maps';
 import { DEFAULT_PLACE_DWELL_MIN, getPlaceDwellMin, getTaskPlaceKey } from '../../utils/place-task-utils';
 import { requestPlaceTaskPermissions } from '../../utils/reminder-permissions';
 import { buildBatchUpdates, type TaskBatchEdits } from '../../utils/task-batch-utils';
@@ -38,6 +38,7 @@ import { getBugNudgeTask, getFixFirstTasks, sortByBugHeat } from '../../utils/ta
 import { cascadeReschedule, findOverlaps, getRescheduleText } from '../../utils/task-reschedule-utils';
 import {
   formatStartTime,
+  getAverageDurationMin,
   getSuggestedStartTime,
   isStartPassed,
   sortByCompletion,
@@ -64,6 +65,8 @@ import { TaskActionSheet } from './components/task-action-sheet';
 import { TaskBatchEditDialog } from './components/task-batch-edit-dialog';
 import { TaskCard } from './components/task-card';
 import { TaskDoneTimeSheet } from './components/task-done-time-sheet';
+import { TaskDriveEstimateDialog } from './components/task-drive-estimate-dialog';
+import { TaskDriveMenu } from './components/task-drive-menu';
 import { TaskDriveNode } from './components/task-drive-node';
 import { TaskDriveSheet } from './components/task-drive-sheet';
 import { TaskEditorDialog } from './components/task-editor-dialog';
@@ -123,6 +126,8 @@ export function TaskScreen() {
   const [historyTaskId, setHistoryTaskId] = useState<string | undefined>();
   const [doneTimeTaskId, setDoneTimeTaskId] = useState<string | undefined>();
   const [driveTaskId, setDriveTaskId] = useState<string | undefined>();
+  const [driveMenuTaskId, setDriveMenuTaskId] = useState<string | undefined>();
+  const [driveEstimateTaskId, setDriveEstimateTaskId] = useState<string | undefined>();
   /** Select mode: ids of the picked tasks (undefined = not selecting). */
   const [selectedIds, setSelectedIds] = useState<string[]>();
   const [batchOpen, setBatchOpen] = useState(false);
@@ -160,6 +165,26 @@ export function TaskScreen() {
     (task: TaskEntry) => (task.placeId ? placeById.get(task.placeId)?.name : task.oneOffPlace?.name) ?? 'the place',
     [placeById],
   );
+  /** Google Maps route from the previous task's place that day (else the user's location) to this task's place. */
+  const openDriveRoute = (task: TaskEntry) => {
+    const pointOf = (candidate: TaskEntry) => {
+      const spot = candidate.placeId ? placeById.get(candidate.placeId) : candidate.oneOffPlace;
+      return spot ? { lat: spot.lat, lng: spot.lng } : undefined;
+    };
+    const destination = pointOf(task);
+    if (!destination) return;
+    const previous = [...timelineTasks.done, ...timelineTasks.open]
+      .filter(
+        candidate =>
+          candidate.id !== task.id &&
+          candidate.startTime &&
+          task.startTime &&
+          candidate.startTime < task.startTime &&
+          pointOf(candidate),
+      )
+      .sort((a, b) => (b.startTime as string).localeCompare(a.startTime as string))[0];
+    openDirectionsInMaps(previous ? pointOf(previous) : undefined, destination);
+  };
   const behaviorOf = useCallback(
     (task: TaskEntry) => (task.behaviorId ? behaviorById.get(task.behaviorId) : undefined),
     [behaviorById],
@@ -310,6 +335,10 @@ export function TaskScreen() {
   const bugTask = bugTaskId ? (tasks ?? []).find(task => task.id === bugTaskId) : undefined;
   const historyTask = historyTaskId ? (tasks ?? []).find(task => task.id === historyTaskId) : undefined;
   const driveTask = driveTaskId ? (tasks ?? []).find(task => task.id === driveTaskId) : undefined;
+  const driveMenuTask = driveMenuTaskId ? (tasks ?? []).find(task => task.id === driveMenuTaskId) : undefined;
+  const driveEstimateTask = driveEstimateTaskId
+    ? (tasks ?? []).find(task => task.id === driveEstimateTaskId)
+    : undefined;
   const doneTimeTask = doneTimeTaskId ? (tasks ?? []).find(task => task.id === doneTimeTaskId) : undefined;
   const menuTask = menuTaskId ? (tasks ?? []).find(task => task.id === menuTaskId) : undefined;
 
@@ -703,7 +732,8 @@ export function TaskScreen() {
               placeName={taskPlaceName(driveTask)}
               minutes={item.driveMin ?? 0}
               leaveAt={item.ts}
-              onPress={() => startDrive(driveTask)}
+              onStart={() => startDrive(driveTask)}
+              onOpenMenu={() => setDriveMenuTaskId(driveTask.id)}
             />
           </TaskTimelineRow>,
         );
@@ -934,6 +964,35 @@ export function TaskScreen() {
           behavior={behaviorOf(doneTimeTask)}
           dateStr={lastCompletedDate(doneTimeTask) as string}
           onClose={() => setDoneTimeTaskId(undefined)}
+        />
+      )}
+
+      {driveMenuTask && (
+        <TaskDriveMenu
+          placeName={taskPlaceName(driveMenuTask)}
+          onClose={() => setDriveMenuTaskId(undefined)}
+          onEditEstimate={() => {
+            setDriveMenuTaskId(undefined);
+            setDriveEstimateTaskId(driveMenuTask.id);
+          }}
+          onOpenMaps={() => {
+            setDriveMenuTaskId(undefined);
+            openDriveRoute(driveMenuTask);
+          }}
+        />
+      )}
+
+      {driveEstimateTask && (
+        <TaskDriveEstimateDialog
+          placeName={taskPlaceName(driveEstimateTask)}
+          minutes={getDriveEstimateMin(driveEstimateTask, tasks ?? [], drivingBehavior)}
+          placeAverageMin={getPlaceDriveAverageMin(driveEstimateTask, tasks ?? [])}
+          allAverageMin={getAverageDurationMin(drivingBehavior)}
+          onSave={minutes => {
+            updateTask(driveEstimateTask.id, { driveEstimateMin: minutes });
+            setDriveEstimateTaskId(undefined);
+          }}
+          onClose={() => setDriveEstimateTaskId(undefined)}
         />
       )}
 
