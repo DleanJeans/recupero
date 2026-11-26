@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { type ReactNode, useState } from 'react';
-import { Keyboard, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Keyboard, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppUsage, type LaunchableApp } from '../../../../modules/app-usage';
 import { AppIcon } from '../../../components/app-icon';
@@ -19,11 +19,13 @@ import { findAutoTrackedBehavior } from '../../../utils/app-usage-utils';
 import { Colors } from '../../../utils/colors';
 import { getPlaceEmoji } from '../../../utils/cue-utils';
 import { formatPlaceDwell } from '../../../utils/place-task-utils';
+import { getAverageDurationMin } from '../../../utils/task-schedule-utils';
 import { formatTaskTime } from '../../../utils/task-time-utils';
 import { AttachRow } from './task-attach-row';
 import { TaskBehaviorPicker } from './task-behavior-picker';
 import { TaskOneOffPlaceScreen } from './task-one-off-place-screen';
 import { TaskPlaceScreen } from './task-place-screen';
+import { type TaskSchedule, TaskScheduleRows } from './task-schedule-rows';
 
 interface TaskEditorDialogProps {
   editing: boolean;
@@ -47,6 +49,8 @@ interface TaskEditorDialogProps {
   onTimedChange: (timed: boolean) => void;
   icon: string;
   onIconChange: (icon: string) => void;
+  schedule: TaskSchedule;
+  onScheduleChange: (schedule: TaskSchedule) => void;
   onSubmit: () => void;
   onCancel: () => void;
 }
@@ -75,6 +79,8 @@ export function TaskEditorDialog({
   onTimedChange,
   icon,
   onIconChange,
+  schedule,
+  onScheduleChange,
   onSubmit,
   onCancel,
 }: TaskEditorDialogProps) {
@@ -131,116 +137,128 @@ export function TaskEditorDialog({
               {`Time spent: ${formatTaskTime(timeSpentMs)}`}
             </Text>
           )}
-          <TextInput
-            style={styles.titleInput}
-            placeholder="Task name"
-            placeholderTextColor={Colors.text.faint}
-            value={title}
-            onChangeText={onTitleChange}
-            returnKeyType="done"
-            autoFocus={!editing}
-          />
+          <ScrollView
+            style={styles.body}
+            contentContainerStyle={styles.bodyContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            <TextInput
+              style={styles.titleInput}
+              placeholder="Task name"
+              placeholderTextColor={Colors.text.faint}
+              value={title}
+              onChangeText={onTitleChange}
+              returnKeyType="done"
+              autoFocus={!editing}
+            />
 
-          <View style={styles.rows}>
-            <AttachRow
-              icon={
-                icon ? (
-                  <AppIcon
-                    value={icon}
-                    size={18}
-                  />
-                ) : (
-                  <Ionicons
-                    name="happy-outline"
-                    size={18}
-                    color={Colors.text.muted}
-                  />
-                )
-              }
-              label="Icon"
-              value={icon ? 'Custom' : undefined}
-              onPress={() => setPicker('icon')}
-              onClear={icon ? () => onIconChange('') : undefined}
-            />
-            <AttachRow
-              icon={
-                selectedBehavior ? (
-                  <BehaviorIcon
-                    behavior={selectedBehavior}
-                    size={20}
-                  />
-                ) : (
-                  <Ionicons
-                    name="extension-puzzle-outline"
-                    size={18}
-                    color={Colors.text.muted}
-                  />
-                )
-              }
-              label="Behavior"
-              value={selectedBehavior?.name}
-              onPress={() => setPicker('behavior')}
-              onClear={selectedBehavior ? () => onBehaviorSelect(undefined) : undefined}
-            />
-            {AppUsage != null && (
+            <View style={styles.rows}>
               <AttachRow
                 icon={
-                  <Ionicons
-                    name="phone-portrait-outline"
-                    size={18}
-                    color={Colors.text.muted}
-                  />
+                  icon ? (
+                    <AppIcon
+                      value={icon}
+                      size={18}
+                    />
+                  ) : (
+                    <Ionicons
+                      name="happy-outline"
+                      size={18}
+                      color={Colors.text.muted}
+                    />
+                  )
                 }
-                label="App"
-                value={app?.label}
-                badge={appIsNew ? 'New' : undefined}
-                onPress={() => setPicker('app')}
-                onClear={app ? () => onAppChange(undefined) : undefined}
+                label="Icon"
+                value={icon ? 'Custom' : undefined}
+                onPress={() => setPicker('icon')}
+                onClear={icon ? () => onIconChange('') : undefined}
               />
-            )}
-            <AttachRow
-              icon={
-                selectedPlace || oneOffPlace ? (
-                  <AppIcon
-                    value={selectedPlace ? getPlaceEmoji(selectedPlace) : '📍'}
-                    style={styles.placeEmoji}
-                  />
-                ) : (
-                  <Ionicons
-                    name="location-outline"
-                    size={18}
-                    color={Colors.text.muted}
-                  />
-                )
-              }
-              label="Place"
-              value={
-                selectedPlace || oneOffPlace
-                  ? placeDwellMin > 0
-                    ? `${(selectedPlace ?? oneOffPlace)?.name} · ${formatPlaceDwell(placeDwellMin)}`
-                    : (selectedPlace ?? oneOffPlace)?.name
-                  : undefined
-              }
-              onPress={() => setPicker('place')}
-              onClear={selectedPlace || oneOffPlace ? () => onPlaceSelect(undefined) : undefined}
-              last
-            />
-          </View>
+              <AttachRow
+                icon={
+                  selectedBehavior ? (
+                    <BehaviorIcon
+                      behavior={selectedBehavior}
+                      size={20}
+                    />
+                  ) : (
+                    <Ionicons
+                      name="extension-puzzle-outline"
+                      size={18}
+                      color={Colors.text.muted}
+                    />
+                  )
+                }
+                label="Behavior"
+                value={selectedBehavior?.name}
+                onPress={() => setPicker('behavior')}
+                onClear={selectedBehavior ? () => onBehaviorSelect(undefined) : undefined}
+              />
+              {AppUsage != null && (
+                <AttachRow
+                  icon={
+                    <Ionicons
+                      name="phone-portrait-outline"
+                      size={18}
+                      color={Colors.text.muted}
+                    />
+                  }
+                  label="App"
+                  value={app?.label}
+                  badge={appIsNew ? 'New' : undefined}
+                  onPress={() => setPicker('app')}
+                  onClear={app ? () => onAppChange(undefined) : undefined}
+                />
+              )}
+              <AttachRow
+                icon={
+                  selectedPlace || oneOffPlace ? (
+                    <AppIcon
+                      value={selectedPlace ? getPlaceEmoji(selectedPlace) : '📍'}
+                      style={styles.placeEmoji}
+                    />
+                  ) : (
+                    <Ionicons
+                      name="location-outline"
+                      size={18}
+                      color={Colors.text.muted}
+                    />
+                  )
+                }
+                label="Place"
+                value={
+                  selectedPlace || oneOffPlace
+                    ? placeDwellMin > 0
+                      ? `${(selectedPlace ?? oneOffPlace)?.name} · ${formatPlaceDwell(placeDwellMin)}`
+                      : (selectedPlace ?? oneOffPlace)?.name
+                    : undefined
+                }
+                onPress={() => setPicker('place')}
+                onClear={selectedPlace || oneOffPlace ? () => onPlaceSelect(undefined) : undefined}
+                last
+              />
+            </View>
 
-          <CheckboxRow
-            variant="row"
-            label="Track duration"
-            hint={
-              !canTime
-                ? 'Pick a behavior or an app to time this task.'
-                : timed
-                  ? `Adds a ▶ timer button${app ? ` that opens ${app.label}` : ''}. Ticking the task while it runs logs the time to ${timedTarget}.`
-                  : 'Adds a ▶ timer button to the task.'
-            }
-            checked={timed && canTime}
-            disabled={!canTime}
-            onToggle={() => onTimedChange(!timed)}
-          />
+            <TaskScheduleRows
+              schedule={schedule}
+              onChange={onScheduleChange}
+              suggestedMin={selectedBehavior?.durationXpEnabled ? getAverageDurationMin(selectedBehavior) : undefined}
+            />
+
+            <CheckboxRow
+              variant="row"
+              label="Track duration"
+              hint={
+                !canTime
+                  ? 'Pick a behavior or an app to time this task.'
+                  : timed
+                    ? `Adds a ▶ timer button${app ? ` that opens ${app.label}` : ''}. Ticking the task while it runs logs the time to ${timedTarget}.`
+                    : 'Adds a ▶ timer button to the task.'
+              }
+              checked={timed && canTime}
+              disabled={!canTime}
+              onToggle={() => onTimedChange(!timed)}
+            />
+          </ScrollView>
 
           <View style={styles.footer}>
             <View style={styles.spacer} />
@@ -329,7 +347,7 @@ export function TaskEditorDialog({
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'center', paddingHorizontal: 16, backgroundColor: 'rgba(0,0,0,0.65)' },
   overlayTop: { justifyContent: 'flex-start' },
-  sheet: { backgroundColor: Colors.bg.card, borderRadius: 18, padding: 16, gap: 12 },
+  sheet: { backgroundColor: Colors.bg.card, borderRadius: 18, padding: 16, gap: 12, maxHeight: '100%' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   heading: { color: Colors.text.primary, fontSize: 17, fontWeight: '700' },
   timeSpent: {
@@ -346,6 +364,8 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     fontSize: 15,
   },
+  body: { flexGrow: 0 },
+  bodyContent: { gap: 12 },
   rows: { backgroundColor: Colors.bg.input, borderRadius: 12, overflow: 'hidden' },
   placeEmoji: { fontSize: 17 },
   footer: { flexDirection: 'row', alignItems: 'center', gap: 10 },

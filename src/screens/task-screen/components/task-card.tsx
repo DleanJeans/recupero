@@ -16,8 +16,10 @@ import type { RootStackParamList } from '../../../types/navigation';
 import type { TaskEntry } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
 import { getPlaceIconText } from '../../../utils/cue-utils';
+import { formatDateDisplay } from '../../../utils/date-utils';
 import { launchApp } from '../../../utils/launch-app';
 import { formatBugSummary, getBugHeat } from '../../../utils/task-bug-utils';
+import { formatEstimate, formatStartTime, getDeadlineState } from '../../../utils/task-schedule-utils';
 import { formatTaskTime } from '../../../utils/task-time-utils';
 import { BugHeatBar } from './bug-heat-bar';
 import { TaskCheckbox } from './task-checkbox';
@@ -31,6 +33,8 @@ interface TaskCardProps {
   behavior: BehaviorEntry | undefined;
   place?: SavedPlace;
   complete: boolean;
+  /** Today (yyyy-MM-dd), to tell whether the deadline has come. */
+  todayStr: string;
   /** Picked as one of "Today's 3": drawn bigger with a blue edge. */
   focused?: boolean;
   /** App to open right after the timer starts: the task's own app, else (Shopping tab) the Shopping timer app setting. */
@@ -52,6 +56,7 @@ function TaskCardComponent({
   behavior,
   place,
   complete,
+  todayStr,
   focused,
   note,
   openAppPackage,
@@ -73,8 +78,12 @@ function TaskCardComponent({
       : task.oneOffPlace
         ? `${getPlaceIconText({ emoji: task.oneOffPlace.emoji, isHome: false })} ${task.oneOffPlace.name}`
         : undefined,
+    task.startTime ? formatStartTime(task.startTime) : undefined,
+    task.estimateMin ? `~${formatEstimate(task.estimateMin)}` : undefined,
+    task.deadline && !complete ? `Due ${formatDateDisplay(task.deadline).replace(/, \d{4}$/, '')}` : undefined,
     note,
   ].filter((part): part is string => Boolean(part));
+  const deadlineState = complete ? 'none' : getDeadlineState(task, todayStr);
   const now = Date.now();
   const bugSummary = complete ? undefined : formatBugSummary(task, now);
   const bugHeat = getBugHeat(task.bugs, now);
@@ -95,7 +104,13 @@ function TaskCardComponent({
   const card = (
     <Animated.View
       layout={TASK_CARD_LAYOUT}
-      style={[styles.taskCard, focused && styles.focusCard, complete && styles.taskCardComplete]}
+      style={[
+        styles.taskCard,
+        focused && styles.focusCard,
+        deadlineState === 'today' && styles.dueTodayCard,
+        deadlineState === 'overdue' && styles.overdueCard,
+        complete && styles.taskCardComplete,
+      ]}
     >
       <Pressable
         style={[styles.taskMain, focused && styles.focusMain]}
@@ -218,6 +233,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#1f2430',
     borderWidth: 1,
     borderColor: '#2f3b55',
+  },
+  dueTodayCard: {
+    backgroundColor: '#3a1a1a',
+  },
+  overdueCard: {
+    backgroundColor: '#5a1f1f',
   },
   taskCardComplete: {
     backgroundColor: Colors.bg.darker,

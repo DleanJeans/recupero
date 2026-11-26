@@ -46,6 +46,7 @@ import { TaskActionSheet } from './components/task-action-sheet';
 import { TaskBatchEditDialog } from './components/task-batch-edit-dialog';
 import { TaskCard } from './components/task-card';
 import { TaskEditorDialog } from './components/task-editor-dialog';
+import type { TaskSchedule } from './components/task-schedule-rows';
 import { TaskSelectionBar } from './components/task-selection-bar';
 import { TaskTabs } from './components/task-tabs';
 import { type TodayPickCandidate, TodayPickSheet } from './components/today-pick-sheet';
@@ -84,6 +85,7 @@ export function TaskScreen() {
   const [selectedApp, setSelectedApp] = useState<LaunchableApp>();
   const [timed, setTimed] = useState(false);
   const [icon, setIcon] = useState('');
+  const [schedule, setSchedule] = useState<TaskSchedule>({ scheduledDate: todayStr });
   const [composerOpen, setComposerOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | undefined>();
   const [menuTaskId, setMenuTaskId] = useState<string | undefined>();
@@ -254,6 +256,7 @@ export function TaskScreen() {
     setSelectedApp(undefined);
     setTimed(false);
     setIcon('');
+    setSchedule({ scheduledDate: tab === 'today' ? selectedDate : todayStr });
     setSelectedPlaceId(undefined);
     setOneOffPlace(undefined);
     setPlaceDwellMin(DEFAULT_PLACE_DWELL_MIN);
@@ -290,6 +293,10 @@ export function TaskScreen() {
       appLabel: app?.label,
       timed: isTimed ? (true as const) : undefined,
       icon: icon || undefined,
+      scheduledDate: schedule.scheduledDate,
+      startTime: schedule.startTime,
+      estimateMin: schedule.estimateMin,
+      deadline: schedule.deadline,
     };
 
     if (editingTaskId) {
@@ -297,7 +304,6 @@ export function TaskScreen() {
     } else {
       addTask({
         ...nextTask,
-        scheduledDate: tab === 'today' ? selectedDate : todayStr,
         list: TAB_LIST[tab],
       });
     }
@@ -349,6 +355,12 @@ export function TaskScreen() {
     );
     setTimed(task.timed === true);
     setIcon(task.icon ?? '');
+    setSchedule({
+      scheduledDate: task.scheduledDate,
+      startTime: task.startTime,
+      estimateMin: task.estimateMin,
+      deadline: task.deadline,
+    });
     setPlaceDwellMin(getPlaceDwellMin(task));
     setEditingTaskId(task.id);
     setComposerOpen(true);
@@ -447,6 +459,7 @@ export function TaskScreen() {
       behavior={behaviorOf(task)}
       place={task.placeId ? placeById.get(task.placeId) : undefined}
       complete={complete}
+      todayStr={todayStr}
       focused={options.focused}
       note={options.note}
       openAppPackage={task.appPackage ?? options.openAppPackage}
@@ -651,6 +664,8 @@ export function TaskScreen() {
           onTimedChange={setTimed}
           icon={icon}
           onIconChange={setIcon}
+          schedule={schedule}
+          onScheduleChange={setSchedule}
           onSubmit={handleSubmitTask}
           onCancel={closeComposer}
         />

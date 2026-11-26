@@ -35,6 +35,10 @@ export interface PatchNotesDay {
  */
 export const PATCH_NOTES: PatchNotesDay[] = [
   {
+    date: '2026-11-26',
+    items: ['Tasks: set a date, start time, estimate and deadline; the card turns red when the deadline comes.'],
+  },
+  {
     date: '2026-11-24',
     items: [
       'Emoji search now shows every match in one list, best match first ("bed" finds the bed).',

@@ -42,6 +42,12 @@ export interface TaskEntry {
   icon?: string;
   /** "Track duration": the task shows a ▶ timer button, and ticking it while that timer runs logs the time. */
   timed?: true;
+  /** Planned start time of day, "HH:mm" (24 h). With scheduledDate it says when to do the task. */
+  startTime?: string;
+  /** Estimated duration in minutes. */
+  estimateMin?: number;
+  /** Last day (yyyy-MM-dd) to finish the task. The card turns red from that day on. */
+  deadline?: string;
   /** Tasks tab this task lives on. Unset means derived, see getTaskList. */
   list?: TaskList;
   /** Dates (yyyy-MM-dd) on which this task was picked as one of "Today's 3". */
@@ -71,4 +77,7 @@ export interface AddTaskInput {
   timed?: true;
   icon?: string;
   list?: TaskList;
+  startTime?: string;
+  estimateMin?: number;
+  deadline?: string;
 }

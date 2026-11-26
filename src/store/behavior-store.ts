@@ -190,6 +190,9 @@ interface BehaviorStore {
         | 'timed'
         | 'icon'
         | 'list'
+        | 'startTime'
+        | 'estimateMin'
+        | 'deadline'
       >
     >,
   ) => void;
@@ -573,6 +576,9 @@ export const useBehaviorStore = create<BehaviorStore>()(
               timed: input.timed,
               icon: input.icon,
               list: input.list,
+              startTime: input.startTime,
+              estimateMin: input.estimateMin,
+              deadline: input.deadline,
               completedDates: [],
               completedAtByDate: undefined,
               createdAt: Date.now(),
