@@ -28,6 +28,7 @@ import { getCalendarTaskCompletionMetrics } from '../../utils/calendar-metrics';
 import { Colors } from '../../utils/colors';
 import { formatDateDisplay, toDateString } from '../../utils/date-utils';
 import { getNeedLowForecasts } from '../../utils/need-utils';
+import { openInMaps } from '../../utils/open-in-maps';
 import { DEFAULT_PLACE_DWELL_MIN, getPlaceDwellMin } from '../../utils/place-task-utils';
 import { requestPlaceTaskPermissions } from '../../utils/reminder-permissions';
 import { buildBatchUpdates, type TaskBatchEdits } from '../../utils/task-batch-utils';
@@ -885,6 +886,14 @@ export function TaskScreen() {
             setMenuTaskId(undefined);
             setHistoryTaskId(menuTask.id);
           }}
+          onOpenMap={(() => {
+            const spot = menuTask.placeId ? placeById.get(menuTask.placeId) : menuTask.oneOffPlace;
+            if (!spot) return undefined;
+            return () => {
+              setMenuTaskId(undefined);
+              openInMaps(spot.lat, spot.lng, spot.name);
+            };
+          })()}
           onEditDoneTime={() => {
             setMenuTaskId(undefined);
             setDoneTimeTaskId(menuTask.id);

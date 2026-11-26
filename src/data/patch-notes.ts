@@ -43,6 +43,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
         screen: 'Home',
         linkPhrase: 'Checklist',
       },
+      'Tasks: long-press a task with a place and choose Open in Google Maps.',
       'Tasks: long-press a done task to edit its done time or use another log; un-ticking keeps timer logs.',
       'Tasks: overlapping or late tasks offer to reschedule, pushing the ones after them down only as needed.',
       'Tasks: finished tasks show the time they were actually done instead of the planned start.',

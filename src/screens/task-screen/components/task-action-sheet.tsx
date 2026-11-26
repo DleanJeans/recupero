@@ -30,6 +30,8 @@ interface TaskActionSheetProps {
   /** Opens the "Bugged me" log sheet for this task. */
   onBug: () => void;
   onBugHistory: () => void;
+  /** Opens the task's place in the Google Maps app. Omit when the task has no place. */
+  onOpenMap?: () => void;
   /** Edit when a finished task was done, or assign a log to it. */
   onEditDoneTime: () => void;
   onMove: (list: TaskList) => void;
@@ -49,6 +51,7 @@ export function TaskActionSheet({
   onBug,
   onBugHistory,
   onEditDoneTime,
+  onOpenMap,
   onMove,
   onDelete,
 }: TaskActionSheetProps) {
@@ -81,6 +84,13 @@ export function TaskActionSheet({
             label="Edit"
             onPress={onEdit}
           />
+          {onOpenMap && (
+            <SheetOption
+              icon="map-outline"
+              label="Open in Google Maps"
+              onPress={onOpenMap}
+            />
+          )}
           {task.completedDates.length > 0 && (
             <SheetOption
               icon="time-outline"
