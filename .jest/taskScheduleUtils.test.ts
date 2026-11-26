@@ -32,6 +32,9 @@ describe('task schedule utils', () => {
     expect(getDeadlineState({ deadline: '2026-11-25' }, '2026-11-26')).toBe('overdue');
     expect(getDeadlineState({ deadline: '2026-11-26' }, '2026-11-26')).toBe('today');
     expect(getDeadlineState({ deadline: '2026-11-27' }, '2026-11-26')).toBe('upcoming');
+    const now = new Date(2026, 10, 26, 13, 19);
+    expect(getDeadlineState({ deadline: '2026-11-26', deadlineTime: '17:00' }, '2026-11-26', now)).toBe('today');
+    expect(getDeadlineState({ deadline: '2026-11-26', deadlineTime: '13:00' }, '2026-11-26', now)).toBe('overdue');
   });
 
   it('detects a passed start time and suggests the next quarter hour', () => {

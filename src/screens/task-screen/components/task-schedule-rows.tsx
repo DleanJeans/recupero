@@ -18,6 +18,7 @@ export interface TaskSchedule {
   startTime?: string;
   estimateMin?: number;
   deadline?: string;
+  deadlineTime?: string;
 }
 
 interface TaskScheduleRowsProps {
@@ -41,7 +42,7 @@ function RowIcon({ name }: { name: React.ComponentProps<typeof Ionicons>['name']
 
 /** Date, start time, estimated duration and deadline rows of the task editor. */
 export function TaskScheduleRows({ schedule, onChange, suggestedMin }: TaskScheduleRowsProps) {
-  const { scheduledDate, startTime, estimateMin, deadline } = schedule;
+  const { scheduledDate, startTime, estimateMin, deadline, deadlineTime } = schedule;
   const set = (patch: Partial<TaskSchedule>) => onChange({ ...schedule, ...patch });
   const stepEstimate = (delta: number) => {
     const next = Math.max(0, Math.min(MAX_ESTIMATE_MIN, (estimateMin ?? 0) + delta));
@@ -111,9 +112,19 @@ export function TaskScheduleRows({ schedule, onChange, suggestedMin }: TaskSched
         <AttachRow
           icon={<RowIcon name="flag-outline" />}
           label="Deadline"
-          value={deadline ? formatDateDisplay(deadline) : undefined}
-          onPress={() => pickTaskDate(deadline ?? scheduledDate, date => set({ deadline: date }))}
-          onClear={deadline ? () => set({ deadline: undefined }) : undefined}
+          value={
+            deadline
+              ? `${formatDateDisplay(deadline)}${deadlineTime ? `, ${formatStartTime(deadlineTime)}` : ''}`
+              : undefined
+          }
+          onPress={() =>
+            // Date first, then an optional time: cancelling the time picker keeps a date-only deadline.
+            pickTaskDate(deadline ?? scheduledDate, date => {
+              set({ deadline: date, deadlineTime: undefined });
+              pickTaskTime(deadlineTime, time => onChange({ ...schedule, deadline: date, deadlineTime: time }));
+            })
+          }
+          onClear={deadline ? () => set({ deadline: undefined, deadlineTime: undefined }) : undefined}
           last
         />
       </View>

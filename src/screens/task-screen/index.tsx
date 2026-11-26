@@ -320,6 +320,7 @@ export function TaskScreen() {
       startTime: schedule.startTime,
       estimateMin: schedule.estimateMin,
       deadline: schedule.deadline,
+      deadlineTime: schedule.deadline ? schedule.deadlineTime : undefined,
     };
 
     if (editingTaskId) {
@@ -383,6 +384,7 @@ export function TaskScreen() {
       startTime: task.startTime,
       estimateMin: task.estimateMin,
       deadline: task.deadline,
+      deadlineTime: task.deadlineTime,
     });
     setPlaceDwellMin(getPlaceDwellMin(task));
     setEditingTaskId(task.id);

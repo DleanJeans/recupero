@@ -51,10 +51,15 @@ export function startTimeToDate(startTime: string | undefined): Date {
 export type DeadlineState = 'none' | 'upcoming' | 'today' | 'overdue';
 
 /** Where an open task stands against its deadline. yyyy-MM-dd strings compare as text. */
-export function getDeadlineState(task: Pick<TaskEntry, 'deadline'>, todayStr: string): DeadlineState {
+export function getDeadlineState(
+  task: Pick<TaskEntry, 'deadline' | 'deadlineTime'>,
+  todayStr: string,
+  now: Date = new Date(),
+): DeadlineState {
   if (!task.deadline) return 'none';
   if (task.deadline < todayStr) return 'overdue';
-  return task.deadline === todayStr ? 'today' : 'upcoming';
+  if (task.deadline > todayStr) return 'upcoming';
+  return task.deadlineTime && task.deadlineTime < toStartTime(now) ? 'overdue' : 'today';
 }
 
 /** True when the task's start time (on its scheduled date) is already behind `now`. */

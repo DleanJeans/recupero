@@ -88,7 +88,9 @@ function TaskCardComponent({
         : undefined,
     task.startTime ? formatStartTime(task.startTime) : undefined,
     task.estimateMin ? `~${formatEstimate(task.estimateMin)}` : undefined,
-    task.deadline && !complete ? `Due ${formatDateDisplay(task.deadline).replace(/, \d{4}$/, '')}` : undefined,
+    task.deadline && !complete
+      ? `Due ${formatDateDisplay(task.deadline).replace(/, \d{4}$/, '')}${task.deadlineTime ? ` ${formatStartTime(task.deadlineTime)}` : ''}`
+      : undefined,
     note,
   ].filter((part): part is string => Boolean(part));
   const deadlineState = complete ? 'none' : getDeadlineState(task, todayStr);

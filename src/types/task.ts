@@ -48,6 +48,8 @@ export interface TaskEntry {
   estimateMin?: number;
   /** Last day (yyyy-MM-dd) to finish the task. The card turns red from that day on. */
   deadline?: string;
+  /** Optional time of day of the deadline, "HH:mm". Without it the deadline lasts all day. */
+  deadlineTime?: string;
   /** Tasks tab this task lives on. Unset means derived, see getTaskList. */
   list?: TaskList;
   /** Dates (yyyy-MM-dd) on which this task was picked as one of "Today's 3". */
@@ -80,4 +82,5 @@ export interface AddTaskInput {
   startTime?: string;
   estimateMin?: number;
   deadline?: string;
+  deadlineTime?: string;
 }
