@@ -7,18 +7,34 @@ interface TaskTimelineRowProps {
   dotColor?: string;
   /** Filled dot (done task). */
   filled?: boolean;
+  /** Dot at the vertical middle of the row (single-line markers) instead of the first line of a card. */
+  centered?: boolean;
   first?: boolean;
   last?: boolean;
   children: ReactNode;
 }
 
 /** A row of the Today timeline: a vertical rail with a dot on the left, the content on the right. */
-export function TaskTimelineRow({ dotColor = Colors.text.faint, filled, first, last, children }: TaskTimelineRowProps) {
+export function TaskTimelineRow({
+  dotColor = Colors.text.faint,
+  filled,
+  centered,
+  first,
+  last,
+  children,
+}: TaskTimelineRowProps) {
   return (
     <View style={styles.row}>
       <View style={styles.rail}>
         <View style={[styles.line, first && styles.lineFirst, last && styles.lineLast]} />
-        <View style={[styles.dot, { borderColor: dotColor }, filled && { backgroundColor: dotColor }]} />
+        <View
+          style={[
+            styles.dot,
+            centered && styles.dotCentered,
+            { borderColor: dotColor },
+            filled && { backgroundColor: dotColor },
+          ]}
+        />
       </View>
       <View style={styles.content}>{children}</View>
     </View>
@@ -40,5 +56,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     backgroundColor: Colors.bg.card,
   },
+  dotCentered: { top: '50%', marginTop: -6 },
   content: { flex: 1 },
 });

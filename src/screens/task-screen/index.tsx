@@ -599,6 +599,7 @@ export function TaskScreen() {
           <TaskTimelineRow
             key={item.key}
             dotColor="#F9A825"
+            centered
             {...rowFlags()}
           >
             <TaskNeedLowNode
