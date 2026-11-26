@@ -13,6 +13,7 @@ import { useTimerStore } from '../../store/timer-store';
 import type { RootStackParamList } from '../../types/navigation';
 import { isArchived } from '../../utils/archive-utils';
 import { Colors } from '../../utils/colors';
+import { toDateString } from '../../utils/date-utils';
 import { buildTimerLogMetadata } from '../../utils/metadata-link-utils';
 import { shouldLogTimerSegment } from '../../utils/timer-utils';
 import { TimerOtherTimers } from './components/timer-other-timers';
@@ -93,14 +94,15 @@ export function TimerScreen() {
   const finishPendingTask = useCallback(
     (logs: ReadonlyArray<{ id: string; timestamp: number }> | undefined, start: number | undefined) => {
       const { pendingTaskFinish, setPendingTaskFinish } = useScreenUiStore.getState();
-      if (!pendingTaskFinish || pendingTaskFinish.taskId !== taskId) return;
+      const pending = pendingTaskFinish?.taskId === taskId ? pendingTaskFinish : undefined;
+      // Logging the timer of a task also finishes that task, even when it wasn't ticked first.
+      const date = pending?.date ?? (logs && taskId ? toDateString(new Date(), dayCutoffHour) : undefined);
+      if (!taskId || !date) return;
       const log = logs ? (logs.find(item => item.timestamp === start) ?? logs[logs.length - 1]) : undefined;
-      useBehaviorStore
-        .getState()
-        .completeTaskWithLog(pendingTaskFinish.taskId, pendingTaskFinish.date, log?.id, Date.now());
-      setPendingTaskFinish(null);
+      useBehaviorStore.getState().completeTaskWithLog(taskId, date, log?.id, Date.now());
+      if (pending) setPendingTaskFinish(null);
     },
-    [taskId],
+    [taskId, dayCutoffHour],
   );
 
   // When the screen regains focus after the user was on the log form, check
