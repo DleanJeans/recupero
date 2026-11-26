@@ -17,6 +17,7 @@ import { NeedAppSourceModal } from '../../components/needs/need-app-source-modal
 import { NEED_TONE_COLORS } from '../../components/needs/need-bar-row';
 import { NeedHistorySection } from '../../components/needs/need-history-section';
 import { NeedRateLearning } from '../../components/needs/need-rate-learning';
+import { NeedWhenChip } from '../../components/needs/need-when-chip';
 import { PeopleStrip } from '../../components/needs/people-strip';
 import { ScreenFrame } from '../../components/screen-frame';
 import { Text, TextInput } from '../../components/text';
@@ -35,6 +36,7 @@ import {
   findMetadataField,
   formatEmptyHours,
   formatRefill,
+  formatUpdateWhen,
   getDecayPerHour,
   getDefaultRefill,
   getNeedLevelTone,
@@ -81,6 +83,8 @@ export function NeedScreen() {
   const [rateEdit, setRateEdit] = useState<{ behaviorId?: string; categoryId?: string; minutes: number }>();
   const [customDialog, setCustomDialog] = useState<'checkIn' | 'update'>();
   const [amountLog, setAmountLog] = useState<NeedRefillEntry>();
+  /** When unlogged top-ups happened; undefined = now. Back to now each time the sheet opens. */
+  const [updateAt, setUpdateAt] = useState<number>();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const scrollRef = useRef<ScrollView>(null);
@@ -302,7 +306,16 @@ export function NeedScreen() {
             </Pressable>
           </View>
 
-          <CueSectionLabel>{NEED_UPDATE_QUESTIONS[need.id]}</CueSectionLabel>
+          <View style={styles.updateHeader}>
+            <View style={styles.updateTitle}>
+              <CueSectionLabel numberOfLines={1}>{NEED_UPDATE_QUESTIONS[need.id]}</CueSectionLabel>
+            </View>
+            <NeedWhenChip
+              value={updateAt}
+              onChange={setUpdateAt}
+              now={now}
+            />
+          </View>
           <View style={styles.checkIns}>
             {(kcalFull != null ? NEED_UPDATE_KCAL_AMOUNTS : NEED_UPDATE_AMOUNTS).map(amount => {
               const full = amount >= 100 && kcalFull == null;
@@ -312,7 +325,7 @@ export function NeedScreen() {
                 <Pressable
                   key={amount}
                   style={({ pressed }) => [styles.checkIn, pressed && styles.pressed]}
-                  onPress={() => updateLevel(need.id, Math.min(100, points))}
+                  onPress={() => updateLevel(need.id, Math.min(100, points), updateAt)}
                   accessibilityRole="button"
                   accessibilityLabel={
                     isFull ? `Fill ${info.label}` : `Add ${amount}${kcalFull != null ? ' kcal' : '%'} to ${info.label}`
@@ -324,7 +337,13 @@ export function NeedScreen() {
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
                   >
-                    {isFull ? 'Full' : kcalFull != null ? `+${amount} kcal` : `+${amount}%`}
+                    {isFull ? 'Full' : `+${amount}`}
+                  </Text>
+                  <Text
+                    style={styles.updateUnit}
+                    numberOfLines={1}
+                  >
+                    {isFull ? '100%' : kcalFull != null ? 'kcal' : '%'}
                   </Text>
                 </Pressable>
               );
@@ -335,7 +354,17 @@ export function NeedScreen() {
               accessibilityRole="button"
               accessibilityLabel="Enter a custom amount"
             >
-              <Text style={styles.customAmount}>Custom</Text>
+              <Ionicons
+                name="create-outline"
+                size={18}
+                color={Colors.text.muted}
+              />
+              <Text
+                style={styles.updateUnit}
+                numberOfLines={1}
+              >
+                Custom
+              </Text>
             </Pressable>
           </View>
 
@@ -690,15 +719,16 @@ export function NeedScreen() {
         <NeedAmountDialog
           title={NEED_UPDATE_QUESTIONS[need.id]}
           hint={
-            kcalFull != null
+            (kcalFull != null
               ? `Type how many kcal you ate. ${kcalFull} kcal fills ${info.label}.`
-              : `Type how many points to add to ${info.label}. 100 fills it.`
+              : `Type how many points to add to ${info.label}. 100 fills it.`) +
+            (updateAt != null ? ` Counts at ${formatUpdateWhen(updateAt, now, ts => formatTime(ts))}.` : '')
           }
           min={1}
           max={kcalFull != null ? 5000 : 100}
           suffix={kcalFull != null ? 'kcal' : '%'}
           onSubmit={value => {
-            updateLevel(need.id, kcalFull != null ? kcalToPercent(value, kcalFull) : value);
+            updateLevel(need.id, kcalFull != null ? kcalToPercent(value, kcalFull) : value, updateAt);
             setCustomDialog(undefined);
           }}
           onClose={() => setCustomDialog(undefined)}
@@ -906,15 +936,26 @@ const styles = StyleSheet.create({
     color: Colors.text.faint,
     fontSize: 10,
   },
+  updateHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  updateTitle: {
+    flex: 1,
+    minWidth: 0,
+  },
   updateAmount: {
+    alignSelf: 'stretch',
+    textAlign: 'center',
+    paddingHorizontal: 4,
     color: Colors.type.desirable,
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: '700',
   },
-  customAmount: {
+  updateUnit: {
     color: Colors.text.muted,
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 10.5,
   },
   hint: {
     color: Colors.text.faint,

@@ -784,18 +784,44 @@ export const NEED_UPDATE_AMOUNTS: readonly number[] = [10, 25, 50, 100];
 /** Hunger top-ups in kcal (Infinity = Full). Converted with the source's full amount. */
 export const NEED_UPDATE_KCAL_AMOUNTS: readonly number[] = [100, 250, 500, Number.POSITIVE_INFINITY];
 
-/** "Ate something you didn't log?" */
+/** Section title over the top-up chips. Kept short so it fits on one line beside the "when" chip. */
 export const NEED_UPDATE_QUESTIONS: Record<NeedId, string> = {
-  hunger: "Ate something you didn't log?",
-  thirst: "Drank something you didn't log?",
-  hygiene: 'Freshened up without logging?',
-  energy: 'Rested without logging?',
-  fun: 'Had fun without logging it?',
-  social: 'Spent time with someone without logging it?',
-  comfort: 'Relaxed without logging it?',
-  movement: 'Moved around without logging it?',
-  tidiness: 'Tidied up without logging it?',
+  hunger: 'Ate something unlogged?',
+  thirst: 'Drank something unlogged?',
+  hygiene: 'Washed up, not logged?',
+  energy: 'Rested, not logged?',
+  fun: 'Had fun, not logged?',
+  social: 'Saw someone, not logged?',
+  comfort: 'Relaxed, not logged?',
+  movement: 'Moved, not logged?',
+  tidiness: 'Tidied, not logged?',
 };
+
+/** Minutes ago offered in the top-up "when" menu; 0 is Now. */
+export const NEED_UPDATE_WHEN_MINUTES: readonly number[] = [0, 30, 60, 120, 240];
+
+/** "Now", "30 min ago" or "2 h ago" for a NEED_UPDATE_WHEN_MINUTES entry. */
+export function formatWhenAgo(minutes: number): string {
+  if (minutes <= 0) return 'Now';
+  return minutes < 60 ? `${minutes} min ago` : `${Math.round(minutes / 60)} h ago`;
+}
+
+/**
+ * Short label for a picked top-up time: "Now" when unset, "9:40 PM" today, "Yest 9:40 PM",
+ * a weekday within the last week ("Tue 9:40 PM"), else "Nov 3 9:40 PM".
+ */
+export function formatUpdateWhen(ts: number | undefined, now: number, formatClock: (ts: number) => string): string {
+  if (ts == null) return 'Now';
+  const clock = formatClock(ts);
+  const day = new Date(ts);
+  const today = new Date(now);
+  const startOf = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const days = Math.round((startOf(today) - startOf(day)) / 86400000);
+  if (days <= 0) return clock;
+  if (days === 1) return `Yest ${clock}`;
+  if (days < 7) return `${day.toLocaleDateString('en-US', { weekday: 'short' })} ${clock}`;
+  return `${day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ${clock}`;
+}
 
 export interface NeedRefillEntry {
   /** Undefined for updates made without a log. */
@@ -927,7 +953,7 @@ export function registerCustomNeeds(defs: readonly CustomNeedDef[]): void {
       refills: {},
       learnedFrom: 0,
     };
-    NEED_UPDATE_QUESTIONS[def.id] = `Topped up ${name} without logging it?`;
+    NEED_UPDATE_QUESTIONS[def.id] = `Topped up ${name}, not logged?`;
   }
 }
 

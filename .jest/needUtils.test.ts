@@ -4,6 +4,8 @@ import {
   DEFAULT_HUNGER_FULL_KCAL,
   DEFAULT_NEED_CONFIGS,
   formatNextCraving,
+  formatUpdateWhen,
+  formatWhenAgo,
   getBehaviorRefill,
   getBodyWords,
   getLineCrossingTime,
@@ -493,4 +495,26 @@ describe('body words', () => {
     expect(getNeedIdForBodySensation('c', 'Face Itch', { hygiene: { bodyWords: '' } })).toBeUndefined();
     expect(getBodyWords('hygiene', { bodyWords: ' A, b ;c' })).toEqual(['a', 'b', 'c']);
   });
+});
+
+describe('formatUpdateWhen', () => {
+  const clock = (ts: number) => {
+    const d = new Date(ts);
+    return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+  };
+  const now = new Date(2026, 10, 26, 13, 42).getTime();
+  it('is Now when unset', () => expect(formatUpdateWhen(undefined, now, clock)).toBe('Now'));
+  it('shows only the time today', () =>
+    expect(formatUpdateWhen(new Date(2026, 10, 26, 9, 5).getTime(), now, clock)).toBe('9:05'));
+  it('says Yest for yesterday', () =>
+    expect(formatUpdateWhen(new Date(2026, 10, 25, 21, 40).getTime(), now, clock)).toBe('Yest 21:40'));
+  it('uses the weekday within a week', () =>
+    expect(formatUpdateWhen(new Date(2026, 10, 24, 19, 30).getTime(), now, clock)).toBe('Tue 19:30'));
+  it('uses the date when older', () =>
+    expect(formatUpdateWhen(new Date(2026, 10, 3, 8, 0).getTime(), now, clock)).toBe('Nov 3 8:00'));
+});
+
+describe('formatWhenAgo', () => {
+  it('labels the menu entries', () =>
+    expect([0, 30, 60, 240].map(formatWhenAgo)).toEqual(['Now', '30 min ago', '1 h ago', '4 h ago']));
 });

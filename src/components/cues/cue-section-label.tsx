@@ -5,10 +5,18 @@ import { Text } from '../text';
 
 interface CueSectionLabelProps {
   children: React.ReactNode;
+  numberOfLines?: number;
 }
 
-export function CueSectionLabel({ children }: CueSectionLabelProps) {
-  return <Text style={styles.label}>{children}</Text>;
+export function CueSectionLabel({ children, numberOfLines }: CueSectionLabelProps) {
+  return (
+    <Text
+      style={styles.label}
+      numberOfLines={numberOfLines}
+    >
+      {children}
+    </Text>
+  );
 }
 
 const styles = StyleSheet.create({
