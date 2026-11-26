@@ -43,6 +43,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       'Today timeline: shows when a need is about to turn low, unless it is already low.',
       'Tasks: a deadline can now have a time; the card turns red once it passes.',
       'Tasks: Today is now a timeline by start time with a Now marker; late tasks turn red and offer a new start.',
+      "Tasks: pick a contact's home (with a map pin) as the place for a task.",
       'Tasks: pick a place by adding a new saved place right from the task editor.',
       'Icon picker: each word of the name gets its own emoji suggestion; tap one to use it.',
     ],

@@ -6,6 +6,7 @@ import { AppIcon } from '../../../components/app-icon';
 import { Button } from '../../../components/button';
 import { FullScreenModal } from '../../../components/full-screen-modal';
 import { Text } from '../../../components/text';
+import { usePeopleStore } from '../../../store/people-store';
 import type { SavedPlace } from '../../../types/cue';
 import type { OneOffPlace } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
@@ -20,6 +21,8 @@ interface TaskPlaceScreenProps {
   oneOffPlace?: OneOffPlace;
   /** Opens the map picker that saves a new place to the saved places. Omit to hide the row. */
   onAddPlace?: () => void;
+  /** Called with a contact's pinned home address as a spot for this task. Omit to hide the contacts section. */
+  onPickPerson?: (place: OneOffPlace) => void;
   /** Omit to hide the one-off option (e.g. batch edit). */
   onPickOneOff?: () => void;
   dwellMin: number;
@@ -34,12 +37,15 @@ export function TaskPlaceScreen({
   onSelect,
   oneOffPlace,
   onAddPlace,
+  onPickPerson,
   onPickOneOff,
   dwellMin,
   onDwellChange,
   onClose,
 }: TaskPlaceScreenProps) {
   const insets = useSafeAreaInsets();
+  const people = usePeopleStore(state => state.people);
+  const homes = people.filter(person => person.lat != null && person.lng != null);
   const selectedPlace = places.find(place => place.id === selectedPlaceId);
   const selectedName = selectedPlace?.name ?? oneOffPlace?.name;
 
@@ -81,6 +87,47 @@ export function TaskPlaceScreen({
             </Pressable>
           );
         })}
+        {onPickPerson && homes.length > 0 && <Text style={styles.heading}>Contacts' homes</Text>}
+        {onPickPerson &&
+          homes.map(person => {
+            const name = `${person.name}'s home`;
+            const selected = oneOffPlace?.lat === person.lat && oneOffPlace?.lng === person.lng;
+            return (
+              <Pressable
+                key={person.id}
+                style={({ pressed }) => [styles.row, selected && styles.rowSelected, pressed && styles.pressed]}
+                onPress={() =>
+                  onPickPerson({
+                    name,
+                    emoji: person.emoji || undefined,
+                    lat: person.lat as number,
+                    lng: person.lng as number,
+                    radiusM: 50,
+                  })
+                }
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+              >
+                <AppIcon
+                  value={person.emoji || '🏠'}
+                  style={styles.emoji}
+                />
+                <Text
+                  style={styles.name}
+                  numberOfLines={1}
+                >
+                  {name}
+                </Text>
+                {selected && (
+                  <Ionicons
+                    name="checkmark"
+                    size={20}
+                    color={Colors.cue.location}
+                  />
+                )}
+              </Pressable>
+            );
+          })}
         {onAddPlace && (
           <Pressable
             style={({ pressed }) => [styles.row, pressed && styles.pressed]}

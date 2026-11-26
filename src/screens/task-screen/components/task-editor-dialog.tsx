@@ -355,6 +355,7 @@ export function TaskEditorDialog({
           onSelect={onPlaceSelect}
           oneOffPlace={oneOffPlace}
           onAddPlace={() => setPicker('newPlace')}
+          onPickPerson={onOneOffPlaceChange}
           onPickOneOff={() => setPicker('oneOffPlace')}
           dwellMin={placeDwellMin}
           onDwellChange={onPlaceDwellChange}
