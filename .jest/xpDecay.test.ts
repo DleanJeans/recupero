@@ -5,6 +5,8 @@ import {
   getDecayedLogs,
   getDecayForGap,
   getDecayLogCount,
+  getDecayThresholds,
+  getDecayUrgency,
   getEffectiveLogCount,
   getEffectiveXp,
   getHighestEffectiveXp,
@@ -629,5 +631,45 @@ describe('getTimeUntilNextDecay', () => {
   it('returns null for invalid everyDays (every=0)', () => {
     const b = makeBehavior({ xpEnabled: true, xpDecay: { every: 0, unit: 'days' }, lastTimestamp: lastLog(0) });
     expect(getTimeUntilNextDecay(b, NOW_TS)).toBeNull();
+  });
+});
+
+describe('getDecayUrgency', () => {
+  const H = 1 / 24;
+  const M = H / 60;
+
+  it('matches the weekly rule: green >= 3d, red < 24h', () => {
+    expect(getDecayUrgency(6 + 23 * H, 7)).toBe('calm');
+    expect(getDecayUrgency(3, 7)).toBe('calm');
+    expect(getDecayUrgency(2.99, 7)).toBe('soon');
+    expect(getDecayUrgency(1, 7)).toBe('soon');
+    expect(getDecayUrgency(23 * H, 7)).toBe('urgent');
+  });
+
+  it('uses half the window rounded down for green and a tenth rounded up for red', () => {
+    const cases: [number, number, number][] = [
+      [H, 30 * M, 10 * M],
+      [2 * H, 60 * M, 15 * M],
+      [6 * H, 3 * H, 40 * M],
+      [12 * H, 6 * H, 75 * M],
+      [1, 12 * H, 3 * H],
+      [7, 3, 1],
+      [30, 15, 3],
+    ];
+    for (const [everyDays, green, red] of cases) {
+      const t = getDecayThresholds(everyDays);
+      expect(t.greenDays).toBeCloseTo(green, 9);
+      expect(t.redDays).toBeCloseTo(red, 9);
+    }
+    expect(getDecayUrgency(12 * H, 1)).toBe('calm');
+    expect(getDecayUrgency(6 * H, 1)).toBe('soon');
+    expect(getDecayUrgency(2.9 * H, 1)).toBe('urgent');
+    expect(getDecayUrgency(15, 30)).toBe('calm');
+    expect(getDecayUrgency(5, 30)).toBe('soon');
+    expect(getDecayUrgency(2.9, 30)).toBe('urgent');
+  });
+
+  it('treats an invalid window as calm', () => {
+    expect(getDecayUrgency(1, 0)).toBe('calm');
   });
 });

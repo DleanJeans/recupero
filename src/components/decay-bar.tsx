@@ -5,7 +5,7 @@ import type { BehaviorEntry, BehaviorType } from '../types/behavior';
 import { getBehaviorTypeColor } from '../utils/behavior-type-utils';
 import { Colors } from '../utils/colors';
 import { formatDuration, MS_PER_DAY, MS_PER_MINUTE } from '../utils/time-utils';
-import { getTimeUntilNextDecay } from '../utils/xp-utils';
+import { type DecayUrgency, getDecayUrgency, getTimeUntilNextDecay } from '../utils/xp-utils';
 import { StripedProgressBar } from './striped-progress-bar';
 import { Text } from './text';
 
@@ -17,12 +17,16 @@ interface Props {
 }
 
 /** Decay color reflects whether decay is "good" or "bad" for the behavior type:
- *  red for desirable (decay hurts progress), green for undesirable (decay helps),
- *  neutral type color for neutral behaviors. */
-const DECAY_COLOR: Record<BehaviorType, string> = {
-  desirable: Colors.cooldown.red,
+ *  desirable goes green, amber, red as decay nears (it hurts progress), undesirable stays
+ *  green (decay helps), neutral keeps its type color. */
+const DECAY_COLOR: Record<Exclude<BehaviorType, 'desirable'>, string> = {
   undesirable: Colors.cooldown.green,
   neutral: getBehaviorTypeColor('neutral'),
+};
+const DESIRABLE_DECAY_COLOR: Record<DecayUrgency, string> = {
+  calm: Colors.cooldown.green,
+  soon: Colors.cooldown.yellow,
+  urgent: Colors.cooldown.red,
 };
 const STRIPE_ANIMATION_MIN_DURATION_MS = 2 * 60 * MS_PER_MINUTE;
 
@@ -35,7 +39,8 @@ export function DecayBar({ behavior, motionEnabled = true, now = Date.now(), var
   // For desirable/neutral: bar empties as we approach decay (time remaining).
   // For undesirable: decay is a reward, so invert — bar fills as we approach it.
   const ratio = isUndesirable ? 1 - daysLeft / everyDays : daysLeft / everyDays;
-  const color = DECAY_COLOR[behavior.type ?? 'neutral'];
+  const type = behavior.type ?? 'neutral';
+  const color = type === 'desirable' ? DESIRABLE_DECAY_COLOR[getDecayUrgency(daysLeft, everyDays)] : DECAY_COLOR[type];
   const timeUntilNextDecayMs = daysLeft * MS_PER_DAY;
   const stripeMotionEnabled = motionEnabled && timeUntilNextDecayMs > STRIPE_ANIMATION_MIN_DURATION_MS;
 
