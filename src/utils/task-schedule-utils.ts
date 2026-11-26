@@ -114,3 +114,11 @@ export function getTaskActualTime(
   const completedAt = task.completedAtByDate?.[dateStr];
   return completedAt != null ? { end: completedAt } : undefined;
 }
+
+/** `ts` moved to the "HH:mm" time of day on its own calendar day. */
+export function withTimeOfDay(ts: number, time: string): number {
+  const [h, m] = time.split(':').map(Number);
+  const date = new Date(ts);
+  date.setHours(h, m, 0, 0);
+  return date.getTime();
+}

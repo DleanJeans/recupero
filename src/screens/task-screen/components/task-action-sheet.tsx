@@ -30,6 +30,8 @@ interface TaskActionSheetProps {
   /** Opens the "Bugged me" log sheet for this task. */
   onBug: () => void;
   onBugHistory: () => void;
+  /** Edit when a finished task was done, or assign a log to it. */
+  onEditDoneTime: () => void;
   onMove: (list: TaskList) => void;
   onDelete: () => void;
 }
@@ -46,6 +48,7 @@ export function TaskActionSheet({
   onToggleFocus,
   onBug,
   onBugHistory,
+  onEditDoneTime,
   onMove,
   onDelete,
 }: TaskActionSheetProps) {
@@ -78,6 +81,14 @@ export function TaskActionSheet({
             label="Edit"
             onPress={onEdit}
           />
+          {task.completedDates.length > 0 && (
+            <SheetOption
+              icon="time-outline"
+              label="Edit done time"
+              hint="Change when it was done, or use another log."
+              onPress={onEditDoneTime}
+            />
+          )}
           {task.completedDates.length === 0 && (
             <SheetOption
               icon="flame-outline"

@@ -60,6 +60,7 @@ import { FocusStreakStrip } from './components/focus-streak-strip';
 import { TaskActionSheet } from './components/task-action-sheet';
 import { TaskBatchEditDialog } from './components/task-batch-edit-dialog';
 import { TaskCard } from './components/task-card';
+import { TaskDoneTimeSheet } from './components/task-done-time-sheet';
 import { TaskEditorDialog } from './components/task-editor-dialog';
 import { TaskNeedLowNode } from './components/task-need-low-node';
 import type { TaskSchedule } from './components/task-schedule-rows';
@@ -115,6 +116,7 @@ export function TaskScreen() {
   /** Task whose "Bugged me" log sheet / bug history is open. */
   const [bugTaskId, setBugTaskId] = useState<string | undefined>();
   const [historyTaskId, setHistoryTaskId] = useState<string | undefined>();
+  const [doneTimeTaskId, setDoneTimeTaskId] = useState<string | undefined>();
   /** Select mode: ids of the picked tasks (undefined = not selecting). */
   const [selectedIds, setSelectedIds] = useState<string[]>();
   const [batchOpen, setBatchOpen] = useState(false);
@@ -293,6 +295,7 @@ export function TaskScreen() {
   const editingTask = editingTaskId ? (tasks ?? []).find(task => task.id === editingTaskId) : undefined;
   const bugTask = bugTaskId ? (tasks ?? []).find(task => task.id === bugTaskId) : undefined;
   const historyTask = historyTaskId ? (tasks ?? []).find(task => task.id === historyTaskId) : undefined;
+  const doneTimeTask = doneTimeTaskId ? (tasks ?? []).find(task => task.id === doneTimeTaskId) : undefined;
   const menuTask = menuTaskId ? (tasks ?? []).find(task => task.id === menuTaskId) : undefined;
 
   const resetComposer = () => {
@@ -846,6 +849,15 @@ export function TaskScreen() {
         />
       )}
 
+      {doneTimeTask && lastCompletedDate(doneTimeTask) && (
+        <TaskDoneTimeSheet
+          task={doneTimeTask}
+          behavior={behaviorOf(doneTimeTask)}
+          dateStr={lastCompletedDate(doneTimeTask) as string}
+          onClose={() => setDoneTimeTaskId(undefined)}
+        />
+      )}
+
       {menuTask && (
         <TaskActionSheet
           task={menuTask}
@@ -872,6 +884,10 @@ export function TaskScreen() {
           onBugHistory={() => {
             setMenuTaskId(undefined);
             setHistoryTaskId(menuTask.id);
+          }}
+          onEditDoneTime={() => {
+            setMenuTaskId(undefined);
+            setDoneTimeTaskId(menuTask.id);
           }}
           onMove={list => {
             setMenuTaskId(undefined);

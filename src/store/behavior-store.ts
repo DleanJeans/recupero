@@ -199,6 +199,10 @@ interface BehaviorStore {
   ) => void;
   /** `timed` (a running task timer) makes the completion log span that time instead of being a single tick. */
   toggleTaskCompletion: (taskId: string, dateStr: string, timed?: { start: number; end: number }) => void;
+  /** Changes when a done task was done: its completion time and, if it has a log, that log's start and end. */
+  setTaskDoneTime: (taskId: string, dateStr: string, start: number | undefined, end: number) => void;
+  /** Makes an existing log the completion log of a done task (and its done time the log's end). */
+  assignTaskLog: (taskId: string, dateStr: string, logId: string) => void;
   /** Marks a task done with a log that already exists (the timer's log), so ticking adds no second log. */
   completeTaskWithLog: (taskId: string, dateStr: string, logId: string | undefined, completedAt: number) => void;
   /** Pick or unpick a task as one of "Today's 3" for the date. */
@@ -633,6 +637,57 @@ export const useBehaviorStore = create<BehaviorStore>()(
             return { ...task, focusDates: next.length > 0 ? next : undefined };
           }),
         })),
+      setTaskDoneTime: (taskId, dateStr, start, end) =>
+        set(state => {
+          const task = (state.tasks ?? []).find(candidate => candidate.id === taskId);
+          if (!task) return state;
+          const logId = task.completionLogIds?.[dateStr];
+          const tasks = (state.tasks ?? []).map(candidate =>
+            candidate.id === taskId
+              ? { ...candidate, completedAtByDate: { ...(candidate.completedAtByDate ?? {}), [dateStr]: end } }
+              : candidate,
+          );
+          if (!logId || !task.behaviorId) return { tasks };
+          const spans = start != null && start < end;
+          const behaviors = state.behaviors.map(b =>
+            b.id !== task.behaviorId
+              ? b
+              : {
+                  ...b,
+                  logs: b.logs.map(log =>
+                    log.id === logId
+                      ? {
+                          ...log,
+                          timestamp: spans ? start : end,
+                          endTimestamp: spans ? end : undefined,
+                          ...(log.source ? { editedAt: Date.now() } : {}),
+                        }
+                      : log,
+                  ),
+                  lastTimestamp: Math.max(...b.logs.map(log => (log.id === logId ? end : getLogEndTimestamp(log)))),
+                },
+          );
+          return { tasks, behaviors };
+        }),
+      assignTaskLog: (taskId, dateStr, logId) =>
+        set(state => {
+          const task = (state.tasks ?? []).find(candidate => candidate.id === taskId);
+          const log = task?.behaviorId
+            ? state.behaviors.find(b => b.id === task.behaviorId)?.logs.find(candidate => candidate.id === logId)
+            : undefined;
+          if (!task || !log) return state;
+          return {
+            tasks: (state.tasks ?? []).map(candidate =>
+              candidate.id === taskId
+                ? {
+                    ...candidate,
+                    completionLogIds: { ...(candidate.completionLogIds ?? {}), [dateStr]: logId },
+                    completedAtByDate: { ...(candidate.completedAtByDate ?? {}), [dateStr]: getLogEndTimestamp(log) },
+                  }
+                : candidate,
+            ),
+          };
+        }),
       completeTaskWithLog: (taskId, dateStr, logId, completedAt) =>
         set(state => ({
           tasks: (state.tasks ?? []).map(task => {
@@ -715,7 +770,11 @@ export const useBehaviorStore = create<BehaviorStore>()(
               : task.behaviorId && logIdToRemove
                 ? state.behaviors.map(b => {
                     if (b.id !== task.behaviorId) return b;
-                    const logs = b.logs.filter(log => log.id !== logIdToRemove);
+                    // Only the instant log a plain tick made goes away. A log that spans time (a timer session
+                    // or an edited time) is real data, so un-ticking keeps it.
+                    const logs = b.logs.filter(
+                      log => log.id !== logIdToRemove || (log.endTimestamp != null && log.endTimestamp > log.timestamp),
+                    );
                     return {
                       ...b,
                       logs,
