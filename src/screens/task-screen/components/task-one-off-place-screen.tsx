@@ -14,12 +14,15 @@ import { GeofenceMap } from '../../location-edit-screen/components/geofence-map'
 
 interface TaskOneOffPlaceScreenProps {
   value: OneOffPlace | undefined;
-  onSave: (place: OneOffPlace) => void;
+  /** `address` is the searched / reverse-geocoded address, kept when the spot becomes a saved place. */
+  onSave: (place: OneOffPlace, address?: string) => void;
+  /** Save the spot as a new saved place (a name is required) instead of using it for this task only. */
+  saveAsPlace?: boolean;
   onClose: () => void;
 }
 
 /** Pick a spot on the map for this task only. It is not added to saved places. */
-export function TaskOneOffPlaceScreen({ value, onSave, onClose }: TaskOneOffPlaceScreenProps) {
+export function TaskOneOffPlaceScreen({ value, onSave, saveAsPlace, onClose }: TaskOneOffPlaceScreenProps) {
   const insets = useSafeAreaInsets();
   const [name, setName] = useState(value?.name ?? '');
   const [address, setAddress] = useState('');
@@ -80,13 +83,17 @@ export function TaskOneOffPlaceScreen({ value, onSave, onClose }: TaskOneOffPlac
       Alert.alert('Pick a spot', 'Search for an address or tap the map to drop a pin.');
       return;
     }
+    if (saveAsPlace && !name.trim()) {
+      Alert.alert('Name this place', 'Add a short name before saving the place.');
+      return;
+    }
     const fallbackName = address.split(',')[0]?.trim() || 'Pinned spot';
-    onSave({ name: name.trim() || fallbackName, lat: point.lat, lng: point.lng, radiusM });
+    onSave({ name: name.trim() || fallbackName, lat: point.lat, lng: point.lng, radiusM }, address.trim() || undefined);
   };
 
   return (
     <FullScreenModal
-      title="Pick a spot"
+      title={saveAsPlace ? 'Add a place' : 'Pick a spot'}
       onClose={onClose}
     >
       <ScrollView
@@ -124,7 +131,7 @@ export function TaskOneOffPlaceScreen({ value, onSave, onClose }: TaskOneOffPlac
           onLocateMe={() => handleLocateMe()}
         />
         <View style={styles.fieldCard}>
-          <Text style={styles.fieldLabel}>Name (optional)</Text>
+          <Text style={styles.fieldLabel}>{saveAsPlace ? 'Name' : 'Name (optional)'}</Text>
           <TextInput
             style={styles.input}
             value={name}
@@ -137,12 +144,16 @@ export function TaskOneOffPlaceScreen({ value, onSave, onClose }: TaskOneOffPlac
           value={radiusM}
           onChange={setRadiusM}
         />
-        <Text style={styles.hint}>Only this task uses this spot. It is not added to your saved places.</Text>
+        <Text style={styles.hint}>
+          {saveAsPlace
+            ? 'Saved to your places, so cues and other tasks can use it too.'
+            : 'Only this task uses this spot. It is not added to your saved places.'}
+        </Text>
         <Button
           variant="primary"
           onPress={handleUse}
         >
-          Use this spot
+          {saveAsPlace ? 'Save place' : 'Use this spot'}
         </Button>
       </ScrollView>
     </FullScreenModal>

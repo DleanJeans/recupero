@@ -18,6 +18,8 @@ interface TaskPlaceScreenProps {
   onSelect: (placeId: string | undefined) => void;
   /** A spot picked just for this task (not a saved place), and the handler that opens its map picker. */
   oneOffPlace?: OneOffPlace;
+  /** Opens the map picker that saves a new place to the saved places. Omit to hide the row. */
+  onAddPlace?: () => void;
   /** Omit to hide the one-off option (e.g. batch edit). */
   onPickOneOff?: () => void;
   dwellMin: number;
@@ -31,6 +33,7 @@ export function TaskPlaceScreen({
   selectedPlaceId,
   onSelect,
   oneOffPlace,
+  onAddPlace,
   onPickOneOff,
   dwellMin,
   onDwellChange,
@@ -47,7 +50,7 @@ export function TaskPlaceScreen({
     >
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 24 + insets.bottom }]}>
         <Text style={styles.hint}>The task ticks itself off when you get there.</Text>
-        {places.length === 0 && <Text style={styles.hint}>No saved places yet. Add them in Cues → Saved places.</Text>}
+        {places.length === 0 && <Text style={styles.hint}>No saved places yet. Add one below.</Text>}
         {places.map(place => {
           const selected = place.id === selectedPlaceId;
           return (
@@ -78,6 +81,25 @@ export function TaskPlaceScreen({
             </Pressable>
           );
         })}
+        {onAddPlace && (
+          <Pressable
+            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+            onPress={onAddPlace}
+            accessibilityRole="button"
+          >
+            <Ionicons
+              name="add-circle-outline"
+              size={20}
+              color={Colors.cue.location}
+            />
+            <Text
+              style={styles.name}
+              numberOfLines={1}
+            >
+              Add a new place
+            </Text>
+          </Pressable>
+        )}
         {onPickOneOff && (
           <Pressable
             style={({ pressed }) => [styles.row, oneOffPlace && styles.rowSelected, pressed && styles.pressed]}

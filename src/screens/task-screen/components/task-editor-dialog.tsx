@@ -12,6 +12,7 @@ import { IconPickerSheet } from '../../../components/icon-picker/icon-picker-she
 import { Text, TextInput } from '../../../components/text';
 import { useKeyboardVisible } from '../../../hooks/use-keyboard-visible';
 import { useBehaviorStore } from '../../../store/behavior-store';
+import { useCuesStore } from '../../../store/cues-store';
 import type { BehaviorEntry } from '../../../types/behavior';
 import type { SavedPlace } from '../../../types/cue';
 import type { OneOffPlace } from '../../../types/task';
@@ -55,7 +56,7 @@ interface TaskEditorDialogProps {
   onCancel: () => void;
 }
 
-type Picker = 'behavior' | 'app' | 'place' | 'oneOffPlace' | 'icon';
+type Picker = 'behavior' | 'app' | 'place' | 'oneOffPlace' | 'newPlace' | 'icon';
 
 /** Add / edit a task in a dialog over the Tasks screen. Centred; docks to the top only while the keyboard is up. */
 export function TaskEditorDialog({
@@ -328,12 +329,32 @@ export function TaskEditorDialog({
           onClose={() => setPicker('place')}
         />
       )}
+      {picker === 'newPlace' && (
+        <TaskOneOffPlaceScreen
+          value={undefined}
+          saveAsPlace
+          onSave={(place, address) => {
+            const id = useCuesStore.getState().addPlace({
+              name: place.name,
+              address,
+              lat: place.lat,
+              lng: place.lng,
+              radiusM: place.radiusM,
+              isHome: false,
+            });
+            onPlaceSelect(id);
+            setPicker('place');
+          }}
+          onClose={() => setPicker('place')}
+        />
+      )}
       {picker === 'place' && (
         <TaskPlaceScreen
           places={places}
           selectedPlaceId={selectedPlace?.id}
           onSelect={onPlaceSelect}
           oneOffPlace={oneOffPlace}
+          onAddPlace={() => setPicker('newPlace')}
           onPickOneOff={() => setPicker('oneOffPlace')}
           dwellMin={placeDwellMin}
           onDwellChange={onPlaceDwellChange}
