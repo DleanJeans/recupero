@@ -56,3 +56,37 @@ export function getDeadlineState(task: Pick<TaskEntry, 'deadline'>, todayStr: st
   if (task.deadline < todayStr) return 'overdue';
   return task.deadline === todayStr ? 'today' : 'upcoming';
 }
+
+/** True when the task's start time (on its scheduled date) is already behind `now`. */
+export function isStartPassed(
+  task: Pick<TaskEntry, 'startTime' | 'scheduledDate'>,
+  now: Date,
+  todayStr: string,
+): boolean {
+  if (!task.startTime) return false;
+  if (task.scheduledDate < todayStr) return true;
+  if (task.scheduledDate > todayStr) return false;
+  return task.startTime < toStartTime(now);
+}
+
+/** The next quarter hour after `now` ("HH:mm"), capped at 23:45, offered when a start time has passed. */
+export function getSuggestedStartTime(now: Date): string {
+  const minutes = Math.min(23 * 60 + 45, (Math.floor((now.getHours() * 60 + now.getMinutes()) / 15) + 1) * 15);
+  return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+}
+
+/** Open tasks by start time; tasks without one come last in creation order. */
+export function sortByStartTime(tasks: ReadonlyArray<TaskEntry>): TaskEntry[] {
+  return [...tasks].sort((a, b) => {
+    if (a.startTime && b.startTime && a.startTime !== b.startTime) return a.startTime < b.startTime ? -1 : 1;
+    if (Boolean(a.startTime) !== Boolean(b.startTime)) return a.startTime ? -1 : 1;
+    return a.createdAt - b.createdAt;
+  });
+}
+
+/** Done tasks of a day in the order they were ticked off. */
+export function sortByCompletion(tasks: ReadonlyArray<TaskEntry>, dateStr: string): TaskEntry[] {
+  return [...tasks].sort(
+    (a, b) => (a.completedAtByDate?.[dateStr] ?? a.createdAt) - (b.completedAtByDate?.[dateStr] ?? b.createdAt),
+  );
+}

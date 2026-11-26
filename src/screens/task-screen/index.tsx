@@ -26,6 +26,12 @@ import { requestPlaceTaskPermissions } from '../../utils/reminder-permissions';
 import { buildBatchUpdates, type TaskBatchEdits } from '../../utils/task-batch-utils';
 import { getBugNudgeTask, getFixFirstTasks, sortByBugHeat } from '../../utils/task-bug-utils';
 import {
+  getSuggestedStartTime,
+  isStartPassed,
+  sortByCompletion,
+  sortByStartTime,
+} from '../../utils/task-schedule-utils';
+import {
   getFocusStreak,
   getFocusTasksForDate,
   getTaskList,
@@ -49,6 +55,8 @@ import { TaskEditorDialog } from './components/task-editor-dialog';
 import type { TaskSchedule } from './components/task-schedule-rows';
 import { TaskSelectionBar } from './components/task-selection-bar';
 import { TaskTabs } from './components/task-tabs';
+import { TaskTimelineNow } from './components/task-timeline-now';
+import { TaskTimelineRow } from './components/task-timeline-row';
 import { type TodayPickCandidate, TodayPickSheet } from './components/today-pick-sheet';
 
 const LIST_ORDER: Record<TaskList, number> = { next: 0, shopping: 1, someday: 2 };
@@ -85,6 +93,7 @@ export function TaskScreen() {
   const [selectedApp, setSelectedApp] = useState<LaunchableApp>();
   const [timed, setTimed] = useState(false);
   const [icon, setIcon] = useState('');
+  const [now, setNow] = useState(() => new Date());
   const [schedule, setSchedule] = useState<TaskSchedule>({ scheduledDate: todayStr });
   const [composerOpen, setComposerOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | undefined>();
@@ -138,6 +147,12 @@ export function TaskScreen() {
     [tasks, selectedDate, dayCutoffHour],
   );
   const isToday = selectedDate === todayStr;
+  useEffect(() => {
+    if (!isToday || tab !== 'today') return;
+    setNow(new Date());
+    const timer = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(timer);
+  }, [isToday, tab]);
   // Hot tasks (from any tab but Later) that are not already picked for today.
   const fixFirstTasks = useMemo(
     () =>
@@ -188,6 +203,14 @@ export function TaskScreen() {
       ),
     [tasks, selectedDate, dayCutoffHour, listOf, fixFirstTasks, sortOpenFirst],
   );
+  /** Today timeline: done tasks (in the order ticked) above "Now", open ones below by start time. */
+  const timelineTasks = useMemo(() => {
+    const seen = new Set<string>();
+    const all = [...focusTasks, ...nextUpTasks].filter(task => !seen.has(task.id) && seen.add(task.id));
+    const done = all.filter(task => isTaskCompleteOnDate(task, selectedDate));
+    const open = all.filter(task => !isTaskCompleteOnDate(task, selectedDate));
+    return { done: sortByCompletion(done, selectedDate), open: sortByStartTime(open) };
+  }, [focusTasks, nextUpTasks, selectedDate]);
   const shoppingTasks = useMemo(
     () => (tasks ?? []).filter(task => !task.archived && listOf(task) === 'shopping'),
     [tasks, listOf],
@@ -451,7 +474,7 @@ export function TaskScreen() {
     task: TaskEntry,
     complete: boolean,
     onToggle: (task: TaskEntry) => void,
-    options: { focused?: boolean; note?: string; openAppPackage?: string } = {},
+    options: { focused?: boolean; note?: string; openAppPackage?: string; startPassed?: boolean } = {},
   ) => (
     <TaskCard
       key={task.id}
@@ -461,6 +484,9 @@ export function TaskScreen() {
       complete={complete}
       todayStr={todayStr}
       focused={options.focused}
+      startPassed={options.startPassed}
+      suggestedStart={options.startPassed ? getSuggestedStartTime(now) : undefined}
+      onMoveStart={moveStart}
       note={options.note}
       openAppPackage={task.appPackage ?? options.openAppPackage}
       timeSpentMs={complete ? undefined : timeSpent.get(task.id)}
@@ -485,6 +511,60 @@ export function TaskScreen() {
     </>
   );
 
+  const moveStart = useCallback(
+    (task: TaskEntry, startTime: string) => updateTask(task.id, { startTime, scheduledDate: todayStr }),
+    [updateTask, todayStr],
+  );
+
+  const renderTimeline = () => {
+    const { done, open } = timelineTasks;
+    const showNow = isToday;
+    const total = done.length + open.length + (showNow ? 1 : 0);
+    if (total === 0) return <Text style={styles.empty}>Nothing for this day.</Text>;
+    let index = 0;
+    const rowFlags = () => ({ first: index === 0, last: index === total - 1 });
+    const rows: React.ReactNode[] = [];
+    for (const task of done) {
+      rows.push(
+        <TaskTimelineRow
+          key={task.id}
+          filled
+          dotColor={Colors.status.success}
+          {...rowFlags()}
+        >
+          {renderCard(task, true, handleTodayToggle, { focused: isTaskFocusedOn(task, selectedDate) })}
+        </TaskTimelineRow>,
+      );
+      index += 1;
+    }
+    if (showNow) {
+      rows.push(
+        <TaskTimelineNow
+          key="now"
+          now={now}
+        />,
+      );
+      index += 1;
+    }
+    for (const task of open) {
+      const passed = isToday && isStartPassed(task, now, todayStr);
+      rows.push(
+        <TaskTimelineRow
+          key={task.id}
+          dotColor={passed ? Colors.cooldown.red : undefined}
+          {...rowFlags()}
+        >
+          {renderCard(task, false, handleTodayToggle, {
+            focused: isTaskFocusedOn(task, selectedDate),
+            startPassed: passed,
+          })}
+        </TaskTimelineRow>,
+      );
+      index += 1;
+    }
+    return <View>{rows}</View>;
+  };
+
   const renderToday = () => (
     <>
       {bugNudgeTask && focusTasks.length < TODAY_FOCUS_LIMIT && (
@@ -496,42 +576,17 @@ export function TaskScreen() {
       )}
       {fixFirstTasks.length > 0 && renderFixFirst()}
       <SectionHeader
-        title={`Today's ${TODAY_FOCUS_LIMIT}`}
-        action={canPick ? (focusTasks.length > 0 ? 'Change' : 'Pick') : undefined}
+        title="Timeline"
+        action={
+          canPick
+            ? focusTasks.length > 0
+              ? `Today's ${TODAY_FOCUS_LIMIT}: change`
+              : `Pick today's ${TODAY_FOCUS_LIMIT}`
+            : undefined
+        }
         onAction={() => setPickOpen(true)}
       />
-      {focusTasks.length === 0 ? (
-        <View style={styles.pickCard}>
-          <Text style={styles.pickText}>
-            {canPick
-              ? `Pick up to ${TODAY_FOCUS_LIMIT} tasks to focus on. Finish all ${TODAY_FOCUS_LIMIT} for a day on your streak.`
-              : 'No tasks were picked on this day.'}
-          </Text>
-          {canPick && (
-            <Button
-              variant="primary"
-              size="sm"
-              onPress={() => setPickOpen(true)}
-            >
-              {`Pick today's ${TODAY_FOCUS_LIMIT}`}
-            </Button>
-          )}
-        </View>
-      ) : (
-        focusTasks.map(task =>
-          renderCard(task, isTaskCompleteOnDate(task, selectedDate), handleTodayToggle, { focused: true }),
-        )
-      )}
-      <SectionHeader
-        title="Next up"
-        action={nextUpTasks.length > 1 ? sortAction : undefined}
-        onAction={toggleSort}
-      />
-      {nextUpTasks.length === 0 ? (
-        <Text style={styles.empty}>Nothing else for this day.</Text>
-      ) : (
-        nextUpTasks.map(task => renderCard(task, isTaskCompleteOnDate(task, selectedDate), handleTodayToggle))
-      )}
+      {renderTimeline()}
     </>
   );
 

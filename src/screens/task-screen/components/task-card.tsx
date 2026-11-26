@@ -41,6 +41,11 @@ interface TaskCardProps {
   openAppPackage?: string;
   /** Total time spent on the task over all its timed logs; the chip is hidden under a minute. */
   timeSpentMs?: number;
+  /** Open task whose start time is behind us: drawn red with a chip offering the next start time. */
+  startPassed?: boolean;
+  /** Start time offered by the chip, "HH:mm". */
+  suggestedStart?: string;
+  onMoveStart?: (task: TaskEntry, startTime: string) => void;
   /** Extra text for the second line, e.g. "Got it Nov 18". */
   note?: string;
   /** Select mode: the box shows whether the task is selected (undefined = not selecting). */
@@ -57,6 +62,9 @@ function TaskCardComponent({
   place,
   complete,
   todayStr,
+  startPassed,
+  suggestedStart,
+  onMoveStart,
   focused,
   note,
   openAppPackage,
@@ -108,7 +116,7 @@ function TaskCardComponent({
         styles.taskCard,
         focused && styles.focusCard,
         deadlineState === 'today' && styles.dueTodayCard,
-        deadlineState === 'overdue' && styles.overdueCard,
+        (deadlineState === 'overdue' || (startPassed && !complete)) && styles.overdueCard,
         complete && styles.taskCardComplete,
       ]}
     >
@@ -146,6 +154,22 @@ function TaskCardComponent({
             </Text>
           </View>
           {bugSummary && <BugHeatBar heat={bugHeat} />}
+          {startPassed && !complete && suggestedStart && onMoveStart && (
+            <Pressable
+              style={styles.moveChip}
+              onPress={() => onMoveStart(task, suggestedStart)}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel={`Move start to ${formatStartTime(suggestedStart)}`}
+            >
+              <Text
+                style={styles.moveChipText}
+                numberOfLines={1}
+              >
+                {`Start passed · Move to ${formatStartTime(suggestedStart)}`}
+              </Text>
+            </Pressable>
+          )}
           {(bugSummary || metaParts.length > 0) && (
             <Text
               style={styles.taskMeta}
@@ -296,6 +320,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     flexShrink: 0,
   },
+  moveChip: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: '#7a2a2a',
+  },
+  moveChipText: { color: '#ffd5d5', fontSize: 11, fontWeight: '700', flexShrink: 0 },
   taskMeta: {
     color: Colors.text.faint,
     fontSize: 11,
