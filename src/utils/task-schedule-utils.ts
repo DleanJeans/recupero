@@ -108,7 +108,7 @@ export function sortByCompletion(tasks: ReadonlyArray<TaskEntry>, dateStr: strin
  * ticked. Undefined when the task has no completion time on record.
  */
 export function getTaskActualTime(
-  task: Pick<TaskEntry, 'completionLogIds' | 'completedAtByDate'>,
+  task: Pick<TaskEntry, 'completionLogIds' | 'completedAtByDate' | 'completedStartByDate'>,
   behavior: Pick<BehaviorEntry, 'logs'> | undefined,
   dateStr: string,
 ): { start?: number; end: number } | undefined {
@@ -119,7 +119,9 @@ export function getTaskActualTime(
     return log.endTimestamp != null && log.endTimestamp > log.timestamp ? { start: log.timestamp, end } : { end };
   }
   const completedAt = task.completedAtByDate?.[dateStr];
-  return completedAt != null ? { end: completedAt } : undefined;
+  if (completedAt == null) return undefined;
+  const start = task.completedStartByDate?.[dateStr];
+  return start != null && start < completedAt ? { start, end: completedAt } : { end: completedAt };
 }
 
 /** `ts` moved to the "HH:mm" time of day on its own calendar day. */

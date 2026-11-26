@@ -63,11 +63,11 @@ describe('buildBatchUpdates', () => {
 
   it('clears the app', () => {
     const updates = buildBatchUpdates(task({ appPackage: 'x', appLabel: 'X', timed: true }), { clearApp: true }, none);
-    expect(updates).toMatchObject({ appPackage: undefined, appLabel: undefined, timed: undefined });
+    expect(updates).toMatchObject({ appPackage: undefined, appLabel: undefined, timed: true });
   });
 
   it('only times tasks that have a behavior or an app', () => {
-    expect(buildBatchUpdates(task(), { timed: true }, none).timed).toBeUndefined();
+    expect(buildBatchUpdates(task(), { timed: true }, none).timed).toBe(true);
     expect(buildBatchUpdates(task({ behaviorId: 'b' }), { timed: true }, none).timed).toBe(true);
     expect(buildBatchUpdates(task({ behaviorId: 'b', timed: true }), { timed: false }, none).timed).toBeUndefined();
   });

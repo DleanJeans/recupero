@@ -207,6 +207,8 @@ interface BehaviorStore {
   assignTaskLog: (taskId: string, dateStr: string, logId: string) => void;
   /** Marks a task done with a log that already exists (the timer's log), so ticking adds no second log. */
   completeTaskWithLog: (taskId: string, dateStr: string, logId: string | undefined, completedAt: number) => void;
+  /** Starts (or stops, with undefined) the task's own timer, used by timed tasks without a behavior. */
+  setTaskTimer: (taskId: string, startedAt: number | undefined) => void;
   /** Pick or unpick a task as one of "Today's 3" for the date. */
   toggleTaskFocus: (taskId: string, dateStr: string) => void;
   /** "Bugged me": log one more time the task's problem bothered the user. */
@@ -654,7 +656,20 @@ export const useBehaviorStore = create<BehaviorStore>()(
           const logId = task.completionLogIds?.[dateStr];
           const tasks = (state.tasks ?? []).map(candidate =>
             candidate.id === taskId
-              ? { ...candidate, completedAtByDate: { ...(candidate.completedAtByDate ?? {}), [dateStr]: end } }
+              ? {
+                  ...candidate,
+                  completedAtByDate: { ...(candidate.completedAtByDate ?? {}), [dateStr]: end },
+                  ...(logId
+                    ? {}
+                    : {
+                        completedStartByDate: Object.fromEntries(
+                          Object.entries({
+                            ...(candidate.completedStartByDate ?? {}),
+                            [dateStr]: start != null && start < end ? start : undefined,
+                          }).filter(([, value]) => value != null),
+                        ) as Record<string, number>,
+                      }),
+                }
               : candidate,
           );
           if (!logId || !task.behaviorId) return { tasks };
@@ -698,6 +713,10 @@ export const useBehaviorStore = create<BehaviorStore>()(
             ),
           };
         }),
+      setTaskTimer: (taskId, startedAt) =>
+        set(state => ({
+          tasks: (state.tasks ?? []).map(task => (task.id === taskId ? { ...task, timerStartedAt: startedAt } : task)),
+        })),
       completeTaskWithLog: (taskId, dateStr, logId, completedAt) =>
         set(state => ({
           tasks: (state.tasks ?? []).map(task => {
@@ -719,7 +738,13 @@ export const useBehaviorStore = create<BehaviorStore>()(
           const logIdToRemove = wasComplete ? task.completionLogIds?.[dateStr] : undefined;
           const logIdToAdd = !wasComplete && task.behaviorId ? uuidv4() : undefined;
           const dayCutoffHour = useSettingsStore.getState().dayCutoffHour;
-          const taskTimestamp = timed && !wasComplete ? timed.end : timestampForTaskDate(dateStr, dayCutoffHour);
+          const ownTimerStart = !wasComplete && !task.behaviorId ? task.timerStartedAt : undefined;
+          const taskTimestamp =
+            ownTimerStart != null
+              ? Date.now()
+              : timed && !wasComplete
+                ? timed.end
+                : timestampForTaskDate(dateStr, dayCutoffHour);
           const logStart = timed && !wasComplete ? timed.start : taskTimestamp;
 
           const tasks = (state.tasks ?? []).map(t => {
@@ -727,8 +752,10 @@ export const useBehaviorStore = create<BehaviorStore>()(
             if (wasComplete) {
               const { [dateStr]: _removedLogId, ...remainingLogIds } = t.completionLogIds ?? {};
               const { [dateStr]: _removedCompletedAt, ...remainingCompletedAt } = t.completedAtByDate ?? {};
+              const { [dateStr]: _removedStart, ...remainingStarts } = t.completedStartByDate ?? {};
               return {
                 ...t,
+                completedStartByDate: Object.keys(remainingStarts).length > 0 ? remainingStarts : undefined,
                 completedDates: t.completedDates.filter(date => date !== dateStr),
                 completedAtByDate: Object.keys(remainingCompletedAt).length > 0 ? remainingCompletedAt : undefined,
                 completionLogIds: Object.keys(remainingLogIds).length > 0 ? remainingLogIds : undefined,
@@ -736,6 +763,11 @@ export const useBehaviorStore = create<BehaviorStore>()(
             }
             return {
               ...t,
+              timerStartedAt: undefined,
+              completedStartByDate:
+                ownTimerStart != null
+                  ? { ...(t.completedStartByDate ?? {}), [dateStr]: ownTimerStart }
+                  : t.completedStartByDate,
               completedDates: [...t.completedDates, dateStr],
               completedAtByDate: {
                 ...(t.completedAtByDate ?? {}),

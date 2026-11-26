@@ -48,6 +48,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
       'Tasks: set a Next step so it always starts when the task before it ends.',
       "Tasks: logging a task's timer now marks the task done automatically.",
       'Tasks: the Next step list has a search box.',
+      'Tasks: Track duration works without a behavior or app; the ▶ times the task itself.',
       'Tasks: long-press a task with a place and choose Open in Google Maps.',
       'Tasks: long-press a done task to edit its done time or use another log; un-ticking keeps timer logs.',
       'Tasks: overlapping or late tasks offer to reschedule, pushing the ones after them down only as needed.',

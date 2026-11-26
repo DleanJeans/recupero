@@ -62,6 +62,10 @@ export interface TaskEntry {
   bugNudgeDismissedAt?: number;
   completedDates: string[];
   completedAtByDate?: Record<string, number>;
+  /** When work on the task began (ms), per done day, for tasks timed without a behavior log. */
+  completedStartByDate?: Record<string, number>;
+  /** Set while the task's own ▶ timer runs (a timed task with no behavior or app). */
+  timerStartedAt?: number;
   completionLogIds?: Record<string, string>;
   createdAt: number;
   archived?: boolean;

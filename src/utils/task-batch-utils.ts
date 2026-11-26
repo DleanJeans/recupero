@@ -90,7 +90,7 @@ export function buildBatchUpdates(
   if (edits.stars != null) updates.stars = edits.stars;
   if (edits.timed != null || edits.behavior || edits.app || edits.clearApp) {
     const wantTimed = edits.timed ?? task.timed === true;
-    updates.timed = wantTimed && (behaviorId != null || hasApp) ? true : undefined;
+    updates.timed = wantTimed ? true : undefined;
   }
   return updates;
 }

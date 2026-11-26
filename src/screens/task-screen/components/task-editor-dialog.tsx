@@ -93,7 +93,6 @@ export function TaskEditorDialog({
   const allBehaviors = useBehaviorStore(s => s.behaviors);
   const [picker, setPicker] = useState<Picker>();
   const canSubmit = title.trim().length > 0 || selectedBehavior != null || app != null;
-  const canTime = selectedBehavior != null || app != null;
   const appIsNew = app != null && !findAutoTrackedBehavior(allBehaviors, { packageName: app.packageName });
   const timedTarget = app?.label ?? selectedBehavior?.name;
 
@@ -253,14 +252,13 @@ export function TaskEditorDialog({
               variant="row"
               label="Track duration"
               hint={
-                !canTime
-                  ? 'Pick a behavior or an app to time this task.'
-                  : timed
+                timed
+                  ? timedTarget
                     ? `Adds a ▶ timer button${app ? ` that opens ${app.label}` : ''}. Ticking the task while it runs logs the time to ${timedTarget}.`
-                    : 'Adds a ▶ timer button to the task.'
+                    : 'Adds a ▶ timer button. Ticking the task while it runs saves the time on the task.'
+                  : 'Adds a ▶ timer button to the task.'
               }
-              checked={timed && canTime}
-              disabled={!canTime}
+              checked={timed}
               onToggle={() => onTimedChange(!timed)}
             />
           </ScrollView>

@@ -9,6 +9,7 @@ import { AppIcon } from '../../../components/app-icon';
 import { BehaviorIcon } from '../../../components/behavior-icon';
 import { Button } from '../../../components/button';
 import { Text } from '../../../components/text';
+import { useBehaviorStore } from '../../../store/behavior-store';
 import { useTimerStore } from '../../../store/timer-store';
 import type { BehaviorEntry } from '../../../types/behavior';
 import type { SavedPlace } from '../../../types/cue';
@@ -115,11 +116,15 @@ function TaskCardComponent({
     selected === undefined &&
     !complete &&
     !timerRunning &&
-    behavior != null &&
-    (task.timed === true || behavior.durationXpEnabled === true);
+    (behavior != null ? task.timed === true || behavior.durationXpEnabled === true : task.timed === true);
 
   const handlePlay = () => {
-    if (!behavior || !canTrack) return;
+    if (!canTrack) return;
+    // A timed task without a behavior keeps its own timer: ticking it saves the time on the task.
+    if (!behavior) {
+      useBehaviorStore.getState().setTaskTimer(task.id, Date.now());
+      return;
+    }
     const opened = openAppPackage ? launchApp(openAppPackage) : false;
     startTimer(behavior.id, Date.now(), task.title, opened ? openAppPackage : undefined, task.id);
     navigation.navigate('Timer');
