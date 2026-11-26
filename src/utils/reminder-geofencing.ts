@@ -6,11 +6,14 @@ import { useBehaviorStore } from '../store/behavior-store';
 import { useCuesStore } from '../store/cues-store';
 import { useSettingsStore } from '../store/settings-store';
 import { useSunlightStore } from '../store/sunlight-store';
+import { useTimerStore } from '../store/timer-store';
 import type { Cue, SavedPlace } from '../types/cue';
 import { toDateString } from './date-utils';
+import { finishDrivesAtPlace } from './driving-utils';
 import {
   getPlaceTaskNotificationContent,
   getPlaceTasksDueByDwell,
+  getPlaceTasksForArrival,
   isOneOffPlaceKey,
   type PlaceArrivals,
   pruneStalePlaceArrivals,
@@ -185,11 +188,27 @@ export async function completeDuePlaceTasks(now = Date.now(), arrivals?: PlaceAr
   }
 }
 
+/** Arriving ends a drive started toward this place, so the Driving log stops at arrival and not after the stay. */
+async function finishDrivesOnArrival(placeId: string, now: number): Promise<void> {
+  await Promise.all([
+    waitForHydration(useBehaviorStore),
+    waitForHydration(useTimerStore),
+    waitForHydration(useSettingsStore),
+  ]);
+  const { dayCutoffHour } = useSettingsStore.getState();
+  const todayStr = toDateString(new Date(now), dayCutoffHour);
+  finishDrivesAtPlace(
+    getPlaceTasksForArrival(useBehaviorStore.getState().tasks, placeId, todayStr, dayCutoffHour),
+    now,
+  );
+}
+
 async function trackPlaceTaskStay(placeId: string, direction: 'enter' | 'exit'): Promise<void> {
   const now = Date.now();
   const arrivals = await readPlaceArrivals(now);
   if (direction === 'enter') {
     // A repeated enter (geofence jitter) must not restart the clock.
+    await finishDrivesOnArrival(placeId, now);
     const next = { ...arrivals, [placeId]: arrivals[placeId] ?? now };
     await AsyncStorage.setItem(PLACE_ARRIVALS_KEY, JSON.stringify(next));
     await completeDuePlaceTasks(now, next);

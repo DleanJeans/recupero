@@ -27,9 +27,11 @@ import { getActiveBehaviors } from '../../utils/archive-utils';
 import { getCalendarTaskCompletionMetrics } from '../../utils/calendar-metrics';
 import { Colors } from '../../utils/colors';
 import { formatDateDisplay, toDateString } from '../../utils/date-utils';
+import { getDriveEstimateMin } from '../../utils/drive-estimate-utils';
+import { findDrivingBehaviorId, startDrive } from '../../utils/driving-utils';
 import { getNeedLowForecasts } from '../../utils/need-utils';
 import { openInMaps } from '../../utils/open-in-maps';
-import { DEFAULT_PLACE_DWELL_MIN, getPlaceDwellMin } from '../../utils/place-task-utils';
+import { DEFAULT_PLACE_DWELL_MIN, getPlaceDwellMin, getTaskPlaceKey } from '../../utils/place-task-utils';
 import { requestPlaceTaskPermissions } from '../../utils/reminder-permissions';
 import { buildBatchUpdates, type TaskBatchEdits } from '../../utils/task-batch-utils';
 import { getBugNudgeTask, getFixFirstTasks, sortByBugHeat } from '../../utils/task-bug-utils';
@@ -62,6 +64,8 @@ import { TaskActionSheet } from './components/task-action-sheet';
 import { TaskBatchEditDialog } from './components/task-batch-edit-dialog';
 import { TaskCard } from './components/task-card';
 import { TaskDoneTimeSheet } from './components/task-done-time-sheet';
+import { TaskDriveNode } from './components/task-drive-node';
+import { TaskDriveSheet } from './components/task-drive-sheet';
 import { TaskEditorDialog } from './components/task-editor-dialog';
 import { TaskNeedLowNode } from './components/task-need-low-node';
 import type { TaskSchedule } from './components/task-schedule-rows';
@@ -118,6 +122,7 @@ export function TaskScreen() {
   const [bugTaskId, setBugTaskId] = useState<string | undefined>();
   const [historyTaskId, setHistoryTaskId] = useState<string | undefined>();
   const [doneTimeTaskId, setDoneTimeTaskId] = useState<string | undefined>();
+  const [driveTaskId, setDriveTaskId] = useState<string | undefined>();
   /** Select mode: ids of the picked tasks (undefined = not selecting). */
   const [selectedIds, setSelectedIds] = useState<string[]>();
   const [batchOpen, setBatchOpen] = useState(false);
@@ -147,6 +152,14 @@ export function TaskScreen() {
     return [...visible].sort((a, b) => a.name.localeCompare(b.name));
   }, [behaviors, composerOpen, batchOpen, hidePrivate]);
   const behaviorById = useMemo(() => new Map(behaviors.map(behavior => [behavior.id, behavior])), [behaviors]);
+  const drivingBehavior = useMemo(() => {
+    const id = findDrivingBehaviorId(behaviors);
+    return behaviors.find(behavior => behavior.id === id);
+  }, [behaviors]);
+  const taskPlaceName = useCallback(
+    (task: TaskEntry) => (task.placeId ? placeById.get(task.placeId)?.name : task.oneOffPlace?.name) ?? 'the place',
+    [placeById],
+  );
   const behaviorOf = useCallback(
     (task: TaskEntry) => (task.behaviorId ? behaviorById.get(task.behaviorId) : undefined),
     [behaviorById],
@@ -296,6 +309,7 @@ export function TaskScreen() {
   const editingTask = editingTaskId ? (tasks ?? []).find(task => task.id === editingTaskId) : undefined;
   const bugTask = bugTaskId ? (tasks ?? []).find(task => task.id === bugTaskId) : undefined;
   const historyTask = historyTaskId ? (tasks ?? []).find(task => task.id === historyTaskId) : undefined;
+  const driveTask = driveTaskId ? (tasks ?? []).find(task => task.id === driveTaskId) : undefined;
   const doneTimeTask = doneTimeTaskId ? (tasks ?? []).find(task => task.id === doneTimeTaskId) : undefined;
   const menuTask = menuTaskId ? (tasks ?? []).find(task => task.id === menuTaskId) : undefined;
 
@@ -587,7 +601,15 @@ export function TaskScreen() {
   const renderTimeline = () => {
     const { done, open } = timelineTasks;
     const showNow = isToday;
-    type OpenItem = { key: string; ts?: number; task?: TaskEntry; needId?: NeedId; running?: boolean };
+    type OpenItem = {
+      key: string;
+      ts?: number;
+      task?: TaskEntry;
+      needId?: NeedId;
+      running?: boolean;
+      driveTask?: TaskEntry;
+      driveMin?: number;
+    };
     const startOf = (task: TaskEntry) => {
       if (!task.startTime) return undefined;
       const [h, m] = task.startTime.split(':').map(Number);
@@ -598,18 +620,52 @@ export function TaskScreen() {
     const running = open.filter(task => taskTimerIds.has(task.id));
     const items: OpenItem[] = [
       ...open.filter(task => !taskTimerIds.has(task.id)).map(task => ({ key: task.id, ts: startOf(task), task })),
+      ...open
+        .filter(task => task.startTime && !task.drive && getTaskPlaceKey(task) && !taskTimerIds.has(task.id))
+        .map(task => {
+          const driveMin = getDriveEstimateMin(task, tasks ?? [], drivingBehavior);
+          return {
+            key: `drive:${task.id}`,
+            ts: (startOf(task) ?? 0) - driveMin * 60000,
+            driveTask: task,
+            driveMin,
+          };
+        }),
       ...needForecasts.map(forecast => ({ key: `need:${forecast.needId}`, ts: forecast.ts, needId: forecast.needId })),
     ];
     // Timed items (tasks with a start time, need forecasts) by time; tasks without a start time keep their order after.
     const timed = items.filter(item => item.ts != null).sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0));
     const untimed = items.filter(item => item.ts == null);
     const ordered: OpenItem[] = [...running.map(task => ({ key: task.id, task, running: true })), ...timed, ...untimed];
-    const total = done.length + ordered.length + (showNow ? 1 : 0);
+    const drivenOnDay = [...done, ...open].filter(
+      task => task.drive && toDateString(new Date(task.drive.end), dayCutoffHour) === selectedDate,
+    );
+    const total = done.length + ordered.length + drivenOnDay.length + (showNow ? 1 : 0);
     if (total === 0) return <Text style={styles.empty}>Nothing for this day.</Text>;
     let index = 0;
     const rowFlags = () => ({ first: index === 0, last: index === total - 1 });
     const rows: React.ReactNode[] = [];
+    const driveRow = (task: TaskEntry) => {
+      if (!task.drive) return;
+      rows.push(
+        <TaskTimelineRow
+          key={`driven:${task.id}`}
+          filled
+          dotColor={Colors.status.success}
+          centered
+          {...rowFlags()}
+        >
+          <TaskDriveNode
+            placeName={taskPlaceName(task)}
+            minutes={Math.max(1, Math.round((task.drive.end - task.drive.start) / 60000))}
+            range={task.drive}
+          />
+        </TaskTimelineRow>,
+      );
+      index += 1;
+    };
     for (const task of done) {
+      driveRow(task);
       rows.push(
         <TaskTimelineRow
           key={task.id}
@@ -622,6 +678,7 @@ export function TaskScreen() {
       );
       index += 1;
     }
+    for (const task of open) driveRow(task);
     if (showNow) {
       rows.push(
         <TaskTimelineNow
@@ -632,7 +689,24 @@ export function TaskScreen() {
       index += 1;
     }
     for (const item of ordered) {
-      if (item.needId != null && item.ts != null) {
+      if (item.driveTask && item.ts != null) {
+        const driveTask = item.driveTask;
+        rows.push(
+          <TaskTimelineRow
+            key={item.key}
+            dotColor="#4a9eff"
+            centered
+            {...rowFlags()}
+          >
+            <TaskDriveNode
+              placeName={taskPlaceName(driveTask)}
+              minutes={item.driveMin ?? 0}
+              leaveAt={item.ts}
+              onPress={() => startDrive(driveTask)}
+            />
+          </TaskTimelineRow>,
+        );
+      } else if (item.needId != null && item.ts != null) {
         rows.push(
           <TaskTimelineRow
             key={item.key}
@@ -862,6 +936,14 @@ export function TaskScreen() {
         />
       )}
 
+      {driveTask && (
+        <TaskDriveSheet
+          task={driveTask}
+          placeName={taskPlaceName(driveTask)}
+          onClose={() => setDriveTaskId(undefined)}
+        />
+      )}
+
       {menuTask && (
         <TaskActionSheet
           task={menuTask}
@@ -897,6 +979,14 @@ export function TaskScreen() {
               openInMaps(spot.lat, spot.lng, spot.name);
             };
           })()}
+          onLogDrive={
+            getTaskPlaceKey(menuTask)
+              ? () => {
+                  setMenuTaskId(undefined);
+                  setDriveTaskId(menuTask.id);
+                }
+              : undefined
+          }
           onEditDoneTime={() => {
             setMenuTaskId(undefined);
             setDoneTimeTaskId(menuTask.id);

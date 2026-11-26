@@ -18,7 +18,9 @@ import type { TaskEntry } from '../../../types/task';
 import { Colors } from '../../../utils/colors';
 import { getPlaceEmoji } from '../../../utils/cue-utils';
 import { formatDateDisplay } from '../../../utils/date-utils';
+import { startDrive } from '../../../utils/driving-utils';
 import { launchApp } from '../../../utils/launch-app';
+import { getTaskPlaceKey } from '../../../utils/place-task-utils';
 import { formatBugSummary, getBugHeat } from '../../../utils/task-bug-utils';
 import {
   formatEstimate,
@@ -117,6 +119,9 @@ function TaskCardComponent({
     !complete &&
     !timerRunning &&
     (behavior != null ? task.timed === true || behavior.durationXpEnabled === true : task.timed === true);
+
+  // A task with a place can be driven to: the Driving timer runs until you arrive.
+  const canDrive = selected === undefined && !complete && !timerRunning && getTaskPlaceKey(task) != null;
 
   const handlePlay = () => {
     if (!canTrack) return;
@@ -237,6 +242,20 @@ function TaskCardComponent({
           </View>
         )}
       </Pressable>
+      {canDrive && (
+        <Button
+          variant="icon"
+          onPress={() => startDrive(task)}
+          accessibilityLabel={`Start driving to ${placeName ?? task.title}`}
+          style={styles.playButton}
+        >
+          <Ionicons
+            name="car-outline"
+            size={20}
+            color={Colors.text.primary}
+          />
+        </Button>
+      )}
       {canTrack && (
         <Button
           variant="icon"

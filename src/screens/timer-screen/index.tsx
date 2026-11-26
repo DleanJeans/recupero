@@ -14,6 +14,7 @@ import type { RootStackParamList } from '../../types/navigation';
 import { isArchived } from '../../utils/archive-utils';
 import { Colors } from '../../utils/colors';
 import { toDateString } from '../../utils/date-utils';
+import { isDrivingBehavior } from '../../utils/drive-estimate-utils';
 import { buildTimerLogMetadata } from '../../utils/metadata-link-utils';
 import { shouldLogTimerSegment } from '../../utils/timer-utils';
 import { TimerOtherTimers } from './components/timer-other-timers';
@@ -92,9 +93,20 @@ export function TimerScreen() {
 
   /** A task ticked while this timer ran is marked done once its time is logged (or the timer is closed). */
   const finishPendingTask = useCallback(
-    (logs: ReadonlyArray<{ id: string; timestamp: number }> | undefined, start: number | undefined) => {
+    (
+      logs: ReadonlyArray<{ id: string; timestamp: number; endTimestamp?: number }> | undefined,
+      start: number | undefined,
+    ) => {
       const { pendingTaskFinish, setPendingTaskFinish } = useScreenUiStore.getState();
       const pending = pendingTaskFinish?.taskId === taskId ? pendingTaskFinish : undefined;
+      // A drive to a task's place is remembered on the task; the task itself is done on arrival, not when logged.
+      const driveLog = logs && lockedBehavior && isDrivingBehavior(lockedBehavior) ? logs[logs.length - 1] : undefined;
+      if (taskId && driveLog?.endTimestamp != null) {
+        useBehaviorStore
+          .getState()
+          .updateTask(taskId, { drive: { start: driveLog.timestamp, end: driveLog.endTimestamp } });
+        if (!pending) return;
+      }
       // Logging the timer of a task also finishes that task, even when it wasn't ticked first.
       const date = pending?.date ?? (logs && taskId ? toDateString(new Date(), dayCutoffHour) : undefined);
       if (!taskId || !date) return;
@@ -102,7 +114,7 @@ export function TimerScreen() {
       useBehaviorStore.getState().completeTaskWithLog(taskId, date, log?.id, Date.now());
       if (pending) setPendingTaskFinish(null);
     },
-    [taskId, dayCutoffHour],
+    [taskId, dayCutoffHour, lockedBehavior],
   );
 
   // When the screen regains focus after the user was on the log form, check

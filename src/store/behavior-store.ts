@@ -194,6 +194,7 @@ interface BehaviorStore {
         | 'startTime'
         | 'estimateMin'
         | 'nextTaskId'
+        | 'drive'
         | 'deadline'
         | 'deadlineTime'
       >

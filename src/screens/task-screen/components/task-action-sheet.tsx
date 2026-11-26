@@ -32,6 +32,8 @@ interface TaskActionSheetProps {
   onBugHistory: () => void;
   /** Opens the task's place in the Google Maps app. Omit when the task has no place. */
   onOpenMap?: () => void;
+  /** Log a drive to the task's place that already happened. Omit when the task has no place. */
+  onLogDrive?: () => void;
   /** Edit when a finished task was done, or assign a log to it. */
   onEditDoneTime: () => void;
   onMove: (list: TaskList) => void;
@@ -52,6 +54,7 @@ export function TaskActionSheet({
   onBugHistory,
   onEditDoneTime,
   onOpenMap,
+  onLogDrive,
   onMove,
   onDelete,
 }: TaskActionSheetProps) {
@@ -89,6 +92,14 @@ export function TaskActionSheet({
               icon="map-outline"
               label="Open in Google Maps"
               onPress={onOpenMap}
+            />
+          )}
+          {onLogDrive && (
+            <SheetOption
+              icon="car-outline"
+              label="Log a past drive"
+              hint="Add a drive that isn't on the timeline yet."
+              onPress={onLogDrive}
             />
           )}
           {task.completedDates.length > 0 && (
