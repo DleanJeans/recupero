@@ -43,6 +43,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
         screen: 'Home',
         linkPhrase: 'Checklist',
       },
+      'Tasks: overlapping or late tasks offer to reschedule, pushing the ones after them down only as needed.',
       'Tasks: finished tasks show the time they were actually done instead of the planned start.',
       'Needs: roomier top-up chips, and a time chip to add an unlogged top-up to any date and time.',
       "Maps now show each place's own icon instead of the red pin.",

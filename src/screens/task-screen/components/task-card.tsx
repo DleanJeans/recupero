@@ -51,9 +51,9 @@ interface TaskCardProps {
   timerRunning?: boolean;
   /** Open task whose start time is behind us: drawn red with a chip offering the next start time. */
   startPassed?: boolean;
-  /** Start time offered by the chip, "HH:mm". */
-  suggestedStart?: string;
-  onMoveStart?: (task: TaskEntry, startTime: string) => void;
+  /** Chip offering a new start time (late or overlapping): its text and the "HH:mm" it moves the task to. */
+  reschedule?: { text: string; startTime: string };
+  onReschedule?: (task: TaskEntry, startTime: string) => void;
   /** Extra text for the second line, e.g. "Got it Nov 18". */
   note?: string;
   /** Select mode: the box shows whether the task is selected (undefined = not selecting). */
@@ -72,8 +72,8 @@ function TaskCardComponent({
   todayStr,
   timerRunning,
   startPassed,
-  suggestedStart,
-  onMoveStart,
+  reschedule,
+  onReschedule,
   focused,
   note,
   openAppPackage,
@@ -172,19 +172,19 @@ function TaskCardComponent({
             </Text>
           </View>
           {bugSummary && <BugHeatBar heat={bugHeat} />}
-          {startPassed && !complete && suggestedStart && onMoveStart && (
+          {!complete && reschedule && onReschedule && (
             <Pressable
               style={styles.moveChip}
-              onPress={() => onMoveStart(task, suggestedStart)}
+              onPress={() => onReschedule(task, reschedule.startTime)}
               hitSlop={6}
               accessibilityRole="button"
-              accessibilityLabel={`Move start to ${formatStartTime(suggestedStart)}`}
+              accessibilityLabel={`Move start to ${formatStartTime(reschedule.startTime)}`}
             >
               <Text
                 style={styles.moveChipText}
                 numberOfLines={1}
               >
-                {`Start passed · Move to ${formatStartTime(suggestedStart)}`}
+                {reschedule.text}
               </Text>
             </Pressable>
           )}
@@ -345,12 +345,13 @@ const styles = StyleSheet.create({
   },
   moveChip: {
     alignSelf: 'flex-start',
+    maxWidth: '100%',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
     backgroundColor: '#7a2a2a',
   },
-  moveChipText: { color: '#ffd5d5', fontSize: 11, fontWeight: '700', flexShrink: 0 },
+  moveChipText: { color: '#ffd5d5', fontSize: 11, fontWeight: '700', flexShrink: 1 },
   taskMeta: {
     color: Colors.text.faint,
     fontSize: 11,

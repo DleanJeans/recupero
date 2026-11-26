@@ -32,7 +32,9 @@ import { DEFAULT_PLACE_DWELL_MIN, getPlaceDwellMin } from '../../utils/place-tas
 import { requestPlaceTaskPermissions } from '../../utils/reminder-permissions';
 import { buildBatchUpdates, type TaskBatchEdits } from '../../utils/task-batch-utils';
 import { getBugNudgeTask, getFixFirstTasks, sortByBugHeat } from '../../utils/task-bug-utils';
+import { cascadeReschedule, findOverlaps, getRescheduleText } from '../../utils/task-reschedule-utils';
 import {
+  formatStartTime,
   getSuggestedStartTime,
   isStartPassed,
   sortByCompletion,
@@ -503,7 +505,13 @@ export function TaskScreen() {
     task: TaskEntry,
     complete: boolean,
     onToggle: (task: TaskEntry) => void,
-    options: { focused?: boolean; note?: string; openAppPackage?: string; startPassed?: boolean } = {},
+    options: {
+      focused?: boolean;
+      note?: string;
+      openAppPackage?: string;
+      startPassed?: boolean;
+      reschedule?: { text: string; startTime: string };
+    } = {},
   ) => (
     <TaskCard
       key={task.id}
@@ -515,8 +523,8 @@ export function TaskScreen() {
       timerRunning={taskTimerIds.has(task.id)}
       focused={options.focused}
       startPassed={options.startPassed}
-      suggestedStart={options.startPassed ? getSuggestedStartTime(now) : undefined}
-      onMoveStart={moveStart}
+      reschedule={options.reschedule}
+      onReschedule={reschedule}
       note={options.note}
       openAppPackage={task.appPackage ?? options.openAppPackage}
       timeSpentMs={complete ? undefined : timeSpent.get(task.id)}
@@ -541,10 +549,34 @@ export function TaskScreen() {
     </>
   );
 
-  const moveStart = useCallback(
-    (task: TaskEntry, startTime: string) => updateTask(task.id, { startTime, scheduledDate: todayStr }),
-    [updateTask, todayStr],
+  /** Open tasks with a planned start, not counting ones whose timer is already running. */
+  const plannedTasks = useMemo(
+    () =>
+      timelineTasks.open.filter(task => task.startTime && task.scheduledDate <= todayStr && !taskTimerIds.has(task.id)),
+    [timelineTasks, todayStr, taskTimerIds],
   );
+  const overlaps = useMemo(() => findOverlaps(plannedTasks), [plannedTasks]);
+
+  /** Moves a task to a new start and pushes the following ones down only as far as needed. */
+  const reschedule = useCallback(
+    (task: TaskEntry, startTime: string) => {
+      for (const change of cascadeReschedule(plannedTasks, task.id, startTime)) {
+        updateTask(change.id, { startTime: change.startTime, scheduledDate: todayStr });
+      }
+    },
+    [plannedTasks, updateTask, todayStr],
+  );
+
+  /** The chip offered on a task: late (start passed) or overlapping the task before it. */
+  const getRescheduleChip = (task: TaskEntry, passed: boolean) => {
+    const startTime = passed ? getSuggestedStartTime(now) : overlaps.get(task.id)?.suggestedStart;
+    if (!startTime || !task.startTime) return undefined;
+    const pushed = cascadeReschedule(plannedTasks, task.id, startTime).length - 1;
+    return {
+      startTime,
+      text: getRescheduleText(passed ? 'late' : 'overlap', formatStartTime(startTime), pushed),
+    };
+  };
 
   const renderTimeline = () => {
     const { done, open } = timelineTasks;
@@ -621,6 +653,7 @@ export function TaskScreen() {
             {renderCard(task, false, handleTodayToggle, {
               focused: isTaskFocusedOn(task, selectedDate),
               startPassed: passed,
+              reschedule: item.running ? undefined : getRescheduleChip(task, passed),
             })}
           </TaskTimelineRow>,
         );
