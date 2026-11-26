@@ -1,7 +1,9 @@
-import React, { useMemo } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text } from '../../../components/text';
+import { Text, TextInput } from '../../../components/text';
+import { useKeyboardVisible } from '../../../hooks/use-keyboard-visible';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { Colors } from '../../../utils/colors';
 import { formatDateDisplay } from '../../../utils/date-utils';
@@ -17,6 +19,8 @@ interface TaskNextStepSheetProps {
 /** Pick which open task comes right after this one. */
 export function TaskNextStepSheet({ taskId, onPick, onClose }: TaskNextStepSheetProps) {
   const insets = useSafeAreaInsets();
+  const keyboardUp = useKeyboardVisible();
+  const [query, setQuery] = useState('');
   const allTasks = useBehaviorStore(state => state.tasks);
   const candidates = useMemo(() => {
     const tasks = allTasks ?? [];
@@ -32,8 +36,9 @@ export function TaskNextStepSheet({ taskId, onPick, onClose }: TaskNextStepSheet
       .filter(
         task => task.id !== taskId && !task.archived && task.completedDates.length === 0 && !leadsBack.has(task.id),
       )
+      .filter(task => task.title.toLowerCase().includes(query.trim().toLowerCase()))
       .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate) || a.createdAt - b.createdAt);
-  }, [allTasks, taskId]);
+  }, [allTasks, taskId, query]);
 
   return (
     <Modal
@@ -42,18 +47,57 @@ export function TaskNextStepSheet({ taskId, onPick, onClose }: TaskNextStepSheet
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, keyboardUp && styles.overlayTop, keyboardUp && { paddingTop: insets.top }]}>
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={onClose}
           accessibilityLabel="Close"
         />
-        <View style={[styles.sheet, { paddingBottom: 16 + insets.bottom }]}>
+        <View
+          style={[
+            styles.sheet,
+            keyboardUp ? styles.sheetTop : styles.sheetBottom,
+            { paddingBottom: 16 + (keyboardUp ? 0 : insets.bottom) },
+          ]}
+        >
           <View style={styles.grabber} />
           <Text style={styles.title}>Next step</Text>
           <Text style={styles.hint}>It will always start when this task ends.</Text>
-          <ScrollView contentContainerStyle={styles.list}>
-            {candidates.length === 0 && <Text style={styles.hint}>No other open tasks yet.</Text>}
+          <View style={styles.search}>
+            <Ionicons
+              name="search-outline"
+              size={17}
+              color={Colors.text.faint}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search tasks"
+              placeholderTextColor={Colors.text.faint}
+              value={query}
+              onChangeText={setQuery}
+              returnKeyType="search"
+            />
+            {query.length > 0 && (
+              <Pressable
+                onPress={() => setQuery('')}
+                hitSlop={8}
+                accessibilityLabel="Clear search"
+              >
+                <Ionicons
+                  name="close-circle"
+                  size={17}
+                  color={Colors.text.faint}
+                />
+              </Pressable>
+            )}
+          </View>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.list}
+          >
+            {candidates.length === 0 && (
+              <Text style={styles.hint}>{query ? 'No matching tasks.' : 'No other open tasks yet.'}</Text>
+            )}
             {candidates.map(task => (
               <Pressable
                 key={task.id}
@@ -85,10 +129,21 @@ export function TaskNextStepSheet({ taskId, onPick, onClose }: TaskNextStepSheet
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.6)' },
+  overlayTop: { justifyContent: 'flex-start' },
+  sheetBottom: { borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+  sheetTop: { borderBottomLeftRadius: 20, borderBottomRightRadius: 20 },
+  search: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.bg.input,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 40,
+  },
+  searchInput: { flex: 1, color: Colors.text.primary, fontSize: 15, padding: 0 },
   sheet: {
     backgroundColor: Colors.bg.card,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
     paddingHorizontal: 16,
     paddingTop: 8,
     gap: 8,
