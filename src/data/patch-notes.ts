@@ -38,6 +38,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-26',
     items: [
       'Tasks: set a date, start time, estimate and deadline; the card turns red when the deadline comes.',
+      'Today timeline: shows when a need is about to turn low, unless it is already low.',
       'Tasks: a deadline can now have a time; the card turns red once it passes.',
       'Tasks: Today is now a timeline by start time with a Now marker; late tasks turn red and offer a new start.',
       'Tasks: pick a place by adding a new saved place right from the task editor.',

@@ -7,6 +7,7 @@ import { TabHeader } from '../../components/tab-header';
 import { Text } from '../../components/text';
 import { useDeferredComputation } from '../../hooks/use-deferred-computation';
 import { useFabCollapse } from '../../hooks/use-fab-collapse';
+import { useNeedLevels } from '../../hooks/use-need-levels';
 import { resyncReminders } from '../../hooks/use-reminder-engine';
 import { useTaskTimeSpent } from '../../hooks/use-task-time-spent';
 import { useBehaviorStore } from '../../store/behavior-store';
@@ -14,6 +15,7 @@ import { useCuesStore } from '../../store/cues-store';
 import { type TaskTab, useScreenUiStore } from '../../store/screen-ui-store';
 import { useSettingsStore } from '../../store/settings-store';
 import { useTimerStore } from '../../store/timer-store';
+import type { NeedId } from '../../types/need';
 import type { OneOffPlace, TaskBug, TaskEntry, TaskList } from '../../types/task';
 import { ensureAppBehavior } from '../../utils/app-behavior';
 import { syncAppUsage } from '../../utils/app-usage-sync';
@@ -21,6 +23,7 @@ import { getActiveBehaviors } from '../../utils/archive-utils';
 import { getCalendarTaskCompletionMetrics } from '../../utils/calendar-metrics';
 import { Colors } from '../../utils/colors';
 import { formatDateDisplay, toDateString } from '../../utils/date-utils';
+import { getNeedLowForecasts } from '../../utils/need-utils';
 import { DEFAULT_PLACE_DWELL_MIN, getPlaceDwellMin } from '../../utils/place-task-utils';
 import { requestPlaceTaskPermissions } from '../../utils/reminder-permissions';
 import { buildBatchUpdates, type TaskBatchEdits } from '../../utils/task-batch-utils';
@@ -52,6 +55,7 @@ import { TaskActionSheet } from './components/task-action-sheet';
 import { TaskBatchEditDialog } from './components/task-batch-edit-dialog';
 import { TaskCard } from './components/task-card';
 import { TaskEditorDialog } from './components/task-editor-dialog';
+import { TaskNeedLowNode } from './components/task-need-low-node';
 import type { TaskSchedule } from './components/task-schedule-rows';
 import { TaskSelectionBar } from './components/task-selection-bar';
 import { TaskTabs } from './components/task-tabs';
@@ -94,6 +98,7 @@ export function TaskScreen() {
   const [timed, setTimed] = useState(false);
   const [icon, setIcon] = useState('');
   const [now, setNow] = useState(() => new Date());
+  const { needs: needLevels } = useNeedLevels();
   const [schedule, setSchedule] = useState<TaskSchedule>({ scheduledDate: todayStr });
   const [composerOpen, setComposerOpen] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | undefined>();
@@ -203,6 +208,15 @@ export function TaskScreen() {
       ),
     [tasks, selectedDate, dayCutoffHour, listOf, fixFirstTasks, sortOpenFirst],
   );
+  /** Needs that will turn low before the day ends, shown on today's timeline (needs already low are left out). */
+  const needForecasts = useMemo(() => {
+    if (!isToday) return [];
+    const dayEnd = new Date(now);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+    dayEnd.setHours(dayCutoffHour, 0, 0, 0);
+    return getNeedLowForecasts(needLevels, now.getTime(), dayEnd.getTime());
+  }, [isToday, needLevels, now, dayCutoffHour]);
+
   /** Today timeline: done tasks (in the order ticked) above "Now", open ones below by start time. */
   const timelineTasks = useMemo(() => {
     const seen = new Set<string>();
@@ -521,7 +535,23 @@ export function TaskScreen() {
   const renderTimeline = () => {
     const { done, open } = timelineTasks;
     const showNow = isToday;
-    const total = done.length + open.length + (showNow ? 1 : 0);
+    type OpenItem = { key: string; ts?: number; task?: TaskEntry; needId?: NeedId };
+    const startOf = (task: TaskEntry) => {
+      if (!task.startTime) return undefined;
+      const [h, m] = task.startTime.split(':').map(Number);
+      const date = new Date(`${task.scheduledDate}T00:00:00`);
+      date.setHours(h, m, 0, 0);
+      return date.getTime();
+    };
+    const items: OpenItem[] = [
+      ...open.map(task => ({ key: task.id, ts: startOf(task), task })),
+      ...needForecasts.map(forecast => ({ key: `need:${forecast.needId}`, ts: forecast.ts, needId: forecast.needId })),
+    ];
+    // Timed items (tasks with a start time, need forecasts) by time; tasks without a start time keep their order after.
+    const timed = items.filter(item => item.ts != null).sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0));
+    const untimed = items.filter(item => item.ts == null);
+    const ordered = [...timed, ...untimed];
+    const total = done.length + ordered.length + (showNow ? 1 : 0);
     if (total === 0) return <Text style={styles.empty}>Nothing for this day.</Text>;
     let index = 0;
     const rowFlags = () => ({ first: index === 0, last: index === total - 1 });
@@ -548,20 +578,36 @@ export function TaskScreen() {
       );
       index += 1;
     }
-    for (const task of open) {
-      const passed = isToday && isStartPassed(task, now, todayStr);
-      rows.push(
-        <TaskTimelineRow
-          key={task.id}
-          dotColor={passed ? Colors.cooldown.red : undefined}
-          {...rowFlags()}
-        >
-          {renderCard(task, false, handleTodayToggle, {
-            focused: isTaskFocusedOn(task, selectedDate),
-            startPassed: passed,
-          })}
-        </TaskTimelineRow>,
-      );
+    for (const item of ordered) {
+      if (item.needId != null && item.ts != null) {
+        rows.push(
+          <TaskTimelineRow
+            key={item.key}
+            dotColor="#F9A825"
+            {...rowFlags()}
+          >
+            <TaskNeedLowNode
+              needId={item.needId}
+              ts={item.ts}
+            />
+          </TaskTimelineRow>,
+        );
+      } else if (item.task) {
+        const task = item.task;
+        const passed = isToday && isStartPassed(task, now, todayStr);
+        rows.push(
+          <TaskTimelineRow
+            key={item.key}
+            dotColor={passed ? Colors.cooldown.red : undefined}
+            {...rowFlags()}
+          >
+            {renderCard(task, false, handleTodayToggle, {
+              focused: isTaskFocusedOn(task, selectedDate),
+              startPassed: passed,
+            })}
+          </TaskTimelineRow>,
+        );
+      }
       index += 1;
     }
     return <View style={styles.timeline}>{rows}</View>;

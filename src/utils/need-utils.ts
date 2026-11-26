@@ -962,3 +962,28 @@ export function getPanelOrder(order: readonly string[] | undefined): PanelRowKey
   };
   return base.sort((a, b) => rank(a) - rank(b));
 }
+
+/** A need that will drop below its craving line later today, if nothing refills it first. */
+export interface NeedLowForecast {
+  needId: NeedId;
+  /** When the level reaches the craving line at the current rate. */
+  ts: number;
+}
+
+/**
+ * Forecast of needs entering the low zone (below their craving line) between `now` and `until`.
+ * Needs that are already low are left out, as are needs with no known level.
+ */
+export function getNeedLowForecasts(
+  needs: ReadonlyArray<{ id: NeedId; level?: number; config: Pick<NeedConfig, 'emptyHours' | 'cravingLine'> }>,
+  now: number,
+  until: number,
+): NeedLowForecast[] {
+  const forecasts: NeedLowForecast[] = [];
+  for (const need of needs) {
+    if (need.level == null) continue;
+    const ts = getLineCrossingTime(need.level, getDecayPerHour(need.config), need.config.cravingLine, now);
+    if (ts != null && ts <= until) forecasts.push({ needId: need.id, ts });
+  }
+  return forecasts.sort((a, b) => a.ts - b.ts);
+}
