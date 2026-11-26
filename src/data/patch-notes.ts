@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-26',
     items: [
+      'Tasks: finished tasks show the time they were actually done instead of the planned start.',
       'Needs: roomier top-up chips, and a time chip to add an unlogged top-up to any date and time.',
       "Maps now show each place's own icon instead of the red pin.",
       'Tasks: set a date, start time, estimate and deadline; the card turns red when the deadline comes.',

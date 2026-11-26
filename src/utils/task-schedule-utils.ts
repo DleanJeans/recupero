@@ -95,3 +95,22 @@ export function sortByCompletion(tasks: ReadonlyArray<TaskEntry>, dateStr: strin
     (a, b) => (a.completedAtByDate?.[dateStr] ?? a.createdAt) - (b.completedAtByDate?.[dateStr] ?? b.createdAt),
   );
 }
+
+/**
+ * When a finished task was really done: the span of the log made for it (a timer session), else the moment it was
+ * ticked. Undefined when the task has no completion time on record.
+ */
+export function getTaskActualTime(
+  task: Pick<TaskEntry, 'completionLogIds' | 'completedAtByDate'>,
+  behavior: Pick<BehaviorEntry, 'logs'> | undefined,
+  dateStr: string,
+): { start?: number; end: number } | undefined {
+  const logId = task.completionLogIds?.[dateStr];
+  const log = logId ? behavior?.logs.find(candidate => candidate.id === logId) : undefined;
+  if (log) {
+    const end = log.endTimestamp ?? log.timestamp;
+    return log.endTimestamp != null && log.endTimestamp > log.timestamp ? { start: log.timestamp, end } : { end };
+  }
+  const completedAt = task.completedAtByDate?.[dateStr];
+  return completedAt != null ? { end: completedAt } : undefined;
+}

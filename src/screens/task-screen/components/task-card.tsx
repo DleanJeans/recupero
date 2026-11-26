@@ -19,8 +19,14 @@ import { getPlaceIconText } from '../../../utils/cue-utils';
 import { formatDateDisplay } from '../../../utils/date-utils';
 import { launchApp } from '../../../utils/launch-app';
 import { formatBugSummary, getBugHeat } from '../../../utils/task-bug-utils';
-import { formatEstimate, formatStartTime, getDeadlineState } from '../../../utils/task-schedule-utils';
+import {
+  formatEstimate,
+  formatStartTime,
+  getDeadlineState,
+  getTaskActualTime,
+} from '../../../utils/task-schedule-utils';
 import { formatTaskTime } from '../../../utils/task-time-utils';
+import { formatTimeRange } from '../../../utils/time-utils';
 import { BugHeatBar } from './bug-heat-bar';
 import { TaskCheckbox } from './task-checkbox';
 
@@ -81,6 +87,8 @@ function TaskCardComponent({
   const navigation = useNavigation<NavigationProp>();
   const startTimer = useTimerStore(s => s.start);
   const showBehaviorName = behavior != null && behavior.name.trim() !== task.title.trim();
+  const completedDate = complete ? task.completedDates.at(-1) : undefined;
+  const actualTime = completedDate ? getTaskActualTime(task, behavior, completedDate) : undefined;
   const metaParts = [
     showBehaviorName ? behavior.name : undefined,
     task.appLabel && task.appLabel !== behavior?.name && task.appLabel !== task.title ? task.appLabel : undefined,
@@ -89,8 +97,11 @@ function TaskCardComponent({
       : task.oneOffPlace
         ? `${getPlaceIconText({ emoji: task.oneOffPlace.emoji, isHome: false })} ${task.oneOffPlace.name}`
         : undefined,
-    task.startTime ? formatStartTime(task.startTime) : undefined,
-    task.estimateMin ? `~${formatEstimate(task.estimateMin)}` : undefined,
+    actualTime
+      ? `Done ${formatTimeRange(actualTime.start ?? actualTime.end, actualTime.start ? actualTime.end : undefined)}`
+      : undefined,
+    !complete && task.startTime ? formatStartTime(task.startTime) : undefined,
+    !complete && task.estimateMin ? `~${formatEstimate(task.estimateMin)}` : undefined,
     task.deadline && !complete
       ? `Due ${formatDateDisplay(task.deadline).replace(/, \d{4}$/, '')}${task.deadlineTime ? ` ${formatStartTime(task.deadlineTime)}` : ''}`
       : undefined,

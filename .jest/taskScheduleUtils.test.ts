@@ -4,6 +4,7 @@ import {
   getAverageDurationMin,
   getDeadlineState,
   getSuggestedStartTime,
+  getTaskActualTime,
   isStartPassed,
   sortByStartTime,
 } from '../src/utils/task-schedule-utils';
@@ -53,5 +54,13 @@ describe('task schedule utils', () => {
       ({ ...(base as object), id, startTime, createdAt }) as never;
     const sorted = sortByStartTime([t('a', undefined, 1), t('b', '14:00', 2), t('c', '09:00', 3)]) as { id: string }[];
     expect(sorted.map(x => x.id)).toEqual(['c', 'b', 'a']);
+  });
+
+  it('finds the actual time a task was done', () => {
+    const behavior = { logs: [{ id: 'l1', timestamp: 1000, endTimestamp: 5000 }] };
+    const task = { completionLogIds: { '2026-11-26': 'l1' }, completedAtByDate: { '2026-11-26': 5000 } };
+    expect(getTaskActualTime(task, behavior, '2026-11-26')).toEqual({ start: 1000, end: 5000 });
+    expect(getTaskActualTime({ completedAtByDate: { d: 7 } }, undefined, 'd')).toEqual({ end: 7 });
+    expect(getTaskActualTime({}, undefined, 'd')).toBeUndefined();
   });
 });
