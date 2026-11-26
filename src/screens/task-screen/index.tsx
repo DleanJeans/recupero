@@ -562,7 +562,7 @@ export function TaskScreen() {
       );
       index += 1;
     }
-    return <View>{rows}</View>;
+    return <View style={styles.timeline}>{rows}</View>;
   };
 
   const renderToday = () => (
@@ -871,6 +871,9 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 16,
     paddingBottom: 96,
+    gap: 6,
+  },
+  timeline: {
     gap: 6,
   },
   sectionHeader: {
