@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { Pressable, type StyleProp, StyleSheet, type ViewStyle } from 'react-native';
 import { Colors } from '../utils/colors';
-import { findEmojiByKeyword } from '../utils/emoji-data';
+import { findEmojiByKeyword, findEmojisForWords } from '../utils/emoji-data';
 import { IconPickerSheet } from './icon-picker/icon-picker-sheet';
 import { IconTile } from './icon-tile';
 import { Text } from './text';
@@ -26,7 +26,7 @@ export function EmojiPicker({ value, onChangeText, nameHint, onPick, onOpenChang
 
   const suggestedEmoji = useMemo(() => {
     if (value || !nameHint?.trim()) return null;
-    return findEmojiByKeyword(nameHint);
+    return findEmojiByKeyword(nameHint) ?? findEmojisForWords(nameHint)[0]?.emoji ?? null;
   }, [nameHint, value]);
 
   const handlePress = () => {

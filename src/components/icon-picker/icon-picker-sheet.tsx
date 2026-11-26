@@ -102,7 +102,12 @@ export function IconPickerSheet({ value, nameHint, onChange, onClose }: Props) {
             </View>
           )}
           <View style={styles.flex}>
-            {tab === 'emoji' && <EmojiGrid onPick={use} />}
+            {tab === 'emoji' && (
+              <EmojiGrid
+                onPick={use}
+                nameHint={nameHint}
+              />
+            )}
             {tab === 'mix' && mixMode === 'kitchen' && (
               <KitchenPanel
                 value={value}

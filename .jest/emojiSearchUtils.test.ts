@@ -55,3 +55,15 @@ describe('searchEmojiCategories', () => {
     expect(result[0].data.map(d => d.emoji)).toEqual(['🛏️', '🛌', '😴']);
   });
 });
+
+describe('findEmojisForWords', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { findEmojisForWords } = require('../src/utils/emoji-data');
+  it('gives each word of a name its own emoji, skipping filler and repeats', () => {
+    const found = findEmojisForWords('Drink the water water') as { word: string; emoji: string }[];
+    expect(found.map(f => f.word)).toContain('water');
+    expect(found.map(f => f.word)).not.toContain('the');
+    expect(new Set(found.map(f => f.emoji)).size).toBe(found.length);
+  });
+  it('returns nothing for an empty name', () => expect(findEmojisForWords('  ')).toEqual([]));
+});

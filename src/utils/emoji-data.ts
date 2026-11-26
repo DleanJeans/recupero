@@ -152,6 +152,33 @@ export function findEmojiByKeyword(keyword: string): string | null {
   return null;
 }
 
+const SUGGEST_SKIP_WORDS = new Set(['the', 'and', 'for', 'with', 'from', 'into', 'have', 'got', 'get', 'are', 'was']);
+const MAX_WORD_SUGGESTIONS = 6;
+
+export interface WordEmoji {
+  word: string;
+  emoji: string;
+}
+
+/**
+ * One emoji per word of a task / behavior name ("Buy umbrella" → 🛒? ☂️), so each word of the name gets its own
+ * suggestion instead of the whole name being looked up as one phrase. Words with no match are left out and
+ * words that land on the same emoji only show once.
+ */
+export function findEmojisForWords(text: string): WordEmoji[] {
+  const seen = new Set<string>();
+  const result: WordEmoji[] = [];
+  for (const word of text.toLowerCase().split(/[^\p{L}\p{N}]+/u)) {
+    if (word.length < 3 || SUGGEST_SKIP_WORDS.has(word)) continue;
+    const emoji = findEmojiByKeyword(word);
+    if (!emoji || seen.has(emoji)) continue;
+    seen.add(emoji);
+    result.push({ word, emoji });
+    if (result.length >= MAX_WORD_SUGGESTIONS) break;
+  }
+  return result;
+}
+
 /** The keyboard's categories with only the emoji that pass the filter; empty categories are dropped. */
 export function filterEmojiData(keep: (emoji: string) => boolean): EmojisByCategory[] {
   return emojiData
