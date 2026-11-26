@@ -169,6 +169,7 @@ export function LocationEditScreen() {
           isLocating={isLocating}
           onChangePoint={next => dropPin(next, true)}
           onLocateMe={() => handleLocateMe()}
+          icon={emoji.trim() || (isHome ? '🏠' : '📍')}
         />
 
         <View style={styles.fieldCard}>

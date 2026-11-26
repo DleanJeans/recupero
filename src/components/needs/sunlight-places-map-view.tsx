@@ -1,17 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import MapView, { Circle, Marker, Polyline } from 'react-native-maps';
+import MapView, { Circle, Polyline } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCuesStore } from '../../store/cues-store';
 import { useSunlightStore } from '../../store/sunlight-store';
 import { Colors } from '../../utils/colors';
+import { getPlaceEmoji } from '../../utils/cue-utils';
 import type { GeoPoint } from '../../utils/geofence-utils';
 import { getCurrentPointIfPermitted } from '../../utils/location-utils';
 import { DARK_MAP_STYLE } from '../../utils/map-style';
 import { getPathCoordinates, type SunlightPathSegment } from '../../utils/sunlight-timeline-utils';
 import { getSunlightMapRegion, getSunReferencePoint } from '../../utils/sunlight-utils';
 import { MapExpandButton } from '../map-expand-button';
+import { PlaceMarker } from '../place-marker';
 import { Text } from '../text';
 import { SUNLIGHT_COLOR } from './sunlight-bar-row';
 
@@ -113,11 +115,12 @@ export function SunlightPlacesMapView({
                 strokeColor={color}
                 strokeWidth={2}
               />
-              <Marker
+              <PlaceMarker
                 coordinate={coordinate}
+                icon={getPlaceEmoji(place)}
                 title={place.name}
                 description={outdoor ? 'Counts as outside' : `Paused within ${radiusM} m`}
-                pinColor={color}
+                color={color}
               />
             </React.Fragment>
           );

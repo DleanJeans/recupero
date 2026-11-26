@@ -10,6 +10,7 @@ interface GeofenceMapProps {
   onChangePoint?: (point: GeoPoint) => void;
   onLocateMe?: () => void;
   label?: string;
+  icon?: string;
   height?: number;
 }
 

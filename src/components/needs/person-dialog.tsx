@@ -286,6 +286,7 @@ export function PersonDialog({ person, now, onClose }: PersonDialogProps) {
               onChangePoint={next => dropPin(next, true)}
               onLocateMe={locateMe}
               label={draft.name.trim() || undefined}
+              icon={draft.emoji || '🧑'}
               height={180}
             />
             <Field

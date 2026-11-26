@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
-import MapView, { Circle, type LatLng, Marker } from 'react-native-maps';
+import MapView, { Circle, type LatLng } from 'react-native-maps';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MapExpandButton } from '../../../components/map-expand-button';
+import { PlaceMarker } from '../../../components/place-marker';
 import { Text } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 import { formatCoordinate, type GeoPoint, regionForGeofence } from '../../../utils/geofence-utils';
@@ -18,6 +19,8 @@ interface GeofenceMapViewProps {
   onLocateMe?: () => void;
   /** Overrides the hint chip (e.g. the place name in a preview). */
   label?: string;
+  /** The place's icon, drawn on the map instead of the standard pin. */
+  icon?: string;
   height?: number;
   fullScreen: boolean;
   onToggleFullScreen: () => void;
@@ -37,6 +40,7 @@ export function GeofenceMapView({
   onChangePoint,
   onLocateMe,
   label,
+  icon,
   height,
   fullScreen,
   onToggleFullScreen,
@@ -85,9 +89,9 @@ export function GeofenceMapView({
               strokeColor={Colors.cue.location}
               strokeWidth={2}
             />
-            <Marker
+            <PlaceMarker
               coordinate={{ latitude: point.lat, longitude: point.lng }}
-              pinColor={Colors.cue.location}
+              icon={icon}
               draggable={onChangePoint != null}
               onDragEnd={handleCoordinateEvent}
             />

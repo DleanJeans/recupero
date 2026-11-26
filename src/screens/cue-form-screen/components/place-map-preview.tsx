@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSettingsStore } from '../../../store/settings-store';
 import type { SavedPlace } from '../../../types/cue';
+import { getPlaceEmoji } from '../../../utils/cue-utils';
 import { GeofenceMap } from '../../location-edit-screen/components/geofence-map';
 
 const PREVIEW_HEIGHT = 200;
@@ -14,6 +15,7 @@ export function PlaceMapPreview({ place }: { place: SavedPlace }) {
       point={{ lat: place.lat, lng: place.lng }}
       radiusM={minRadiusM}
       label={`📍 ${place.name}`}
+      icon={getPlaceEmoji(place)}
       height={PREVIEW_HEIGHT}
     />
   );

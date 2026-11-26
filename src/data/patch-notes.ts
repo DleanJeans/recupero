@@ -38,6 +38,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
     date: '2026-11-26',
     items: [
       'Needs: roomier top-up chips, and a time chip to add an unlogged top-up to any date and time.',
+      "Maps now show each place's own icon instead of the red pin.",
       'Tasks: set a date, start time, estimate and deadline; the card turns red when the deadline comes.',
       'Tasks: a task with a started timer turns blue and moves to the top; ticking it opens the Timer to log first.',
       'Today timeline: shows when a need is about to turn low, unless it is already low.',
