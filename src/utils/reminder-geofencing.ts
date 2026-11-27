@@ -33,7 +33,7 @@ import {
 import { waitForHydration } from './store-hydration';
 import { syncSunlightNotification } from './sunlight-notification';
 import { noteSunlightTaskRun } from './sunlight-persist';
-import { rehydrateSunlight } from './sunlight-sync';
+import { confirmSunlightExit, rehydrateSunlight } from './sunlight-sync';
 import { getSunlightRegionPlaceId, SUNLIGHT_PIN_PLACE_ID } from './sunlight-utils';
 
 export const REMINDER_GEOFENCE_TASK = 'recupero-reminder-geofence';
@@ -102,6 +102,11 @@ async function handleGeofenceEvent({ eventType, region }: GeofenceTaskData): Pro
     if (sunlightPlaceId === SUNLIGHT_PIN_PLACE_ID) {
       // Leaving the pause pin resumes counting and removes the pin.
       if (direction === 'exit' && useSunlightStore.getState().pause?.pin) useSunlightStore.getState().resumeSunlight();
+      syncSunlightNotification();
+      return;
+    }
+    // A GPS check drops a "left" that the fix still places well inside (Home while asleep).
+    if (direction === 'exit' && !(await confirmSunlightExit(sunlightPlaceId))) {
       syncSunlightNotification();
       return;
     }

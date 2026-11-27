@@ -11,7 +11,7 @@ import type { GeoPoint } from '../../utils/geofence-utils';
 import { getCurrentPointIfPermitted } from '../../utils/location-utils';
 import { DARK_MAP_STYLE } from '../../utils/map-style';
 import { getPathCoordinates, type SunlightPathSegment } from '../../utils/sunlight-timeline-utils';
-import { getSunlightMapRegion, getSunReferencePoint } from '../../utils/sunlight-utils';
+import { getSunlightMapRegion, getSunReferencePoint, MIN_SUNLIGHT_PLACE_RADIUS_M } from '../../utils/sunlight-utils';
 import { MapExpandButton } from '../map-expand-button';
 import { PlaceMarker } from '../place-marker';
 import { Text } from '../text';
@@ -109,7 +109,7 @@ export function SunlightPlacesMapView({
             <React.Fragment key={place.id}>
               <Circle
                 center={coordinate}
-                radius={place.radiusM}
+                radius={outdoor ? place.radiusM : Math.max(place.radiusM, MIN_SUNLIGHT_PLACE_RADIUS_M)}
                 fillColor={`${color}30`}
                 strokeColor={color}
                 strokeWidth={2}
@@ -118,7 +118,11 @@ export function SunlightPlacesMapView({
                 coordinate={coordinate}
                 icon={getPlaceEmoji(place)}
                 title={place.name}
-                description={outdoor ? 'Counts as outside' : `Paused within ${place.radiusM} m`}
+                description={
+                  outdoor
+                    ? 'Counts as outside'
+                    : `Paused within ${Math.max(place.radiusM, MIN_SUNLIGHT_PLACE_RADIUS_M)} m`
+                }
                 color={color}
               />
             </React.Fragment>

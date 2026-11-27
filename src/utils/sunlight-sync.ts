@@ -10,7 +10,10 @@ import {
   getSunReferencePoint,
   getWeatherUrl,
   hasLeftPausePin,
+  isClearlyInsidePlace,
   isUsableSunlightFix,
+  isWobbleSample,
+  MAX_FIX_ACCURACY_M,
   parseWeatherHours,
   roundCoordinate,
   SUNLIGHT_PIN_RADIUS_M,
@@ -43,6 +46,48 @@ async function samplePresence(now: number, force: boolean): Promise<void> {
     lat: roundCoordinate(latitude, SAMPLE_COORD_DECIMALS),
     lng: roundCoordinate(longitude, SAMPLE_COORD_DECIMALS),
   });
+}
+
+const EXIT_CHECK_TIMEOUT_MS = 15_000;
+
+/**
+ * Double-checks a geofence "left" with a GPS fix. Android reports false exits while you sleep (Wi-Fi/cell
+ * jitter); a good fix still well inside the place proves it, so that exit is dropped. A real departure is
+ * recorded as an "away" sample so the stretch out is confirmed. Returns whether the exit should be kept.
+ */
+export async function confirmSunlightExit(placeId: string): Promise<boolean> {
+  try {
+    const { status } = await Location.getForegroundPermissionsAsync();
+    if (status !== 'granted') return true;
+    const { outdoorPlaceIds, addSample } = useSunlightStore.getState();
+    const indoor = getIndoorPlaces(useCuesStore.getState().places, outdoorPlaceIds);
+    const place = indoor.find(candidate => candidate.id === placeId);
+    if (!place) return true;
+    const position = await Promise.race([
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
+      new Promise<null>(resolve => setTimeout(() => resolve(null), EXIT_CHECK_TIMEOUT_MS)),
+    ]);
+    if (!position) return true;
+    const { latitude, longitude, accuracy } = position.coords;
+    if (accuracy != null && accuracy > MAX_FIX_ACCURACY_M) return true;
+    const point = { lat: latitude, lng: longitude };
+    const fix = describeSunlightFix(indoor, point, accuracy);
+    const sample = {
+      ts: position.timestamp || Date.now(),
+      ...fix,
+      lat: roundCoordinate(latitude, SAMPLE_COORD_DECIMALS),
+      lng: roundCoordinate(longitude, SAMPLE_COORD_DECIMALS),
+    };
+    if (isClearlyInsidePlace(distanceMeters(place, point), place.radiusM) && fix.placeId != null) {
+      addSample(sample);
+      return false;
+    }
+    // Just past the edge could still be wobble; only a clearly-away fix confirms the departure.
+    if (!isWobbleSample(sample)) addSample(sample);
+    return true;
+  } catch {
+    return true;
+  }
 }
 
 /** Refreshes hourly sunshine for the past week (estimated lux) when it's over an hour old or you've moved. */

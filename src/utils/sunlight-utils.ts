@@ -56,10 +56,25 @@ export interface PresenceEvent {
   placeId: string | null;
 }
 
-/** Saved places that count as indoors: every place except the ones marked as outdoors (e.g. a park). */
+/**
+ * Smallest radius sunlight uses around a place. Android geofences and indoor GPS wobble by tens of metres, so a
+ * 10 m place flapped "left / arrived" all night while asleep and counted fake sunlight sessions.
+ */
+export const MIN_SUNLIGHT_PLACE_RADIUS_M = 50;
+
+/** Saved places that count as indoors: every place except the ones marked as outdoors (e.g. a park). Small radii are raised to the minimum. */
 export function getIndoorPlaces(places: SavedPlace[], outdoorPlaceIds: string[]): SavedPlace[] {
   const outdoor = new Set(outdoorPlaceIds);
-  return places.filter(place => !outdoor.has(place.id));
+  return places
+    .filter(place => !outdoor.has(place.id))
+    .map(place =>
+      place.radiusM < MIN_SUNLIGHT_PLACE_RADIUS_M ? { ...place, radiusM: MIN_SUNLIGHT_PLACE_RADIUS_M } : place,
+    );
+}
+
+/** A fix this deep inside a place (within half its radius) can't be the edge noise of a real departure. */
+export function isClearlyInsidePlace(distanceM: number, radiusM: number): boolean {
+  return distanceM <= radiusM / 2;
 }
 
 export const SUNLIGHT_REGION_PREFIX = 'sunlight:';

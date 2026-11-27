@@ -17,6 +17,7 @@ import {
   getSunlightStatus,
   getSunReferencePoint,
   getWeatherUrl,
+  isClearlyInsidePlace,
   MAX_OUTDOOR_STRETCH_MS,
   parseWeatherHours,
   shouldRefreshWeather,
@@ -141,6 +142,14 @@ describe('getOutdoorRanges', () => {
     expect(getOutdoorRanges(activity, samples, [home], 0, t0 + 2 * HOUR)).toEqual([{ start: t0, end: t0 + 40 * MIN }]);
   });
 
+  it('raises tiny place radii to the sunlight minimum', () => {
+    const [tiny, big] = getIndoorPlaces([place('a', { radiusM: 10 }), place('b', { radiusM: 80 })], []);
+    expect(tiny.radiusM).toBe(50);
+    expect(big.radiusM).toBe(80);
+    expect(isClearlyInsidePlace(20, 50)).toBe(true);
+    expect(isClearlyInsidePlace(40, 50)).toBe(false);
+  });
+
   it('treats places marked as outdoors as being out', () => {
     const park = place('park');
     const indoor = getIndoorPlaces([home, park], ['park']);
@@ -225,7 +234,7 @@ describe('places', () => {
         identifier: 'sunlight:home',
         latitude: 21.03,
         longitude: 105.85,
-        radius: 30,
+        radius: 50,
         notifyOnEnter: true,
         notifyOnExit: true,
       },

@@ -35,6 +35,10 @@ export interface PatchNotesDay {
  */
 export const PATCH_NOTES: PatchNotesDay[] = [
   {
+    date: '2026-11-27',
+    items: ['Sunlight no longer counts fake trips from Home flickering while you sleep.'],
+  },
+  {
     date: '2026-11-26',
     items: [
       {
