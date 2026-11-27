@@ -5,11 +5,13 @@ import { BehaviorIcon } from '../../../components/behavior-icon';
 import { Button } from '../../../components/button';
 import { Text } from '../../../components/text';
 import { useBehaviorStore } from '../../../store/behavior-store';
+import { useSettingsStore } from '../../../store/settings-store';
 import { Colors } from '../../../utils/colors';
 import { getBehaviorMetadataFields, type StackedLog } from '../../../utils/metadata-calculation-utils';
 import {
   getBehaviorFormFields,
   getFormCalculatedValues,
+  getFormProgressByField,
   getStackedTypedFormulaKeys,
 } from '../../../utils/metadata-form-utils';
 import { resolveFormulaState } from '../../../utils/metadata-formula-utils';
@@ -21,6 +23,8 @@ interface StackedBehaviorCardProps {
   onFormulaTypedChange: (behaviorId: string, key: string, typed: boolean) => void;
   onRemove: (behaviorId: string) => void;
   onFocus: () => void;
+  /** Date the log is for (YYYY-MM-DD), for the daily-goal progress bars. */
+  selectedDate: string;
 }
 
 /** One stacked behaviour: its name and the same metadata inputs the main log form shows (BehaviorMetadataFields). */
@@ -30,9 +34,12 @@ export function StackedBehaviorCard({
   onFormulaTypedChange,
   onRemove,
   onFocus,
+  selectedDate,
 }: StackedBehaviorCardProps) {
   const behavior = useBehaviorStore(state => state.behaviors.find(b => b.id === stacked.behaviorId));
   const categories = useBehaviorStore(state => state.categories);
+  const allBehaviors = useBehaviorStore(state => state.behaviors);
+  const dayCutoffHour = useSettingsStore(state => state.dayCutoffHour);
   const categoryFields = useMemo(
     () => (behavior ? getBehaviorMetadataFields(behavior, categories) : []),
     [behavior, categories],
@@ -48,7 +55,7 @@ export function StackedBehaviorCard({
     () => (behavior ? getStackedTypedFormulaKeys(stacked, behavior, categoryFields) : []),
     [behavior, categoryFields, stacked],
   );
-  const calculatedValues = useMemo(() => {
+  const { calculatedValues, progressByField } = useMemo(() => {
     const { effectiveValues } = resolveFormulaState({
       fields,
       amountField,
@@ -56,19 +63,38 @@ export function StackedBehaviorCard({
       values: stacked.metadataValues,
       typedKeys: typedFormulaKeys,
     });
-    return getFormCalculatedValues({
+    const calculated = getFormCalculatedValues({
       fields,
       amountField,
       values: effectiveValues,
       defaultMetadata: behavior?.defaultMetadata,
       rateBasis: behavior?.metadataRateBasis,
     });
+    const categoryBehaviors = behavior?.categoryId
+      ? allBehaviors.filter(b => b.categoryId === behavior.categoryId)
+      : undefined;
+    return {
+      calculatedValues: calculated,
+      progressByField: behavior
+        ? getFormProgressByField({
+            behavior,
+            fields,
+            values: effectiveValues,
+            calculatedValues: calculated,
+            dateStr: selectedDate,
+            dayCutoffHour,
+            categoryBehaviors,
+          })
+        : {},
+    };
   }, [
+    allBehaviors,
     amountField,
     amountOptedOut,
-    behavior?.defaultMetadata,
-    behavior?.metadataRateBasis,
+    behavior,
+    dayCutoffHour,
     fields,
+    selectedDate,
     stacked.metadataValues,
     typedFormulaKeys,
   ]);
@@ -119,6 +145,7 @@ export function StackedBehaviorCard({
         typedFormulaKeys={typedFormulaKeys}
         onFormulaTypedChange={setFormulaTyped}
         calculatedValues={calculatedValues}
+        progressByField={progressByField}
         onFocus={onFocus}
         gap={8}
       />

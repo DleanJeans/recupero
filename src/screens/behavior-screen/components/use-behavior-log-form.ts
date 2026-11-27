@@ -30,17 +30,14 @@ import {
 import {
   buildCalculatedMetadata,
   buildLogMetadata,
-  type DailyGoalProgress,
   getBehaviorAmountField,
   getBehaviorMetadataFields,
   getCalculatedMetadataFields,
-  getDailyGoalProgress,
   getInitialLogMetadataValues,
   getManualMetadataFields,
   getSelectedAmountMetadataField,
   isLinkMetadataField,
   NO_AMOUNT_FIELD_KEY,
-  parseDecimalInput,
   type StackedLog,
 } from '../../../utils/metadata-calculation-utils';
 import {
@@ -49,6 +46,7 @@ import {
   getBehaviorInitialTypedFormulaKeys,
   getBehaviorRememberedTypedKeys,
   getFormCalculatedValues,
+  getFormProgressByField,
   getStackedTypedFormulaKeys,
   getVisibleMetadataFields,
 } from '../../../utils/metadata-form-utils';
@@ -344,37 +342,29 @@ export function useBehaviorLogForm({
     [amountField, behavior.defaultMetadata, behavior.metadataRateBasis, effectiveMetadataValues, metadataFields],
   );
 
-  const progressByField = useMemo<Record<string, DailyGoalProgress | null>>(() => {
-    const map: Record<string, DailyGoalProgress | null> = {};
-    for (const field of metadataFields) {
-      let newValue: number | undefined;
-      if (field.calculation === 'per100') {
-        newValue = calculatedMetadataValues[field.key];
-      } else {
-        const raw = effectiveMetadataValues[field.key];
-        newValue = raw === undefined ? undefined : parseDecimalInput(raw);
-      }
-      map[field.key] = getDailyGoalProgress({
+  const progressByField = useMemo(
+    () =>
+      getFormProgressByField({
         behavior,
+        fields: metadataFields,
+        values: effectiveMetadataValues,
+        calculatedValues: calculatedMetadataValues,
         dateStr: selectedDate,
-        field,
-        newValue,
         dayCutoffHour,
         editLogId,
         categoryBehaviors,
-      });
-    }
-    return map;
-  }, [
-    behavior,
-    calculatedMetadataValues,
-    categoryBehaviors,
-    dayCutoffHour,
-    editLogId,
-    effectiveMetadataValues,
-    metadataFields,
-    selectedDate,
-  ]);
+      }),
+    [
+      behavior,
+      calculatedMetadataValues,
+      categoryBehaviors,
+      dayCutoffHour,
+      editLogId,
+      effectiveMetadataValues,
+      metadataFields,
+      selectedDate,
+    ],
+  );
 
   const maxTimestampForDate = useMemo(
     () => getDayMaxTimestamp(selectedDate, nowRef.current, dayCutoffHour),

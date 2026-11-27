@@ -19,6 +19,7 @@ export function StackedBehaviorsSection({ form }: Props) {
     behavior,
     handleCollapseTime,
     removeStackedBehavior,
+    selectedDate,
     setStackedFormulaTyped,
     setStackedMetadataValues,
     stackedLogs,
@@ -43,6 +44,7 @@ export function StackedBehaviorsSection({ form }: Props) {
           onFormulaTypedChange={setStackedFormulaTyped}
           onRemove={removeStackedBehavior}
           onFocus={handleCollapseTime}
+          selectedDate={selectedDate}
         />
       ))}
       <Button

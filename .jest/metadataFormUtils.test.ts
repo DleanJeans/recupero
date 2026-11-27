@@ -6,6 +6,7 @@ import {
   getBehaviorInitialTypedFormulaKeys,
   getBehaviorRememberedTypedKeys,
   getFormCalculatedValues,
+  getFormProgressByField,
   getStackedTypedFormulaKeys,
   getVisibleMetadataFields,
 } from '../src/utils/metadata-form-utils';
@@ -99,5 +100,22 @@ describe('stacked behaviours use the same metadata rules as the main log', () =>
     expect(
       getFormCalculatedValues({ fields, amountField, values: { w: '' }, defaultMetadata: { k: 360 }, rateBasis: 100 }),
     ).toEqual({});
+  });
+});
+
+describe('daily goal progress bars (shared by the log form and stack cards)', () => {
+  it('builds a bar for each field with a goal, using the worked-out values', () => {
+    const goalFields: MetadataField[] = [{ ...weight, dailyGoal: 500 }, { ...kcal, dailyGoal: 2000 }, before];
+    const progress = getFormProgressByField({
+      behavior: behavior(),
+      fields: goalFields,
+      values: { w: '75' },
+      calculatedValues: { k: 270 },
+      dateStr: '2026-11-27',
+      dayCutoffHour: 0,
+    });
+    expect(progress.w).toMatchObject({ goal: 500, after: 75, deltaPercent: 15 });
+    expect(progress.k).toMatchObject({ goal: 2000, after: 270 });
+    expect(progress.b).toBeNull();
   });
 });

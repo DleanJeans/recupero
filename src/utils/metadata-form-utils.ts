@@ -2,7 +2,9 @@ import type { BehaviorEntry, LogEntry, MetadataField } from '../types/behavior';
 import {
   buildCalculatedMetadata,
   buildLogMetadata,
+  type DailyGoalProgress,
   getBehaviorAmountField,
+  getDailyGoalProgress,
   getManualMetadataFields,
   isLinkMetadataField,
   NO_AMOUNT_FIELD_KEY,
@@ -124,4 +126,39 @@ export function getStackedTypedFormulaKeys(
   categoryFields: MetadataField[],
 ): string[] {
   return stacked.typedFormulaKeys ?? getBehaviorInitialTypedFormulaKeys(behavior, categoryFields);
+}
+
+/** Daily-goal progress bars for every field of one behaviour's log: today's total so far, and what this log adds. */
+export function getFormProgressByField(params: {
+  behavior: BehaviorEntry;
+  fields: MetadataField[];
+  /** Values with formula results already applied. */
+  values: Record<string, string>;
+  calculatedValues: Record<string, number>;
+  dateStr: string;
+  dayCutoffHour: number;
+  editLogId?: string;
+  /** Behaviours of the category, so the total matches the day screen's per-category sum. */
+  categoryBehaviors?: BehaviorEntry[];
+}): Record<string, DailyGoalProgress | null> {
+  const map: Record<string, DailyGoalProgress | null> = {};
+  for (const field of params.fields) {
+    let newValue: number | undefined;
+    if (field.calculation === 'per100') {
+      newValue = params.calculatedValues[field.key];
+    } else {
+      const raw = params.values[field.key];
+      newValue = raw === undefined ? undefined : parseDecimalInput(raw);
+    }
+    map[field.key] = getDailyGoalProgress({
+      behavior: params.behavior,
+      dateStr: params.dateStr,
+      field,
+      newValue,
+      dayCutoffHour: params.dayCutoffHour,
+      editLogId: params.editLogId,
+      categoryBehaviors: params.categoryBehaviors,
+    });
+  }
+  return map;
 }
