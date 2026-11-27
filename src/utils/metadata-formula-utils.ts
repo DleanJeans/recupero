@@ -370,3 +370,77 @@ export function getBaseUnitsSummary(fields: MetadataField[]): string {
   }
   return units.join(' · ');
 }
+
+/** Formula fields that start in Manual (typed) mode: an edited log opens the way it was saved, a new one the way the
+ *  behaviour was last logged (Manual when it was never chosen). */
+export function getInitialTypedFormulaKeys(
+  formulaFields: MetadataField[],
+  rememberedTypedKeys: readonly string[] | undefined,
+  existingMetadata?: LogEntry['metadata'],
+): string[] {
+  return formulaFields
+    .filter(field =>
+      existingMetadata
+        ? isLogFormulaValueTyped(field, existingMetadata)
+        : rememberedTypedKeys == null || rememberedTypedKeys.includes(field.key),
+    )
+    .map(field => field.key);
+}
+
+/** Switching to Type starts from the formula's result, so it can be nudged instead of retyped. */
+export function setFormulaFieldTyped(
+  state: { typedKeys: string[]; values: Record<string, string> },
+  formulaFields: MetadataField[],
+  key: string,
+  typed: boolean,
+): { typedKeys: string[]; values: Record<string, string> } {
+  const typedKeys = typed
+    ? state.typedKeys.includes(key)
+      ? state.typedKeys
+      : [...state.typedKeys, key]
+    : state.typedKeys.filter(item => item !== key);
+  if (!typed) return { typedKeys, values: state.values };
+  const field = formulaFields.find(item => item.key === key);
+  const result = field ? evaluateFormula(getFieldFormula(field) ?? '', state.values).result : undefined;
+  return { typedKeys, values: result == null ? state.values : { ...state.values, [key]: String(result) } };
+}
+
+/** The behaviour's remembered Manual-mode keys after a save, or `null` when nothing changed. Undefined (never
+ *  chosen) means Manual, so the first save always stores the choice, even an empty list (= Formula everywhere). */
+export function getNextRememberedTypedKeys(
+  formulaFields: MetadataField[],
+  rememberedTypedKeys: readonly string[] | undefined,
+  typedKeys: readonly string[],
+): string[] | null {
+  if (formulaFields.length === 0) return null;
+  const formulaKeys = new Set(formulaFields.map(field => field.key));
+  const kept = (rememberedTypedKeys ?? []).filter(key => !formulaKeys.has(key));
+  const next = [...kept, ...typedKeys.filter(key => formulaKeys.has(key))].sort();
+  const previous = [...(rememberedTypedKeys ?? [])].sort();
+  if (rememberedTypedKeys != null && next.join(',') === previous.join(',')) return null;
+  return next;
+}
+
+export interface FormulaState {
+  formulaFields: MetadataField[];
+  /** Fields a formula uses: typed inside the formula's row instead of on their own. */
+  inputKeys: Set<string>;
+  /** Values to save and to calculate from: the typed ones with formula results filled in. */
+  effectiveValues: Record<string, string>;
+}
+
+/** Everything a log form (the main one or a stacked behaviour's card) needs to show and save formula fields. */
+export function resolveFormulaState(params: {
+  fields: MetadataField[];
+  amountField: MetadataField | undefined;
+  amountOptedOut: boolean;
+  values: Record<string, string>;
+  typedKeys: readonly string[];
+}): FormulaState {
+  const formulaFields = getActiveFormulaFields(params.fields, params.amountField, params.amountOptedOut);
+  return {
+    formulaFields,
+    inputKeys: getFormulaInputKeys(formulaFields),
+    effectiveValues: applyFormulaValues(params.values, formulaFields, params.typedKeys),
+  };
+}

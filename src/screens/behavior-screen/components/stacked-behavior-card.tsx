@@ -6,65 +6,79 @@ import { Button } from '../../../components/button';
 import { Text } from '../../../components/text';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import { Colors } from '../../../utils/colors';
+import { getBehaviorMetadataFields, type StackedLog } from '../../../utils/metadata-calculation-utils';
 import {
-  buildCalculatedMetadata,
-  formatMetadataFieldLabel,
-  getBehaviorAmountField,
-  getBehaviorMetadataFields,
-  getCalculatedMetadataFields,
-  getManualMetadataFields,
-  isLinkMetadataField,
-  parseDecimalInput,
-  type StackedLog,
-} from '../../../utils/metadata-calculation-utils';
-import { CalculatedMetadataFields } from './calculated-metadata-fields';
-import { MetadataInputRow } from './metadata-input-row';
+  getBehaviorFormFields,
+  getFormCalculatedValues,
+  getStackedTypedFormulaKeys,
+} from '../../../utils/metadata-form-utils';
+import { resolveFormulaState } from '../../../utils/metadata-formula-utils';
+import { BehaviorMetadataFields } from './behavior-metadata-fields';
 
 interface StackedBehaviorCardProps {
   stacked: StackedLog;
   onChange: (behaviorId: string, update: React.SetStateAction<Record<string, string>>) => void;
+  onFormulaTypedChange: (behaviorId: string, key: string, typed: boolean) => void;
   onRemove: (behaviorId: string) => void;
   onFocus: () => void;
 }
 
-const noop = () => {};
-
-export function StackedBehaviorCard({ stacked, onChange, onRemove, onFocus }: StackedBehaviorCardProps) {
+/** One stacked behaviour: its name and the same metadata inputs the main log form shows (BehaviorMetadataFields). */
+export function StackedBehaviorCard({
+  stacked,
+  onChange,
+  onFormulaTypedChange,
+  onRemove,
+  onFocus,
+}: StackedBehaviorCardProps) {
   const behavior = useBehaviorStore(state => state.behaviors.find(b => b.id === stacked.behaviorId));
   const categories = useBehaviorStore(state => state.categories);
-  const fields = useMemo(
+  const categoryFields = useMemo(
     () => (behavior ? getBehaviorMetadataFields(behavior, categories) : []),
     [behavior, categories],
   );
-  const amountField = useMemo(
-    () => (behavior ? getBehaviorAmountField(behavior, fields) : undefined),
-    [behavior, fields],
+  const { fields, amountField, amountOptedOut } = useMemo(
+    () =>
+      behavior
+        ? getBehaviorFormFields(behavior, categoryFields)
+        : { fields: [], amountField: undefined, amountOptedOut: false },
+    [behavior, categoryFields],
   );
-  const inputFields = useMemo(
-    () => [
-      ...(amountField ? [amountField] : []),
-      ...getManualMetadataFields(fields),
-      ...fields.filter(isLinkMetadataField),
-    ],
-    [amountField, fields],
-  );
-  const calculatedFields = useMemo(
-    () => (amountField ? getCalculatedMetadataFields(fields) : []),
-    [amountField, fields],
+  const typedFormulaKeys = useMemo(
+    () => (behavior ? getStackedTypedFormulaKeys(stacked, behavior, categoryFields) : []),
+    [behavior, categoryFields, stacked],
   );
   const calculatedValues = useMemo(() => {
-    const amountValue = amountField ? stacked.metadataValues[amountField.key] : undefined;
-    if (!amountValue) return {};
-    return buildCalculatedMetadata(
+    const { effectiveValues } = resolveFormulaState({
       fields,
-      behavior?.defaultMetadata,
-      parseDecimalInput(amountValue),
-      behavior?.metadataRateBasis,
-    );
-  }, [amountField, behavior?.defaultMetadata, behavior?.metadataRateBasis, fields, stacked.metadataValues]);
+      amountField,
+      amountOptedOut,
+      values: stacked.metadataValues,
+      typedKeys: typedFormulaKeys,
+    });
+    return getFormCalculatedValues({
+      fields,
+      amountField,
+      values: effectiveValues,
+      defaultMetadata: behavior?.defaultMetadata,
+      rateBasis: behavior?.metadataRateBasis,
+    });
+  }, [
+    amountField,
+    amountOptedOut,
+    behavior?.defaultMetadata,
+    behavior?.metadataRateBasis,
+    fields,
+    stacked.metadataValues,
+    typedFormulaKeys,
+  ]);
   const setValues = useCallback(
     (update: React.SetStateAction<Record<string, string>>) => onChange(stacked.behaviorId, update),
     [onChange, stacked.behaviorId],
+  );
+  const setFormulaTyped = useCallback(
+    (key: string, typed: boolean) => onFormulaTypedChange(stacked.behaviorId, key, typed),
+    [onFormulaTypedChange, stacked.behaviorId],
   );
 
   if (!behavior) return null;
@@ -95,35 +109,19 @@ export function StackedBehaviorCard({ stacked, onChange, onRemove, onFocus }: St
           />
         </Button>
       </View>
-      {inputFields.map(field => (
-        <MetadataInputRow
-          key={field.key}
-          field={field}
-          value={stacked.metadataValues[field.key] ?? ''}
-          label={formatMetadataFieldLabel(field)}
-          onChange={setValues}
-          onFocus={onFocus}
-          onBlur={noop}
-          behaviorId={stacked.behaviorId}
-          style={styles.input}
-        />
-      ))}
-      {calculatedFields.length > 0 && (
-        <View style={styles.calculatedGrid}>
-          {calculatedFields.map(field => (
-            <CalculatedMetadataFields
-              key={field.key}
-              amountField={amountField}
-              defaultMetadata={behavior.defaultMetadata}
-              rateBasis={behavior.metadataRateBasis}
-              fields={[field]}
-              metadataValues={stacked.metadataValues}
-              calculatedMetadataValues={calculatedValues}
-              style={styles.calculatedItem}
-            />
-          ))}
-        </View>
-      )}
+      <BehaviorMetadataFields
+        behavior={behavior}
+        fields={fields}
+        amountField={amountField}
+        amountOptedOut={amountOptedOut}
+        values={stacked.metadataValues}
+        onChange={setValues}
+        typedFormulaKeys={typedFormulaKeys}
+        onFormulaTypedChange={setFormulaTyped}
+        calculatedValues={calculatedValues}
+        onFocus={onFocus}
+        gap={8}
+      />
     </View>
   );
 }
@@ -151,19 +149,5 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     padding: 0,
-  },
-  input: {
-    marginBottom: 0,
-  },
-  calculatedGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  calculatedItem: {
-    width: '48%',
-    flexGrow: 0,
-    flexShrink: 0,
-    minWidth: 0,
   },
 });

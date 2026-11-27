@@ -362,6 +362,8 @@ export interface StackedLog {
   behaviorId: string;
   /** Metadata text-input values, keyed by field key. */
   metadataValues: Record<string, string>;
+  /** Formula fields in Type mode (the value was typed instead of worked out). Undefined = none. */
+  typedFormulaKeys?: string[];
 }
 
 export function getBehaviorMetadataFields(

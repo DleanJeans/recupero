@@ -44,13 +44,18 @@ import {
   type StackedLog,
 } from '../../../utils/metadata-calculation-utils';
 import {
-  applyFormulaValues,
-  evaluateFormula,
+  buildBehaviorFormMetadata,
+  getBehaviorFormFields,
+  getBehaviorInitialTypedFormulaKeys,
+  getBehaviorRememberedTypedKeys,
+  getFormCalculatedValues,
+  getStackedTypedFormulaKeys,
+  getVisibleMetadataFields,
+} from '../../../utils/metadata-form-utils';
+import {
   getActiveFormulaFields,
-  getFieldFormula,
-  getFormulaInputKeys,
-  isLogFormulaValueTyped,
-  resolveMetadataFieldUnits,
+  resolveFormulaState,
+  setFormulaFieldTyped,
 } from '../../../utils/metadata-formula-utils';
 import { getFirstLinkField } from '../../../utils/metadata-link-utils';
 import { getMoneyRewardForLog, getStarMoneyMultiplierForLog } from '../../../utils/money-utils';
@@ -179,46 +184,25 @@ export function useBehaviorLogForm({
   const [timePickerCollapsed, setTimePickerCollapsed] = useState(true);
 
   const categoryFields = useMemo(() => category?.metadataFields ?? [], [category?.metadataFields]);
-  const amountField = useMemo(
-    () =>
-      getSelectedAmountMetadataField(categoryFields, behavior.metadataAmountFieldKey, behavior.metadataQuantityUnit),
-    [behavior.metadataAmountFieldKey, behavior.metadataQuantityUnit, categoryFields],
-  );
-  /** Fields with "Unit from Base" show this behaviour's Base unit (g for Weight, ml for Volume). */
-  const metadataFields = useMemo(
-    () => resolveMetadataFieldUnits(categoryFields, amountField),
-    [amountField, categoryFields],
-  );
+  /** Fields (with "Unit from Base" resolved for this behaviour), the Base amount field and the "None" amount opt-out. */
+  const {
+    fields: metadataFields,
+    amountField,
+    amountOptedOut,
+  } = useMemo(() => getBehaviorFormFields(behavior, categoryFields), [behavior, categoryFields]);
   const manualMetadataFields = useMemo(() => getManualMetadataFields(metadataFields), [metadataFields]);
-  /** "None" amount unit: hide the amount and per-100 fields, which can't be filled or calculated without an amount. */
-  const amountOptedOut = behavior.metadataAmountFieldKey === NO_AMOUNT_FIELD_KEY;
   const visibleMetadataFields = useMemo(
-    () =>
-      amountOptedOut
-        ? metadataFields.filter(field => isLinkMetadataField(field) || getManualMetadataFields([field]).length > 0)
-        : metadataFields,
+    () => getVisibleMetadataFields(metadataFields, amountOptedOut),
     [amountOptedOut, metadataFields],
   );
   const calculatedMetadataFields = useMemo(
     () => (amountOptedOut ? [] : getCalculatedMetadataFields(metadataFields)),
     [amountOptedOut, metadataFields],
   );
-  /** Fields filled by a formula (e.g. Weight = Before - After) and the fields their formulas use. */
-  const formulaFields = useMemo(
-    () => getActiveFormulaFields(metadataFields, amountField, amountOptedOut),
-    [amountField, amountOptedOut, metadataFields],
-  );
-  const formulaInputKeys = useMemo(() => getFormulaInputKeys(formulaFields), [formulaFields]);
-  /** Formula fields in Type mode. An edited log opens the way it was saved; a new one the way this behaviour
-   *  was last logged (Type/Manual when it was never chosen). */
+  /** Formula fields in Manual mode. An edited log opens the way it was saved; a new one the way this behaviour
+   *  was last logged (Manual when it was never chosen). */
   const [typedFormulaKeys, setTypedFormulaKeys] = useState<string[]>(() =>
-    formulaFields
-      .filter(field =>
-        existingLog
-          ? isLogFormulaValueTyped(field, existingLog.metadata)
-          : behavior.metadataTypedFormulaKeys == null || behavior.metadataTypedFormulaKeys.includes(field.key),
-      )
-      .map(field => field.key),
+    getBehaviorInitialTypedFormulaKeys(behavior, categoryFields, existingLog?.metadata),
   );
   const [metadataValues, setMetadataValues] = useState<Record<string, string>>(() => {
     const values: Record<string, string> = {};
@@ -263,7 +247,14 @@ export function useBehaviorLogForm({
           getBehaviorAmountField(stackedBehavior, fields),
           stackedBehavior.defaultMetadata,
         );
-        return [...current, { behaviorId: stackedBehaviorId, metadataValues: values }];
+        return [
+          ...current,
+          {
+            behaviorId: stackedBehaviorId,
+            metadataValues: values,
+            typedFormulaKeys: getBehaviorInitialTypedFormulaKeys(stackedBehavior, fields),
+          },
+        ];
       });
     },
     [allBehaviors, behaviorId, categories],
@@ -286,35 +277,72 @@ export function useBehaviorLogForm({
     },
     [],
   );
+  /** Manual/Formula switch on a stacked behaviour's formula field (same rule as the main behaviour's). */
+  const setStackedFormulaTyped = useCallback(
+    (stackedBehaviorId: string, key: string, typed: boolean) => {
+      const stackedBehavior = allBehaviors.find(b => b.id === stackedBehaviorId);
+      if (!stackedBehavior) return;
+      const stackedCategoryFields = getBehaviorMetadataFields(stackedBehavior, categories);
+      const {
+        fields,
+        amountField: stackedAmountField,
+        amountOptedOut: stackedOptedOut,
+      } = getBehaviorFormFields(stackedBehavior, stackedCategoryFields);
+      const stackedFormulaFields = getActiveFormulaFields(fields, stackedAmountField, stackedOptedOut);
+      setStackedLogs(current =>
+        current.map(item => {
+          if (item.behaviorId !== stackedBehaviorId) return item;
+          const next = setFormulaFieldTyped(
+            {
+              typedKeys: getStackedTypedFormulaKeys(item, stackedBehavior, stackedCategoryFields),
+              values: item.metadataValues,
+            },
+            stackedFormulaFields,
+            key,
+            typed,
+          );
+          return { ...item, typedFormulaKeys: next.typedKeys, metadataValues: next.values };
+        }),
+      );
+    },
+    [allBehaviors, categories],
+  );
   /** What gets saved: the typed values with formula results filled in. */
-  const effectiveMetadataValues = useMemo(
-    () => applyFormulaValues(metadataValues, formulaFields, typedFormulaKeys),
-    [formulaFields, metadataValues, typedFormulaKeys],
+  const { formulaFields, effectiveValues: effectiveMetadataValues } = useMemo(
+    () =>
+      resolveFormulaState({
+        fields: metadataFields,
+        amountField,
+        amountOptedOut,
+        values: metadataValues,
+        typedKeys: typedFormulaKeys,
+      }),
+    [amountField, amountOptedOut, metadataFields, metadataValues, typedFormulaKeys],
   );
   const setFormulaTyped = useCallback(
     (key: string, typed: boolean) => {
-      setTypedFormulaKeys(current =>
-        typed ? (current.includes(key) ? current : [...current, key]) : current.filter(item => item !== key),
+      const next = setFormulaFieldTyped(
+        { typedKeys: typedFormulaKeys, values: metadataValues },
+        formulaFields,
+        key,
+        typed,
       );
-      if (!typed) return;
-      // Switching to Type starts from the formula's result, so it can be nudged instead of retyped.
-      const formula = formulaFields.find(field => field.key === key);
-      const result = formula ? evaluateFormula(getFieldFormula(formula) ?? '', metadataValues).result : undefined;
-      if (result != null) setMetadataValues(current => ({ ...current, [key]: String(result) }));
+      setTypedFormulaKeys(next.typedKeys);
+      setMetadataValues(next.values);
     },
-    [formulaFields, metadataValues],
+    [formulaFields, metadataValues, typedFormulaKeys],
   );
-  const calculatedMetadataValues = useMemo(() => {
-    if (!amountField) return {};
-    const amountValue = effectiveMetadataValues[amountField.key];
-    if (amountValue === undefined || amountValue === '') return {};
-    return buildCalculatedMetadata(
-      metadataFields,
-      behavior.defaultMetadata,
-      parseDecimalInput(amountValue),
-      behavior.metadataRateBasis,
-    );
-  }, [amountField, behavior.defaultMetadata, behavior.metadataRateBasis, metadataFields, effectiveMetadataValues]);
+  const calculatedMetadataValues = useMemo(
+    () =>
+      getFormCalculatedValues({
+        fields: metadataFields,
+        amountField,
+        values: effectiveMetadataValues,
+        defaultMetadata: behavior.defaultMetadata,
+        rateBasis: behavior.metadataRateBasis,
+      }),
+    [amountField, behavior.defaultMetadata, behavior.metadataRateBasis, effectiveMetadataValues, metadataFields],
+  );
 
   const progressByField = useMemo<Record<string, DailyGoalProgress | null>>(() => {
     const map: Record<string, DailyGoalProgress | null> = {};
@@ -481,16 +509,23 @@ export function useBehaviorLogForm({
     startSecond,
     timePickerCollapsed,
   ]);
-  /** Remembers Type vs Formula per behaviour, so the next log opens the same way. */
-  const rememberFormulaMode = useCallback(() => {
-    if (formulaFields.length === 0) return;
-    const formulaKeys = new Set(formulaFields.map(field => field.key));
-    const kept = (behavior.metadataTypedFormulaKeys ?? []).filter(key => !formulaKeys.has(key));
-    const next = [...kept, ...typedFormulaKeys.filter(key => formulaKeys.has(key))].sort();
-    const previous = [...(behavior.metadataTypedFormulaKeys ?? [])].sort();
-    if (behavior.metadataTypedFormulaKeys != null && next.join(',') === previous.join(',')) return;
-    useBehaviorStore.getState().updateBehavior(behaviorId, { metadataTypedFormulaKeys: next });
-  }, [behavior.metadataTypedFormulaKeys, behaviorId, formulaFields, typedFormulaKeys]);
+  /** Remembers Manual vs Formula per behaviour (this one and every stacked one), so the next log opens the same way. */
+  const rememberFormulaModes = useCallback(() => {
+    const remember = (target: BehaviorEntry, typedKeys: readonly string[]) => {
+      const next = getBehaviorRememberedTypedKeys(target, getBehaviorMetadataFields(target, categories), typedKeys);
+      if (next) useBehaviorStore.getState().updateBehavior(target.id, { metadataTypedFormulaKeys: next });
+    };
+    remember(behavior, typedFormulaKeys);
+    for (const stacked of stackedLogs) {
+      const stackedBehavior = allBehaviors.find(b => b.id === stacked.behaviorId);
+      if (stackedBehavior) {
+        remember(
+          stackedBehavior,
+          getStackedTypedFormulaKeys(stacked, stackedBehavior, getBehaviorMetadataFields(stackedBehavior, categories)),
+        );
+      }
+    }
+  }, [allBehaviors, behavior, categories, stackedLogs, typedFormulaKeys]);
   const handleConfirm = useCallback(() => {
     const logHour = showTimeRange ? startHour : endHour;
     const logMinute = showTimeRange ? startMinute : endMinute;
@@ -519,15 +554,14 @@ export function useBehaviorLogForm({
     const startTimestamp = Math.min(rawStartTimestamp, endTimestamp);
     const saveEndTimestamp = showTimeRange ? endTimestamp : undefined;
 
-    const metadataOrUndefined = buildLogMetadata({
-      fields: metadataFields,
-      amountField,
-      values: effectiveMetadataValues,
-      defaultMetadata: behavior.defaultMetadata,
-      rateBasis: behavior.metadataRateBasis,
+    const metadataOrUndefined = buildBehaviorFormMetadata({
+      behavior,
+      categoryFields,
+      values: metadataValues,
+      typedFormulaKeys,
       notes,
     });
-    rememberFormulaMode();
+    rememberFormulaModes();
 
     if (editLogId) {
       updateLog(behaviorId, editLogId, startTimestamp, metadataOrUndefined, saveEndTimestamp, selectedCues);
@@ -563,16 +597,15 @@ export function useBehaviorLogForm({
     for (const stacked of stackedLogs) {
       const stackedBehavior = allBehaviors.find(b => b.id === stacked.behaviorId);
       if (!stackedBehavior) continue;
-      const stackedFields = getBehaviorMetadataFields(stackedBehavior, categories);
+      const stackedCategoryFields = getBehaviorMetadataFields(stackedBehavior, categories);
       logBehavior(
         stacked.behaviorId,
         startTimestamp,
-        buildLogMetadata({
-          fields: stackedFields,
-          amountField: getBehaviorAmountField(stackedBehavior, stackedFields),
+        buildBehaviorFormMetadata({
+          behavior: stackedBehavior,
+          categoryFields: stackedCategoryFields,
           values: stacked.metadataValues,
-          defaultMetadata: stackedBehavior.defaultMetadata,
-          rateBasis: stackedBehavior.metadataRateBasis,
+          typedFormulaKeys: getStackedTypedFormulaKeys(stacked, stackedBehavior, stackedCategoryFields),
           notes,
         }),
         saveEndTimestamp,
@@ -617,7 +650,7 @@ export function useBehaviorLogForm({
     logBehavior,
     maxTimestampForDate,
     metadataFields,
-    rememberFormulaMode,
+    rememberFormulaModes,
     notes,
     onSaved,
     pendingLogId,
@@ -688,6 +721,7 @@ export function useBehaviorLogForm({
   return {
     addStackedBehavior,
     amountField,
+    amountOptedOut,
     applyEndSeconds,
     applyStartSeconds,
     behavior,
@@ -710,8 +744,6 @@ export function useBehaviorLogForm({
     handleSaveForLater,
     handleStartTimer,
     hasTimerRange,
-    formulaFields,
-    formulaInputKeys,
     manualMetadataFields,
     metadataFields,
     metadataValues,
@@ -730,6 +762,7 @@ export function useBehaviorLogForm({
     setMetadataValues,
     setNotes,
     setSelectedDate,
+    setStackedFormulaTyped,
     setStackedMetadataValues,
     showTimeRange,
     showSeconds,

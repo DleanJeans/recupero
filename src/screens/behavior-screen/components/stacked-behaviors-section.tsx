@@ -19,6 +19,7 @@ export function StackedBehaviorsSection({ form }: Props) {
     behavior,
     handleCollapseTime,
     removeStackedBehavior,
+    setStackedFormulaTyped,
     setStackedMetadataValues,
     stackedLogs,
   } = form;
@@ -39,6 +40,7 @@ export function StackedBehaviorsSection({ form }: Props) {
           key={stacked.behaviorId}
           stacked={stacked}
           onChange={setStackedMetadataValues}
+          onFormulaTypedChange={setStackedFormulaTyped}
           onRemove={removeStackedBehavior}
           onFocus={handleCollapseTime}
         />

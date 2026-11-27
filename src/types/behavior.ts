@@ -146,7 +146,7 @@ export interface BehaviorEntry {
   metadataRateBasis?: number;
   metadataQuantityUnit?: string;
   /** Formula fields this behaviour last logged by typing the value instead of using the formula (remembered
-   *  Type mode). Undefined = formula mode for every formula field. */
+   *  Manual mode). Undefined = never chosen, which opens in Manual; an empty list = Formula for every field. */
   metadataTypedFormulaKeys?: string[];
   /** Set on behaviours made by "Cook a batch". Undefined for ordinary behaviours. */
   batch?: MealBatch;

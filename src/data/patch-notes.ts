@@ -37,6 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-27',
     items: [
+      'Behaviors added to a stack now show the same metadata as the main log: the Manual | Formula switch (e.g. Weight from Before and After), the unit that follows Weight or Volume, links and calculated values. They are saved the same way, and each behavior remembers Manual or Formula.',
       'Energy is now two needs: Brain Energy (Mood Tired lowers it) and Body Energy (Body Tired lowers it).',
       'Behaviours can have effects, like a workout taking Brain Energy down to 25%, with a heads-up before you log.',
       'Checking in much lower than expected right after a behaviour asks if it did it, and saves that as an effect.',

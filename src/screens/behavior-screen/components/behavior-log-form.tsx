@@ -8,9 +8,7 @@ import { Text, TextInput } from '../../../components/text';
 import { Colors } from '../../../utils/colors';
 import { formatMetadataFieldLabel, getMetadataFieldCalculation } from '../../../utils/metadata-calculation-utils';
 import { formatDuration } from '../../../utils/time-utils';
-import { CalculatedMetadataFields } from './calculated-metadata-fields';
-import { FormulaMetadataRow } from './formula-metadata-row';
-import { MetadataInputRow } from './metadata-input-row';
+import { BehaviorMetadataFields } from './behavior-metadata-fields';
 import { StackedBehaviorsSection } from './stacked-behaviors-section';
 import type { BehaviorLogFormModel } from './use-behavior-log-form';
 
@@ -34,8 +32,7 @@ export function BehaviorLogForm({ form }: Props) {
     endHour,
     endMinute,
     endSecond,
-    formulaFields,
-    formulaInputKeys,
+    amountOptedOut,
     handleCollapseTime,
     handleInputBlur,
     visibleMetadataFields,
@@ -139,67 +136,21 @@ export function BehaviorLogForm({ form }: Props) {
               )}
             </View>
           )}
-          <View style={styles.metadataFields}>
-            {visibleMetadataFields.map(field => {
-              if (getMetadataFieldCalculation(field) === 'amount' && field.key !== amountField?.key) {
-                return null;
-              }
-              // Fields a formula uses are typed inside that formula's row.
-              if (formulaInputKeys.has(field.key)) return null;
-              if (formulaFields.some(formulaField => formulaField.key === field.key)) {
-                return (
-                  <FormulaMetadataRow
-                    key={field.key}
-                    field={field}
-                    fields={metadataFields}
-                    values={metadataValues}
-                    onChange={setMetadataValues}
-                    typed={typedFormulaKeys.includes(field.key)}
-                    onTypedChange={setFormulaTyped}
-                    onFocus={handleCollapseTime}
-                    onBlur={handleInputBlur}
-                    progress={progressByField[field.key]}
-                    style={styles.metadataFullWidthItem}
-                  />
-                );
-              }
-
-              const isCalculatedField = getMetadataFieldCalculation(field) === 'per100';
-              const itemStyle = isCalculatedField
-                ? calculatedMetadataFields.length > 1
-                  ? calculatedMetadataColumns === 2
-                    ? styles.calculatedMetadataGridItem
-                    : styles.calculatedMetadataSingleItem
-                  : styles.metadataFullWidthItem
-                : styles.metadataFullWidthItem;
-              return isCalculatedField ? (
-                <CalculatedMetadataFields
-                  key={field.key}
-                  amountField={amountField}
-                  defaultMetadata={behavior.defaultMetadata}
-                  rateBasis={behavior.metadataRateBasis}
-                  fields={[field]}
-                  metadataValues={metadataValues}
-                  calculatedMetadataValues={calculatedMetadataValues}
-                  progressByField={progressByField}
-                  style={itemStyle}
-                />
-              ) : (
-                <MetadataInputRow
-                  key={field.key}
-                  field={field}
-                  value={metadataValues[field.key] ?? ''}
-                  label={formatMetadataFieldLabel(field)}
-                  onChange={setMetadataValues}
-                  onFocus={handleCollapseTime}
-                  onBlur={handleInputBlur}
-                  progress={progressByField[field.key]}
-                  behaviorId={behavior.id}
-                  style={itemStyle}
-                />
-              );
-            })}
-          </View>
+          <BehaviorMetadataFields
+            behavior={behavior}
+            fields={metadataFields}
+            amountField={amountField}
+            amountOptedOut={amountOptedOut}
+            values={metadataValues}
+            onChange={setMetadataValues}
+            typedFormulaKeys={typedFormulaKeys}
+            onFormulaTypedChange={setFormulaTyped}
+            calculatedValues={calculatedMetadataValues}
+            progressByField={progressByField}
+            calculatedColumns={calculatedMetadataColumns}
+            onFocus={handleCollapseTime}
+            onBlur={handleInputBlur}
+          />
 
           {!editLogId && (
             <View style={visibleMetadataFields.length > 0 && styles.stackAfterMetadata}>
