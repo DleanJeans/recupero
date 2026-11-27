@@ -142,10 +142,11 @@ describe('getOutdoorRanges', () => {
     expect(getOutdoorRanges(activity, samples, [home], 0, t0 + 2 * HOUR)).toEqual([{ start: t0, end: t0 + 40 * MIN }]);
   });
 
-  it('raises tiny place radii to the sunlight minimum', () => {
+  it('leaves need a bigger radius than arriving', () => {
     const [tiny, big] = getIndoorPlaces([place('a', { radiusM: 10 }), place('b', { radiusM: 80 })], []);
-    expect(tiny.radiusM).toBe(50);
-    expect(big.radiusM).toBe(80);
+    expect(tiny.radiusM).toBe(60);
+    expect(big.radiusM).toBe(160);
+    expect(getSunlightRegionPlaceId('sunlight:home#exit')).toBe('home');
     expect(isClearlyInsidePlace(20, 50)).toBe(true);
     expect(isClearlyInsidePlace(40, 50)).toBe(false);
   });
@@ -227,15 +228,23 @@ describe('weather helpers', () => {
 });
 
 describe('places', () => {
-  it('gives indoor places their own small sunlight geofences, only when on', () => {
+  it('gives indoor places an enter geofence and a bigger exit geofence, only when on', () => {
     const places = [place('home'), place('park')];
     expect(getSunlightGeofenceRegions(true, places, ['park'])).toEqual([
       {
         identifier: 'sunlight:home',
         latitude: 21.03,
         longitude: 105.85,
-        radius: 50,
+        radius: 30,
         notifyOnEnter: true,
+        notifyOnExit: false,
+      },
+      {
+        identifier: 'sunlight:home#exit',
+        latitude: 21.03,
+        longitude: 105.85,
+        radius: 80,
+        notifyOnEnter: false,
         notifyOnExit: true,
       },
     ]);

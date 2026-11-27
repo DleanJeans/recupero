@@ -56,20 +56,23 @@ export interface PresenceEvent {
   placeId: string | null;
 }
 
-/**
- * Smallest radius sunlight uses around a place. Android geofences and indoor GPS wobble by tens of metres, so a
- * 10 m place flapped "left / arrived" all night while asleep and counted fake sunlight sessions.
- */
-export const MIN_SUNLIGHT_PLACE_RADIUS_M = 50;
+/** Leaving needs this much more than arriving: indoor GPS/Wi-Fi jitter (tens of metres) flapped Home at night. */
+const EXIT_EXTRA_M = 50;
 
-/** Saved places that count as indoors: every place except the ones marked as outdoors (e.g. a park). Small radii are raised to the minimum. */
+/** Radius you must go beyond to count as having left a place with this (user-set, "arrive") radius. */
+export function getSunlightExitRadius(radiusM: number): number {
+  return Math.max(radiusM + EXIT_EXTRA_M, radiusM * 2);
+}
+
+/**
+ * Saved places that count as indoors: every place except the ones marked as outdoors (e.g. a park). Their
+ * radius is the larger "leave" radius, so wobbling near the edge never reads as having left.
+ */
 export function getIndoorPlaces(places: SavedPlace[], outdoorPlaceIds: string[]): SavedPlace[] {
   const outdoor = new Set(outdoorPlaceIds);
   return places
     .filter(place => !outdoor.has(place.id))
-    .map(place =>
-      place.radiusM < MIN_SUNLIGHT_PLACE_RADIUS_M ? { ...place, radiusM: MIN_SUNLIGHT_PLACE_RADIUS_M } : place,
-    );
+    .map(place => ({ ...place, radiusM: getSunlightExitRadius(place.radiusM) }));
 }
 
 /** A fix this deep inside a place (within half its radius) can't be the edge noise of a real departure. */
@@ -79,9 +82,13 @@ export function isClearlyInsidePlace(distanceM: number, radiusM: number): boolea
 
 export const SUNLIGHT_REGION_PREFIX = 'sunlight:';
 
+/** Suffix of the exit-only geofence (bigger radius) paired with each place's enter-only one. */
+export const SUNLIGHT_EXIT_SUFFIX = '#exit';
+
 /**
- * Sunlight's own geofence around every indoor place, at the place's own radius (reminders floor theirs to
- * 100 m, which would hide a small walk). Events land in the sunlight store, not the cue activity log.
+ * Sunlight's own geofences around every indoor place: enter-only at the place's own radius (reminders floor
+ * theirs to 100 m, which would hide a small walk) and exit-only at a bigger radius, so jitter at the edge
+ * can't flap. Events land in the sunlight store, not the cue activity log.
  */
 export function getSunlightGeofenceRegions(
   enabled: boolean,
@@ -89,19 +96,33 @@ export function getSunlightGeofenceRegions(
   outdoorPlaceIds: string[],
 ): ReminderGeofenceRegion[] {
   if (!enabled) return [];
-  return getIndoorPlaces(places, outdoorPlaceIds).map(place => ({
-    identifier: `${SUNLIGHT_REGION_PREFIX}${place.id}`,
-    latitude: place.lat,
-    longitude: place.lng,
-    radius: place.radiusM,
-    notifyOnEnter: true,
-    notifyOnExit: true,
-  }));
+  return places
+    .filter(place => !outdoorPlaceIds.includes(place.id))
+    .flatMap(place => [
+      {
+        identifier: `${SUNLIGHT_REGION_PREFIX}${place.id}`,
+        latitude: place.lat,
+        longitude: place.lng,
+        radius: place.radiusM,
+        notifyOnEnter: true,
+        notifyOnExit: false,
+      },
+      {
+        identifier: `${SUNLIGHT_REGION_PREFIX}${place.id}${SUNLIGHT_EXIT_SUFFIX}`,
+        latitude: place.lat,
+        longitude: place.lng,
+        radius: getSunlightExitRadius(place.radiusM),
+        notifyOnEnter: false,
+        notifyOnExit: true,
+      },
+    ]);
 }
 
 /** The place id behind a sunlight geofence identifier, or undefined for any other geofence. */
 export function getSunlightRegionPlaceId(identifier: string): string | undefined {
-  return identifier.startsWith(SUNLIGHT_REGION_PREFIX) ? identifier.slice(SUNLIGHT_REGION_PREFIX.length) : undefined;
+  if (!identifier.startsWith(SUNLIGHT_REGION_PREFIX)) return undefined;
+  const id = identifier.slice(SUNLIGHT_REGION_PREFIX.length);
+  return id.endsWith(SUNLIGHT_EXIT_SUFFIX) ? id.slice(0, -SUNLIGHT_EXIT_SUFFIX.length) : id;
 }
 
 /** Geofence id of the temporary pause pin (no saved place has this id). */
