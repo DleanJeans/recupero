@@ -20,6 +20,22 @@ export type NeedRefill =
   /** Adds by the log's duration: `fullMinutes` takes the need from 0% to 100% (e.g. sleep). */
   | { mode: 'duration'; fullMinutes: number };
 
+/**
+ * A side effect a behaviour has on a need, besides what it refills, e.g. a workout making you sleepy.
+ * `by` moves the level by `amount` points (negative lowers it). `to` takes the level down to `amount`
+ * from wherever it is, and never raises it. Applied when the log ends.
+ */
+export interface NeedEffect {
+  kind: 'by' | 'to';
+  amount: number;
+  /** `you` = set by hand, `learned` = confirmed from a check-in that came in lower or higher than expected. */
+  source: 'you' | 'learned';
+  /** Confirmed check-ins it was learned from. */
+  seen: number;
+  /** Recent confirmed check-ins: the level expected without the effect, and the level you checked in at. */
+  samples?: Array<{ expected: number; actual: number }>;
+}
+
 /** Refills a need from a metadata field on any log, e.g. kcal for Hunger. */
 export interface NeedMetadataSource {
   /** The first (or only) field. Kept so needs saved before several fields were allowed still load. */
@@ -67,6 +83,8 @@ export interface NeedConfig {
   refills: Record<string, NeedRefill>;
   /** Whole categories whose behaviours refill this need, by category id. */
   categoryRefills?: Record<string, NeedRefill>;
+  /** Side effects of behaviours on this need, by behaviour id. */
+  effects?: Record<string, NeedEffect>;
   /** Typed-in amounts (percentage points) for single logs, by log id. They replace what the log would refill. */
   logAmounts?: Record<string, number>;
   /**

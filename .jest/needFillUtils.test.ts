@@ -21,6 +21,28 @@ describe('getNeedFills', () => {
   });
 });
 
+describe('getNeedFills drops', () => {
+  it('reports a drop only when a new side effect landed', () => {
+    const previous = new Map([
+      ['energy', 62],
+      ['body', 60],
+    ] as const);
+    const effectAt = new Map([
+      ['energy', undefined],
+      ['body', 5],
+    ] as const);
+    const fills = getNeedFills(
+      previous,
+      [
+        { id: 'energy', level: 25, lastEffectAt: 10 },
+        { id: 'body', level: 40, lastEffectAt: 5 },
+      ],
+      effectAt,
+    );
+    expect(fills).toEqual([{ needId: 'energy', from: 62, to: 25 }]);
+  });
+});
+
 describe('mergeNeedFills', () => {
   it('keeps the earliest start and latest end per need', () => {
     expect(mergeNeedFills([{ needId: 'hunger', from: 20, to: 40 }], [{ needId: 'hunger', from: 40, to: 70 }])).toEqual([

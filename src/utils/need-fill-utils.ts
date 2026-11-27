@@ -14,20 +14,26 @@ export interface NeedFill {
 }
 
 /**
- * Needs whose level rose since `previous`. Needs being filled by a running timer are skipped,
- * since they creep up all the time. Biggest rise first.
+ * Needs whose level rose since `previous`, plus needs a new behaviour side effect lowered (a side effect
+ * landed since `previousEffectAt`). Needs being filled by a running timer are skipped, since they creep up
+ * all the time. Biggest change first.
  */
 export function getNeedFills(
   previous: ReadonlyMap<NeedId, number>,
-  current: ReadonlyArray<{ id: NeedId; level?: number; timerFullInMs?: number }>,
+  current: ReadonlyArray<{ id: NeedId; level?: number; timerFullInMs?: number; lastEffectAt?: number }>,
+  previousEffectAt?: ReadonlyMap<NeedId, number | undefined>,
 ): NeedFill[] {
   const fills: NeedFill[] = [];
   for (const need of current) {
     if (need.level == null || need.timerFullInMs != null) continue;
     const from = previous.get(need.id) ?? 0;
     if (need.level - from >= NEED_FILL_MIN_RISE) fills.push({ needId: need.id, from, to: need.level });
+    const newEffect =
+      previousEffectAt != null && need.lastEffectAt != null && need.lastEffectAt !== previousEffectAt.get(need.id);
+    if (newEffect && from - need.level >= NEED_FILL_MIN_RISE) fills.push({ needId: need.id, from, to: need.level });
   }
-  return fills.sort((a, b) => b.to - b.from - (a.to - a.from)).slice(0, NEED_FILL_MAX_ROWS);
+  const change = (fill: NeedFill) => Math.abs(fill.to - fill.from);
+  return fills.sort((a, b) => change(b) - change(a)).slice(0, NEED_FILL_MAX_ROWS);
 }
 
 /** Merges new fills into waiting ones: same need keeps the earliest `from` and the latest `to`. */
@@ -35,7 +41,9 @@ export function mergeNeedFills(waiting: NeedFill[], added: NeedFill[]): NeedFill
   const byNeed = new Map(waiting.map(fill => [fill.needId, fill]));
   for (const fill of added) {
     const existing = byNeed.get(fill.needId);
-    byNeed.set(fill.needId, existing ? { ...fill, from: Math.min(existing.from, fill.from) } : fill);
+    byNeed.set(fill.needId, existing ? { ...fill, from: existing.from } : fill);
   }
-  return [...byNeed.values()].filter(fill => fill.to - fill.from >= NEED_FILL_MIN_RISE).slice(0, NEED_FILL_MAX_ROWS);
+  return [...byNeed.values()]
+    .filter(fill => Math.abs(fill.to - fill.from) >= NEED_FILL_MIN_RISE)
+    .slice(0, NEED_FILL_MAX_ROWS);
 }

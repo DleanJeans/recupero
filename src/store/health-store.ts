@@ -50,8 +50,10 @@ export const useHealthStore = create<HealthStore>()(
       setSleepBehavior: behaviorId => {
         if (behaviorId) {
           const needs = useNeedsStore.getState();
-          if (!needs.needs.energy.refills[behaviorId]) {
-            needs.setRefill('energy', behaviorId, getDefaultRefill('energy'));
+          for (const needId of ['energy', 'body']) {
+            if (needs.needs[needId] && !needs.needs[needId].refills[behaviorId]) {
+              needs.setRefill(needId, behaviorId, getDefaultRefill(needId));
+            }
           }
         }
         set({ sleepBehaviorId: behaviorId });

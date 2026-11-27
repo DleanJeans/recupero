@@ -10,6 +10,7 @@ import { Text, TextInput } from '../../components/text';
 import { useCuesStore } from '../../store/cues-store';
 import type { MoodId } from '../../types/cue';
 import type { RootStackParamList } from '../../types/navigation';
+import { applyMoodsToNeeds } from '../../utils/body-need-utils';
 import { Colors } from '../../utils/colors';
 import { getCurrentMood } from '../../utils/cue-utils';
 import { MoodGrid } from './components/mood-grid';
@@ -27,6 +28,7 @@ export function MoodLogScreen() {
 
   const handleMoodSelect = (mood: MoodId) => {
     const id = logMood(mood);
+    applyMoodsToNeeds([mood]);
     setSelectedMood(mood);
     setMoodLogId(id);
     setNote('');

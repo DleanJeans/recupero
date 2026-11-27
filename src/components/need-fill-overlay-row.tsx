@@ -68,7 +68,7 @@ export function NeedFillOverlayRow({ fill, config, delayMs }: Props) {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
   emoji: { fontSize: 16, width: 22, textAlign: 'center' },
-  label: { color: Colors.text.primary, fontSize: 14, fontWeight: '600', width: 80 },
+  label: { color: Colors.text.primary, fontSize: 14, fontWeight: '600', width: 92 },
   track: { flex: 1, height: 12, borderRadius: 6, backgroundColor: Colors.bg.input, overflow: 'hidden' },
   fill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 6 },
   tick: { position: 'absolute', top: 0, bottom: 0, width: 2, backgroundColor: 'rgba(255,255,255,0.35)' },

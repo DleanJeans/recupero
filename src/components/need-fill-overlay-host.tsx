@@ -20,6 +20,7 @@ interface Props {
 
 /**
  * Slides a card down from the top when a log fills needs: each need's bar fills up while its % counts up.
+ * A behaviour's side effect that lowers a need shows the same way, draining instead.
  * A log made on the log screen waits until Routines is back in front.
  */
 export function NeedFillOverlayHost({ active }: Props) {
@@ -27,6 +28,7 @@ export function NeedFillOverlayHost({ active }: Props) {
   const { needs } = useNeedLevels();
   const configs = useNeedsStore(state => state.needs);
   const previous = useRef<Map<NeedId, number> | undefined>(undefined);
+  const previousEffectAt = useRef<Map<NeedId, number | undefined>>(new Map());
   const waiting = useRef<{ fills: NeedFill[]; at: number }>({ fills: [], at: 0 });
   const [shown, setShown] = useState<NeedFill[]>([]);
   const slide = useRef(new Animated.Value(HIDDEN_OFFSET)).current;
@@ -35,12 +37,13 @@ export function NeedFillOverlayHost({ active }: Props) {
   // Compare each refresh with the last one; the first only seeds, so app start shows nothing.
   useEffect(() => {
     if (previous.current) {
-      const fills = getNeedFills(previous.current, needs);
+      const fills = getNeedFills(previous.current, needs, previousEffectAt.current);
       if (fills.length > 0) {
         waiting.current = { fills: mergeNeedFills(waiting.current.fills, fills), at: Date.now() };
       }
     }
     previous.current = new Map(needs.flatMap(need => (need.level == null ? [] : [[need.id, need.level] as const])));
+    previousEffectAt.current = new Map(needs.map(need => [need.id, need.lastEffectAt] as const));
     if (!active || showing || waiting.current.fills.length === 0) return;
     const { fills, at } = waiting.current;
     waiting.current = { fills: [], at: 0 };

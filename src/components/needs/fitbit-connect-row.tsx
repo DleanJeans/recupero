@@ -51,7 +51,9 @@ export function FitbitConnectRow() {
         </Pressable>
       ) : (
         <View style={styles.connect}>
-          <Text style={styles.hint}>Connect Fitbit to log sleep and fill Energy by time asleep.</Text>
+          <Text style={styles.hint}>
+            Connect Fitbit to log sleep and fill Brain Energy and Body Energy by time asleep.
+          </Text>
           <Button
             variant="primary"
             onPress={connect}

@@ -8,10 +8,12 @@ import type {
   NeedCheckIn,
   NeedCheckInSource,
   NeedConfig,
+  NeedEffect,
   NeedId,
   NeedMetadataSource,
   NeedRefill,
 } from '../types/need';
+import { addEffectSample, EFFECT_MIN_GAP, findEffectCandidates, forecastEffect } from '../utils/need-effect-utils';
 import { emptyRateHistory, NEED_CHART_COLORS, type NeedRatePoint } from '../utils/need-history-utils';
 import {
   applyBuiltInEmojis,
@@ -31,6 +33,7 @@ import {
   simulateNeed,
 } from '../utils/need-utils';
 import { useBehaviorStore } from './behavior-store';
+import { useEffectPromptStore } from './effect-prompt-store';
 
 const MAX_CHECK_INS = 500;
 const MAX_RATE_POINTS = 200;
@@ -111,6 +114,10 @@ export interface NeedsStore {
   /** Sets the full-to-empty time by hand; recorded in the rate history like a learned change. */
   setEmptyHours: (needId: NeedId, emptyHours: number) => void;
   resetLearning: (needId: NeedId) => void;
+  /** Sets a behaviour's side effect on a need, or removes it with undefined. */
+  setEffect: (needId: NeedId, behaviorId: string, effect: NeedEffect | undefined) => void;
+  /** Confirms that a behaviour caused a check-in's gap: adds it to the behaviour's effect on the need. */
+  learnEffect: (needId: NeedId, behaviorId: string, sample: { expected: number; actual: number }) => void;
 }
 
 function withRateHistory(
@@ -142,14 +149,45 @@ function withDefaults(needs: Partial<Record<NeedId, Partial<NeedConfig>>> | unde
       refills: { ...saved?.refills },
       categoryRefills: { ...saved?.categoryRefills },
       logAmounts: { ...saved?.logAmounts },
+      effects: { ...saved?.effects },
     };
   }
+  // Body Energy came after Energy split in two: start it with Energy's sleep refills and Comfort's at half.
+  if (needs && !needs.body) result.body = { ...result.body, ...getSeededBodyRefills(result) };
   return result;
 }
 
-/** A need's state right now, from logs and earlier check-ins. */
-function getCurrentNeedState(state: Pick<NeedsStore, 'needs' | 'checkIns'>, needId: NeedId, now: number) {
-  const config = state.needs[needId];
+/** Halves a refill, for Comfort behaviours that also rest the body. */
+function halfRefill(refill: NeedRefill): NeedRefill {
+  if (refill.mode === 'add') return { mode: 'add', amount: refill.amount / 2 };
+  if (refill.mode === 'set') return { mode: 'add', amount: 50 };
+  return { mode: 'duration', fullMinutes: refill.fullMinutes * 2 };
+}
+
+function getSeededBodyRefills(needs: Record<NeedId, NeedConfig>): Pick<NeedConfig, 'refills' | 'categoryRefills'> {
+  const refills: Record<string, NeedRefill> = {};
+  const categoryRefills: Record<string, NeedRefill> = {};
+  for (const [id, refill] of Object.entries(needs.comfort?.refills ?? {})) refills[id] = halfRefill(refill);
+  for (const [id, refill] of Object.entries(needs.comfort?.categoryRefills ?? {})) {
+    categoryRefills[id] = halfRefill(refill);
+  }
+  for (const [id, refill] of Object.entries(needs.energy?.refills ?? {})) {
+    if (refill.mode === 'duration') refills[id] = refill;
+  }
+  for (const [id, refill] of Object.entries(needs.energy?.categoryRefills ?? {})) {
+    if (refill.mode === 'duration') categoryRefills[id] = refill;
+  }
+  return { refills, categoryRefills };
+}
+
+/** A need's state right now, from logs and earlier check-ins. `withoutEffects` leaves out side effects. */
+function getCurrentNeedState(
+  state: Pick<NeedsStore, 'needs' | 'checkIns'>,
+  needId: NeedId,
+  now: number,
+  withoutEffects = false,
+) {
+  const config = withoutEffects ? { ...state.needs[needId], effects: undefined } : state.needs[needId];
   const { behaviors, categories } = useBehaviorStore.getState();
   const events = getNeedEvents(
     needId,
@@ -160,6 +198,28 @@ function getCurrentNeedState(state: Pick<NeedsStore, 'needs' | 'checkIns'>, need
     now - NEED_LOOKBACK_MS,
   );
   return simulateNeed(events, getDecayPerHour(config), now);
+}
+
+/**
+ * After a check-in well off what was expected, soon after a behaviour: if that behaviour's known effect
+ * already explains it, counts it as another sample; otherwise asks whether the behaviour did it.
+ * Returns true when a recent behaviour may explain the gap.
+ */
+function checkForEffect(state: Pick<NeedsStore, 'needs' | 'checkIns'>, needId: NeedId, entry: NeedCheckIn): boolean {
+  const config = state.needs[needId];
+  const expected = getCurrentNeedState(state, needId, entry.ts, true).level;
+  if (expected == null || Math.abs(entry.level - expected) < EFFECT_MIN_GAP) return false;
+  const candidates = findEffectCandidates(useBehaviorStore.getState().behaviors, config, entry.ts);
+  if (candidates.length === 0) return false;
+  const sample = { expected, actual: entry.level };
+  const known = config.effects?.[candidates[0].behaviorId];
+  if (known && Math.abs(forecastEffect(expected, known) - entry.level) < EFFECT_MIN_GAP) {
+    // Runs after this set() so it isn't overwritten by it.
+    setTimeout(() => useNeedsStore.getState().learnEffect(needId, candidates[0].behaviorId, sample), 0);
+    return true;
+  }
+  useEffectPromptStore.getState().show({ needId, ts: entry.ts, ...sample, candidates });
+  return true;
 }
 
 export const useNeedsStore = create<NeedsStore>()(
@@ -239,7 +299,9 @@ export const useNeedsStore = create<NeedsStore>()(
           const config = state.needs[needId];
           const { anchor } = getCurrentNeedState(state, needId, now);
           const entry: NeedCheckIn = { id: uuidv4(), needId, ts: now, level: clampLevel(level), source };
-          const emptyHours = learnEmptyHours(config.emptyHours, anchor, entry);
+          const blamed = checkForEffect(state, needId, entry);
+          // A gap a recent behaviour may explain says nothing about the decay rate.
+          const emptyHours = blamed ? config.emptyHours : learnEmptyHours(config.emptyHours, anchor, entry);
           const learned = emptyHours !== config.emptyHours;
           return {
             checkIns: [...state.checkIns, entry].slice(-MAX_CHECK_INS),
@@ -309,6 +371,19 @@ export const useNeedsStore = create<NeedsStore>()(
             },
             needs: { ...state.needs, [needId]: { ...config, emptyHours, learnedFrom: config.learnedFrom + 1 } },
           };
+        }),
+      setEffect: (needId, behaviorId, effect) =>
+        set(state => {
+          const effects = { ...state.needs[needId].effects };
+          if (effect) effects[behaviorId] = effect;
+          else delete effects[behaviorId];
+          return { needs: { ...state.needs, [needId]: { ...state.needs[needId], effects } } };
+        }),
+      learnEffect: (needId, behaviorId, sample) =>
+        set(state => {
+          const config = state.needs[needId];
+          const effects = { ...config.effects, [behaviorId]: addEffectSample(config.effects?.[behaviorId], sample) };
+          return { needs: { ...state.needs, [needId]: { ...config, effects } } };
         }),
       resetLearning: needId =>
         set(state => ({

@@ -15,6 +15,7 @@ import { FitbitConnectRow } from '../../components/needs/fitbit-connect-row';
 import { NeedAmountDialog } from '../../components/needs/need-amount-dialog';
 import { NeedAppSourceModal } from '../../components/needs/need-app-source-modal';
 import { NEED_TONE_COLORS } from '../../components/needs/need-bar-row';
+import { CantSleepHint, NeedEffectsSection } from '../../components/needs/need-effects-section';
 import { NeedHistorySection } from '../../components/needs/need-history-section';
 import { NeedRateLearning } from '../../components/needs/need-rate-learning';
 import { NeedWhenChip } from '../../components/needs/need-when-chip';
@@ -249,6 +250,12 @@ export function NeedScreen() {
               : ' · default'}
           </Text>
 
+          <CantSleepHint
+            needId={need.id}
+            level={need.level}
+            now={now}
+          />
+
           {need.id === 'hunger' && need.source ? (
             <CalorieBalanceCard
               source={need.source}
@@ -464,6 +471,8 @@ export function NeedScreen() {
               </View>
             </>
           ) : null}
+
+          <NeedEffectsSection needId={need.id} />
 
           <CueSectionLabel>What helps</CueSectionLabel>
           {sourceFields.length > 0 && need.source ? (

@@ -19,7 +19,7 @@ export function EnergyRuleCard({ fullMinutes }: { fullMinutes: number }) {
   return (
     <View style={styles.card}>
       <Text style={styles.text}>
-        ⚡ This behaviour refills <Text style={styles.accent}>Energy</Text>: time asleep ÷{' '}
+        🧠 This behaviour refills <Text style={styles.accent}>Brain Energy</Text>: time asleep ÷{' '}
         {formatDuration(fullMinutes * 60_000)}, × a quality of {SLEEP_QUALITY_MIN_FACTOR}–{SLEEP_QUALITY_MAX_FACTOR}{' '}
         from how much was deep + REM ({Math.round(SLEEP_RESTORATIVE_TARGET * 100)}% = ×1.0).
       </Text>

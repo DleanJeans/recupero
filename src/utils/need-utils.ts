@@ -1,5 +1,13 @@
 import type { BehaviorEntry, Category, LogSleepDetails, MetadataField } from '../types/behavior';
-import type { CustomNeedDef, NeedCheckIn, NeedConfig, NeedId, NeedMetadataSource, NeedRefill } from '../types/need';
+import type {
+  CustomNeedDef,
+  NeedCheckIn,
+  NeedConfig,
+  NeedEffect,
+  NeedId,
+  NeedMetadataSource,
+  NeedRefill,
+} from '../types/need';
 
 const MS_PER_HOUR = 3_600_000;
 
@@ -8,6 +16,7 @@ export const NEED_IDS: NeedId[] = [
   'thirst',
   'hygiene',
   'energy',
+  'body',
   'fun',
   'social',
   'comfort',
@@ -25,6 +34,8 @@ export interface NeedInfo {
   checkIns: ReadonlyArray<{ label: string; level: number }>;
   /** Body sensations that count as a check-in at the craving line. */
   bodySensations: readonly string[];
+  /** Moods that count as a check-in at the craving line (e.g. Tired lowers Brain Energy). */
+  moods?: readonly string[];
   /** Behaviour names that probably refill this need, offered as suggestions. */
   suggest: RegExp;
 }
@@ -60,15 +71,26 @@ export const NEED_INFO: Record<NeedId, NeedInfo> = {
     bodySensations: [],
     suggest: /shower|bath|wash|brush|teeth|shave/i,
   },
+  // Brain Energy keeps the old Energy need's id, so its history and learned rate carry over.
   energy: {
     id: 'energy',
-    emoji: '⚡',
-    label: 'Energy',
-    question: 'How much energy do you have?',
-    checkIns: checkInLevels(['Exhausted', 'Tired', 'Okay', 'Awake', 'Energised']),
-    bodySensations: ['tired', 'sleepy'],
+    emoji: '🧠',
+    label: 'Brain Energy',
+    question: 'How alert are you?',
+    checkIns: checkInLevels(['Exhausted', 'Drowsy', 'Okay', 'Alert', 'Sharp']),
+    bodySensations: ['sleepy'],
+    moods: ['tired'],
     // Word boundaries so "Napa cabbage" or "Restaurant" don't count.
     suggest: /\b(sleep|nap|rest)\b/i,
+  },
+  body: {
+    id: 'body',
+    emoji: '💪',
+    label: 'Body Energy',
+    question: 'How much does your body have left?',
+    checkIns: checkInLevels(['Spent', 'Heavy', 'Okay', 'Fresh', 'Charged']),
+    bodySensations: ['tired'],
+    suggest: /\b(sleep|nap|rest|lie down|sit)\b/i,
   },
   fun: {
     id: 'fun',
@@ -122,6 +144,7 @@ export const DEFAULT_NEED_CONFIGS: Record<NeedId, NeedConfig> = {
   thirst: { enabled: true, emptyHours: 5, cravingLine: 30, nudgeLine: 15, refills: {}, learnedFrom: 0 },
   hygiene: { enabled: true, emptyHours: 36, cravingLine: 30, nudgeLine: 10, refills: {}, learnedFrom: 0 },
   energy: { enabled: true, emptyHours: 16, cravingLine: 25, nudgeLine: 10, refills: {}, learnedFrom: 0 },
+  body: { enabled: true, emptyHours: 30, cravingLine: 25, nudgeLine: 10, refills: {}, learnedFrom: 0 },
   fun: { enabled: true, emptyHours: 10, cravingLine: 30, nudgeLine: 15, refills: {}, learnedFrom: 0 },
   social: { enabled: true, emptyHours: 72, cravingLine: 30, nudgeLine: 15, refills: {}, learnedFrom: 0 },
   comfort: { enabled: true, emptyHours: 6, cravingLine: 30, nudgeLine: 15, refills: {}, learnedFrom: 0 },
@@ -229,8 +252,38 @@ export type NeedEvent =
    * `update` marks a top-up made by hand without a log, which has no behaviour. `startTs` is when a
    * duration refill (e.g. sleep) began: the level counts it at `ts`, charts ramp up from `startTs`.
    */
-  | { ts: number; kind: 'add'; amount: number; behaviorId?: string; logId?: string; update?: boolean; startTs?: number }
-  | { ts: number; kind: 'set'; level: number; behaviorId?: string; checkIn?: boolean; logId?: string };
+  | {
+      ts: number;
+      kind: 'add';
+      amount: number;
+      behaviorId?: string;
+      logId?: string;
+      update?: boolean;
+      startTs?: number;
+      /** A behaviour's side effect (see NeedEffect), not a refill. */
+      effect?: boolean;
+    }
+  | { ts: number; kind: 'set'; level: number; behaviorId?: string; checkIn?: boolean; logId?: string }
+  /** A "down to" side effect: the level drops to `level` if it is above it, and is never raised. */
+  | { ts: number; kind: 'cap'; level: number; behaviorId: string; logId: string; effect: true };
+
+/** The level right after an event. */
+export function applyNeedEvent(level: number, event: NeedEvent): number {
+  if (event.kind === 'add') return clampLevel(level + event.amount);
+  if (event.kind === 'cap') return Math.min(level, clampLevel(event.level));
+  return clampLevel(event.level);
+}
+
+/** The event a behaviour's side effect adds when one of its logs ends. */
+export function getEffectEvent(
+  behaviorId: string,
+  log: Pick<BehaviorEntry['logs'][number], 'id' | 'timestamp' | 'endTimestamp'>,
+  effect: Pick<NeedEffect, 'kind' | 'amount'>,
+): NeedEvent {
+  const ts = log.endTimestamp ?? log.timestamp;
+  if (effect.kind === 'to') return { ts, kind: 'cap', level: effect.amount, behaviorId, logId: log.id, effect: true };
+  return { ts, kind: 'add', amount: effect.amount, behaviorId, logId: log.id, effect: true };
+}
 
 /** Share of time asleep spent in deep + REM sleep that counts as a normal night (factor 1). */
 export const SLEEP_RESTORATIVE_TARGET = 0.4;
@@ -403,6 +456,16 @@ export function getNeedEvents(
       if (event) events.push(event);
     }
   }
+  // Side effects land when a log ends. A running timer's stand-in log doesn't count until it stops.
+  for (const behavior of behaviors) {
+    const effect = config.effects?.[behavior.id];
+    if (!effect) continue;
+    for (const log of behavior.logs) {
+      if (log.id === TIMER_PREVIEW_LOG_ID || log.batchBehaviorId) continue;
+      if ((log.endTimestamp ?? log.timestamp) < since) continue;
+      events.push(getEffectEvent(behavior.id, log, effect));
+    }
+  }
   for (const checkIn of checkIns) {
     if (checkIn.needId !== needId || checkIn.ts < since) continue;
     if (checkIn.amount != null) {
@@ -422,6 +485,8 @@ export interface NeedState {
   lastRefillAt?: number;
   /** The behaviour logged at `lastRefillAt`, when it was a logged behaviour. */
   lastRefillBehaviorId?: string;
+  /** When the latest behaviour side effect landed. */
+  lastEffectAt?: number;
 }
 
 /** Replays events with a constant decay rate and returns the level at `now`. */
@@ -432,10 +497,14 @@ export function simulateNeed(events: NeedEvent[], decayPerHour: number, now: num
   let t = past[0].ts;
   let lastRefillAt: number | undefined;
   let lastRefillBehaviorId: string | undefined;
+  let lastEffectAt: number | undefined;
   for (const event of past) {
     level = clampLevel(level - (decayPerHour * Math.max(0, event.ts - t)) / MS_PER_HOUR);
-    level = event.kind === 'add' ? clampLevel(level + event.amount) : clampLevel(event.level);
-    if (event.kind === 'add' || !event.checkIn) {
+    level = applyNeedEvent(level, event);
+    // Side effects aren't refills.
+    const isEffect = event.kind === 'cap' || (event.kind === 'add' && event.effect);
+    if (isEffect) lastEffectAt = event.ts;
+    else if (event.kind === 'add' || !event.checkIn) {
       lastRefillAt = event.ts;
       lastRefillBehaviorId = event.behaviorId;
     }
@@ -447,6 +516,7 @@ export function simulateNeed(events: NeedEvent[], decayPerHour: number, now: num
     anchor,
     lastRefillAt,
     lastRefillBehaviorId,
+    lastEffectAt,
   };
 }
 
@@ -605,7 +675,7 @@ export function getSuggestedRefillIds(needId: NeedId, config: NeedConfig, behavi
 /** A sensible starting refill for a behaviour added to a need. */
 export function getDefaultRefill(needId: NeedId): NeedRefill {
   if (needId === 'hygiene') return { mode: 'set' };
-  if (needId === 'energy') return { mode: 'duration', fullMinutes: 8 * 60 };
+  if (needId === 'energy' || needId === 'body') return { mode: 'duration', fullMinutes: 8 * 60 };
   if (needId === 'thirst') return { mode: 'add', amount: 40 };
   if (needId === 'fun') return { mode: 'duration', fullMinutes: 100 };
   if (needId === 'social') return { mode: 'duration', fullMinutes: 100 };
@@ -789,7 +859,8 @@ export const NEED_UPDATE_QUESTIONS: Record<NeedId, string> = {
   hunger: 'Ate something unlogged?',
   thirst: 'Drank something unlogged?',
   hygiene: 'Washed up, not logged?',
-  energy: 'Rested, not logged?',
+  energy: 'Slept, not logged?',
+  body: 'Rested, not logged?',
   fun: 'Had fun, not logged?',
   social: 'Saw someone, not logged?',
   comfort: 'Relaxed, not logged?',

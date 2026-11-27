@@ -3,8 +3,10 @@ import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 import { useBehaviorStore } from '../store/behavior-store';
 import { useCuesStore } from '../store/cues-store';
+import { useNeedsStore } from '../store/needs-store';
 import { useSunlightStore } from '../store/sunlight-store';
 import { useTimerStore } from '../store/timer-store';
+import { applyMoodsToNeeds } from './body-need-utils';
 import { getNextMoodXp, presentCheckInConfirmation } from './checkin-notifications';
 import { isCheckInNotificationData, parseCheckInAction } from './checkin-utils';
 import { type NotificationActionInput, readTaskNotificationAction } from './notification-action-utils';
@@ -101,9 +103,14 @@ export async function handleBackgroundNotificationAction(
   if (isCheckInNotificationData(data)) {
     const mood = parseCheckInAction(actionIdentifier);
     if (!mood) return;
-    await waitForHydration(useCuesStore);
+    await Promise.all([
+      waitForHydration(useCuesStore),
+      waitForHydration(useNeedsStore),
+      waitForHydration(useBehaviorStore),
+    ]);
     const xp = getNextMoodXp();
     useCuesStore.getState().logMood(mood);
+    applyMoodsToNeeds([mood]);
     await Notifications.dismissNotificationAsync(notificationId).catch(() => undefined);
     await presentCheckInConfirmation(mood, xp);
     return;

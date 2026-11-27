@@ -66,11 +66,12 @@ export function NeedHistorySection({ needId, onEditLog }: NeedHistorySectionProp
         const before = history.points.find(point => point.ts === event.ts);
         const after = [...history.points].reverse().find(point => point.ts === event.ts);
         const isCheckIn = event.kind === 'set' && event.checkIn === true;
+        const isEffect = event.kind === 'cap' || (event.kind === 'add' && event.effect === true);
         return {
           key: `${event.ts}-${event.logId ?? ''}`,
           x: event.ts,
           y: (after ?? before)?.level ?? 0,
-          color: isCheckIn ? '#60a5fa' : Colors.type.desirable,
+          color: isCheckIn ? '#60a5fa' : isEffect ? Colors.type.undesirable : Colors.type.desirable,
           event,
         };
       }),

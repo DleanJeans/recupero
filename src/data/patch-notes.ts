@@ -37,6 +37,15 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-27',
     items: [
+      'Energy is now two needs: Brain Energy (Mood Tired lowers it) and Body Energy (Body Tired lowers it).',
+      'Behaviours can have effects, like a workout taking Brain Energy down to 25%, with a heads-up before you log.',
+      'Checking in much lower than expected right after a behaviour asks if it did it, and saves that as an effect.',
+      {
+        text: "The Brain Energy screen lists what lowers or raises it, and suggests one late at night when you can't sleep.",
+        screen: 'Need',
+        params: { needId: 'energy' },
+        linkPhrase: 'Brain Energy screen',
+      },
       'Sunlight: arriving uses your place radius, leaving needs a bigger one, so Home stops flickering while you sleep.',
     ],
   },

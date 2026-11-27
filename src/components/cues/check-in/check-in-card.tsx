@@ -9,7 +9,7 @@ import { useCuesStore } from '../../../store/cues-store';
 import { useSettingsStore } from '../../../store/settings-store';
 import type { BodySensationId, MoodId } from '../../../types/cue';
 import type { RootStackParamList } from '../../../types/navigation';
-import { applyBodySensationsToNeeds } from '../../../utils/body-need-utils';
+import { applyBodySensationsToNeeds, applyMoodsToNeeds } from '../../../utils/body-need-utils';
 import { formatCheckInAgo, getCheckInDays, getNextCheckInXp, isCheckInStale } from '../../../utils/checkin-utils';
 import { Colors } from '../../../utils/colors';
 import { getBodySensationOption, getMoodOption } from '../../../utils/cue-utils';
@@ -65,6 +65,7 @@ export function CheckInCard() {
     if (moods.length === 0) return;
     const xp = getNextCheckInXp(checkIn.events, 'mood', Date.now(), dayCutoffHour);
     const ids = logMoods(moods);
+    applyMoodsToNeeds(moods);
     setSheet(undefined);
     showUndo({ kind: 'mood', ids, label: joinLabels(moods.map(m => getMoodOption(m, custom.moods).label)), xp });
   };

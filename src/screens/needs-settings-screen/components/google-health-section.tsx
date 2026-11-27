@@ -56,7 +56,8 @@ export function GoogleHealthSection() {
         ) : !connected ? (
           <View style={styles.connect}>
             <Text style={styles.hint}>
-              Logs your Fitbit sleep, fills Energy by time asleep, and tracks Active Zone Minutes against a daily goal.
+              Logs your Fitbit sleep, fills Brain Energy and Body Energy by time asleep, and tracks Active Zone Minutes
+              against a daily goal.
             </Text>
             <Button
               variant="primary"

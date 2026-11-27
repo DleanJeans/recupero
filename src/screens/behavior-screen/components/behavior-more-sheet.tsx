@@ -3,6 +3,7 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SheetOption } from '../../../components/behavior-action-sheet';
 import { MergeLogsPicker } from '../../../components/merge-logs-picker';
+import { EffectEditDialog } from '../../../components/needs/effect-edit-dialog';
 import { useBehaviorStore } from '../../../store/behavior-store';
 import type { BehaviorEntry } from '../../../types/behavior';
 import { isArchived } from '../../../utils/archive-utils';
@@ -32,11 +33,22 @@ export function BehaviorMoreSheet({
   const unarchiveBehavior = useBehaviorStore(state => state.unarchiveBehavior);
   const archived = isArchived(behavior);
   const [merging, setMerging] = useState(false);
+  const [addingEffect, setAddingEffect] = useState(false);
 
   const run = (action: () => void) => () => {
     onClose();
     action();
   };
+
+  if (addingEffect) {
+    return (
+      <EffectEditDialog
+        behaviorId={behavior.id}
+        behaviorName={behavior.name}
+        onClose={onClose}
+      />
+    );
+  }
 
   if (merging) {
     return (
@@ -74,6 +86,12 @@ export function BehaviorMoreSheet({
               onPress={run(onRideOut)}
             />
           )}
+          <SheetOption
+            icon="pulse-outline"
+            label="Add an effect…"
+            hint="e.g. it makes you sleepy: lowers Brain Energy."
+            onPress={() => setAddingEffect(true)}
+          />
           <SheetOption
             icon={archived ? 'arrow-undo-outline' : 'archive-outline'}
             label={archived ? 'Unarchive' : 'Archive'}

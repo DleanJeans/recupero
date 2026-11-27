@@ -1,5 +1,5 @@
 import type { NeedId } from '../types/need';
-import { clampLevel, compareNeedEvents, NEED_UNKNOWN_START_LEVEL, type NeedEvent } from './need-utils';
+import { applyNeedEvent, clampLevel, compareNeedEvents, NEED_UNKNOWN_START_LEVEL, type NeedEvent } from './need-utils';
 
 const MS_PER_HOUR = 3_600_000;
 export const MS_PER_DAY = 24 * MS_PER_HOUR;
@@ -107,7 +107,7 @@ export function replayNeedLevels(
     sampleUntil(event.ts);
     decayTo(event.ts);
     let manualSlope = false;
-    const manual = event.kind === 'set' ? event.checkIn === true : event.update === true;
+    const manual = event.kind === 'set' ? event.checkIn === true : event.kind === 'add' && event.update === true;
     if (manual && lastEventIdx >= 0) {
       manualSlope = true;
       // Manual updates (check-ins, "ate something you didn't log") slope straight from the previous
@@ -116,7 +116,7 @@ export function replayNeedLevels(
     } else if (event.ts >= drawFrom) {
       points.push({ ts: event.ts, level });
     }
-    level = event.kind === 'add' ? clampLevel(level + event.amount) : clampLevel(event.level);
+    level = applyNeedEvent(level, event);
     if (event.ts >= drawFrom) {
       if (!manualSlope || points[points.length - 1]?.ts !== event.ts) points.push({ ts: event.ts, level });
       lastEventIdx = points.length - 1;
@@ -205,8 +205,14 @@ export function getNeedDayBands(
 
 /** Refills (not check-ins) between `from` and `to`. */
 export function countRefills(events: readonly NeedEvent[], from: number, to: number): number {
-  return events.filter(event => event.ts >= from && event.ts <= to && !(event.kind === 'set' && event.checkIn === true))
-    .length;
+  return events.filter(
+    event =>
+      event.ts >= from &&
+      event.ts <= to &&
+      event.kind !== 'cap' &&
+      !(event.kind === 'set' && event.checkIn === true) &&
+      !(event.kind === 'add' && event.effect),
+  ).length;
 }
 
 /** Sample step that keeps a chart to a few hundred points. */
@@ -256,6 +262,7 @@ export function emptyRateHistory(): Record<NeedId, NeedRatePoint[]> {
     thirst: [],
     hygiene: [],
     energy: [],
+    body: [],
     fun: [],
     social: [],
     comfort: [],
@@ -321,6 +328,7 @@ export const NEED_CHART_COLORS: Record<NeedId, string> = {
   thirst: '#60a5fa',
   hygiene: '#2dd4bf',
   energy: '#a3e635',
+  body: '#f87171',
   fun: '#f472b6',
   social: '#c084fc',
   comfort: '#fb923c',
@@ -330,7 +338,8 @@ export const NEED_CHART_COLORS: Record<NeedId, string> = {
 
 /** "+45%", "Full" or "Check-in 25%" for an event dot. */
 export function describeNeedEvent(event: NeedEvent): string {
-  if (event.kind === 'add') return `+${Math.round(event.amount)}%`;
+  if (event.kind === 'cap') return `Down to ${Math.round(event.level)}%`;
+  if (event.kind === 'add') return `${event.amount < 0 ? '−' : '+'}${Math.abs(Math.round(event.amount))}%`;
   if (event.checkIn) return `Check-in ${Math.round(event.level)}%`;
   return event.level >= 100 ? 'Full' : `Set to ${Math.round(event.level)}%`;
 }
