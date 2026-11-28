@@ -37,7 +37,7 @@ export const PATCH_NOTES: PatchNotesDay[] = [
   {
     date: '2026-11-27',
     items: [
-      'A cooked meal\'s details page now lists the ingredients and amounts used, even after it is archived.',
+      "A cooked meal's details page now lists the ingredients and amounts used, even after it is archived.",
       'Behaviors added to a stack now show the same metadata as the main log: the Manual | Formula switch (e.g. Weight from Before and After), the unit that follows Weight or Volume, links and calculated values. They are saved the same way, and each behavior remembers Manual or Formula.',
       'Energy is now two needs: Brain Energy (Mood Tired lowers it) and Body Energy (Body Tired lowers it).',
       'Behaviours can have effects, like a workout taking Brain Energy down to 25%, with a heads-up before you log.',
